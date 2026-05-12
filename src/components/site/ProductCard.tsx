@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag, Minus, Plus } from "lucide-react";
+import { Heart, ShoppingBag, Minus, Plus, Images } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
@@ -21,25 +21,29 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       className="group relative bg-card rounded-xl overflow-hidden border border-border/60 shadow-soft hover:shadow-warm transition-shadow flex flex-col"
     >
       <Link to="/produs/$id" params={{ id: product.id }} className="block">
-        <div className="relative aspect-square overflow-hidden bg-[color:var(--wood-dark)]">
+        <div className="relative aspect-square overflow-hidden bg-muted/40 p-3">
           <motion.img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover"
-            whileHover={{ scale: 1.06 }}
+            className="w-full h-full object-contain drop-shadow-[0_16px_24px_rgba(0,0,0,0.14)]"
+            whileHover={{ scale: 1.04 }}
             transition={{ duration: 0.6 }}
+            loading="lazy"
           />
           <div className="absolute top-3 left-3 text-[10px] uppercase tracking-[0.15em] bg-background/90 backdrop-blur px-2 py-1 rounded">
             {product.category}
           </div>
+          <div className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+            <Images className="w-3 h-3" /> 3 imagini
+          </div>
         </div>
         <div className="p-4 text-center">
           <h3 className="font-display text-lg leading-tight">{product.name}</h3>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{product.tagline}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-8">{product.tagline}</p>
           <div className="mt-3 flex items-baseline justify-center gap-2">
             <span className="font-display text-2xl">{PRICE} <span className="text-sm">lei</span></span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">75 lei/buc la 3+ · transport gratuit</p>
+          <p className="text-[11px] text-muted-foreground mt-1">150 lei / 2 · 75 lei/buc la 3+ · transport gratuit</p>
         </div>
       </Link>
       <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
