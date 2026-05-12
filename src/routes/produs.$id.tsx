@@ -69,47 +69,14 @@ function ProductPage() {
           </motion.div>
           <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Vizualizare 3D din fotografia originală</p>
           <div className="mt-4 grid grid-cols-3 gap-3">
-            {product.gallery.map((image, index) => (
+            {product.gallery.map((image: (typeof product.gallery)[number], index: number) => (
               <button key={`${product.id}-${image.label}`} onClick={() => setActive(index)} className={`rounded-xl border p-2 bg-card transition ${active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}>
                 <img src={image.src} alt={image.label} className="aspect-square w-full object-contain" style={{ objectPosition: image.position ?? "center" }} />
                 <span className="mt-2 block text-[11px] text-center text-muted-foreground">{image.label}</span>
               </button>
             ))}
-          </div>
-        </div>
-
-        <div className="text-center md:text-left">
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{product.category}</div>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl mt-2 leading-tight">{product.name}</h1>
-          <p className="mt-2 text-lg italic text-muted-foreground">{product.tagline}</p>
-
-          <div className="mt-6 flex items-baseline gap-4 justify-center md:justify-start">
-            <span className="font-display text-5xl">{PRICE} lei</span>
-            <span className="text-sm text-muted-foreground">150 lei / 2 · 75 lei/buc la 3+</span>
-          </div>
-
-          <p className="mt-6 text-base leading-relaxed text-foreground/90">{product.description}</p>
-
-          <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start items-center">
-            <div className="flex items-center gap-3 bg-muted rounded-md px-2 py-1.5">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-1.5 rounded hover:bg-background" aria-label="Scade"><Minus className="w-4 h-4" /></button>
-              <span className="font-medium w-6 text-center">{qty}</span>
-              <button onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))} className="p-1.5 rounded hover:bg-background" aria-label="Crește"><Plus className="w-4 h-4" /></button>
-            </div>
-            <button onClick={() => { addToCart(product.id, qty); toast.success(`${qty} × adăugat în coș`, { description: product.name }); }} className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-md px-6 py-3 font-medium hover:opacity-90"><ShoppingBag className="w-4 h-4" /> Comandă acum</button>
-            <Link to="/comanda" className="inline-flex items-center gap-2 wood-grain text-[color:var(--cream)] rounded-md px-6 py-3 font-medium">Finalizează comanda</Link>
-            <button onClick={() => toggleFavorite(product.id)} className={`p-3 rounded-md border border-border ${fav ? "bg-[color:var(--gold)]/20" : "hover:bg-muted"}`} aria-label="Favorite"><Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} /></button>
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted-foreground justify-center md:justify-start">
-            <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit la 3+</div>
-            <div className="flex items-center gap-2"><Gift className="w-4 h-4" /> Plată exclusiv online</div>
-          </div>
-
-          <div className="mt-10 border-t border-border pt-8">
-            <h2 className="font-display text-2xl">Povestea acestei cutiuțe</h2>
-            <p className="mt-3 text-muted-foreground leading-relaxed">{product.story}</p>
-          </div>
+...
+              {product.details.map((d: string) => <li key={d} className="flex gap-2 text-sm"><span className="text-[color:var(--gold)]">✦</span> {d}</li>)}
 
           <div className="mt-8">
             <h3 className="font-display text-xl">Detalii</h3>
