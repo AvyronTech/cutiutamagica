@@ -75,8 +75,50 @@ function ProductPage() {
                 <span className="mt-2 block text-[11px] text-center text-muted-foreground">{image.label}</span>
               </button>
             ))}
-...
-              {product.details.map((d: string) => <li key={d} className="flex gap-2 text-sm"><span className="text-[color:var(--gold)]">✦</span> {d}</li>)}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">{product.category}</p>
+          <h1 className="font-display text-4xl md:text-5xl mt-2">{product.name}</h1>
+          <p className="mt-3 text-lg text-muted-foreground">{product.tagline}</p>
+
+          <div className="mt-6 flex items-baseline gap-3">
+            <span className="font-display text-4xl">{PRICE} lei</span>
+            <span className="text-sm text-muted-foreground">75 lei/buc la 3+ · transport gratuit</span>
+          </div>
+
+          <div className="mt-6 flex items-center gap-3">
+            <div className="inline-flex items-center rounded-full border bg-card">
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-2.5 hover:bg-muted rounded-l-full" aria-label="Scade"><Minus className="w-4 h-4" /></button>
+              <span className="px-4 font-medium tabular-nums">{qty}</span>
+              <button onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))} className="p-2.5 hover:bg-muted rounded-r-full" aria-label="Crește"><Plus className="w-4 h-4" /></button>
+            </div>
+            <button
+              onClick={() => { addToCart(product.id, qty); toast.success(`${qty} × ${product.name} adăugată în coș`); }}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
+            >
+              <ShoppingBag className="w-4 h-4" /> Adaugă în coș
+            </button>
+            <button onClick={() => toggleFavorite(product.id)} className={`p-3 rounded-full border ${fav ? "bg-primary/10 border-primary text-primary" : "bg-card hover:bg-muted"}`} aria-label="Favorite">
+              <Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} />
+            </button>
+          </div>
+
+          <Link to="/comanda" className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full border border-primary/40 px-6 py-3 text-sm font-medium hover:bg-primary/5">
+            <Gift className="w-4 h-4" /> Finalizează comanda
+          </Link>
+
+          <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-xl border p-3"><Truck className="w-4 h-4" /> Transport gratuit la 3+</div>
+            <div className="flex items-center gap-2 rounded-xl border p-3"><Gift className="w-4 h-4" /> Ambalaj cadou inclus</div>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="font-display text-xl">Despre cutiuță</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{product.description}</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{product.story}</p>
+          </div>
 
           <div className="mt-8">
             <h3 className="font-display text-xl">Detalii</h3>
