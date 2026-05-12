@@ -36,7 +36,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{product.tagline}</p>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-display text-2xl">{PRICE} <span className="text-sm">lei</span></span>
-            <span className="text-xs text-muted-foreground">sau 75 lei/buc la 2+</span>
+            <span className="text-xs text-muted-foreground">75 lei/buc la 3+ · transport gratuit</span>
           </div>
         </div>
       </Link>

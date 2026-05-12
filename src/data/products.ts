@@ -22,11 +22,13 @@ export type Product = {
 export const PRICE = 89;
 export const SHIPPING = 25;
 
+// 1 buc = 89 lei + 25 transport. 2 buc = 150 lei (75/buc) + 25 transport.
+// 3+ buc = 75 lei/buc + transport GRATUIT.
 export function calcTotals(qty: number) {
   let subtotal = qty * PRICE;
   if (qty === 2) subtotal = 150;
-  if (qty >= 3) subtotal = 225 + (qty - 3) * 75;
-  const shipping = qty >= 2 ? 0 : SHIPPING;
+  if (qty >= 3) subtotal = qty * 75;
+  const shipping = qty >= 3 ? 0 : qty > 0 ? SHIPPING : 0;
   return { subtotal, shipping, total: subtotal + shipping };
 }
 
@@ -39,34 +41,32 @@ export const products: Product[] = [
     category: "Stăpânul Inelelor",
     image: lotr,
     description:
-      "O cutiuță gravată cu silueta lui Gandalf și a lui Frodo, purtându-te înapoi în Ținutul de Mijloc cu fiecare învârtire de manivelă.",
+      "Cadoul perfect pentru fanul Tolkien care încă visează la Ținutul de Mijloc.",
     story:
-      "Inspirată din călătoria celor mai îndrăgiți eroi ai Pământului de Mijloc, această cutiuță cântă tema Hobbiților — o melodie care îți va aminti că marile aventuri încep cu un singur pas în afara casei.",
+      "O învârtire de manivelă și se aud primele note din «Concerning Hobbits». Pentru cel care a citit trilogia de trei ori și plânge la finalul filmului.",
     details: [
       "Lemn natural gravat cu laser",
-      "Mecanism manual cu manivelă, fără baterii",
+      "Mecanism manual, fără baterii",
       "Dimensiuni: 6.5 × 5 × 4 cm",
-      "Melodie: Concerning Hobbits (LOTR)",
-      "Cadou ideal pentru fanii Tolkien",
+      "Melodie: Concerning Hobbits",
     ],
   },
   {
     id: "lotr-rings",
-    name: "Lord of the Rings — One Ring",
+    name: "Stăpânul Inelelor — One Ring",
     tagline: "Un inel le stăpânește pe toate",
     melody: "In Dreams",
     category: "Stăpânul Inelelor",
     image: lotr2,
     description:
-      "Capac gravat cu inscripția elfică a Inelului Suprem. O piesă de colecție pentru cei care păstrează încă ecoul Mordorului.",
+      "Pentru colecționarul care își dorește inscripția elfică pe biroul lui.",
     story:
-      "Litere argintii curg pe capac ca runele inelului forjat în focul Muntelui Osândei. Învârte manivela și melodia 'In Dreams' va umple camera.",
+      "Litere argintii ce curg ca runele forjate în Muntele Osândei. Un cadou de impact pentru fani LOTR și pasionați de fantasy.",
     details: [
       "Gravare detaliată inscripție elfică",
-      "Lemn de fag tratat, finisaj vintage",
-      "Mecanism elvețian de calitate",
-      "Melodie: In Dreams (LOTR)",
-      "Greutate: 180 g",
+      "Lemn de fag, finisaj vintage",
+      "Mecanism durabil",
+      "Melodie: In Dreams",
     ],
   },
   {
@@ -77,34 +77,32 @@ export const products: Product[] = [
     category: "Game of Thrones",
     image: got,
     description:
-      "Sigiliul lupului străvechi, gravat în lemn negru cu accente aurii. Tema iconică a Tronului de Fier prinde viață sub mâna ta.",
+      "Pentru fanul care a urmărit toate sezoanele și încă speră la un final mai bun.",
     story:
-      "De la zidurile din Winterfell până la Tronul de Fier — această cutiuță poartă cu ea forța casei Stark și liniștea tăioasă a Nordului.",
+      "Sigiliul lupului străvechi, gravat în lemn. Cadou de neuitat pentru iubitorii sagăi sau pentru cineva loial casei Stark.",
     details: [
-      "Sigiliu Stark gravat pe ambele fețe",
-      "Lemn negru cu accente aurii",
+      "Sigiliu Stark gravat",
+      "Finisaj cald, accente aurii",
       "Mecanism manual silențios",
-      "Melodie: Game of Thrones Main Theme",
-      "Cutie cadou inclusă",
+      "Melodie: GoT Main Theme",
     ],
   },
   {
     id: "got-winter",
-    name: "Winter is Coming",
+    name: "Game of Thrones — Winter is Coming",
     tagline: "Cuvintele Casei Stark",
     melody: "Main Theme",
     category: "Game of Thrones",
     image: gotWinter,
     description:
-      "Capac gravat cu deviza eternă: Winter is Coming. O cutiuță pentru cei loiali Nordului.",
+      "Trei cuvinte care îi vor da fiori oricărui fan GoT. Cadou ideal de aniversare sau Crăciun.",
     story:
-      "Trei cuvinte care au schimbat regate. O melodie care îți va da fiori pe șira spinării de fiecare dată.",
+      "Pentru cel care îți recită replici din serial pe de rost. O cutiuță care aduce Nordul direct pe raftul lui.",
     details: [
-      "Gravare adâncă, vopsea aurie",
-      "Finisaj mat negru",
+      "Gravare adâncă, accent auriu",
+      "Finisaj mat",
       "Manivelă din alamă",
       "Melodie: GoT Main Theme",
-      "Garanție 12 luni",
     ],
   },
   {
@@ -115,15 +113,14 @@ export const products: Product[] = [
     category: "Harry Potter",
     image: hpHeart,
     description:
-      "Inimă gravată cu simbolurile lumii vrăjitorești: peronul 9¾, ochelarii, fulgerul, talismanele morții.",
+      "Cadou romantic pentru ea, dacă ea încă mai crede în magia Hogwarts-ului.",
     story:
-      "Pentru cei care încă mai cred în magie. Fiecare simbol gravat în lemn este o amintire dintr-o călătorie pe Hogwarts Express.",
+      "O inimă plină de simboluri Harry Potter. Perfectă de Sf. Valentin, aniversare sau «doar pentru că».",
     details: [
-      "11 simboluri Harry Potter gravate",
+      "Simboluri Harry Potter gravate",
       "Lemn ebonizat cu detalii aurii",
-      "Mecanism manual de precizie",
+      "Mecanism de precizie",
       "Melodie: Hedwig's Theme",
-      "Ambalaj cadou magic",
     ],
   },
   {
@@ -134,34 +131,32 @@ export const products: Product[] = [
     category: "Harry Potter",
     image: hpQuidditch,
     description:
-      "Capac dublu gravat — Harry Potter pe o față, stema Hogwarts și Quidditch pe celelalte.",
+      "Pentru Potterhead-ul din viața ta — cel cu eșarfă Gryffindor și baghetă pe noptieră.",
     story:
-      "Inspirată din meciurile de Quidditch sub cerul aurit al Hogwarts-ului. Învârte manivela și retrăiește prima ta cursă cu Nimbus 2000.",
+      "Capac dublu gravat cu Harry și stema Hogwarts. Un cadou care îi va aduce zâmbetul de la prima notă.",
     details: [
-      "Gravare pe 4 fețe",
-      "Dimensiuni compacte: 6.5 × 5 × 4 cm",
-      "Mecanism manual, fără baterii",
+      "Gravare pe mai multe fețe",
+      "Compactă: 6.5 × 5 × 4 cm",
+      "Mecanism manual durabil",
       "Melodie: Hedwig's Theme",
-      "Perfect pentru colecționari",
     ],
   },
   {
     id: "hp-platform",
-    name: "Peronul 9¾",
+    name: "Harry Potter — Peronul 9¾",
     tagline: "King's Cross — London",
     melody: "Hedwig's Theme",
     category: "Harry Potter",
     image: hpPlatform,
     description:
-      "Cutiuță vintage cu peronul 9¾ și inscripția 'I'm a Keeper'. Pentru cei care încă așteaptă scrisoarea de la Hogwarts.",
+      "Pentru cel care își amintește exact unde era când a citit prima carte.",
     story:
-      "O bucățică din magia primei sosiri la Hogwarts — gata să te transporte înapoi pe Hogwarts Express.",
+      "Stil vintage afumat cu peronul 9¾. Cadou ideal pentru aniversare sau pentru cineva care încă așteaptă scrisoarea de la Hogwarts.",
     details: [
-      "Stil vintage afumat",
-      "Gravură 'I'm a Keeper' & 'Always'",
+      "Stil vintage",
+      "Gravură «I'm a Keeper»",
       "Lemn masiv, manivelă alamă",
       "Melodie: Hedwig's Theme",
-      "Ediție limitată",
     ],
   },
   {
@@ -172,15 +167,14 @@ export const products: Product[] = [
     category: "Romantic",
     image: love,
     description:
-      "Silueta a doi îndrăgostiți gravată pe capac — o declarație de dragoste pe care o poți auzi de fiecare dată.",
+      "Pentru aniversare, cerere în căsătorie sau un «te iubesc» care nu se uită.",
     story:
-      "Pentru aniversări, cereri în căsătorie, Sf. Valentin sau pur și simplu pentru un 'te iubesc' nespus. Melodia lui Elvis prinde viață sub degetele tale.",
+      "Doi îndrăgostiți gravați pe capac și melodia lui Elvis sub degetele tale. Cadou cu impact garantat.",
     details: [
       "Gravură romantică",
       "Lemn fin lustruit",
-      "Sunet cristalin, vibrant",
+      "Sunet cristalin",
       "Melodie: Can't Help Falling in Love",
-      "Cadou ambalat magic",
     ],
   },
 ];
