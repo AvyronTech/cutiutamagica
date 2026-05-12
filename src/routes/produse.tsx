@@ -13,7 +13,7 @@ export const Route = createFileRoute("/produse")({
   }),
 });
 
-const cats = ["Toate", "Harry Potter", "Game of Thrones", "Stăpânul Inelelor", "Romantic"];
+const cats = ["Toate", "Harry Potter", "Game of Thrones", "Stăpânul Inelelor", "Halloween", "Fantasy", "Aventură", "Romantic", "Cadouri Speciale"];
 
 function ProductsPage() {
   const [cat, setCat] = useState("Toate");

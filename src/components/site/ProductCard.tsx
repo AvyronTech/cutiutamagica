@@ -1,14 +1,16 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart, ShoppingBag, Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import type { Product } from "@/data/products";
-import { PRICE } from "@/data/products";
+import { PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
 import { toast } from "sonner";
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { addToCart, toggleFavorite, isFavorite } = useShop();
   const fav = isFavorite(product.id);
+  const [qty, setQty] = useState(1);
 
   return (
     <motion.div
@@ -16,7 +18,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: index * 0.05 }}
-      className="group relative bg-card rounded-xl overflow-hidden border border-border/60 shadow-soft hover:shadow-warm transition-shadow"
+      className="group relative bg-card rounded-xl overflow-hidden border border-border/60 shadow-soft hover:shadow-warm transition-shadow flex flex-col"
     >
       <Link to="/produs/$id" params={{ id: product.id }} className="block">
         <div className="relative aspect-square overflow-hidden bg-[color:var(--wood-dark)]">
@@ -31,33 +33,52 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             {product.category}
           </div>
         </div>
-        <div className="p-4">
+        <div className="p-4 text-center">
           <h3 className="font-display text-lg leading-tight">{product.name}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{product.tagline}</p>
-          <div className="mt-3 flex items-baseline gap-2">
+          <div className="mt-3 flex items-baseline justify-center gap-2">
             <span className="font-display text-2xl">{PRICE} <span className="text-sm">lei</span></span>
-            <span className="text-xs text-muted-foreground">75 lei/buc la 3+ · transport gratuit</span>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-1">75 lei/buc la 3+ · transport gratuit</p>
         </div>
       </Link>
-      <div className="px-4 pb-4 flex gap-2">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            addToCart(product.id);
-            toast.success("Adăugat în coș", { description: product.name });
-          }}
-          className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-md py-2 text-sm font-medium hover:opacity-90 transition"
-        >
-          <ShoppingBag className="w-4 h-4" /> Comandă acum
-        </button>
-        <button
-          onClick={() => toggleFavorite(product.id)}
-          className={`p-2 rounded-md border border-border ${fav ? "bg-[color:var(--gold)]/20 text-[color:var(--wood-dark)]" : "hover:bg-muted"}`}
-          aria-label="Favorite"
-        >
-          <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
-        </button>
+      <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
+        <div className="flex items-center justify-center gap-3 bg-muted/50 rounded-md py-1.5">
+          <button
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            className="p-1 rounded hover:bg-background"
+            aria-label="Scade"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+          <span className="font-medium text-sm w-6 text-center">{qty}</span>
+          <button
+            onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
+            className="p-1 rounded hover:bg-background"
+            aria-label="Crește"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              addToCart(product.id, qty);
+              toast.success(`${qty} × adăugat în coș`, { description: product.name });
+            }}
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-md py-2 text-sm font-medium hover:opacity-90 transition"
+          >
+            <ShoppingBag className="w-4 h-4" /> Comandă
+          </button>
+          <button
+            onClick={() => toggleFavorite(product.id)}
+            className={`p-2 rounded-md border border-border ${fav ? "bg-[color:var(--gold)]/20 text-[color:var(--wood-dark)]" : "hover:bg-muted"}`}
+            aria-label="Favorite"
+          >
+            <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
+          </button>
+        </div>
       </div>
     </motion.div>
   );
