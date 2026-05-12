@@ -1,72 +1,50 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Sparkles, Heart, Truck, Gift } from "lucide-react";
+import { Sparkles, Heart, Truck, Gift, CreditCard } from "lucide-react";
 import { products } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
-import heroImg from "@/assets/box-lotr.jpg";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Cutiuța Magică — Cutiuțe muzicale din lemn handmade" },
-      { name: "description", content: "Cutiuțe muzicale gravate cu laser în lemn. Harry Potter, Game of Thrones, Lord of the Rings & melodii romantice. De la 75 lei/buc cu transport gratuit." },
+      { title: "Cutiuța Magică — cutiuțe muzicale originale din lemn" },
+      { name: "description", content: "Cutiuțe muzicale din lemn cu fotografii reale, descrieri ample și comandă online. 89 lei bucata, 150 lei la 2 și transport gratuit de la 3." },
     ],
   }),
 });
 
 function Index() {
   const featured = products.slice(0, 4);
+  const hero = products[0];
+
   return (
     <div>
-      {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 pt-10 pb-14 md:pt-20 md:pb-24 grid md:grid-cols-2 gap-10 items-center text-center md:text-left">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="order-2 md:order-1">
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[color:var(--wood)] mb-5 justify-center md:justify-start">
               <Sparkles className="w-3.5 h-3.5" /> Piesă originală · Mecanism durabil
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl leading-[1.05] text-balance">
-              Melodii vechi,<br />
-              <span className="gold-text">cutiuțe noi.</span>
-            </h1>
-            <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-lg mx-auto md:mx-0 text-balance">
-              Cutiuțe muzicale din lemn, gravate cu poveștile tale preferate.
-              Harry Potter, Stăpânul Inelelor, Game of Thrones — o învârtire de manivelă și magia revine.
-            </p>
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl leading-[1.05] text-balance">Cutiuțe muzicale <span className="gold-text">autentice.</span></h1>
+            <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-lg mx-auto md:mx-0 text-balance">Am păstrat doar modelele cu fotografie reală a cutiuței, clară și ușor de inspectat, ca utilizatorul să ajungă rapid și sigur la comandă.</p>
             <div className="mt-7 flex flex-wrap gap-3 justify-center md:justify-start">
-              <Link to="/produse" className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-md px-6 py-3 font-medium hover:opacity-90">
-                <Gift className="w-4 h-4" /> Vezi toate cutiuțele
-              </Link>
-              <Link to="/poveste" className="inline-flex items-center gap-2 border border-border rounded-md px-6 py-3 font-medium hover:bg-muted">
-                Povestea noastră
-              </Link>
+              <Link to="/produse" className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-md px-6 py-3 font-medium hover:opacity-90"><Gift className="w-4 h-4" /> Vezi cutiuțele</Link>
+              <Link to="/comanda" className="inline-flex items-center gap-2 border border-border rounded-md px-6 py-3 font-medium hover:bg-muted"><CreditCard className="w-4 h-4" /> Comandă online</Link>
             </div>
             <div className="mt-7 flex flex-wrap gap-5 text-sm text-muted-foreground justify-center md:justify-start">
               <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit la 3+</div>
-              <div className="flex items-center gap-2"><Heart className="w-4 h-4" /> Cadou ambalat</div>
+              <div className="flex items-center gap-2"><Heart className="w-4 h-4" /> Fotografii reale</div>
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, rotate: -3 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 0.9, ease: "easeOut" }}
-            className="relative order-1 md:order-2 max-w-sm mx-auto md:max-w-none"
-          >
-            <div className="absolute -inset-6 bg-[color:var(--gold)]/20 rounded-full blur-3xl" />
-            <motion.img
-              src={heroImg}
-              alt="Cutiuța muzicală Stăpânul Inelelor"
-              className="relative rounded-2xl shadow-warm w-full"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} className="relative order-1 md:order-2 max-w-sm mx-auto md:max-w-none">
+            <div className="absolute -inset-6 bg-[color:var(--gold)]/15 rounded-full blur-3xl" />
+            <motion.img src={hero.image} alt={hero.name} className="relative rounded-2xl shadow-warm w-full max-h-[520px] object-contain bg-card/70 p-4" animate={{ y: [0, -8, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} />
           </motion.div>
         </div>
       </section>
 
-      {/* Bundle banner */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="grid sm:grid-cols-3 gap-4 text-center">
           {[
@@ -83,38 +61,14 @@ function Index() {
         </div>
       </section>
 
-      {/* Featured products */}
       <section className="max-w-7xl mx-auto px-4 py-16 md:py-20">
         <div className="text-center mb-8">
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">Cele mai îndrăgite</div>
-          <h2 className="font-display text-4xl md:text-5xl mt-1">Alege-ți magia</h2>
+          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">Selecție reală</div>
+          <h2 className="font-display text-4xl md:text-5xl mt-1">Produsele păstrate</h2>
           <Link to="/produse" className="mt-3 inline-block text-sm underline underline-offset-4 hover:text-foreground/80">Vezi toate →</Link>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
-          ))}
-        </div>
-      </section>
-
-      {/* Story teaser */}
-      <section className="max-w-7xl mx-auto px-4 pb-20">
-        <div className="rounded-2xl wood-grain text-[color:var(--cream)] p-10 md:p-16 grid md:grid-cols-2 gap-10 items-center shadow-warm">
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--gold)]">Povestea noastră</div>
-            <h2 className="font-display text-4xl md:text-5xl mt-2">Lemn, melodie, amintire.</h2>
-            <p className="mt-5 text-[color:var(--cream)]/80 max-w-md">
-              Fiecare cutiuță e gândită ca un cadou care se aude. Le gravăm cu laser
-              în lemn natural și le împachetăm cu grijă, ca să ajungă magia exact așa cum
-              o visezi.
-            </p>
-            <Link to="/poveste" className="inline-flex mt-6 border border-[color:var(--gold)]/50 rounded-md px-5 py-2.5 text-sm hover:bg-[color:var(--gold)]/10">Citește povestea</Link>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {products.slice(4, 7).map((p) => (
-              <img key={p.id} src={p.image} alt={p.name} className="rounded-lg aspect-square object-cover" />
-            ))}
-          </div>
+          {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
         </div>
       </section>
     </div>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Heart, ShoppingBag, ArrowLeft, Music, Truck, Gift, Sparkles, Minus, Plus } from "lucide-react";
 import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
@@ -33,12 +33,12 @@ function ProductPage() {
   const fav = isFavorite(product.id);
   const ref = useRef<HTMLDivElement>(null);
   const [qty, setQty] = useState(1);
+  const [active, setActive] = useState(0);
 
-  // 3D tilt effect
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rx = useSpring(useTransform(y, [-0.5, 0.5], [15, -15]), { stiffness: 200, damping: 20 });
-  const ry = useSpring(useTransform(x, [-0.5, 0.5], [-20, 20]), { stiffness: 200, damping: 20 });
+  const rx = useSpring(useTransform(y, [-0.5, 0.5], [12, -12]), { stiffness: 200, damping: 20 });
+  const ry = useSpring(useTransform(x, [-0.5, 0.5], [-16, 16]), { stiffness: 200, damping: 20 });
 
   function handleMove(e: React.MouseEvent) {
     if (!ref.current) return;
@@ -46,111 +46,42 @@ function ProductPage() {
     x.set((e.clientX - r.left) / r.width - 0.5);
     y.set((e.clientY - r.top) / r.height - 0.5);
   }
+
   function handleLeave() {
     x.set(0);
     y.set(0);
   }
 
-  const related = products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4);
+  const related = useMemo(() => products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4), [product.id, product.category]);
+  const currentImage = product.gallery[active] ?? product.gallery[0];
 
   return (
     <div>
       <div className="max-w-7xl mx-auto px-4 pt-8">
-        <Link to="/produse" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Înapoi la produse
-        </Link>
+        <Link to="/produse" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> Înapoi la produse</Link>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
-        {/* 3D animation */}
         <div className="perspective-1000">
-          <motion.div
-            ref={ref}
-            onMouseMove={handleMove}
-            onMouseLeave={handleLeave}
-            style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-            className="relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-[color:var(--wood-dark)]"
-          >
-            <motion.img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-cover"
-              style={{ transform: "translateZ(40px)" }}
-            />
-            <motion.div
-              style={{ transform: "translateZ(80px)" }}
-              className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
-            >
-              <Music className="w-3 h-3" /> {product.melody}
-            </motion.div>
+          <motion.div ref={ref} onMouseMove={handleMove} onMouseLeave={handleLeave} style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }} className="relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card p-4">
+            <motion.img src={currentImage.src} alt={`${product.name} — ${currentImage.label}`} className="w-full h-full object-contain" style={{ transform: "translateZ(36px)", objectPosition: currentImage.position ?? "center" }} />
+            <motion.div style={{ transform: "translateZ(60px)" }} className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"><Music className="w-3 h-3" /> {product.melody}</motion.div>
           </motion.div>
-          <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
-            <Sparkles className="w-3 h-3" /> Mișcă mouse-ul peste imagine
-          </p>
-        </div>
-
-        {/* Details */}
-        <div>
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)] text-center md:text-left">{product.category}</div>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl mt-2 leading-tight text-center md:text-left">{product.name}</h1>
-          <p className="mt-2 text-lg italic text-muted-foreground text-center md:text-left">{product.tagline}</p>
-
-          <div className="mt-6 flex items-baseline gap-4 justify-center md:justify-start">
-            <span className="font-display text-5xl">{PRICE} lei</span>
-            <span className="text-sm text-muted-foreground">75 lei/buc la 3+</span>
-          </div>
-
-          <p className="mt-6 text-base leading-relaxed">{product.description}</p>
-
-          <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start items-center">
-            <div className="flex items-center gap-3 bg-muted rounded-md px-2 py-1.5">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-1.5 rounded hover:bg-background" aria-label="Scade">
-                <Minus className="w-4 h-4" />
+          <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Vizualizare 3D din fotografia originală</p>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {product.gallery.map((image: (typeof product.gallery)[number], index: number) => (
+              <button key={`${product.id}-${image.label}`} onClick={() => setActive(index)} className={`rounded-xl border p-2 bg-card transition ${active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}>
+                <img src={image.src} alt={image.label} className="aspect-square w-full object-contain" style={{ objectPosition: image.position ?? "center" }} />
+                <span className="mt-2 block text-[11px] text-center text-muted-foreground">{image.label}</span>
               </button>
-              <span className="font-medium w-6 text-center">{qty}</span>
-              <button onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))} className="p-1.5 rounded hover:bg-background" aria-label="Crește">
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                addToCart(product.id, qty);
-                toast.success(`${qty} × adăugat în coș`, { description: product.name });
-              }}
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-md px-6 py-3 font-medium hover:opacity-90"
-            >
-              <ShoppingBag className="w-4 h-4" /> Comandă acum
-            </button>
-            <Link to="/comanda" className="inline-flex items-center gap-2 wood-grain text-[color:var(--cream)] rounded-md px-6 py-3 font-medium">
-              Finalizează comanda
-            </Link>
-            <button
-              onClick={() => toggleFavorite(product.id)}
-              className={`p-3 rounded-md border border-border ${fav ? "bg-[color:var(--gold)]/20" : "hover:bg-muted"}`}
-              aria-label="Favorite"
-            >
-              <Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} />
-            </button>
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit la 3+</div>
-            <div className="flex items-center gap-2"><Gift className="w-4 h-4" /> Ambalaj cadou</div>
-          </div>
-
-          <div className="mt-10 border-t border-border pt-8">
-            <h2 className="font-display text-2xl">Povestea acestei cutiuțe</h2>
-            <p className="mt-3 text-muted-foreground leading-relaxed">{product.story}</p>
-          </div>
+            ))}
+...
+              {product.details.map((d: string) => <li key={d} className="flex gap-2 text-sm"><span className="text-[color:var(--gold)]">✦</span> {d}</li>)}
 
           <div className="mt-8">
             <h3 className="font-display text-xl">Detalii</h3>
             <ul className="mt-3 space-y-2">
-              {product.details.map((d: string) => (
-                <li key={d} className="flex gap-2 text-sm">
-                  <span className="text-[color:var(--gold)]">✦</span> {d}
-                </li>
-              ))}
+              {product.details.map((d) => <li key={d} className="flex gap-2 text-sm"><span className="text-[color:var(--gold)]">✦</span> {d}</li>)}
             </ul>
           </div>
         </div>
@@ -158,10 +89,8 @@ function ProductPage() {
 
       {related.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
-          <h2 className="font-display text-3xl mb-6">Și acestea îți pot plăcea</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {related.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-          </div>
+          <h2 className="font-display text-3xl mb-6 text-center">Și acestea îți pot plăcea</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">{related.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}</div>
         </section>
       )}
     </div>
