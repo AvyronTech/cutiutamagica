@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/comanda")({
   component: OrderPage,
-  head: () => ({ meta: [{ title: "Comandă — Cutiuța Magică" }, { name: "description", content: "Finalizează comanda. Plata la livrare, transport gratuit la 2+ cutiuțe." }] }),
+  head: () => ({ meta: [{ title: "Comandă — Cutiuța Magică" }, { name: "description", content: "Finalizează comanda. Plata la livrare, transport gratuit la 3+ cutiuțe." }] }),
 });
 
 function OrderPage() {
@@ -103,8 +103,8 @@ function OrderPage() {
         </div>
         <div className="mt-5 p-3 bg-[color:var(--gold)]/10 rounded-md text-xs">
           {totalQty === 0 && "🎁 Adaugă primul produs."}
-          {totalQty === 1 && "✨ Mai adaugă 1 cutiuță și plătești doar 75 lei/buc + transport gratuit!"}
-          {totalQty === 2 && "🚚 Transport gratuit deblocat! Mai adaugă una pentru 225 lei totală."}
+          {totalQty === 1 && "✨ Mai adaugă 1 cutiuță: 150 lei (75/buc) + 25 lei transport."}
+          {totalQty === 2 && "🚚 Mai adaugă una și ai transport gratuit — 225 lei total."}
           {totalQty >= 3 && "💫 Cel mai bun preț — 75 lei/buc, transport gratuit."}
         </div>
       </aside>

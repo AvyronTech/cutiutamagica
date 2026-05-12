@@ -124,7 +124,7 @@ function ProductPage() {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit la 2+</div>
+            <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit la 3+</div>
             <div className="flex items-center gap-2"><Gift className="w-4 h-4" /> Ambalaj cadou</div>
           </div>
 
