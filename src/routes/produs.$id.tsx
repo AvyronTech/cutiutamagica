@@ -132,17 +132,6 @@ function ProductPage() {
               <Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} />
             </button>
           </div>
-            <Link to="/comanda" className="inline-flex items-center gap-2 wood-grain text-[color:var(--cream)] rounded-md px-6 py-3 font-medium">
-              Finalizează comanda
-            </Link>
-            <button
-              onClick={() => toggleFavorite(product.id)}
-              className={`p-3 rounded-md border border-border ${fav ? "bg-[color:var(--gold)]/20" : "hover:bg-muted"}`}
-              aria-label="Favorite"
-            >
-              <Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} />
-            </button>
-          </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit la 3+</div>
