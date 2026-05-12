@@ -32,6 +32,7 @@ function ProductPage() {
   const { addToCart, toggleFavorite, isFavorite } = useShop();
   const fav = isFavorite(product.id);
   const ref = useRef<HTMLDivElement>(null);
+  const [qty, setQty] = useState(1);
 
   // 3D tilt effect
   const x = useMotionValue(0);
@@ -101,16 +102,36 @@ function ProductPage() {
 
           <p className="mt-6 text-base leading-relaxed">{product.description}</p>
 
-          <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
+          <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start items-center">
+            <div className="flex items-center gap-3 bg-muted rounded-md px-2 py-1.5">
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-1.5 rounded hover:bg-background" aria-label="Scade">
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="font-medium w-6 text-center">{qty}</span>
+              <button onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))} className="p-1.5 rounded hover:bg-background" aria-label="Crește">
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
             <button
               onClick={() => {
-                addToCart(product.id);
-                toast.success("Adăugat în coș", { description: product.name });
+                addToCart(product.id, qty);
+                toast.success(`${qty} × adăugat în coș`, { description: product.name });
               }}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-md px-6 py-3 font-medium hover:opacity-90"
             >
               <ShoppingBag className="w-4 h-4" /> Comandă acum
             </button>
+            <Link to="/comanda" className="inline-flex items-center gap-2 wood-grain text-[color:var(--cream)] rounded-md px-6 py-3 font-medium">
+              Finalizează comanda
+            </Link>
+            <button
+              onClick={() => toggleFavorite(product.id)}
+              className={`p-3 rounded-md border border-border ${fav ? "bg-[color:var(--gold)]/20" : "hover:bg-muted"}`}
+              aria-label="Favorite"
+            >
+              <Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} />
+            </button>
+          </div>
             <Link to="/comanda" className="inline-flex items-center gap-2 wood-grain text-[color:var(--cream)] rounded-md px-6 py-3 font-medium">
               Finalizează comanda
             </Link>
