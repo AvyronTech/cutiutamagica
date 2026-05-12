@@ -13,7 +13,7 @@ export function Header() {
           </span>
           <div className="leading-tight">
             <div className="font-display text-xl tracking-tight">Cutiuța <span className="gold-text">Magică</span></div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">handmade · lemn</div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">piesă originală · mecanism durabil</div>
           </div>
         </Link>
         <nav className="hidden md:flex items-center gap-7 text-sm">
