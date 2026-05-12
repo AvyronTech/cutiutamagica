@@ -9,38 +9,129 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProduseRouteImport } from './routes/produse'
+import { Route as PovesteRouteImport } from './routes/poveste'
+import { Route as FavoriteRouteImport } from './routes/favorite'
+import { Route as ComandaRouteImport } from './routes/comanda'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProdusIdRouteImport } from './routes/produs.$id'
 
+const ProduseRoute = ProduseRouteImport.update({
+  id: '/produse',
+  path: '/produse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PovesteRoute = PovesteRouteImport.update({
+  id: '/poveste',
+  path: '/poveste',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoriteRoute = FavoriteRouteImport.update({
+  id: '/favorite',
+  path: '/favorite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComandaRoute = ComandaRouteImport.update({
+  id: '/comanda',
+  path: '/comanda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProdusIdRoute = ProdusIdRouteImport.update({
+  id: '/produs/$id',
+  path: '/produs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/comanda': typeof ComandaRoute
+  '/favorite': typeof FavoriteRoute
+  '/poveste': typeof PovesteRoute
+  '/produse': typeof ProduseRoute
+  '/produs/$id': typeof ProdusIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/comanda': typeof ComandaRoute
+  '/favorite': typeof FavoriteRoute
+  '/poveste': typeof PovesteRoute
+  '/produse': typeof ProduseRoute
+  '/produs/$id': typeof ProdusIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/comanda': typeof ComandaRoute
+  '/favorite': typeof FavoriteRoute
+  '/poveste': typeof PovesteRoute
+  '/produse': typeof ProduseRoute
+  '/produs/$id': typeof ProdusIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/comanda'
+    | '/favorite'
+    | '/poveste'
+    | '/produse'
+    | '/produs/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/comanda' | '/favorite' | '/poveste' | '/produse' | '/produs/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/comanda'
+    | '/favorite'
+    | '/poveste'
+    | '/produse'
+    | '/produs/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ComandaRoute: typeof ComandaRoute
+  FavoriteRoute: typeof FavoriteRoute
+  PovesteRoute: typeof PovesteRoute
+  ProduseRoute: typeof ProduseRoute
+  ProdusIdRoute: typeof ProdusIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/produse': {
+      id: '/produse'
+      path: '/produse'
+      fullPath: '/produse'
+      preLoaderRoute: typeof ProduseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/poveste': {
+      id: '/poveste'
+      path: '/poveste'
+      fullPath: '/poveste'
+      preLoaderRoute: typeof PovesteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorite': {
+      id: '/favorite'
+      path: '/favorite'
+      fullPath: '/favorite'
+      preLoaderRoute: typeof FavoriteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comanda': {
+      id: '/comanda'
+      path: '/comanda'
+      fullPath: '/comanda'
+      preLoaderRoute: typeof ComandaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +139,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/produs/$id': {
+      id: '/produs/$id'
+      path: '/produs/$id'
+      fullPath: '/produs/$id'
+      preLoaderRoute: typeof ProdusIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ComandaRoute: ComandaRoute,
+  FavoriteRoute: FavoriteRoute,
+  PovesteRoute: PovesteRoute,
+  ProduseRoute: ProduseRoute,
+  ProdusIdRoute: ProdusIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
