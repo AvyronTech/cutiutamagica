@@ -90,18 +90,18 @@ function ProductPage() {
 
         {/* Details */}
         <div>
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{product.category}</div>
-          <h1 className="font-display text-4xl md:text-5xl mt-2 leading-tight">{product.name}</h1>
-          <p className="mt-2 text-lg italic text-muted-foreground">{product.tagline}</p>
+          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)] text-center md:text-left">{product.category}</div>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl mt-2 leading-tight text-center md:text-left">{product.name}</h1>
+          <p className="mt-2 text-lg italic text-muted-foreground text-center md:text-left">{product.tagline}</p>
 
-          <div className="mt-6 flex items-baseline gap-4">
+          <div className="mt-6 flex items-baseline gap-4 justify-center md:justify-start">
             <span className="font-display text-5xl">{PRICE} lei</span>
-            <span className="text-sm text-muted-foreground">75 lei/buc la 2+</span>
+            <span className="text-sm text-muted-foreground">75 lei/buc la 3+</span>
           </div>
 
           <p className="mt-6 text-base leading-relaxed">{product.description}</p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
             <button
               onClick={() => {
                 addToCart(product.id);
