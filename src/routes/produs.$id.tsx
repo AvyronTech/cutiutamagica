@@ -123,7 +123,7 @@ function ProductPage() {
           <div className="mt-8">
             <h3 className="font-display text-xl">Detalii</h3>
             <ul className="mt-3 space-y-2">
-              {product.details.map((d) => <li key={d} className="flex gap-2 text-sm"><span className="text-[color:var(--gold)]">✦</span> {d}</li>)}
+              {product.details.map((d: string) => <li key={d} className="flex gap-2 text-sm"><span className="text-[color:var(--gold)]">✦</span> {d}</li>)}
             </ul>
           </div>
         </div>
