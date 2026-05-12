@@ -1,8 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { useRef } from "react";
-import { Heart, ShoppingBag, ArrowLeft, Music, Truck, Gift, Sparkles } from "lucide-react";
-import { getProduct, products, PRICE } from "@/data/products";
+import { useRef, useState } from "react";
+import { Heart, ShoppingBag, ArrowLeft, Music, Truck, Gift, Sparkles, Minus, Plus } from "lucide-react";
+import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 import { toast } from "sonner";
