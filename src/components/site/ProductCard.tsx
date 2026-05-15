@@ -43,7 +43,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <div className="mt-3 flex items-baseline justify-center gap-2">
             <span className="font-display text-2xl">{PRICE} <span className="text-sm">lei</span></span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">150 lei / 2 · 75 lei/buc la 3+ · transport gratuit</p>
+          
         </div>
       </Link>
       <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
