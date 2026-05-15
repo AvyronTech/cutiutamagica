@@ -13,7 +13,7 @@ import appCss from "../styles.css?url";
 import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { OfferStrip } from "@/components/site/OfferStrip";
+
 
 function NotFoundComponent() {
   return (
@@ -85,7 +85,6 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ShopProvider>
-        <OfferStrip />
         <Header />
         <main className="min-h-[60vh]"><Outlet /></main>
         <Footer />

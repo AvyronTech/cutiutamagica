@@ -27,7 +27,7 @@ function Index() {
               <Sparkles className="w-3.5 h-3.5" /> Piesă originală · Mecanism durabil
             </div>
             <h1 className="font-display text-4xl sm:text-5xl md:text-7xl leading-[1.05] text-balance">Cutiuțe muzicale <span className="gold-text">autentice.</span></h1>
-            <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-lg mx-auto md:mx-0 text-balance">Am păstrat doar modelele cu fotografie reală a cutiuței, clară și ușor de inspectat, ca utilizatorul să ajungă rapid și sigur la comandă.</p>
+            <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-lg mx-auto md:mx-0 text-balance">Învârți o dată manivela și camera se umple de o melodie care îți aduce înapoi un personaj drag, o scenă din copilărie sau o emoție pe care credeai că ai uitat-o. Fiecare cutiuță este o mică poveste din lemn, gata să fie dăruită.</p>
             <div className="mt-7 flex flex-wrap gap-3 justify-center md:justify-start">
               <Link to="/produse" className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-md px-6 py-3 font-medium hover:opacity-90"><Gift className="w-4 h-4" /> Vezi cutiuțele</Link>
               <Link to="/comanda" className="inline-flex items-center gap-2 border border-border rounded-md px-6 py-3 font-medium hover:bg-muted"><CreditCard className="w-4 h-4" /> Comandă online</Link>
