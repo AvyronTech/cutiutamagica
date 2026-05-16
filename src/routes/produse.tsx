@@ -9,7 +9,11 @@ export const Route = createFileRoute("/produse")({
     meta: [
       { title: "Cutiuțe muzicale originale — Cutiuța Magică" },
       { name: "description", content: "Catalog cu fotografii reale pentru cutiuțe muzicale din lemn. 89 lei bucata, 150 lei la 2, 75 lei/buc de la 3." },
+      { property: "og:title", content: "Catalogul Cutiuța Magică — cutiuțe muzicale din lemn" },
+      { property: "og:description", content: "Catalog cu fotografii reale pentru cutiuțele muzicale, gata de dăruit." },
+      { property: "og:url", content: "https://cutiutamagica.lovable.app/produse" },
     ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/produse" }],
   }),
 });
 
@@ -37,6 +41,7 @@ function ProductsPage() {
         ))}
       </div>
 
+      <h2 className="sr-only">Cutiuțe disponibile</h2>
       <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 text-left">
         {list.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
       </div>

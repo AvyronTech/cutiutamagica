@@ -8,9 +8,13 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Cutiuța Magică — cutiuțe muzicale originale din lemn" },
+      { title: "Cutiuța Magică — cutiuțe muzicale din lemn" },
       { name: "description", content: "Cutiuțe muzicale din lemn cu fotografii reale, descrieri ample și comandă online. 89 lei bucata, 150 lei la 2 și transport gratuit de la 3." },
+      { property: "og:title", content: "Cutiuța Magică — cutiuțe muzicale din lemn" },
+      { property: "og:description", content: "Cutiuțe muzicale autentice, gata de dăruit. Comandă online cu transport gratuit de la 3 bucăți." },
+      { property: "og:url", content: "https://cutiutamagica.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/" }],
   }),
 });
 
@@ -46,6 +50,7 @@ function Index() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4">
+        <h2 className="sr-only">Oferte și prețuri</h2>
         <div className="grid sm:grid-cols-3 gap-4 text-center">
           {[
             { qty: "1", label: "O cutiuță", price: "89 lei", note: "+ 25 lei transport" },

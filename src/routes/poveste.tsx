@@ -6,7 +6,11 @@ export const Route = createFileRoute("/poveste")({
     meta: [
       { title: "Povestea Cutiuței Magice — handmade din România" },
       { name: "description", content: "Cum au prins viață cutiuțele muzicale Cutiuța Magică: lemn, laser, melodii și multă răbdare." },
+      { property: "og:title", content: "Povestea Cutiuței Magice" },
+      { property: "og:description", content: "Cum au prins viață cutiuțele muzicale: lemn, laser, melodii și multă răbdare." },
+      { property: "og:url", content: "https://cutiutamagica.lovable.app/poveste" },
     ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/poveste" }],
   }),
 });
 

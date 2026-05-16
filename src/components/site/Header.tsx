@@ -23,13 +23,13 @@ export function Header() {
           <Link to="/comanda" className="hover:text-foreground/80 [&.active]:font-medium">Comandă</Link>
         </nav>
         <div className="flex items-center gap-1">
-          <Link to="/favorite" className="relative p-2 rounded-md hover:bg-muted">
+          <Link to="/favorite" aria-label="Favorite" className="relative p-2 rounded-md hover:bg-muted">
             <Heart className="w-5 h-5" />
             {favorites.length > 0 && (
               <span className="absolute -top-0.5 -right-0.5 bg-[color:var(--gold)] text-[color:var(--wood-dark)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{favorites.length}</span>
             )}
           </Link>
-          <Link to="/comanda" className="relative p-2 rounded-md hover:bg-muted">
+          <Link to="/comanda" aria-label="Coș de cumpărături" className="relative p-2 rounded-md hover:bg-muted">
             <ShoppingBag className="w-5 h-5" />
             {totalQty > 0 && (
               <span className="absolute -top-0.5 -right-0.5 bg-[color:var(--wood-dark)] text-[color:var(--cream)] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{totalQty}</span>

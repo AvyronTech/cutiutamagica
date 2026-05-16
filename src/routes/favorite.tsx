@@ -6,7 +6,16 @@ import { ProductCard } from "@/components/site/ProductCard";
 
 export const Route = createFileRoute("/favorite")({
   component: FavPage,
-  head: () => ({ meta: [{ title: "Favorite — Cutiuța Magică" }, { name: "description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." }] }),
+  head: () => ({
+    meta: [
+      { title: "Favorite — Cutiuța Magică" },
+      { name: "description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
+      { property: "og:title", content: "Favorite — Cutiuța Magică" },
+      { property: "og:description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
+      { property: "og:url", content: "https://cutiutamagica.lovable.app/favorite" },
+    ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/favorite" }],
+  }),
 });
 
 function FavPage() {
@@ -27,9 +36,12 @@ function FavPage() {
           <Link to="/produse" className="mt-6 inline-block bg-primary text-primary-foreground rounded-md px-6 py-3 text-sm font-medium">Descoperă cutiuțele</Link>
         </div>
       ) : (
-        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {list.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-        </div>
+        <>
+          <h2 className="sr-only">Cutiuțe favorite</h2>
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {list.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+          </div>
+        </>
       )}
     </div>
   );

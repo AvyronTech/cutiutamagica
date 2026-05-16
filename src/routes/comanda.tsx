@@ -11,7 +11,11 @@ export const Route = createFileRoute("/comanda")({
     meta: [
       { title: "Comandă online — Cutiuța Magică" },
       { name: "description", content: "Finalizează comanda online. Transport 25 lei pentru 1-2 produse și gratuit de la 3 bucăți." },
+      { property: "og:title", content: "Comandă online — Cutiuța Magică" },
+      { property: "og:description", content: "Finalizează comanda online. Transport gratuit de la 3 bucăți." },
+      { property: "og:url", content: "https://cutiutamagica.lovable.app/comanda" },
     ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/comanda" }],
   }),
 });
 
@@ -74,7 +78,7 @@ function OrderPage() {
                     <button onClick={() => setQty(it.id, Math.min(MAX_QTY, it.qty + 1))} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-muted"><Plus className="w-3 h-3" /></button>
                   </div>
                 </div>
-                <button onClick={() => removeFromCart(it.id)} className="p-2 text-muted-foreground hover:text-destructive self-start"><Trash2 className="w-4 h-4" /></button>
+                <button aria-label={`Elimină ${it.product.name} din coș`} onClick={() => removeFromCart(it.id)} className="p-2 text-muted-foreground hover:text-destructive self-start"><Trash2 className="w-4 h-4" /></button>
               </div>
             ))}
           </div>
@@ -82,11 +86,11 @@ function OrderPage() {
 
         <h2 className="font-display text-2xl mt-12 text-center lg:text-left">Date livrare</h2>
         <form onSubmit={submit} className="mt-4 grid sm:grid-cols-2 gap-3">
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nume complet" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2" />
-          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Telefon" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm" />
-          <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Localitate" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm" />
-          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Adresă (stradă, nr, bl, ap)" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2" />
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Mesaj cadou sau observații (opțional)" rows={3} className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2" />
+          <input aria-label="Nume complet" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nume complet" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2" />
+          <input aria-label="Telefon" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Telefon" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm" />
+          <input aria-label="Localitate" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Localitate" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm" />
+          <input aria-label="Adresă" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Adresă (stradă, nr, bl, ap)" className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2" />
+          <textarea aria-label="Mesaj cadou sau observații" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Mesaj cadou sau observații (opțional)" rows={3} className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2" />
           <button type="submit" className="sm:col-span-2 mt-2 wood-grain text-[color:var(--cream)] rounded-md py-3.5 font-medium shadow-warm hover:opacity-95">
             Trimite comanda · {totals.total} lei
           </button>
