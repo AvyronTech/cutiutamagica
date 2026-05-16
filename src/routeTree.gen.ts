@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as FavoriteRouteImport } from './routes/favorite'
@@ -16,6 +17,11 @@ import { Route as ComandaRouteImport } from './routes/comanda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProdusIdRouteImport } from './routes/produs.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProduseRoute = ProduseRouteImport.update({
   id: '/produse',
   path: '/produse',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/favorite': typeof FavoriteRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produs/$id': typeof ProdusIdRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/favorite': typeof FavoriteRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produs/$id': typeof ProdusIdRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/favorite': typeof FavoriteRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produs/$id': typeof ProdusIdRoute
 }
 export interface FileRouteTypes {
@@ -80,9 +89,17 @@ export interface FileRouteTypes {
     | '/favorite'
     | '/poveste'
     | '/produse'
+    | '/sitemap.xml'
     | '/produs/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/comanda' | '/favorite' | '/poveste' | '/produse' | '/produs/$id'
+  to:
+    | '/'
+    | '/comanda'
+    | '/favorite'
+    | '/poveste'
+    | '/produse'
+    | '/sitemap.xml'
+    | '/produs/$id'
   id:
     | '__root__'
     | '/'
@@ -90,6 +107,7 @@ export interface FileRouteTypes {
     | '/favorite'
     | '/poveste'
     | '/produse'
+    | '/sitemap.xml'
     | '/produs/$id'
   fileRoutesById: FileRoutesById
 }
@@ -99,11 +117,19 @@ export interface RootRouteChildren {
   FavoriteRoute: typeof FavoriteRoute
   PovesteRoute: typeof PovesteRoute
   ProduseRoute: typeof ProduseRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ProdusIdRoute: typeof ProdusIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/produse': {
       id: '/produse'
       path: '/produse'
@@ -155,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoriteRoute: FavoriteRoute,
   PovesteRoute: PovesteRoute,
   ProduseRoute: ProduseRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ProdusIdRoute: ProdusIdRoute,
 }
 export const routeTree = rootRouteImport

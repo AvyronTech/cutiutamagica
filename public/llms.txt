@@ -1,0 +1,14 @@
+# Cutiuța Magică
+
+> Cutiuțe muzicale din lemn, gravate cu pasiune, cu mecanism manual durabil și melodii din universuri îndrăgite (Harry Potter, Stăpânul Inelelor, Star Wars și altele).
+
+## Pages
+
+- [Acasă](/): Prezentare și produse selectate.
+- [Produse](/produse): Catalogul complet de cutiuțe muzicale.
+- [Poveste](/poveste): Cum a apărut Cutiuța Magică.
+- [Comandă](/comanda): Finalizarea comenzii online.
+
+## Optional
+
+- [Favorite](/favorite): Cutiuțele salvate de utilizator.
