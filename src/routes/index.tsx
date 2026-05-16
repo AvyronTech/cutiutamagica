@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Sparkles, Heart, Truck, Gift, CreditCard } from "lucide-react";
 import { products } from "@/data/products";
-import { ProductCard } from "@/components/site/ProductCard";
+import { ProductCarouselSection } from "@/components/site/ProductCarouselSection";
 
 const heroImage = products[0].image;
 
@@ -24,8 +24,21 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const featured = products.slice(0, 4);
   const hero = products[0];
+
+  // Mockup: împărțim produsele existente în 3 subsecțiuni tematice.
+  // Vor fi modificate/extinse ulterior (target: 5 per secțiune).
+  const povesteIds = ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"];
+  const emotieIds = ["fairy", "kitten", "hp-always", "lotr-rings"];
+  const uniceIds = ["halloween", "pirates", "starwars-dad", "kitten", "fairy"];
+
+  const byIds = (ids: string[]) => ids
+    .map((id) => products.find((p) => p.id === id))
+    .filter((p): p is typeof products[number] => Boolean(p));
+
+  const povesteProducts = byIds(povesteIds);
+  const emotieProducts = byIds(emotieIds);
+  const uniceProducts = byIds(uniceIds);
 
   return (
     <div>
@@ -42,7 +55,7 @@ function Index() {
               <Link to="/comanda" className="inline-flex items-center gap-2 border border-border rounded-md px-6 py-3 font-medium hover:bg-muted"><CreditCard className="w-4 h-4" /> Comandă online</Link>
             </div>
             <div className="mt-7 flex flex-wrap gap-5 text-sm text-muted-foreground justify-center">
-              <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit la 3+</div>
+              <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Transport gratuit peste 250 lei</div>
               <div className="flex items-center gap-2"><Heart className="w-4 h-4" /> Fotografii reale</div>
             </div>
           </motion.div>
@@ -55,14 +68,14 @@ function Index() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4">
-        <h2 className="sr-only">Oferte și prețuri</h2>
+        <h2 className="sr-only">Livrare și transport</h2>
         <div className="grid sm:grid-cols-3 gap-4 text-center">
           {[
-            { qty: "1", label: "O cutiuță", price: "89 lei", note: "+ 25 lei transport" },
-            { qty: "2", label: "Două cutiuțe", price: "150 lei", note: "75 lei/buc · + 25 lei transport" },
-            { qty: "3", label: "Trei cutiuțe", price: "225 lei", note: "75 lei/buc · transport gratuit", featured: true },
+            { label: "Comandă minimă", price: "250 lei", note: "transport gratuit oriunde", featured: true },
+            { label: "Curier la domiciliu", price: "25 lei", note: "sub 250 lei comandă" },
+            { label: "Easybox Sameday", price: "12,99 lei", note: "sub 250 lei comandă" },
           ].map((b) => (
-            <div key={b.qty} className={`rounded-xl p-6 border ${b.featured ? "wood-grain text-[color:var(--cream)] border-transparent shadow-warm" : "bg-card border-border"}`}>
+            <div key={b.label} className={`rounded-xl p-6 border ${b.featured ? "wood-grain text-[color:var(--cream)] border-transparent shadow-warm" : "bg-card border-border"}`}>
               <div className="text-xs uppercase tracking-[0.2em] opacity-70">{b.label}</div>
               <div className={`font-display text-4xl mt-2 ${b.featured ? "gold-text" : ""}`}>{b.price}</div>
               <div className="text-sm mt-1 opacity-80">{b.note}</div>
@@ -71,16 +84,26 @@ function Index() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 py-16 md:py-20">
-        <div className="text-center mb-8">
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">Selecție reală</div>
-          <h2 className="font-display text-4xl md:text-5xl mt-1">Produsele păstrate</h2>
-          <Link to="/produse" className="mt-3 inline-block text-sm underline underline-offset-4 hover:text-foreground/80">Vezi toate →</Link>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-        </div>
-      </section>
+      <ProductCarouselSection
+        eyebrow="Subsecțiunea 1"
+        title="Descoperă povestea"
+        description="Cutiuțe inspirate din filmele și universurile care ne-au marcat copilăria."
+        products={povesteProducts}
+      />
+
+      <ProductCarouselSection
+        eyebrow="Subsecțiunea 2"
+        title="Trăiește emoția"
+        description="Modele delicate, pentru momente romantice și cadouri din suflet."
+        products={emotieProducts}
+      />
+
+      <ProductCarouselSection
+        eyebrow="Subsecțiunea 3"
+        title="Descoperă alte obiecte unice"
+        description="Piese cu personalitate, perfecte pentru colecționari și cadouri memorabile."
+        products={uniceProducts}
+      />
     </div>
   );
 }
