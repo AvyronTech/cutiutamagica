@@ -14,17 +14,42 @@ export const Route = createFileRoute("/produs/$id")({
     if (!product) throw notFound();
     return { product };
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [
-          { title: `${loaderData.product.name} — Cutiuța Magică` },
-          { name: "description", content: loaderData.product.description },
-          { property: "og:title", content: loaderData.product.name },
-          { property: "og:description", content: loaderData.product.description },
-          { property: "og:image", content: loaderData.product.image },
-        ]
-      : [],
-  }),
+  head: ({ loaderData, params }) => {
+    if (!loaderData) return {};
+    const url = `https://cutiutamagica.lovable.app/produs/${params.id}`;
+    return {
+      meta: [
+        { title: `${loaderData.product.name} — Cutiuța Magică` },
+        { name: "description", content: loaderData.product.description },
+        { property: "og:title", content: loaderData.product.name },
+        { property: "og:description", content: loaderData.product.description },
+        { property: "og:image", content: loaderData.product.image },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "product" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: loaderData.product.name,
+            image: loaderData.product.image,
+            description: loaderData.product.description,
+            category: loaderData.product.category,
+            offers: {
+              "@type": "Offer",
+              price: "89",
+              priceCurrency: "RON",
+              availability: "https://schema.org/InStock",
+              url,
+            },
+          }),
+        },
+      ],
+    };
+  },
 });
 
 function ProductPage() {
