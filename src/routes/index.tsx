@@ -47,10 +47,10 @@ function Index() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} className="relative order-1 md:order-2 max-w-sm mx-auto md:max-w-none">
+          <div className="relative order-1 md:order-2 max-w-sm mx-auto md:max-w-none">
             <div className="absolute -inset-6 bg-[color:var(--gold)]/15 rounded-full blur-3xl" />
-            <motion.img src={hero.image} alt={hero.name} width={520} height={520} fetchPriority="high" decoding="async" className="relative rounded-2xl shadow-warm w-full max-h-[520px] object-contain bg-card/70 p-4" animate={{ y: [0, -8, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} />
-          </motion.div>
+            <img src={hero.image} alt={hero.name} width={520} height={520} fetchPriority="high" decoding="async" className="relative rounded-2xl shadow-warm w-full max-h-[520px] object-contain bg-card/70 p-4" />
+          </div>
         </div>
       </section>
 
