@@ -50,6 +50,7 @@ function Index() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4">
+        <h2 className="sr-only">Oferte și prețuri</h2>
         <div className="grid sm:grid-cols-3 gap-4 text-center">
           {[
             { qty: "1", label: "O cutiuță", price: "89 lei", note: "+ 25 lei transport" },
