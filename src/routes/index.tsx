@@ -4,6 +4,8 @@ import { Sparkles, Heart, Truck, Gift, CreditCard } from "lucide-react";
 import { products } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 
+const heroImage = products[0].image;
+
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
@@ -14,7 +16,10 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Cutiuțe muzicale autentice, gata de dăruit. Comandă online cu transport gratuit de la 3 bucăți." },
       { property: "og:url", content: "https://cutiutamagica.lovable.app/" },
     ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/" }],
+    links: [
+      { rel: "canonical", href: "https://cutiutamagica.lovable.app/" },
+      { rel: "preload", as: "image", href: heroImage, fetchpriority: "high" },
+    ],
   }),
 });
 
@@ -44,7 +49,7 @@ function Index() {
 
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} className="relative order-1 md:order-2 max-w-sm mx-auto md:max-w-none">
             <div className="absolute -inset-6 bg-[color:var(--gold)]/15 rounded-full blur-3xl" />
-            <motion.img src={hero.image} alt={hero.name} className="relative rounded-2xl shadow-warm w-full max-h-[520px] object-contain bg-card/70 p-4" animate={{ y: [0, -8, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} />
+            <motion.img src={hero.image} alt={hero.name} width={520} height={520} fetchPriority="high" decoding="async" className="relative rounded-2xl shadow-warm w-full max-h-[520px] object-contain bg-card/70 p-4" animate={{ y: [0, -8, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} />
           </motion.div>
         </div>
       </section>
