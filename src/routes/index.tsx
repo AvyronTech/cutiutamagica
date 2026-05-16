@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Sparkles, Heart, Truck, Gift, CreditCard } from "lucide-react";
 import { products } from "@/data/products";
-import { ProductCard } from "@/components/site/ProductCard";
+import { ProductCarouselSection } from "@/components/site/ProductCarouselSection";
 
 const heroImage = products[0].image;
 
