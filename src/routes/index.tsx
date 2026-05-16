@@ -4,6 +4,8 @@ import { Sparkles, Heart, Truck, Gift, CreditCard } from "lucide-react";
 import { products } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 
+const heroImage = products[0].image;
+
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
@@ -14,7 +16,10 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Cutiuțe muzicale autentice, gata de dăruit. Comandă online cu transport gratuit de la 3 bucăți." },
       { property: "og:url", content: "https://cutiutamagica.lovable.app/" },
     ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/" }],
+    links: [
+      { rel: "canonical", href: "https://cutiutamagica.lovable.app/" },
+      { rel: "preload", as: "image", href: heroImage, fetchpriority: "high" },
+    ],
   }),
 });
 
