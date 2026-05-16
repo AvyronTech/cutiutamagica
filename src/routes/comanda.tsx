@@ -11,7 +11,11 @@ export const Route = createFileRoute("/comanda")({
     meta: [
       { title: "Comandă online — Cutiuța Magică" },
       { name: "description", content: "Finalizează comanda online. Transport 25 lei pentru 1-2 produse și gratuit de la 3 bucăți." },
+      { property: "og:title", content: "Comandă online — Cutiuța Magică" },
+      { property: "og:description", content: "Finalizează comanda online. Transport gratuit de la 3 bucăți." },
+      { property: "og:url", content: "https://cutiutamagica.lovable.app/comanda" },
     ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/comanda" }],
   }),
 });
 

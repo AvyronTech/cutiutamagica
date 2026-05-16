@@ -6,7 +6,16 @@ import { ProductCard } from "@/components/site/ProductCard";
 
 export const Route = createFileRoute("/favorite")({
   component: FavPage,
-  head: () => ({ meta: [{ title: "Favorite — Cutiuța Magică" }, { name: "description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." }] }),
+  head: () => ({
+    meta: [
+      { title: "Favorite — Cutiuța Magică" },
+      { name: "description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
+      { property: "og:title", content: "Favorite — Cutiuța Magică" },
+      { property: "og:description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
+      { property: "og:url", content: "https://cutiutamagica.lovable.app/favorite" },
+    ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/favorite" }],
+  }),
 });
 
 function FavPage() {
