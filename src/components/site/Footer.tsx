@@ -23,22 +23,23 @@ export function Footer() {
         </nav>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pb-5 flex justify-center">
+      <div className="max-w-7xl mx-auto px-4 pb-6 flex justify-center">
         <a
           href="https://avyron.ro"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Powered by Avyron — descoperă-ne"
-          className="block rounded-lg overflow-hidden opacity-55 hover:opacity-100 transition-opacity duration-300"
+          className="block rounded-xl overflow-hidden bg-[color:var(--cream)]/95 px-5 py-2.5 opacity-90 hover:opacity-100 shadow-soft hover:shadow-warm ring-1 ring-[color:var(--cream)]/40 transition-all duration-300"
         >
           <img
             src={avyronLogo}
             alt="Powered by Avyron — descoperă-ne"
             loading="lazy"
-            className="h-12 md:h-14 w-auto block"
+            className="h-16 md:h-20 w-auto block"
           />
         </a>
       </div>
+
 
       <div className="border-t border-white/10 py-4 text-center text-xs text-[color:var(--cream)]/50">
         © {year} Cutiuța Magică · Făcut cu drag în România
