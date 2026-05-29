@@ -3,7 +3,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import type { Product } from "@/data/products";
 
 type Props = {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description?: string;
   products: Product[];
@@ -13,7 +13,9 @@ export function ProductCarouselSection({ eyebrow, title, description, products }
   return (
     <section className="max-w-7xl mx-auto px-4 py-14 md:py-20">
       <div className="text-center mb-8 md:mb-10">
-        <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{eyebrow}</div>
+        {eyebrow && (
+          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{eyebrow}</div>
+        )}
         <h2 className="font-display text-3xl md:text-5xl mt-1">{title}</h2>
         {description && (
           <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-xl mx-auto">{description}</p>
