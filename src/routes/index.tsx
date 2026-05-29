@@ -38,10 +38,12 @@ function Index() {
 
   const povesteIds = ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"];
   const emotieIds = ["fairy", "kitten", "hp-always", "lotr-rings"];
-  const uniceIds = ["halloween", "pirates", "starwars-dad", "kitten", "fairy"];
-  const povesteIds = ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"];
-  const emotieIds = ["fairy", "kitten", "hp-always", "lotr-rings"];
   const uniceIds = ["pernuta-auto", "set-termos", "pieptene-barba", "suport-telefon", "ceas-buzunar"];
+
+  const byIds = (ids: string[]) => ids
+    .map((id) => products.find((p) => p.id === id))
+    .filter((p): p is typeof products[number] => Boolean(p));
+
 
   return (
     <div>
