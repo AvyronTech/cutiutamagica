@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Minus, Plus, Trash2, ShoppingBag, Check, CreditCard } from "lucide-react";
 import { useShop } from "@/store/shop";
 import { calcTotals, MAX_QTY } from "@/data/products";
+import { BackButton } from "@/components/site/BackButton";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/comanda")({
@@ -53,7 +54,9 @@ function OrderPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-14 grid lg:grid-cols-[1fr_400px] gap-10">
+    <div className="max-w-6xl mx-auto px-4 pt-8 pb-14">
+      <div className="flex justify-start mb-6"><BackButton /></div>
+      <div className="grid lg:grid-cols-[1fr_400px] gap-10">
       <div>
         <h1 className="font-display text-5xl text-center lg:text-left">Comandă online</h1>
         <p className="mt-2 text-muted-foreground text-center lg:text-left">{totalQty} produs{totalQty === 1 ? "" : "e"} în coș.</p>
