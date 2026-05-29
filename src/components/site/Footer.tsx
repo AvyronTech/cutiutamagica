@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
-import avyronLogo from "@/assets/avyron-logo.png";
+import avyronLogo from "@/assets/avyron-logo.jpg";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -23,25 +23,25 @@ export function Footer() {
         </nav>
       </div>
 
-      <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[color:var(--cream)]/60">
-          <span>© {year} Cutiuța Magică · Făcut cu drag în România</span>
-          <a
-            href="https://avyron.ro"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Powered by Avyron"
-            className="group inline-flex items-center gap-2 hover:text-[color:var(--cream)] transition-colors"
-          >
-            <span className="tracking-[0.18em] uppercase text-[10px]">Powered by</span>
-            <img
-              src={avyronLogo}
-              alt="Avyron"
-              loading="lazy"
-              className="h-5 w-auto opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_8px_rgba(168,85,247,0.35)]"
-            />
-          </a>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 pb-5 flex justify-center">
+        <a
+          href="https://avyron.ro"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Powered by Avyron — descoperă-ne"
+          className="block rounded-lg overflow-hidden opacity-55 hover:opacity-100 transition-opacity duration-300"
+        >
+          <img
+            src={avyronLogo}
+            alt="Powered by Avyron — descoperă-ne"
+            loading="lazy"
+            className="h-12 md:h-14 w-auto block"
+          />
+        </a>
+      </div>
+
+      <div className="border-t border-white/10 py-4 text-center text-xs text-[color:var(--cream)]/50">
+        © {year} Cutiuța Magică · Făcut cu drag în România
       </div>
     </footer>
   );
