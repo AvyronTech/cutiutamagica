@@ -24,15 +24,12 @@ const contacts = [
 
 export function ConnectSection() {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-14 md:py-20" aria-labelledby="connect-heading">
-      <div className="text-center mb-10">
-        <h2 id="connect-heading" className="font-display text-3xl md:text-5xl">Urmărește-ne</h2>
-        <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-xl mx-auto">
-          Conturile noastre sociale — produsele și momentele din spatele cutiuțelor vor fi adăugate aici în curând.
-        </p>
+    <section className="max-w-5xl mx-auto px-4 py-8 md:py-10" aria-labelledby="connect-heading">
+      <div className="text-center mb-5">
+        <h2 id="connect-heading" className="font-display text-2xl md:text-3xl">Urmărește-ne</h2>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-md mx-auto">
         {socials.map(({ name, href, Icon, color }) => (
           <a
             key={name}
@@ -40,29 +37,27 @@ export function ConnectSection() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={name}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-card aspect-[4/3] flex flex-col items-center justify-center shadow-soft transition-transform hover:-translate-y-0.5"
+            className="group relative overflow-hidden rounded-xl border border-border bg-card aspect-square flex flex-col items-center justify-center shadow-soft transition-transform hover:-translate-y-0.5"
           >
             <div className={`absolute inset-0 opacity-15 bg-gradient-to-br ${color}`} />
-            <Icon className="w-10 h-10 mb-2 text-foreground relative" />
-            <span className="font-medium text-sm relative">{name}</span>
-            <span className="text-xs text-muted-foreground relative mt-1">Vizual · în curând</span>
+            <Icon className="w-6 h-6 md:w-7 md:h-7 text-foreground relative" />
+            <span className="text-[11px] md:text-xs font-medium relative mt-1">{name}</span>
           </a>
         ))}
       </div>
 
-      <div className="mt-14 text-center">
-        <h3 className="font-display text-2xl md:text-3xl">Contactează-ne</h3>
-        <p className="mt-2 text-sm text-muted-foreground">Scrie-ne pe canalul care ți-e mai la îndemână.</p>
+      <div className="mt-10 text-center">
+        <h3 className="font-display text-xl md:text-2xl">Contactează-ne</h3>
       </div>
 
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
+      <div className="mt-4 flex flex-wrap justify-center gap-2.5">
         {contacts.map(({ name, href, Icon, accent }) => (
           <a
             key={name}
             href={href}
             target={href.startsWith("http") ? "_blank" : undefined}
             rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium shadow-soft hover:opacity-90 transition ${accent}`}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-soft hover:opacity-90 transition ${accent}`}
           >
             <Icon className="w-4 h-4" />
             {name}

@@ -9,10 +9,13 @@ type Props = {
   products: Product[];
 };
 
+const arrowClasses =
+  "h-11 w-11 md:h-12 md:w-12 rounded-full bg-card/95 backdrop-blur border border-[color:var(--gold)]/40 text-[color:var(--wood-dark)] shadow-warm hover:bg-[color:var(--gold)] hover:text-[color:var(--wood-dark)] hover:scale-110 active:scale-95 transition-all [&_svg]:size-5";
+
 export function ProductCarouselSection({ eyebrow, title, description, products }: Props) {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-14 md:py-20">
-      <div className="text-center mb-8 md:mb-10">
+    <section className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+      <div className="text-center mb-6 md:mb-8">
         {eyebrow && (
           <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{eyebrow}</div>
         )}
@@ -23,8 +26,8 @@ export function ProductCarouselSection({ eyebrow, title, description, products }
       </div>
 
       <Carousel
-        opts={{ align: "start", loop: products.length > 3 }}
-        className="relative px-2 md:px-12"
+        opts={{ align: "start", loop: products.length > 1 }}
+        className="relative px-2 md:px-14"
       >
         <CarouselContent className="-ml-3 md:-ml-5">
           {products.map((p, i) => (
@@ -36,11 +39,11 @@ export function ProductCarouselSection({ eyebrow, title, description, products }
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="hidden md:flex -left-2 md:-left-4 bg-card border-border shadow-soft" />
-        <CarouselNext className="hidden md:flex -right-2 md:-right-4 bg-card border-border shadow-soft" />
-        <div className="md:hidden mt-4 flex items-center justify-center gap-4">
-          <CarouselPrevious className="static translate-y-0 bg-card border-border shadow-soft" />
-          <CarouselNext className="static translate-y-0 bg-card border-border shadow-soft" />
+        <CarouselPrevious className={`hidden md:flex -left-2 md:-left-2 ${arrowClasses}`} />
+        <CarouselNext className={`hidden md:flex -right-2 md:-right-2 ${arrowClasses}`} />
+        <div className="md:hidden mt-5 flex items-center justify-center gap-6">
+          <CarouselPrevious className={`static translate-y-0 ${arrowClasses}`} />
+          <CarouselNext className={`static translate-y-0 ${arrowClasses}`} />
         </div>
       </Carousel>
     </section>
