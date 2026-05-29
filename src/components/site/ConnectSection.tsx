@@ -1,0 +1,74 @@
+import { Instagram, Facebook, Phone, Mail, MessageCircle } from "lucide-react";
+
+const socials = [
+  { name: "Instagram", href: "https://instagram.com", Icon: Instagram, color: "from-[#feda75] via-[#d62976] to-[#4f5bd5]" },
+  { name: "Facebook", href: "https://facebook.com", Icon: Facebook, color: "from-[#1877f2] to-[#0a4db3]" },
+  {
+    name: "TikTok",
+    href: "https://tiktok.com",
+    Icon: (props: React.SVGProps<SVGSVGElement>) => (
+      <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.83a8.16 8.16 0 0 0 4.77 1.52V6.9a4.85 4.85 0 0 1-1.84-.21Z" />
+      </svg>
+    ),
+    color: "from-[#25f4ee] via-[#000] to-[#fe2c55]",
+  },
+];
+
+const contacts = [
+  { name: "WhatsApp", href: "https://wa.me/40700000000", Icon: MessageCircle, accent: "bg-[#25d366] text-white" },
+  { name: "Telefon", href: "tel:+40700000000", Icon: Phone, accent: "bg-[color:var(--wood-dark)] text-[color:var(--cream)]" },
+  { name: "Email", href: "mailto:contact@cutiutamagica.ro", Icon: Mail, accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]" },
+  { name: "Messenger", href: "https://m.me/cutiutamagica", Icon: MessageCircle, accent: "bg-[#0084ff] text-white" },
+];
+
+export function ConnectSection() {
+  return (
+    <section className="max-w-7xl mx-auto px-4 py-14 md:py-20" aria-labelledby="connect-heading">
+      <div className="text-center mb-10">
+        <h2 id="connect-heading" className="font-display text-3xl md:text-5xl">Urmărește-ne</h2>
+        <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-xl mx-auto">
+          Conturile noastre sociale — produsele și momentele din spatele cutiuțelor vor fi adăugate aici în curând.
+        </p>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-4">
+        {socials.map(({ name, href, Icon, color }) => (
+          <a
+            key={name}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={name}
+            className="group relative overflow-hidden rounded-2xl border border-border bg-card aspect-[4/3] flex flex-col items-center justify-center shadow-soft transition-transform hover:-translate-y-0.5"
+          >
+            <div className={`absolute inset-0 opacity-15 bg-gradient-to-br ${color}`} />
+            <Icon className="w-10 h-10 mb-2 text-foreground relative" />
+            <span className="font-medium text-sm relative">{name}</span>
+            <span className="text-xs text-muted-foreground relative mt-1">Vizual · în curând</span>
+          </a>
+        ))}
+      </div>
+
+      <div className="mt-14 text-center">
+        <h3 className="font-display text-2xl md:text-3xl">Contactează-ne</h3>
+        <p className="mt-2 text-sm text-muted-foreground">Scrie-ne pe canalul care ți-e mai la îndemână.</p>
+      </div>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        {contacts.map(({ name, href, Icon, accent }) => (
+          <a
+            key={name}
+            href={href}
+            target={href.startsWith("http") ? "_blank" : undefined}
+            rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium shadow-soft hover:opacity-90 transition ${accent}`}
+          >
+            <Icon className="w-4 h-4" />
+            {name}
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}

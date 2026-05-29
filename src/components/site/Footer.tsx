@@ -1,33 +1,29 @@
-import { Instagram, Facebook, ShoppingBag } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Sparkles } from "lucide-react";
 
 export function Footer() {
+  const year = new Date().getFullYear();
   return (
     <footer className="mt-24 wood-grain text-[color:var(--cream)]">
-      <div className="max-w-7xl mx-auto px-4 py-14 grid md:grid-cols-3 gap-10 text-center md:text-left">
-        <div>
-          <div className="font-display text-2xl">Cutiuța <span className="gold-text">Magică</span></div>
-          <p className="mt-3 text-sm text-[color:var(--cream)]/70 max-w-sm mx-auto md:mx-0">Cutiuțe muzicale din lemn, păstrate doar în variantele cu fotografie reală și prezentare clară.</p>
-        </div>
-        <div>
-          <div className="text-sm uppercase tracking-[0.2em] text-[color:var(--gold)] mb-3">Ne găsești pe</div>
-          <div className="flex flex-col gap-2 text-sm">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center md:justify-start gap-2 hover:text-[color:var(--gold)]"><Instagram className="w-4 h-4" /> Instagram</a>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center md:justify-start gap-2 hover:text-[color:var(--gold)]"><Facebook className="w-4 h-4" /> Facebook</a>
-            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center md:justify-start gap-2 hover:text-[color:var(--gold)]"><svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.83a8.16 8.16 0 0 0 4.77 1.52V6.9a4.85 4.85 0 0 1-1.84-.21Z"/></svg> TikTok</a>
-            <a href="https://emag.ro" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center md:justify-start gap-2 hover:text-[color:var(--gold)]"><ShoppingBag className="w-4 h-4" /> eMAG</a>
-          </div>
-        </div>
-        <div>
-          <div className="text-sm uppercase tracking-[0.2em] text-[color:var(--gold)] mb-3">Oferta</div>
-          <ul className="text-sm space-y-1 text-[color:var(--cream)]/80">
-            <li>1 cutiuță — 89 lei</li>
-            <li>2 cutiuțe — 150 lei <span className="text-[color:var(--gold)]">(+ 25 lei transport)</span></li>
-            <li>3 cutiuțe — 225 lei <span className="text-[color:var(--gold)]">(75 lei/buc + transport gratuit)</span></li>
-            <li>Plată: exclusiv online</li>
-          </ul>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6 text-center md:text-left">
+        <Link to="/" className="flex items-center gap-2 justify-center md:justify-start">
+          <span className="w-8 h-8 rounded-md bg-[color:var(--cream)]/10 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-[color:var(--gold)]" />
+          </span>
+          <span className="font-display text-xl">Cutiuța <span className="gold-text">Magică</span></span>
+        </Link>
+
+        <nav aria-label="Navigare subsol" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+          <Link to="/" className="hover:text-[color:var(--gold)]">Acasă</Link>
+          <Link to="/produse" className="hover:text-[color:var(--gold)]">Produse</Link>
+          <Link to="/poveste" className="hover:text-[color:var(--gold)]">Poveste</Link>
+          <Link to="/comanda" className="hover:text-[color:var(--gold)]">Comandă</Link>
+          <Link to="/favorite" className="hover:text-[color:var(--gold)]">Favorite</Link>
+        </nav>
       </div>
-      <div className="border-t border-white/10 py-4 text-center text-xs text-[color:var(--cream)]/50">© {new Date().getFullYear()} Cutiuța Magică · Făcut cu drag în România</div>
+      <div className="border-t border-white/10 py-4 text-center text-xs text-[color:var(--cream)]/50">
+        © {year} Cutiuța Magică · Făcut cu drag în România
+      </div>
     </footer>
   );
 }
