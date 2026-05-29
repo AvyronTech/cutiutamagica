@@ -3,7 +3,6 @@ import { ProductCard } from "@/components/site/ProductCard";
 import type { Product } from "@/data/products";
 
 type Props = {
-type Props = {
   eyebrow?: string;
   title: string;
   description?: string;
