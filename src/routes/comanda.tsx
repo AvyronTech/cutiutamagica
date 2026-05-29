@@ -116,6 +116,7 @@ function OrderPage() {
           {totalQty >= 3 && "💫 75 lei/buc și transport gratuit de la 3 bucăți."}
         </div>
       </aside>
+      </div>
     </div>
   );
 }
