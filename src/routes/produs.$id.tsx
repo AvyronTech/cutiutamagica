@@ -1,10 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
-import { Heart, ShoppingBag, ArrowLeft, Music, Truck, Gift, Sparkles, Minus, Plus } from "lucide-react";
+import { Heart, ShoppingBag, Music, Truck, Gift, Sparkles, Minus, Plus } from "lucide-react";
 import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
+import { BackButton } from "@/components/site/BackButton";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/produs/$id")({
@@ -83,15 +84,7 @@ function ProductPage() {
   return (
     <div>
       <div className="max-w-7xl mx-auto px-4 pt-8">
-        <Link
-          to="/produse"
-          className="group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5 text-sm font-medium text-[color:var(--wood-dark)] bg-[color:var(--gold)]/15 border border-[color:var(--gold)]/40 shadow-soft hover:bg-[color:var(--gold)]/30 hover:shadow-warm transition-all"
-        >
-          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[color:var(--cream)] border border-[color:var(--gold)]/50 group-hover:-translate-x-0.5 transition-transform">
-            <ArrowLeft className="w-3.5 h-3.5" />
-          </span>
-          Înapoi la cutiuțe
-        </Link>
+        <BackButton to="/produse" label="Înapoi la cutiuțe" />
       </div>
 
 

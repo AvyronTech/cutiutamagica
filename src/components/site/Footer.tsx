@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
-import avyronLogo from "@/assets/avyron-logo.jpg";
+import avyronLogo from "@/assets/avyron-logo.png";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -23,23 +23,25 @@ export function Footer() {
         </nav>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pb-6 flex justify-center">
+      <div className="max-w-7xl mx-auto px-4 pb-6 flex flex-col items-center gap-2">
+        <span className="text-[10px] uppercase tracking-[0.25em] text-[color:var(--cream)]/50">Powered by</span>
         <a
           href="https://avyron.ro"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Powered by Avyron — descoperă-ne"
-          className="block rounded-xl overflow-hidden bg-[color:var(--cream)]/95 px-5 py-2.5 opacity-90 hover:opacity-100 shadow-soft hover:shadow-warm ring-1 ring-[color:var(--cream)]/40 transition-all duration-300"
+          className="group inline-flex items-center rounded-lg px-3 py-1.5 bg-[color:var(--cream)] hover:bg-white shadow-soft hover:shadow-warm ring-1 ring-[color:var(--cream)]/40 transition-all duration-300"
         >
           <img
             src={avyronLogo}
-            alt="Powered by Avyron — descoperă-ne"
+            alt="Avyron — Digital Products"
             loading="lazy"
-            className="h-16 md:h-20 w-auto block"
+            width={1536}
+            height={1024}
+            className="h-7 md:h-8 w-auto block"
           />
         </a>
       </div>
-
 
       <div className="border-t border-white/10 py-4 text-center text-xs text-[color:var(--cream)]/50">
         © {year} Cutiuța Magică · Făcut cu drag în România
