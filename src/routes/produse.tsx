@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { products } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
+import { BackButton } from "@/components/site/BackButton";
 
 export const Route = createFileRoute("/produse")({
   component: ProductsPage,
@@ -27,15 +27,7 @@ function ProductsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-10 text-center">
       <div className="flex justify-start mb-6">
-        <Link
-          to="/"
-          className="group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5 text-sm font-medium text-[color:var(--wood-dark)] bg-[color:var(--gold)]/15 border border-[color:var(--gold)]/40 shadow-soft hover:bg-[color:var(--gold)]/30 hover:shadow-warm transition-all"
-        >
-          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[color:var(--cream)] border border-[color:var(--gold)]/50 group-hover:-translate-x-0.5 transition-transform">
-            <ArrowLeft className="w-3.5 h-3.5" />
-          </span>
-          Înapoi acasă
-        </Link>
+        <BackButton />
       </div>
 
       <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">Catalog</div>
