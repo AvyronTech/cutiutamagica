@@ -42,11 +42,13 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-8">{product.tagline}</p>
           <div className="mt-3 flex items-baseline justify-center gap-2">
             <span className="font-display text-2xl">{PRICE} <span className="text-sm">lei</span></span>
+          <div className="mt-3 flex items-baseline justify-center gap-2">
+            <span className="font-display text-2xl">{product.price ?? PRICE} <span className="text-sm">lei</span></span>
           </div>
           
         </div>
       </Link>
-      <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
+
         <div className="flex items-center justify-center gap-3 bg-muted/50 rounded-md py-1.5">
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
