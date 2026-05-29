@@ -10,7 +10,6 @@ type Props = {
 };
 
 const arrowClasses =
-const arrowClasses =
   "h-12 w-12 md:h-14 md:w-14 rounded-full bg-[color:var(--cream)] backdrop-blur border-2 border-[color:var(--gold)]/60 text-[color:var(--wood-dark)] shadow-warm hover:bg-[color:var(--gold)] hover:text-[color:var(--wood-dark)] hover:scale-110 active:scale-95 transition-all [&_svg]:size-6";
 
 export function ProductCarouselSection({ eyebrow, title, description, products }: Props) {
@@ -43,17 +42,6 @@ export function ProductCarouselSection({ eyebrow, title, description, products }
         <CarouselPrevious className={`hidden md:flex -left-1 ${arrowClasses}`} />
         <CarouselNext className={`hidden md:flex -right-1 ${arrowClasses}`} />
         <div className="md:hidden mt-5 flex items-center justify-center gap-8">
-          <CarouselPrevious className={`static translate-y-0 ${arrowClasses}`} />
-          <CarouselNext className={`static translate-y-0 ${arrowClasses}`} />
-        </div>
-      </Carousel>
-    </section>
-  );
-}
-
-        <CarouselPrevious className={`hidden md:flex -left-2 md:-left-2 ${arrowClasses}`} />
-        <CarouselNext className={`hidden md:flex -right-2 md:-right-2 ${arrowClasses}`} />
-        <div className="md:hidden mt-5 flex items-center justify-center gap-6">
           <CarouselPrevious className={`static translate-y-0 ${arrowClasses}`} />
           <CarouselNext className={`static translate-y-0 ${arrowClasses}`} />
         </div>
