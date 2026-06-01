@@ -98,21 +98,31 @@ function Index() {
       {/* Compact shipping strip */}
       <section className="max-w-5xl mx-auto px-4 -mt-10 md:-mt-14 relative z-10">
         <h2 className="sr-only">Livrare și transport</h2>
-        <div className="rounded-2xl bg-card border border-border shadow-warm overflow-hidden grid grid-cols-3 divide-x divide-border text-center">
-          {[
-            { label: "Comandă min.", price: "250 lei", note: "transport gratuit", Icon: Gift, featured: true },
-            { label: "Curier", price: "25 lei", note: "la domiciliu", Icon: Truck },
-            { label: "Easybox", price: "12,99 lei", note: "Sameday", Icon: Package },
-          ].map(({ label, price, note, Icon, featured }) => (
-            <div key={label} className={`px-3 py-4 md:py-5 ${featured ? "bg-[color:var(--gold)]/10" : ""}`}>
-              <Icon className={`w-4 h-4 mx-auto mb-1 ${featured ? "text-[color:var(--gold)]" : "text-muted-foreground"}`} />
-              <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-              <div className={`font-display text-lg md:text-2xl mt-0.5 ${featured ? "gold-text" : ""}`}>{price}</div>
-              <div className="text-[11px] md:text-xs text-muted-foreground">{note}</div>
+        <div className="rounded-2xl bg-card border border-border shadow-warm overflow-hidden grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border text-center">
+          <div className="px-4 py-5 bg-[color:var(--gold)]/10">
+            <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
+            <div className="text-[11px] md:text-xs leading-snug text-muted-foreground">
+              La comanda minimă de <span className="font-medium text-foreground">250 lei</span>
             </div>
-          ))}
+            <div className="font-display text-xl md:text-2xl mt-1 gold-text">transportul este gratuit</div>
+          </div>
+
+          <div className="px-4 py-5">
+            <Sparkles className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
+            <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">Piesa preferată</div>
+            <div className="font-display text-base md:text-lg mt-1 leading-tight">Lemn ales cu grijă,<br />parfum cald de atelier</div>
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">Rafinament și o melodie de păstrat</div>
+          </div>
+
+          <div className="px-4 py-5">
+            <Package className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+            <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">Orice produs făurit</div>
+            <div className="font-display text-base md:text-lg mt-1 leading-tight">Easybox <span className="gold-text">12,99 lei</span></div>
+            <div className="text-[11px] md:text-xs text-muted-foreground">sau curier la domiciliu 25 lei</div>
+          </div>
         </div>
       </section>
+
 
       <ProductCarouselSection
         title="Descoperă povestea"
