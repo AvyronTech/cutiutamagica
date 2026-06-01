@@ -144,6 +144,7 @@ function Index() {
         products={byIds(uniceIds)}
       />
 
+      <ReviewsStrip />
       <ConnectSection />
     </div>
   );
