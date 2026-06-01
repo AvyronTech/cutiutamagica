@@ -66,8 +66,11 @@ function Index() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
             >
-              <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-[color:var(--gold)] mb-4">
-                <Sparkles className="w-3.5 h-3.5" /> Piesă originală · Mecanism durabil
+              <div className="relative inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-[color:var(--gold)] mb-4 rounded-full px-4 py-1.5 overflow-hidden border border-[color:var(--gold)]/30 bg-[color:var(--cream)]/[0.06] backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_8px_24px_-12px_rgba(0,0,0,0.5)]">
+                <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_0%,rgba(255,255,255,0.18),transparent_60%)]" />
+                <span aria-hidden className="pointer-events-none absolute -inset-x-6 -top-6 h-12 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent)] blur-md" />
+                <Sparkles className="w-3.5 h-3.5 relative" />
+                <span className="relative">Piesă originală · Mecanism durabil</span>
               </div>
               <h1 className="font-display text-4xl sm:text-5xl md:text-7xl leading-[1.05] text-balance max-w-3xl">
                 Cutiuțe muzicale <span className="gold-text">autentice.</span>
