@@ -42,18 +42,33 @@ function MusicBoxMark({ className = "" }: { className?: string }) {
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="mt-16 wood-grain text-[color:var(--cream)]">
-      <div className="max-w-7xl mx-auto px-4 pt-12 pb-6 flex flex-col items-center gap-7 text-center">
+    <footer className="mt-12 wood-grain text-[color:var(--cream)]">
+      <div className="max-w-6xl mx-auto px-4 pt-6 pb-4 flex flex-col items-center gap-4 text-center">
+        {/* Brand — deschide subsolul */}
+        <Link to="/" className="flex flex-col items-center gap-1.5 group">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-[color:var(--cream)]/15 to-[color:var(--cream)]/[0.03] border border-[color:var(--gold)]/30 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] group-hover:border-[color:var(--gold)]/70 transition-colors">
+              <MusicBoxMark className="w-5 h-5 text-[color:var(--gold)]" />
+            </span>
+            <span className="font-display text-2xl md:text-[1.6rem] leading-none">
+              Cutiuța <span className="gold-text italic">Magică</span>
+            </span>
+          </div>
+          <p className="max-w-md text-xs md:text-sm italic text-[color:var(--cream)]/70 font-serif">
+            Lemn ales cu grijă, mâini răbdătoare și o melodie șoptită de poveste — fiecare cutiuță, o promisiune făcută cu suflet.
+          </p>
+        </Link>
+
         {/* Navigare — butoane soft, de poveste */}
         <nav
           aria-label="Navigare subsol"
-          className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3"
+          className="flex flex-wrap items-center justify-center gap-2"
         >
           {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="group relative inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium tracking-wide
+              className="group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium tracking-wide
                          text-[color:var(--cream)]/90
                          bg-[color:var(--cream)]/[0.04]
                          border border-[color:var(--cream)]/15
@@ -83,29 +98,13 @@ export function Footer() {
             src={avyronLogo}
             alt="Avyron"
             loading="lazy"
-            className="h-[74px] md:h-[92px] w-auto block"
+            className="h-[58px] md:h-[72px] w-auto block"
           />
         </a>
 
-        {/* Brand */}
-        <Link to="/" className="flex flex-col items-center gap-2 group">
-          <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-[color:var(--cream)]/15 to-[color:var(--cream)]/[0.03] border border-[color:var(--gold)]/30 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] group-hover:border-[color:var(--gold)]/70 transition-colors">
-              <MusicBoxMark className="w-6 h-6 text-[color:var(--gold)]" />
-            </span>
-            <span className="font-display text-2xl md:text-[1.6rem] leading-none">
-              Cutiuța <span className="gold-text italic">Magică</span>
-            </span>
-          </div>
-          <p className="max-w-md text-xs md:text-sm italic text-[color:var(--cream)]/70 font-serif">
-            Lemn ales cu grijă, mâini răbdătoare și o melodie șoptită de poveste — fiecare cutiuță, o promisiune făcută cu suflet.
-          </p>
-        </Link>
-
-        {/* Linia subțire de despărțire */}
         <div className="w-24 h-px bg-gradient-to-r from-transparent via-[color:var(--gold)]/40 to-transparent" />
 
-        <p className="text-xs text-[color:var(--cream)]/60">
+        <p className="text-[11px] text-[color:var(--cream)]/60">
           © {year} Cutiuța Magică · Făcut cu drag în România
         </p>
       </div>
