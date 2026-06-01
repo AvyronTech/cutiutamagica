@@ -36,7 +36,7 @@ export function Footer() {
             src={avyronLogo}
             alt="Avyron"
             loading="lazy"
-            className="h-16 md:h-20 w-auto block"
+            className="h-[74px] md:h-[92px] w-auto block"
           />
         </a>
       </div>
