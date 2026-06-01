@@ -99,4 +99,18 @@
     color: transparent;
   }
   .perspective-1000 { perspective: 1000px; }
+  .mask-fade {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .animate-reviews-marquee {
+    animation: reviews-marquee 48s linear infinite;
+  }
+  .animate-reviews-marquee:hover { animation-play-state: paused; }
 }
+
+@keyframes reviews-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
