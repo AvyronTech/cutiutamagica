@@ -102,27 +102,30 @@ function Index() {
       <section className="max-w-5xl mx-auto px-4 -mt-10 md:-mt-14 relative z-10">
         <h2 className="sr-only">Livrare și transport</h2>
         <div className="rounded-2xl bg-card border border-border shadow-warm overflow-hidden grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border text-center">
-          <div className="px-4 py-5 bg-[color:var(--gold)]/10">
+          <div className="px-4 py-4 bg-[color:var(--gold)]/10">
             <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
-            <div className="text-[11px] md:text-xs leading-snug text-muted-foreground">
-              La comanda minimă de <span className="font-medium text-foreground">250 lei</span>
+            <div className="font-display italic text-base md:text-lg leading-snug text-foreground">
+              La comanda minimă de <span className="gold-text not-italic font-medium">250 lei</span>
             </div>
-            <div className="font-display text-xl md:text-2xl mt-1 gold-text">transportul este gratuit</div>
+            <div className="font-display text-sm md:text-base mt-0.5 text-[color:var(--wood-dark)]/85">transportul este gratuit</div>
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">Durată livrare: 24–48H</div>
           </div>
 
-          <div className="px-4 py-5">
+          <div className="px-4 py-4">
             <Sparkles className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
             <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">Piesa preferată</div>
-            <div className="font-display text-base md:text-lg mt-1 leading-tight">Lemn ales cu grijă,<br />parfum cald de atelier</div>
+            <div className="font-display text-base md:text-lg mt-0.5 leading-tight">Lemn ales cu grijă,<br />parfum cald de atelier</div>
             <div className="text-[11px] md:text-xs text-muted-foreground mt-1">Rafinament și o melodie de păstrat</div>
           </div>
 
-          <div className="px-4 py-5">
+          <div className="px-4 py-4">
             <Package className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
             <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">Orice produs făurit</div>
-            <div className="font-display text-base md:text-lg mt-1 leading-tight">Easybox <span className="gold-text">12,99 lei</span></div>
+            <div className="font-display text-base md:text-lg mt-0.5 leading-tight">Easybox <span className="gold-text">12,99 lei</span></div>
             <div className="text-[11px] md:text-xs text-muted-foreground">sau curier la domiciliu 25 lei</div>
+            <div className="text-[11px] md:text-xs text-[color:var(--wood-dark)]/80 mt-1 italic">Sau programează livrarea!</div>
           </div>
+
         </div>
       </section>
 
