@@ -20,27 +20,25 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: index * 0.05 }}
-      className="group relative bg-card rounded-xl overflow-hidden border border-border/60 shadow-soft hover:shadow-warm transition-shadow flex flex-col"
+      className="group relative rounded-2xl overflow-hidden border border-[color:var(--gold)]/25 shadow-soft hover:shadow-warm transition-all hover:-translate-y-0.5 flex flex-col bg-[linear-gradient(160deg,oklch(0.97_0.025_75)_0%,oklch(0.93_0.05_65)_55%,oklch(0.88_0.07_55)_100%)]"
     >
       <Link to="/produs/$id" params={{ id: product.id }} className="block">
-        <div className="relative aspect-square overflow-hidden bg-muted/40 p-3">
+        <div className="relative aspect-square overflow-hidden p-3 bg-[radial-gradient(70%_60%_at_50%_30%,oklch(0.98_0.03_80/0.9),transparent_70%),linear-gradient(180deg,oklch(0.95_0.04_70),oklch(0.9_0.06_60))]">
           <motion.img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-contain drop-shadow-[0_16px_24px_rgba(0,0,0,0.14)]"
-            whileHover={{ scale: 1.04 }}
+            className="w-full h-full object-contain drop-shadow-[0_18px_28px_rgba(80,40,10,0.25)]"
+            whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.6 }}
             loading="lazy"
           />
-          <div className="absolute top-3 left-3 text-[10px] uppercase tracking-[0.15em] bg-background/90 backdrop-blur px-2 py-1 rounded">
-            {product.category}
-          </div>
           {imageCount > 1 && (
-            <div className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+            <div className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-[color:var(--wood-dark)]/85 backdrop-blur px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-[color:var(--cream)]">
               <Images className="w-3 h-3" /> {imageCount} imagini
             </div>
           )}
         </div>
+
         <div className="p-4 text-center">
           <h3 className="font-display text-lg leading-tight">{product.name}</h3>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-8">{product.tagline}</p>
