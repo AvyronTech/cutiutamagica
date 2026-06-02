@@ -12,7 +12,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
   const fav = isFavorite(product.id);
   const [qty, setQty] = useState(1);
   const displayPrice = product.price ?? PRICE;
-  const imageCount = product.gallery?.length ?? 1;
+  
 
   return (
     <motion.div
