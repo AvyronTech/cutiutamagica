@@ -1,8 +1,11 @@
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles } from "lucide-react";
+import AutoScroll from "embla-carousel-auto-scroll";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { ProductCard } from "@/components/site/ProductCard";
 import type { Product } from "@/data/products";
+
 
 type Props = {
   eyebrow?: string;
