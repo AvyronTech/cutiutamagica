@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag, Minus, Plus, Images } from "lucide-react";
+import { Heart, ShoppingBag, Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
