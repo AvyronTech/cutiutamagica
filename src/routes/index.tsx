@@ -148,6 +148,8 @@ function Index() {
 
       <ReviewsStrip />
       <ConnectSection />
+      <FloatingContacts />
+
     </div>
   );
 }
