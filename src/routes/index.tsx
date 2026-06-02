@@ -5,6 +5,8 @@ import { products } from "@/data/products";
 import { ProductCarouselSection } from "@/components/site/ProductCarouselSection";
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { ReviewsStrip } from "@/components/site/ReviewsStrip";
+import { FloatingContacts } from "@/components/site/FloatingContacts";
+
 
 const heroImage = products[0].image;
 
@@ -146,6 +148,8 @@ function Index() {
 
       <ReviewsStrip />
       <ConnectSection />
+      <FloatingContacts />
+
     </div>
   );
 }
