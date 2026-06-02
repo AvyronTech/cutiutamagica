@@ -31,7 +31,9 @@ export function ProductCarouselSection({
 }: Props) {
   return (
     <section className="relative overflow-hidden">
-      <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(60%_80%_at_50%_0%,oklch(0.88_0.06_70/0.9),transparent_70%),radial-gradient(70%_60%_at_0%_100%,oklch(0.82_0.08_55/0.55),transparent_60%),radial-gradient(70%_60%_at_100%_100%,oklch(0.84_0.07_75/0.55),transparent_60%),linear-gradient(180deg,oklch(0.91_0.04_70),oklch(0.88_0.05_60))]" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(55%_70%_at_50%_10%,oklch(0.82_0.09_65/0.85),transparent_70%),radial-gradient(60%_55%_at_5%_95%,oklch(0.7_0.13_45/0.55),transparent_65%),radial-gradient(60%_55%_at_95%_95%,oklch(0.74_0.11_75/0.55),transparent_65%),linear-gradient(180deg,oklch(0.85_0.07_60),oklch(0.78_0.09_50))]" />
+      <div aria-hidden className="absolute inset-0 -z-10 opacity-[0.07] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]" />
+
       <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
 
       <div className="text-center mb-6 md:mb-8">
