@@ -99,8 +99,8 @@ function ProductPage() {
             {product.gallery.map((image: (typeof product.gallery)[number], index: number) => (
               <button key={`${product.id}-${image.label}`} onClick={() => setActive(index)} className={`rounded-xl border p-2 bg-card transition ${active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}>
                 <img src={image.src} alt={image.label} className="aspect-square w-full object-contain" style={{ objectPosition: image.position ?? "center" }} />
-                <span className="mt-2 block text-[11px] text-center text-muted-foreground">{image.label}</span>
               </button>
+
             ))}
           </div>
         </div>
