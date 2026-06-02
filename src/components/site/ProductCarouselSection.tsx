@@ -36,7 +36,7 @@ export function ProductCarouselSection({
 
       <div className="max-w-7xl mx-auto px-4 py-5 md:py-7">
 
-      <div className="text-center mb-6 md:mb-8">
+      <div className="text-center mb-4 md:mb-6">
         {eyebrow && (
           <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{eyebrow}</div>
         )}
