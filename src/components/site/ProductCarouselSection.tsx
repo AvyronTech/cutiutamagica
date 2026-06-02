@@ -30,7 +30,10 @@ export function ProductCarouselSection({
   secondaryCta,
 }: Props) {
   return (
-    <section className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+    <section className="relative overflow-hidden">
+      <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(60%_80%_at_50%_0%,oklch(0.88_0.06_70/0.9),transparent_70%),radial-gradient(70%_60%_at_0%_100%,oklch(0.82_0.08_55/0.55),transparent_60%),radial-gradient(70%_60%_at_100%_100%,oklch(0.84_0.07_75/0.55),transparent_60%),linear-gradient(180deg,oklch(0.91_0.04_70),oklch(0.88_0.05_60))]" />
+      <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+
       <div className="text-center mb-6 md:mb-8">
         {eyebrow && (
           <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{eyebrow}</div>
