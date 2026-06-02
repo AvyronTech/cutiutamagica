@@ -1,4 +1,4 @@
-import { useRef } from "react";
+
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles } from "lucide-react";
 import AutoScroll from "embla-carousel-auto-scroll";
