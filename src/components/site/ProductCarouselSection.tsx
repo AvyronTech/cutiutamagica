@@ -53,7 +53,7 @@ export function ProductCarouselSection({
       </div>
 
       <Carousel
-        opts={{ align: "start", loop: true, dragFree: true, direction: "rtl" }}
+        opts={{ align: "start", loop: true, dragFree: true }}
         plugins={[
           AutoScroll({
             speed: 0.8,
