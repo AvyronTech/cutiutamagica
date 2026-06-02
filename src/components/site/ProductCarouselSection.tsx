@@ -56,18 +56,20 @@ export function ProductCarouselSection({
       </div>
 
       <Carousel
-        opts={{ align: "start", loop: true, dragFree: true }}
+        opts={{ align: "start", loop: true, dragFree: true, containScroll: false, watchDrag: true, duration: 35 }}
         plugins={[
           AutoScroll({
-            speed: 0.8,
-            startDelay: 600,
+            speed: 0.55,
+            startDelay: 0,
             stopOnInteraction: false,
             stopOnMouseEnter: true,
             stopOnFocusIn: true,
+            playOnInit: true,
           }),
         ]}
         className="relative px-2 md:px-16"
       >
+
 
         <CarouselContent className="-ml-3 md:-ml-5">
           {products.map((p, i) => (
