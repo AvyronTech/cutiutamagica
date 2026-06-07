@@ -6,6 +6,9 @@ import { ProductCarouselSection } from "@/components/site/ProductCarouselSection
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { ReviewsStrip } from "@/components/site/ReviewsStrip";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
+import bgPoveste from "@/assets/bg-poveste.jpg";
+import bgEmotie from "@/assets/bg-emotie.jpg";
+import bgUnice from "@/assets/bg-unice.jpg";
 
 
 const heroImage = products[0].image;
@@ -135,18 +138,24 @@ function Index() {
         description="Cutiuțe inspirate din filmele și universurile care ne-au marcat copilăria."
         products={byIds(povesteIds)}
         secondaryCta={{ label: "Vezi povestea", to: "/poveste" }}
+        bgImage={bgPoveste}
+        tone="cream"
       />
 
       <ProductCarouselSection
         title="Trăiește emoția"
         description="Modele delicate, pentru momente romantice și cadouri din suflet."
         products={byIds(emotieIds)}
+        bgImage={bgEmotie}
+        tone="cream"
       />
 
       <ProductCarouselSection
         title="Descoperă alte obiecte unice"
         description="Piese cu personalitate, perfecte pentru colecționari și cadouri memorabile."
         products={byIds(uniceIds)}
+        bgImage={bgUnice}
+        tone="cream"
       />
 
       <ReviewsStrip />

@@ -41,13 +41,18 @@ export function Header() {
         />
 
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
-          <Link to="/" className="flex items-center gap-2 group">
-            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-[color:var(--cream)] to-[color:var(--cream)]/60 border border-[color:var(--gold)]/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_14px_-6px_rgba(120,80,40,0.4)] group-hover:border-[color:var(--gold)] transition-colors">
-              <BrandMark className="w-6 h-6" />
+          <Link to="/" className="flex items-center gap-3 group">
+            <span className="relative flex items-center justify-center w-14 h-14 md:w-16 md:h-16 transition-transform group-hover:-rotate-3 group-hover:scale-105 duration-300">
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full blur-md opacity-70 group-hover:opacity-100 transition-opacity"
+                style={{ background: "radial-gradient(circle, oklch(0.86 0.16 85 / 0.55), transparent 65%)" }}
+              />
+              <BrandMark className="relative w-full h-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.45)]" />
             </span>
             <div className="leading-tight">
-              <div className="font-display text-xl tracking-tight text-[color:var(--wood-dark)]">
-                Cutiuța <span className="gold-text">Magică</span>
+              <div className="font-display text-xl md:text-2xl tracking-tight text-[color:var(--wood-dark)]">
+                Cutiuța <span className="gold-text italic">Magică</span>
               </div>
               <div className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--wood-dark)]/65">
                 piesă originală · mecanism durabil
