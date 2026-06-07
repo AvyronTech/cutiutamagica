@@ -56,6 +56,8 @@ function Index() {
           <img
             src={hero.image}
             alt={hero.name}
+            width={1200}
+            height={800}
             fetchPriority="high"
             decoding="async"
             className="absolute inset-0 w-full h-full object-cover object-[70%_center] md:object-[65%_center]"
