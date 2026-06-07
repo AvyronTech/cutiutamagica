@@ -20,10 +20,10 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: index * 0.05 }}
-      className="group relative rounded-2xl overflow-hidden border border-[color:var(--gold)]/25 shadow-soft hover:shadow-warm transition-all hover:-translate-y-0.5 flex flex-col bg-[linear-gradient(160deg,oklch(0.97_0.025_75)_0%,oklch(0.93_0.05_65)_55%,oklch(0.88_0.07_55)_100%)]"
+      className="group relative rounded-2xl overflow-hidden border border-[color:var(--cream)]/25 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.55)] hover:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.65)] transition-all hover:-translate-y-0.5 flex flex-col bg-[color:var(--cream)]/10 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/15"
     >
       <Link to="/produs/$id" params={{ id: product.id }} className="block">
-        <div className="relative aspect-square overflow-hidden px-2 pt-1 pb-2 bg-[radial-gradient(70%_60%_at_50%_30%,oklch(0.98_0.03_80/0.9),transparent_70%),linear-gradient(180deg,oklch(0.95_0.04_70),oklch(0.9_0.06_60))]">
+        <div className="relative aspect-square overflow-hidden px-2 pt-2 pb-2 bg-[radial-gradient(70%_60%_at_50%_30%,rgba(255,255,255,0.18),transparent_70%)]">
           <motion.img
             src={product.image}
             alt={product.name}
