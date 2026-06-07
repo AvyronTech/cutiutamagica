@@ -49,7 +49,7 @@ function ProductsPage() {
 
       <h2 className="sr-only">Cutiuțe disponibile</h2>
       <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 text-left">
-        {list.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+        {list.map((p, i) => <ProductCard key={p.id} product={p} index={i} variant="solid" />)}
       </div>
     </div>
   );
