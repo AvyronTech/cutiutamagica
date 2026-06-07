@@ -15,6 +15,9 @@ type Props = {
   ctaLabel?: string;
   ctaTo?: string;
   secondaryCta?: { label: string; to: string };
+  bgImage?: string;
+  /** "cream" = text deschis pe overlay închis (pentru imagini), "warm" = text închis pe gradient cald */
+  tone?: "warm" | "cream";
 };
 
 const arrowClasses =
@@ -28,11 +31,39 @@ export function ProductCarouselSection({
   ctaLabel = "Descoperă și alte obiecte magice",
   ctaTo = "/produse",
   secondaryCta,
+  bgImage,
+  tone = "warm",
 }: Props) {
+  const isCream = tone === "cream";
   return (
     <section className="relative overflow-hidden">
-      <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(55%_70%_at_50%_10%,oklch(0.82_0.09_65/0.85),transparent_70%),radial-gradient(60%_55%_at_5%_95%,oklch(0.7_0.13_45/0.55),transparent_65%),radial-gradient(60%_55%_at_95%_95%,oklch(0.74_0.11_75/0.55),transparent_65%),linear-gradient(180deg,oklch(0.85_0.07_60),oklch(0.78_0.09_50))]" />
-      <div aria-hidden className="absolute inset-0 -z-10 opacity-[0.07] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]" />
+      {bgImage ? (
+        <>
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 bg-cover bg-center"
+            style={{ backgroundImage: `url(${bgImage})` }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10"
+            style={{
+              background: isCream
+                ? "linear-gradient(180deg, oklch(0.22 0.04 40 / 0.78) 0%, oklch(0.22 0.04 40 / 0.5) 45%, oklch(0.22 0.04 40 / 0.82) 100%)"
+                : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.6) 0%, oklch(0.95 0.03 75 / 0.4) 45%, oklch(0.95 0.03 75 / 0.75) 100%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]"
+          />
+        </>
+      ) : (
+        <>
+          <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(55%_70%_at_50%_10%,oklch(0.82_0.09_65/0.85),transparent_70%),radial-gradient(60%_55%_at_5%_95%,oklch(0.7_0.13_45/0.55),transparent_65%),radial-gradient(60%_55%_at_95%_95%,oklch(0.74_0.11_75/0.55),transparent_65%),linear-gradient(180deg,oklch(0.85_0.07_60),oklch(0.78_0.09_50))]" />
+          <div aria-hidden className="absolute inset-0 -z-10 opacity-[0.07] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]" />
+        </>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 py-5 md:py-7">
 
