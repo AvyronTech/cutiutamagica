@@ -210,6 +210,8 @@ function Index() {
       <ReviewsStrip />
       <ConnectSection />
       <FloatingContacts />
+      <SideScrollMagic />
+
 
     </div>
   );
