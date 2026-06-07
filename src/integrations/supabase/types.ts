@@ -149,7 +149,7 @@ export type Database = {
           subtotal_lei: number
           total_lei: number
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           address_snapshot: Json
@@ -165,7 +165,7 @@ export type Database = {
           subtotal_lei: number
           total_lei: number
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           address_snapshot?: Json
@@ -181,7 +181,7 @@ export type Database = {
           subtotal_lei?: number
           total_lei?: number
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -435,6 +435,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validate_promo_code: {
+        Args: { _code: string }
+        Returns: {
+          description: string
+          min_order_lei: number
+          type: Database["public"]["Enums"]["promo_type"]
+          valid: boolean
+          value: number
+        }[]
       }
     }
     Enums: {
