@@ -34,12 +34,13 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           />
         </div>
 
-        <div className="px-4 pt-2 pb-3 text-center">
+        <div className="px-4 pt-2 pb-3 text-center text-[color:var(--cream)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
           <h3 className="font-display text-base leading-tight">{product.name}</h3>
           <div className="mt-1.5 flex items-baseline justify-center gap-2">
-            <span className="font-display text-xl">{displayPrice} <span className="text-xs">lei</span></span>
+            <span className="font-display text-xl text-[color:var(--gold)]">{displayPrice} <span className="text-xs text-[color:var(--cream)]/90">lei</span></span>
           </div>
         </div>
+
 
       </Link>
       <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
