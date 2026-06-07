@@ -138,18 +138,24 @@ function Index() {
         description="Cutiuțe inspirate din filmele și universurile care ne-au marcat copilăria."
         products={byIds(povesteIds)}
         secondaryCta={{ label: "Vezi povestea", to: "/poveste" }}
+        bgImage={bgPoveste}
+        tone="cream"
       />
 
       <ProductCarouselSection
         title="Trăiește emoția"
         description="Modele delicate, pentru momente romantice și cadouri din suflet."
         products={byIds(emotieIds)}
+        bgImage={bgEmotie}
+        tone="cream"
       />
 
       <ProductCarouselSection
         title="Descoperă alte obiecte unice"
         description="Piese cu personalitate, perfecte pentru colecționari și cadouri memorabile."
         products={byIds(uniceIds)}
+        bgImage={bgUnice}
+        tone="cream"
       />
 
       <ReviewsStrip />
