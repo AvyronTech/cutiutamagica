@@ -69,11 +69,11 @@ export function ProductCarouselSection({
 
       <div className="text-center mb-4 md:mb-6">
         {eyebrow && (
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">{eyebrow}</div>
+          <div className={`text-xs uppercase tracking-[0.2em] ${isCream ? "text-[color:var(--gold)]/90" : "text-[color:var(--wood)]"}`}>{eyebrow}</div>
         )}
-        <h2 className="font-display text-3xl md:text-5xl mt-1">{title}</h2>
+        <h2 className={`font-display text-3xl md:text-5xl mt-1 ${isCream ? "text-[color:var(--cream)] drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]" : ""}`}>{title}</h2>
         {description && (
-          <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-xl mx-auto">{description}</p>
+          <p className={`mt-3 text-sm md:text-base max-w-xl mx-auto ${isCream ? "text-[color:var(--cream)]/85" : "text-muted-foreground"}`}>{description}</p>
         )}
         {secondaryCta && (
           <div className="mt-5">
