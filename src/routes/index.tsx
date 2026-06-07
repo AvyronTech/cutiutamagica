@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Sparkles, Truck, Package, CreditCard, BookOpen, ShoppingBag, Gift, ArrowRight } from "lucide-react";
+import { Sparkles, Package, BookOpen, Gift, ArrowRight } from "lucide-react";
 import { products } from "@/data/products";
 import { ProductCarouselSection } from "@/components/site/ProductCarouselSection";
 import { ConnectSection } from "@/components/site/ConnectSection";
@@ -35,11 +35,6 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-const quickLinks = [
-  { to: "/produse", label: "Vezi cutiuțele", Icon: Gift },
-  { to: "/poveste", label: "Povestea noastră", Icon: BookOpen },
-  { to: "/comanda", label: "Comandă rapid", Icon: ShoppingBag },
-];
 
 function Index() {
   const hero = products[0];
