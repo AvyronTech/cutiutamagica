@@ -92,13 +92,11 @@ function Index() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="md:col-span-7 lg:col-span-6 text-left max-w-xl"
             >
-              {/* Banner Piesă originală — fără steluțe, mai tematic */}
-              <div className="relative inline-flex items-center gap-3 text-[10px] md:text-[11px] uppercase tracking-[0.32em] text-[color:var(--gold)] mb-6 rounded-full pl-3 pr-4 py-1.5 overflow-hidden border border-[color:var(--gold)]/40 bg-[oklch(0.18_0.04_40/0.45)] backdrop-blur-xl shadow-[inset_0_1px_0_0_oklch(0.95_0.05_90/0.18),0_10px_30px_-14px_oklch(0_0_0/0.7)]">
-                <span aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_60%_at_50%_0%,oklch(0.95_0.05_90/0.18),transparent_60%)]" />
-                <span aria-hidden className="relative inline-block w-1.5 h-1.5 rounded-full bg-[color:var(--gold)] shadow-[0_0_8px_oklch(0.85_0.18_75/0.95)]" />
+              {/* Banner Piesă originală — liquid glass, slim, tematic */}
+              <div className="relative inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.32em] text-[color:var(--gold)] mb-3 rounded-full pl-3 pr-3.5 py-1 overflow-hidden border border-[color:var(--gold)]/30 bg-white/[0.06] backdrop-blur-2xl shadow-[inset_0_1px_1px_0_oklch(0.95_0.05_90/0.12),0_6px_20px_-10px_oklch(0_0_0/0.5)]">
+                <span aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,oklch(0.95_0.05_90/0.08)_0%,transparent_55%)]" />
+                <span aria-hidden className="relative inline-block w-1 h-1 rounded-full bg-[color:var(--gold)] shadow-[0_0_6px_oklch(0.85_0.18_75/0.9)]" />
                 <span className="relative">Piesă originală · Mecanism durabil</span>
-                <span aria-hidden className="relative h-3 w-px bg-[color:var(--gold)]/40" />
-                <span className="relative not-italic">Ediție atelier</span>
               </div>
 
               <h1 className="font-display text-[2.6rem] sm:text-5xl md:text-[4.4rem] lg:text-[5rem] leading-[0.98] tracking-tight text-balance">
