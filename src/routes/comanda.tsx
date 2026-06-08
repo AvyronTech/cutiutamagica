@@ -111,7 +111,7 @@ function OrderPage() {
         </div>
         <div className="mt-5 p-3 bg-[color:var(--gold)]/10 rounded-md text-xs">
           {totalQty === 0 && "🎁 Adaugă primul produs."}
-          {totalQty === 1 && "✨ 1 produs: 89 lei + 25 lei transport."}
+          {totalQty === 1 && "✨ 1 produs: 119 lei + 25 lei transport."}
           {totalQty === 2 && "✨ 2 produse: 150 lei + 25 lei transport."}
           {totalQty >= 3 && "💫 75 lei/buc și transport gratuit de la 3 bucăți."}
         </div>

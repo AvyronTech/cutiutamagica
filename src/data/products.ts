@@ -37,7 +37,7 @@ export type Product = {
   price?: number;
 };
 
-export const PRICE = 89;
+export const PRICE = 119;
 export const SHIPPING = 25;
 export const MAX_QTY = 5;
 
@@ -64,7 +64,7 @@ export const products: Product[] = [
     ],
     description: "O cutiuță care arată ca un mic artefact de colecție. Imaginea Inelului îl cucerește instant pe fanul Tolkien, iar lemnul cald îi dă acel aer de obiect păstrat cu grijă ani întregi. Este genul de cadou care impresionează un colecționar, un pasionat de fantasy sau pe cineva care încă retrăiește scenele din trilogie.",
     story: "Modelul One Ring are un impact imediat: foc, aur și simbolul cel mai recognoscibil din universul Stăpânul Inelelor. Pe pagina produsului am păstrat fotografia originală și am extras trei perspective din aceeași imagine ca să se vadă mai clar capacul, zona laterală și partea mecanică. Astfel, produsul rămâne autentic, dar este mai ușor de inspectat înainte de comandă.",
-    details: ["Lemn natural cu gravură ornamentală", "Mecanism manual cu manivelă", "89 lei / 1 buc · 150 lei / 2 buc", "Transport gratuit de la 3 bucăți"],
+    details: ["Lemn natural cu gravură ornamentală", "Mecanism manual cu manivelă", "119 lei / 1 buc · 150 lei / 2 buc", "Transport gratuit de la 3 bucăți"],
   },
   {
     id: "hp-always",
