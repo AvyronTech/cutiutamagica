@@ -37,7 +37,7 @@ export type Product = {
   price?: number;
 };
 
-export const PRICE = 89;
+export const PRICE = 119;
 export const SHIPPING = 25;
 export const MAX_QTY = 5;
 
