@@ -1,62 +1,192 @@
-import { Instagram, Facebook, Phone, Mail, MessageCircle } from "lucide-react";
+import { Instagram, Facebook, Phone, Mail, MessageCircle, Sparkles, Handshake, ArrowRight } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
+import { PHONE_TEL, PHONE_DISPLAY, waLink, messageForPath, B2B_MESSAGE } from "@/lib/whatsapp";
 
-const socials = [
-  { name: "Instagram", href: "https://www.instagram.com/cutiutamagicaofficial/", Icon: Instagram, color: "from-[#feda75] via-[#d62976] to-[#4f5bd5]" },
-  { name: "Facebook", href: "https://www.facebook.com/profile.php?id=61590919580877", Icon: Facebook, color: "from-[#1877f2] to-[#0a4db3]" },
+type SocialCard = {
+  name: string;
+  handle: string;
+  href: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  /** Card-specific accent gradient (used as a wash, not background). */
+  accent: string;
+  /** Glow color for the ember ring. */
+  glow: string;
+};
+
+const socials: SocialCard[] = [
+  {
+    name: "Instagram",
+    handle: "@cutiutamagicaofficial",
+    href: "https://www.instagram.com/cutiutamagicaofficial/",
+    Icon: Instagram,
+    accent:
+      "radial-gradient(120% 90% at 0% 0%, oklch(0.78 0.16 35 / 0.55) 0%, transparent 55%), radial-gradient(120% 90% at 100% 100%, oklch(0.55 0.2 320 / 0.55) 0%, transparent 60%)",
+    glow: "oklch(0.78 0.18 50 / 0.55)",
+  },
+  {
+    name: "Facebook",
+    handle: "Cutiuța Magică",
+    href: "https://www.facebook.com/profile.php?id=61590919580877",
+    Icon: Facebook,
+    accent:
+      "radial-gradient(120% 90% at 0% 0%, oklch(0.58 0.18 250 / 0.6) 0%, transparent 55%), radial-gradient(120% 90% at 100% 100%, oklch(0.4 0.14 260 / 0.55) 0%, transparent 60%)",
+    glow: "oklch(0.6 0.18 245 / 0.55)",
+  },
   {
     name: "TikTok",
+    handle: "@cutiua.magic",
     href: "https://www.tiktok.com/@cutiua.magic",
-    Icon: (props: React.SVGProps<SVGSVGElement>) => (
-      <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    Icon: (props: { className?: string }) => (
+      <svg viewBox="0 0 24 24" fill="currentColor" className={props.className}>
         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.83a8.16 8.16 0 0 0 4.77 1.52V6.9a4.85 4.85 0 0 1-1.84-.21Z" />
       </svg>
     ),
-    color: "from-[#25f4ee] via-[#000] to-[#fe2c55]",
+    accent:
+      "radial-gradient(120% 90% at 0% 0%, oklch(0.85 0.16 195 / 0.55) 0%, transparent 55%), radial-gradient(120% 90% at 100% 100%, oklch(0.58 0.22 15 / 0.55) 0%, transparent 60%)",
+    glow: "oklch(0.78 0.2 200 / 0.55)",
   },
 ];
 
-const contacts = [
-  { name: "WhatsApp", href: "https://wa.me/40700000000", Icon: MessageCircle, accent: "bg-[#25d366] text-white" },
-  { name: "Telefon", href: "tel:+40700000000", Icon: Phone, accent: "bg-[color:var(--wood-dark)] text-[color:var(--cream)]" },
-  { name: "Email", href: "mailto:contact@cutiutamagica.ro", Icon: Mail, accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]" },
-  { name: "Messenger", href: "https://m.me/cutiutamagica", Icon: MessageCircle, accent: "bg-[#0084ff] text-white" },
-];
-
 export function ConnectSection() {
+  const { pathname } = useLocation();
+  const waHref = waLink(messageForPath(pathname));
+  const b2bHref = waLink(B2B_MESSAGE);
+
+  const contacts = [
+    { name: "WhatsApp", href: waHref, Icon: MessageCircle, accent: "bg-[#25d366] text-white", external: true },
+    { name: PHONE_DISPLAY, href: `tel:${PHONE_TEL}`, Icon: Phone, accent: "bg-[color:var(--wood-dark)] text-[color:var(--cream)]", external: false },
+    { name: "Email", href: "mailto:contact@cutiutamagica.ro", Icon: Mail, accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]", external: false },
+    { name: "Messenger", href: "https://m.me/61590919580877", Icon: MessageCircle, accent: "bg-[#0084ff] text-white", external: true },
+  ];
+
   return (
-    <section className="max-w-5xl mx-auto px-4 py-8 md:py-10" aria-labelledby="connect-heading">
-      <div className="text-center mb-5">
-        <h2 id="connect-heading" className="font-display text-2xl md:text-3xl">Urmărește-ne</h2>
+    <section className="max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="connect-heading">
+      {/* B2B partnership strip — sits between reviews and socials */}
+      <a
+        href={b2bHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group block mb-10 md:mb-12 relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/30 bg-[oklch(0.22_0.04_45)] text-[color:var(--cream)] shadow-[0_20px_60px_-30px_oklch(0.55_0.18_55/0.6)]"
+        aria-label="Discută parteneriat B2B pe WhatsApp"
+      >
+        <span
+          aria-hidden
+          className="absolute inset-0 opacity-90 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(60% 120% at 0% 0%, oklch(0.55 0.16 55 / 0.35) 0%, transparent 55%), radial-gradient(50% 120% at 100% 100%, oklch(0.45 0.14 30 / 0.35) 0%, transparent 60%)",
+          }}
+        />
+        <span
+          aria-hidden
+          className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: "oklch(0.78 0.18 65 / 0.6)" }}
+        />
+        <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 px-5 md:px-8 py-5 md:py-6">
+          <span
+            className="flex items-center justify-center w-12 h-12 rounded-xl shrink-0 border border-[color:var(--gold)]/40"
+            style={{ background: "linear-gradient(135deg, oklch(0.78 0.16 70), oklch(0.55 0.16 45))" }}
+          >
+            <Handshake className="w-6 h-6 text-[color:var(--wood-dark)]" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[color:var(--gold)]/90">
+              <Sparkles className="w-3 h-3" />
+              <span>Parteneriate B2B</span>
+            </div>
+            <h3 className="font-display text-xl md:text-2xl leading-tight mt-1">
+              Cadouri corporate, comenzi în volum & personalizări
+            </h3>
+            <p className="text-sm md:text-[15px] text-[color:var(--cream)]/80 mt-1.5 max-w-2xl">
+              Lucrăm cu branduri, agenții și magazine pentru cadouri memorabile cu poveste. Hai să discutăm direct pe WhatsApp — îți răspundem în câteva minute.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#25d366] text-white px-4 py-2 text-sm font-medium shadow-soft transition-transform group-hover:translate-x-0.5 shrink-0">
+            <MessageCircle className="w-4 h-4" />
+            Discută pe WhatsApp
+            <ArrowRight className="w-4 h-4" />
+          </span>
+        </div>
+      </a>
+
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[color:var(--gold)]">
+          <span className="h-px w-6 bg-[color:var(--gold)]/50" />
+          <span>Comunitatea noastră</span>
+          <span className="h-px w-6 bg-[color:var(--gold)]/50" />
+        </div>
+        <h2 id="connect-heading" className="font-display text-2xl md:text-3xl mt-2">Urmărește-ne</h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-md mx-auto">
-        {socials.map(({ name, href, Icon, color }) => (
+      {/* Premium thematic social cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 max-w-3xl mx-auto">
+        {socials.map(({ name, handle, href, Icon, accent, glow }) => (
           <a
             key={name}
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={name}
-            className="group relative overflow-hidden rounded-xl border border-border bg-card aspect-square flex flex-col items-center justify-center shadow-soft transition-transform hover:-translate-y-0.5"
+            aria-label={`${name} — ${handle}`}
+            className="group relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/25 bg-[oklch(0.2_0.035_45)] text-[color:var(--cream)] p-5 md:p-6 shadow-[0_20px_50px_-28px_rgba(0,0,0,0.6)] transition-all duration-500 hover:-translate-y-1 hover:border-[color:var(--gold)]/55"
+            style={{
+              backgroundImage:
+                "linear-gradient(180deg, oklch(0.22 0.04 45) 0%, oklch(0.16 0.03 40) 100%)",
+            }}
           >
-            <div className={`absolute inset-0 opacity-15 bg-gradient-to-br ${color}`} />
-            <Icon className="w-6 h-6 md:w-7 md:h-7 text-foreground relative" />
-            <span className="text-[11px] md:text-xs font-medium relative mt-1">{name}</span>
+            {/* Themed wash */}
+            <span aria-hidden className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: accent }} />
+            {/* Gold thread border on hover */}
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ boxShadow: `inset 0 0 0 1px oklch(0.85 0.16 70 / 0.55), 0 0 40px -10px ${glow}` }}
+            />
+            {/* Ember halo following the icon */}
+            <span
+              aria-hidden
+              className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity duration-500"
+              style={{ background: glow }}
+            />
+
+            <div className="relative flex items-start justify-between">
+              <span
+                className="flex items-center justify-center w-12 h-12 rounded-xl border border-[color:var(--gold)]/30 bg-[oklch(0.15_0.03_40)]/70 backdrop-blur-sm transition-transform duration-500 group-hover:rotate-[-4deg] group-hover:scale-105"
+                style={{ boxShadow: `inset 0 0 18px ${glow}` }}
+              >
+                <Icon className="w-5 h-5 text-[color:var(--gold)]" />
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--gold)]/80">
+                <Sparkles className="w-3 h-3" />
+                Urmărește
+              </span>
+            </div>
+
+            <div className="relative mt-6">
+              <div className="font-display text-xl md:text-2xl leading-tight">{name}</div>
+              <div className="text-xs md:text-sm text-[color:var(--cream)]/70 mt-0.5 truncate">{handle}</div>
+            </div>
+
+            <div className="relative mt-5 flex items-center justify-between pt-3 border-t border-[color:var(--gold)]/15">
+              <span className="text-[11px] text-[color:var(--cream)]/60">Atelier · cutiuțe muzicale</span>
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-[color:var(--gold)] transition-transform duration-500 group-hover:translate-x-1">
+                Deschide <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </div>
           </a>
         ))}
       </div>
 
-      <div className="mt-10 text-center">
+      <div className="mt-12 text-center">
         <h3 className="font-display text-xl md:text-2xl">Contactează-ne</h3>
       </div>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-        {contacts.map(({ name, href, Icon, accent }) => (
+        {contacts.map(({ name, href, Icon, accent, external }) => (
           <a
             key={name}
             href={href}
-            target={href.startsWith("http") ? "_blank" : undefined}
-            rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noopener noreferrer" : undefined}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-soft hover:opacity-90 transition ${accent}`}
           >
             <Icon className="w-4 h-4" />

@@ -115,13 +115,14 @@
 }
 
 /* ===== Hide native scrollbar — SideScrollMagic is the only visual progress bar ===== */
-html {
+html, body {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge legacy */
+  overflow-x: hidden; /* kill stray horizontal scrollbar at the top */
 }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
-*::-webkit-scrollbar { width: 0; height: 0; display: none; }
+*::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none; -webkit-appearance: none; }
 *::-webkit-scrollbar-corner { background: transparent; }
 
 
