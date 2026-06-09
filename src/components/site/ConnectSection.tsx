@@ -118,8 +118,8 @@ export function ConnectSection() {
         <h2 id="connect-heading" className="font-display text-2xl md:text-3xl mt-2">Urmărește-ne</h2>
       </div>
 
-      {/* Premium thematic social cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 max-w-3xl mx-auto">
+      {/* Compact thematic social cards — name only */}
+      <div className="grid grid-cols-3 gap-2.5 md:gap-3 max-w-md mx-auto">
         {socials.map(({ name, handle, href, Icon, accent, glow }) => (
           <a
             key={name}
@@ -127,50 +127,31 @@ export function ConnectSection() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`${name} — ${handle}`}
-            className="group relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/25 bg-[oklch(0.2_0.035_45)] text-[color:var(--cream)] p-5 md:p-6 shadow-[0_20px_50px_-28px_rgba(0,0,0,0.6)] transition-all duration-500 hover:-translate-y-1 hover:border-[color:var(--gold)]/55"
+            className="group relative overflow-hidden rounded-xl border border-[color:var(--gold)]/25 text-[color:var(--cream)] px-3 py-3 md:px-4 md:py-4 shadow-[0_14px_36px_-22px_rgba(0,0,0,0.6)] transition-all duration-500 hover:-translate-y-0.5 hover:border-[color:var(--gold)]/55"
             style={{
               backgroundImage:
                 "linear-gradient(180deg, oklch(0.22 0.04 45) 0%, oklch(0.16 0.03 40) 100%)",
             }}
           >
-            {/* Themed wash */}
             <span aria-hidden className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: accent }} />
-            {/* Gold thread border on hover */}
             <span
               aria-hidden
-              className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{ boxShadow: `inset 0 0 0 1px oklch(0.85 0.16 70 / 0.55), 0 0 40px -10px ${glow}` }}
+              className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ boxShadow: `inset 0 0 0 1px oklch(0.85 0.16 70 / 0.55), 0 0 28px -8px ${glow}` }}
             />
-            {/* Ember halo following the icon */}
             <span
               aria-hidden
-              className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity duration-500"
+              className="absolute -top-8 -right-8 w-20 h-20 rounded-full blur-2xl opacity-40 group-hover:opacity-75 transition-opacity duration-500"
               style={{ background: glow }}
             />
-
-            <div className="relative flex items-start justify-between">
+            <div className="relative flex flex-col items-center gap-1.5 text-center">
               <span
-                className="flex items-center justify-center w-12 h-12 rounded-xl border border-[color:var(--gold)]/30 bg-[oklch(0.15_0.03_40)]/70 backdrop-blur-sm transition-transform duration-500 group-hover:rotate-[-4deg] group-hover:scale-105"
-                style={{ boxShadow: `inset 0 0 18px ${glow}` }}
+                className="flex items-center justify-center w-9 h-9 rounded-lg border border-[color:var(--gold)]/30 bg-[oklch(0.15_0.03_40)]/70 backdrop-blur-sm transition-transform duration-500 group-hover:rotate-[-4deg] group-hover:scale-105"
+                style={{ boxShadow: `inset 0 0 14px ${glow}` }}
               >
-                <Icon className="w-5 h-5 text-[color:var(--gold)]" />
+                <Icon className="w-4 h-4 text-[color:var(--gold)]" />
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--gold)]/80">
-                <Sparkles className="w-3 h-3" />
-                Urmărește
-              </span>
-            </div>
-
-            <div className="relative mt-6">
-              <div className="font-display text-xl md:text-2xl leading-tight">{name}</div>
-              <div className="text-xs md:text-sm text-[color:var(--cream)]/70 mt-0.5 truncate">{handle}</div>
-            </div>
-
-            <div className="relative mt-5 flex items-center justify-between pt-3 border-t border-[color:var(--gold)]/15">
-              <span className="text-[11px] text-[color:var(--cream)]/60">Atelier · cutiuțe muzicale</span>
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-[color:var(--gold)] transition-transform duration-500 group-hover:translate-x-1">
-                Deschide <ArrowRight className="w-3.5 h-3.5" />
-              </span>
+              <span className="font-display text-sm md:text-base leading-none">{name}</span>
             </div>
           </a>
         ))}
