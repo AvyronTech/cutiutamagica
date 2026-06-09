@@ -107,6 +107,7 @@ function RootComponent() {
         <Header />
         <main className="min-h-[60vh]"><Outlet /></main>
         <Footer />
+        <SideScrollMagic />
         <Toaster position="top-center" richColors />
       </ShopProvider>
     </QueryClientProvider>
