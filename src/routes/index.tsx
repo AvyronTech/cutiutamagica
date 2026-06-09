@@ -6,7 +6,7 @@ import { ProductCarouselSection } from "@/components/site/ProductCarouselSection
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { ReviewsStrip } from "@/components/site/ReviewsStrip";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
-import { SideScrollMagic } from "@/components/site/SideScrollMagic";
+
 import bgPoveste from "@/assets/bg-poveste.jpg";
 import bgEmotie from "@/assets/bg-emotie.jpg";
 import bgUnice from "@/assets/bg-unice.jpg";
@@ -205,7 +205,6 @@ function Index() {
       <ReviewsStrip />
       <ConnectSection />
       <FloatingContacts />
-      <SideScrollMagic />
 
 
     </div>
