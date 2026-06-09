@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 
 
 function NotFoundComponent() {
