@@ -16,6 +16,12 @@ type Props = {
   secondaryCta?: { label: string; to: string };
   bgImage?: string;
   tone?: "warm" | "cream";
+  /** Disable auto-scroll — user navigates manually. */
+  staticMode?: boolean;
+  /** Narrow the carousel so the background image is visible around it. */
+  framed?: boolean;
+  /** Multiplier for overall section/card size (1 = default). */
+  scale?: number;
 };
 
 const arrowClasses =
@@ -31,6 +37,9 @@ export function ProductCarouselSection({
   secondaryCta,
   bgImage,
   tone = "warm",
+  staticMode = false,
+  framed = false,
+  scale = 1,
 }: Props) {
   const isCream = tone === "cream";
 
@@ -47,7 +56,7 @@ export function ProductCarouselSection({
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { align: "start", loop: true, dragFree: true, containScroll: false, watchDrag: true, duration: 35 },
-    [autoScroll.current],
+    staticMode ? [] : [autoScroll.current],
   );
 
   const nudge = (dir: "prev" | "next") => {
@@ -56,7 +65,7 @@ export function ProductCarouselSection({
     plugin?.stop();
     if (dir === "prev") emblaApi.scrollPrev();
     else emblaApi.scrollNext();
-    window.setTimeout(() => plugin?.play(), 1800);
+    if (!staticMode) window.setTimeout(() => plugin?.play(), 1800);
   };
 
   return (
