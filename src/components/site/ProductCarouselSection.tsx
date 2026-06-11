@@ -131,7 +131,10 @@ export function ProductCarouselSection({
           )}
         </div>
 
-        <div className="relative px-2 md:px-16">
+        <div
+          className="relative px-2 md:px-16"
+          style={scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "top center" } : undefined}
+        >
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex -ml-3 md:-ml-5">
               {products.map((p, i) => (
