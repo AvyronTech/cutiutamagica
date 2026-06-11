@@ -77,14 +77,16 @@ export function ProductCarouselSection({
             className="absolute inset-0 -z-10 bg-cover bg-center"
             style={{ backgroundImage: `url(${bgImage})` }}
           />
-          {/* Heavier readable overlay */}
+          {/* Heavier readable overlay — softer in framed mode so the bg art is visible */}
           <div
             aria-hidden
             className="absolute inset-0 -z-10"
             style={{
-              background: isCream
-                ? "linear-gradient(180deg, oklch(0.18 0.04 40 / 0.86) 0%, oklch(0.18 0.04 40 / 0.62) 45%, oklch(0.18 0.04 40 / 0.88) 100%)"
-                : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.6) 0%, oklch(0.95 0.03 75 / 0.4) 45%, oklch(0.95 0.03 75 / 0.75) 100%)",
+              background: framed
+                ? "radial-gradient(60% 55% at 50% 55%, oklch(0.16 0.03 40 / 0.78) 0%, oklch(0.16 0.03 40 / 0.55) 55%, oklch(0.16 0.03 40 / 0.25) 100%)"
+                : isCream
+                  ? "linear-gradient(180deg, oklch(0.18 0.04 40 / 0.86) 0%, oklch(0.18 0.04 40 / 0.62) 45%, oklch(0.18 0.04 40 / 0.88) 100%)"
+                  : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.6) 0%, oklch(0.95 0.03 75 / 0.4) 45%, oklch(0.95 0.03 75 / 0.75) 100%)",
             }}
           />
           {/* Top + bottom vignette for crisp text */}
