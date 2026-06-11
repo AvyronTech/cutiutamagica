@@ -66,7 +66,7 @@ export function ConnectSection() {
         href={b2bHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="group block mb-10 md:mb-12 relative overflow-hidden rounded-xl border border-[color:var(--gold)]/30 bg-[oklch(0.22_0.04_45)] text-[color:var(--cream)] shadow-[0_14px_40px_-24px_oklch(0.55_0.18_55/0.6)] max-w-2xl mx-auto"
+        className="group block mb-10 md:mb-12 relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/30 bg-[oklch(0.22_0.04_45)] text-[color:var(--cream)] shadow-[0_20px_60px_-30px_oklch(0.55_0.18_55/0.6)]"
         aria-label="Discută parteneriat B2B pe WhatsApp"
       >
         <span
@@ -74,37 +74,37 @@ export function ConnectSection() {
           className="absolute inset-0 opacity-90 pointer-events-none"
           style={{
             background:
-              "radial-gradient(60% 120% at 0% 0%, oklch(0.55 0.16 55 / 0.3) 0%, transparent 55%), radial-gradient(50% 120% at 100% 100%, oklch(0.45 0.14 30 / 0.3) 0%, transparent 60%)",
+              "radial-gradient(60% 120% at 0% 0%, oklch(0.55 0.16 55 / 0.35) 0%, transparent 55%), radial-gradient(50% 120% at 100% 100%, oklch(0.45 0.14 30 / 0.35) 0%, transparent 60%)",
           }}
         />
         <span
           aria-hidden
-          className="absolute -top-8 -right-8 w-28 h-28 rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{ background: "oklch(0.78 0.18 65 / 0.55)" }}
+          className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: "oklch(0.78 0.18 65 / 0.6)" }}
         />
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 sm:py-4">
+        <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 px-5 md:px-8 py-5 md:py-6">
           <span
-            className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border border-[color:var(--gold)]/40"
+            className="flex items-center justify-center w-12 h-12 rounded-xl shrink-0 border border-[color:var(--gold)]/40"
             style={{ background: "linear-gradient(135deg, oklch(0.78 0.16 70), oklch(0.55 0.16 45))" }}
           >
-            <Handshake className="w-4 h-4 text-[color:var(--wood-dark)]" />
+            <Handshake className="w-6 h-6 text-[color:var(--wood-dark)]" />
           </span>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[color:var(--gold)]/90">
-              <Sparkles className="w-2.5 h-2.5" />
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[color:var(--gold)]/90">
+              <Sparkles className="w-3 h-3" />
               <span>Parteneriate B2B</span>
             </div>
-            <h3 className="font-display text-base md:text-lg leading-tight mt-0.5">
-              Cadouri corporate & comenzi în volum
+            <h3 className="font-display text-xl md:text-2xl leading-tight mt-1">
+              Cadouri corporate, comenzi în volum & personalizări
             </h3>
-            <p className="text-[12px] md:text-[13px] text-[color:var(--cream)]/75 mt-1 max-w-xl">
-              Branduri, agenții și magazine — discută direct pe WhatsApp.
+            <p className="text-sm md:text-[15px] text-[color:var(--cream)]/80 mt-1.5 max-w-2xl">
+              Lucrăm cu branduri, agenții și magazine pentru cadouri memorabile cu poveste. Hai să discutăm direct pe WhatsApp — îți răspundem în câteva minute.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#25d366] text-white px-3 py-1.5 text-xs font-medium shadow-soft transition-transform group-hover:translate-x-0.5 shrink-0">
-            <MessageCircle className="w-3.5 h-3.5" />
-            WhatsApp
-            <ArrowRight className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#25d366] text-white px-4 py-2 text-sm font-medium shadow-soft transition-transform group-hover:translate-x-0.5 shrink-0">
+            <MessageCircle className="w-4 h-4" />
+            Discută pe WhatsApp
+            <ArrowRight className="w-4 h-4" />
           </span>
         </div>
       </a>
