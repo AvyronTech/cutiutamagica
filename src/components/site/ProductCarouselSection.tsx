@@ -107,7 +107,7 @@ export function ProductCarouselSection({
         </>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-6 md:py-9">
+      <div className={`${framed ? "max-w-4xl" : "max-w-7xl"} mx-auto px-4 py-6 md:py-9`}>
         <div className="text-center mb-5 md:mb-7">
           {eyebrow && (
             <div className={`text-xs uppercase tracking-[0.2em] ${isCream ? "text-[color:var(--gold)]" : "text-[color:var(--wood)]"}`}>{eyebrow}</div>
