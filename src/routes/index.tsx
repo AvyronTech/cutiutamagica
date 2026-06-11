@@ -8,7 +8,7 @@ import { ReviewsStrip } from "@/components/site/ReviewsStrip";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
 
 import bgPoveste from "@/assets/bg-poveste.jpg";
-import bgEmotie from "@/assets/bg-emotie.jpg";
+import bgEmotie from "@/assets/bg-emotie-frame.jpg";
 import bgUnice from "@/assets/bg-unice.jpg";
 
 
@@ -184,6 +184,8 @@ function Index() {
         secondaryCta={{ label: "Vezi povestea", to: "/poveste" }}
         bgImage={bgPoveste}
         tone="cream"
+        staticMode
+        framed
       />
 
       <ProductCarouselSection
@@ -192,6 +194,8 @@ function Index() {
         products={byIds(emotieIds)}
         bgImage={bgEmotie}
         tone="cream"
+        staticMode
+        framed
       />
 
       <ProductCarouselSection
@@ -200,6 +204,7 @@ function Index() {
         products={byIds(uniceIds)}
         bgImage={bgUnice}
         tone="cream"
+        scale={0.85}
       />
 
       <ReviewsStrip />

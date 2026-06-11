@@ -16,6 +16,12 @@ type Props = {
   secondaryCta?: { label: string; to: string };
   bgImage?: string;
   tone?: "warm" | "cream";
+  /** Disable auto-scroll — user navigates manually. */
+  staticMode?: boolean;
+  /** Narrow the carousel so the background image is visible around it. */
+  framed?: boolean;
+  /** Multiplier for overall section/card size (1 = default). */
+  scale?: number;
 };
 
 const arrowClasses =
@@ -31,6 +37,9 @@ export function ProductCarouselSection({
   secondaryCta,
   bgImage,
   tone = "warm",
+  staticMode = false,
+  framed = false,
+  scale = 1,
 }: Props) {
   const isCream = tone === "cream";
 
@@ -47,7 +56,7 @@ export function ProductCarouselSection({
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { align: "start", loop: true, dragFree: true, containScroll: false, watchDrag: true, duration: 35 },
-    [autoScroll.current],
+    staticMode ? [] : [autoScroll.current],
   );
 
   const nudge = (dir: "prev" | "next") => {
@@ -56,7 +65,7 @@ export function ProductCarouselSection({
     plugin?.stop();
     if (dir === "prev") emblaApi.scrollPrev();
     else emblaApi.scrollNext();
-    window.setTimeout(() => plugin?.play(), 1800);
+    if (!staticMode) window.setTimeout(() => plugin?.play(), 1800);
   };
 
   return (
@@ -68,14 +77,16 @@ export function ProductCarouselSection({
             className="absolute inset-0 -z-10 bg-cover bg-center"
             style={{ backgroundImage: `url(${bgImage})` }}
           />
-          {/* Heavier readable overlay */}
+          {/* Heavier readable overlay — softer in framed mode so the bg art is visible */}
           <div
             aria-hidden
             className="absolute inset-0 -z-10"
             style={{
-              background: isCream
-                ? "linear-gradient(180deg, oklch(0.18 0.04 40 / 0.86) 0%, oklch(0.18 0.04 40 / 0.62) 45%, oklch(0.18 0.04 40 / 0.88) 100%)"
-                : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.6) 0%, oklch(0.95 0.03 75 / 0.4) 45%, oklch(0.95 0.03 75 / 0.75) 100%)",
+              background: framed
+                ? "radial-gradient(60% 55% at 50% 55%, oklch(0.16 0.03 40 / 0.78) 0%, oklch(0.16 0.03 40 / 0.55) 55%, oklch(0.16 0.03 40 / 0.25) 100%)"
+                : isCream
+                  ? "linear-gradient(180deg, oklch(0.18 0.04 40 / 0.86) 0%, oklch(0.18 0.04 40 / 0.62) 45%, oklch(0.18 0.04 40 / 0.88) 100%)"
+                  : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.6) 0%, oklch(0.95 0.03 75 / 0.4) 45%, oklch(0.95 0.03 75 / 0.75) 100%)",
             }}
           />
           {/* Top + bottom vignette for crisp text */}
@@ -96,7 +107,7 @@ export function ProductCarouselSection({
         </>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 py-6 md:py-9">
+      <div className={`${framed ? "max-w-4xl" : "max-w-7xl"} mx-auto px-4 py-6 md:py-9`}>
         <div className="text-center mb-5 md:mb-7">
           {eyebrow && (
             <div className={`text-xs uppercase tracking-[0.2em] ${isCream ? "text-[color:var(--gold)]" : "text-[color:var(--wood)]"}`}>{eyebrow}</div>
@@ -120,7 +131,14 @@ export function ProductCarouselSection({
           )}
         </div>
 
-        <div className="relative px-2 md:px-16">
+        <div
+          className="relative px-2 md:px-16"
+          style={
+            scale !== 1
+              ? { transform: `scale(${scale})`, transformOrigin: "top center", marginBottom: `calc((1 - ${scale}) * -28rem)` }
+              : undefined
+          }
+        >
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex -ml-3 md:-ml-5">
               {products.map((p, i) => (
