@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { supabase } from '@/integrations/supabase/client';
 import {
   LayoutDashboard,
   ShoppingCart,
