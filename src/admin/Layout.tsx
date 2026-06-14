@@ -76,12 +76,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const location = useLocation();
+  const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('cm_auth');
-    navigate('/admin');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: '/auth' });
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
