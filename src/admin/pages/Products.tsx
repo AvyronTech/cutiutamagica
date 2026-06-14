@@ -20,7 +20,7 @@ import {
   RefreshCw,
   ExternalLink
 } from 'lucide-react';
-import { realProducts, type Product } from '@/data/mockData';
+import { realProducts, type Product } from '@/admin/data/mockData';
 
 const categories = [
   { value: 'toate', label: 'Toate' },

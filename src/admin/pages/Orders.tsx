@@ -24,7 +24,7 @@ import {
   Copy,
   MessageSquare
 } from 'lucide-react';
-import { orders as allOrders, type Order, platformColors } from '@/data/mockData';
+import { orders as allOrders, type Order, platformColors } from '@/admin/data/mockData';
 
 const platforms = ['Toate', 'Cutiuța Magică', 'eMag', 'OLX', 'Vinted', 'Facebook', 'Instagram', 'TikTok'];
 const statuses = ['Toate', 'Nouă', 'Procesare', 'Expediată', 'Livrată', 'Returnată', 'Anulată'];

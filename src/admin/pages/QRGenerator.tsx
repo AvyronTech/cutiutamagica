@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Download, Printer, Copy, Check, Package, MapPin, Phone, User, Camera, ScanLine } from 'lucide-react';
-import { orders } from '@/data/mockData';
+import { orders } from '@/admin/data/mockData';
 
 export default function QRGenerator() {
   const [selectedOrderId, setSelectedOrderId] = useState(orders[0]?.id || '');

@@ -15,7 +15,7 @@ import {
   Coffee
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { orders, platformStats } from '@/data/mockData';
+import { orders, platformStats } from '@/admin/data/mockData';
 
 const stats = [
   {

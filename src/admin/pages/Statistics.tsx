@@ -3,7 +3,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users, Repeat, Share2, Heart } from 'lucide-react';
-import { monthlyStats, platformStats, deliveryStats } from '@/data/mockData';
+import { monthlyStats, platformStats, deliveryStats } from '@/admin/data/mockData';
 
 const weeklyData = [
   { day: 'Lun', comenzi: 12, venituri: 1800 },
