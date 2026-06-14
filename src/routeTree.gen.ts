@@ -14,6 +14,7 @@ import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as FavoriteRouteImport } from './routes/favorite'
 import { Route as ComandaRouteImport } from './routes/comanda'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProdusIdRouteImport } from './routes/produs.$id'
@@ -50,6 +51,11 @@ const FavoriteRoute = FavoriteRouteImport.update({
 const ComandaRoute = ComandaRouteImport.update({
   id: '/comanda',
   path: '/comanda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -121,6 +127,7 @@ const AuthenticatedAdminFinanciarRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
   '/poveste': typeof PovesteRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
   '/poveste': typeof PovesteRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
   '/poveste': typeof PovesteRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/comanda'
     | '/favorite'
     | '/poveste'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/comanda'
     | '/favorite'
     | '/poveste'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/auth'
     | '/comanda'
     | '/favorite'
     | '/poveste'
@@ -234,6 +246,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   ComandaRoute: typeof ComandaRoute
   FavoriteRoute: typeof FavoriteRoute
   PovesteRoute: typeof PovesteRoute
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       path: '/comanda'
       fullPath: '/comanda'
       preLoaderRoute: typeof ComandaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -408,6 +428,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   ComandaRoute: ComandaRoute,
   FavoriteRoute: FavoriteRoute,
   PovesteRoute: PovesteRoute,
