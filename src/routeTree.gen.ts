@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_authenticated/admin/qr-generator'
 import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin/products'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin/orders'
+import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin/integrations'
 import { Route as AuthenticatedAdminFinanciarRouteImport } from './routes/_authenticated/admin/financiar'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -105,6 +106,12 @@ const AuthenticatedAdminOrdersRoute =
     path: '/orders',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminIntegrationsRoute =
+  AuthenticatedAdminIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminFinanciarRoute =
   AuthenticatedAdminFinanciarRouteImport.update({
     id: '/financiar',
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
+  '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/products': typeof AuthenticatedAdminProductsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
@@ -138,6 +146,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produs/$id': typeof ProdusIdRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
+  '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/products': typeof AuthenticatedAdminProductsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
@@ -157,6 +166,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
   '/_authenticated/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
+  '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRoute
   '/_authenticated/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/produs/$id'
     | '/admin/financiar'
+    | '/admin/integrations'
     | '/admin/orders'
     | '/admin/products'
     | '/admin/qr-generator'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/produs/$id'
     | '/admin/financiar'
+    | '/admin/integrations'
     | '/admin/orders'
     | '/admin/products'
     | '/admin/qr-generator'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/produs/$id'
     | '/_authenticated/admin/financiar'
+    | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/orders'
     | '/_authenticated/admin/products'
     | '/_authenticated/admin/qr-generator'
@@ -336,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/integrations': {
+      id: '/_authenticated/admin/integrations'
+      path: '/integrations'
+      fullPath: '/admin/integrations'
+      preLoaderRoute: typeof AuthenticatedAdminIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/financiar': {
       id: '/_authenticated/admin/financiar'
       path: '/financiar'
@@ -348,6 +368,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminFinanciarRoute: typeof AuthenticatedAdminFinanciarRoute
+  AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
   AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRoute
   AuthenticatedAdminQrGeneratorRoute: typeof AuthenticatedAdminQrGeneratorRoute
@@ -359,6 +380,7 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminFinanciarRoute: AuthenticatedAdminFinanciarRoute,
+    AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
     AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
     AuthenticatedAdminProductsRoute: AuthenticatedAdminProductsRoute,
     AuthenticatedAdminQrGeneratorRoute: AuthenticatedAdminQrGeneratorRoute,
