@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -43,21 +43,21 @@ const initialNotifications: Notification[] = [
 ];
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/products', label: 'Produse & Servicii', icon: ShoppingBag },
-  { path: '/financiar', label: 'Financiar', icon: Wallet },
-  { path: '/orders', label: 'Comenzi', icon: ShoppingCart },
-  { path: '/statistics', label: 'Statistici', icon: BarChart3 },
-  { path: '/settings', label: 'Setări', icon: Settings },
-  { path: '/qr-generator', label: 'Generator QR', icon: QrCode },
-  { path: '/integrations', label: 'Integrări', icon: Plug },
+  { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/admin/products', label: 'Produse & Servicii', icon: ShoppingBag },
+  { path: '/admin/financiar', label: 'Financiar', icon: Wallet },
+  { path: '/admin/orders', label: 'Comenzi', icon: ShoppingCart },
+  { path: '/admin/statistics', label: 'Statistici', icon: BarChart3 },
+  { path: '/admin/settings', label: 'Setări', icon: Settings },
+  { path: '/admin/qr-generator', label: 'Generator QR', icon: QrCode },
+  { path: '/admin/integrations', label: 'Integrări', icon: Plug },
 ];
 
 const quickActions = [
-  { label: 'Comandă nouă', icon: Plus, path: '/orders', color: 'bg-purple-600' },
-  { label: 'Generează QR', icon: QrCode, path: '/qr-generator', color: 'bg-amber-600' },
-  { label: 'Verifică AWB', icon: Truck, path: '/integrations', color: 'bg-emerald-600' },
-  { label: 'Acces rapid', icon: Zap, path: '/integrations', color: 'bg-blue-600' },
+  { label: 'Comandă nouă', icon: Plus, path: '/admin/orders', color: 'bg-purple-600' },
+  { label: 'Generează QR', icon: QrCode, path: '/admin/qr-generator', color: 'bg-amber-600' },
+  { label: 'Verifică AWB', icon: Truck, path: '/admin/integrations', color: 'bg-emerald-600' },
+  { label: 'Acces rapid', icon: Zap, path: '/admin/integrations', color: 'bg-blue-600' },
 ];
 
 function NotificationIcon({ type }: { type: string }) {
@@ -328,7 +328,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <span className="text-[10px] text-slate-500">Limite & Ținte active</span>
                       </div>
                       <Link
-                        to="/settings"
+                        to="/admin/settings"
                         onClick={() => setShowNotifications(false)}
                         className="text-[10px] text-purple-400 hover:text-purple-300"
                       >
