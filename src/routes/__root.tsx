@@ -101,13 +101,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
   return (
     <QueryClientProvider client={queryClient}>
       <ShopProvider>
-        <Header />
+        {isChrome && <Header />}
         <main className="min-h-[60vh]"><Outlet /></main>
-        <Footer />
-        <SideScrollMagic />
+        {isChrome && <Footer />}
+        {isChrome && <SideScrollMagic />}
         <Toaster position="top-center" richColors />
       </ShopProvider>
     </QueryClientProvider>
