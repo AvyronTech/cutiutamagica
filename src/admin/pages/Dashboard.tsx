@@ -16,41 +16,9 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { orders, platformStats } from '@/admin/data/mockData';
-
-const stats = [
-  {
-    label: 'Comenzi Totale',
-    value: '583',
-    change: '+12.5%',
-    trend: 'up',
-    icon: ShoppingCart,
-    color: 'from-purple-500 to-purple-700'
-  },
-  {
-    label: 'Venituri Luna',
-    value: '14,200 RON',
-    change: '+8.2%',
-    trend: 'up',
-    icon: TrendingUp,
-    color: 'from-amber-500 to-amber-700'
-  },
-  {
-    label: 'Produse Active',
-    value: '127',
-    change: '+3',
-    trend: 'up',
-    icon: Package,
-    color: 'from-emerald-500 to-emerald-700'
-  },
-  {
-    label: 'În Livrare',
-    value: '23',
-    change: '-2',
-    trend: 'down',
-    icon: Truck,
-    color: 'from-cyan-500 to-cyan-700'
-  }
-];
+import { useQuery } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { getAdminDashboard } from '@/lib/admin.functions';
 
 const quickLinks = [
   { name: 'SameDay Courier', url: 'https://www.sameday.ro', color: '#F59E0B' },
