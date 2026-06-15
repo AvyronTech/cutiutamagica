@@ -16,41 +16,9 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { orders, platformStats } from '@/admin/data/mockData';
-
-const stats = [
-  {
-    label: 'Comenzi Totale',
-    value: '583',
-    change: '+12.5%',
-    trend: 'up',
-    icon: ShoppingCart,
-    color: 'from-purple-500 to-purple-700'
-  },
-  {
-    label: 'Venituri Luna',
-    value: '14,200 RON',
-    change: '+8.2%',
-    trend: 'up',
-    icon: TrendingUp,
-    color: 'from-amber-500 to-amber-700'
-  },
-  {
-    label: 'Produse Active',
-    value: '127',
-    change: '+3',
-    trend: 'up',
-    icon: Package,
-    color: 'from-emerald-500 to-emerald-700'
-  },
-  {
-    label: 'În Livrare',
-    value: '23',
-    change: '-2',
-    trend: 'down',
-    icon: Truck,
-    color: 'from-cyan-500 to-cyan-700'
-  }
-];
+import { useQuery } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { getAdminDashboard } from '@/lib/admin.functions';
 
 const quickLinks = [
   { name: 'SameDay Courier', url: 'https://www.sameday.ro', color: '#F59E0B' },
@@ -114,6 +82,49 @@ function getGreeting(): { text: string; emoji: string; description: string; Icon
 }
 
 export default function Dashboard() {
+  const fetchDashboard = useServerFn(getAdminDashboard);
+  const { data: live } = useQuery({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: () => fetchDashboard(),
+    staleTime: 30_000,
+  });
+
+  const liveStats = live?.stats;
+  const stats = [
+    {
+      label: 'Comenzi Totale',
+      value: liveStats ? String(liveStats.ordersTotal) : '—',
+      change: liveStats ? `${liveStats.ordersCount30d} / 30z` : '',
+      trend: 'up' as const,
+      icon: ShoppingCart,
+      color: 'from-purple-500 to-purple-700',
+    },
+    {
+      label: 'Venituri 30z',
+      value: liveStats ? `${liveStats.revenue30d.toLocaleString('ro-RO')} RON` : '—',
+      change: 'Live',
+      trend: 'up' as const,
+      icon: TrendingUp,
+      color: 'from-amber-500 to-amber-700',
+    },
+    {
+      label: 'Produse Active',
+      value: liveStats ? `${liveStats.productsActive}` : '—',
+      change: liveStats ? `/ ${liveStats.productsTotal} total` : '',
+      trend: 'up' as const,
+      icon: Package,
+      color: 'from-emerald-500 to-emerald-700',
+    },
+    {
+      label: 'Comenzi Deschise',
+      value: liveStats ? String(liveStats.ordersOpen) : '—',
+      change: 'În procesare',
+      trend: 'up' as const,
+      icon: Truck,
+      color: 'from-cyan-500 to-cyan-700',
+    },
+  ];
+
   const recentOrders = orders.slice(0, 7);
   const [currentTime, setCurrentTime] = useState(getFormattedTime());
   const greeting = getGreeting();
