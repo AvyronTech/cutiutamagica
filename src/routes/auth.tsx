@@ -115,8 +115,10 @@ function AuthPage() {
             >
               ← Înapoi acasă
             </Link>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-violet-200/80 backdrop-blur">
-              <Sparkles className="h-3 w-3" /> Cutiuța Magică
+            <div className="mt-5 flex justify-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-violet-200/80 backdrop-blur">
+                <Sparkles className="h-3 w-3" /> Cutiuța Magică
+              </span>
             </div>
             <h1
               className="mt-4 text-4xl text-white"
