@@ -54,51 +54,18 @@ export function ConnectSection() {
 
   const contacts = [
     { name: "WhatsApp", href: waHref, Icon: MessageCircle, accent: "bg-[#25d366] text-white", external: true },
-    { name: PHONE_DISPLAY, href: `tel:${PHONE_TEL}`, Icon: Phone, accent: "bg-[color:var(--wood-dark)] text-[color:var(--cream)]", external: false },
+    { name: "Telefon", href: `tel:${PHONE_TEL}`, Icon: Phone, accent: "bg-[color:var(--wood-dark)] text-[color:var(--cream)]", external: false },
     { name: "Email", href: "mailto:contact@cutiutamagica.ro", Icon: Mail, accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]", external: false },
     { name: "Messenger", href: "https://m.me/61590919580877", Icon: MessageCircle, accent: "bg-[#0084ff] text-white", external: true },
   ];
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="connect-heading">
-      {/* B2B partnership strip — discreet, between reviews and socials */}
-      <a
-        href={b2bHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group flex items-center gap-3 mb-8 md:mb-10 max-w-2xl mx-auto rounded-full border border-[color:var(--gold)]/25 bg-[oklch(0.22_0.04_45)]/70 backdrop-blur-sm text-[color:var(--cream)] pl-3 pr-3 py-2 shadow-[0_10px_30px_-20px_oklch(0.55_0.18_55/0.5)] hover:border-[color:var(--gold)]/50 transition-colors"
-        aria-label="Discută parteneriat B2B pe WhatsApp"
-      >
-        <span
-          className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 border border-[color:var(--gold)]/30 bg-[oklch(0.18_0.03_40)]"
-        >
-          <Handshake className="w-3.5 h-3.5 text-[color:var(--gold)]" />
-        </span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-[9.5px] uppercase tracking-[0.22em] text-[color:var(--gold)]/85">
-            <Sparkles className="w-2.5 h-2.5" />
-            <span>Parteneriate B2B</span>
-          </div>
-          <p className="text-[12.5px] md:text-[13px] text-[color:var(--cream)]/85 leading-snug truncate">
-            Cadouri corporate & comenzi în volum — scrie-ne pe WhatsApp.
-          </p>
-        </div>
-        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#25d366]/95 text-white px-2.5 py-1 text-[11px] font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
-          <MessageCircle className="w-3 h-3" />
-          WhatsApp
-          <ArrowRight className="w-3 h-3" />
-        </span>
-        <ArrowRight className="sm:hidden w-4 h-4 text-[color:var(--gold)] shrink-0" />
-      </a>
-
-
       <div className="text-center mb-6">
-        <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[color:var(--gold)]">
-          <span className="h-px w-6 bg-[color:var(--gold)]/50" />
-          <span>Comunitatea noastră</span>
-          <span className="h-px w-6 bg-[color:var(--gold)]/50" />
-        </div>
-        <h2 id="connect-heading" className="font-display text-2xl md:text-3xl mt-2">Urmărește-ne</h2>
+        <h2 id="connect-heading" className="font-display text-2xl md:text-3xl">Urmărește-ne</h2>
+        <p className="mt-2 text-sm md:text-[15px] text-[color:var(--cream)]/75 max-w-xl mx-auto">
+          Lansări noi, culise din atelier și melodii rare — direct în feed-ul tău.
+        </p>
       </div>
 
       {/* Compact thematic social cards — name only */}
@@ -142,6 +109,9 @@ export function ConnectSection() {
 
       <div className="mt-12 text-center">
         <h3 className="font-display text-xl md:text-2xl">Contactează-ne</h3>
+        <p className="mt-2 text-sm md:text-[15px] text-[color:var(--cream)]/75 max-w-xl mx-auto">
+          Răspuns rapid pe canalul tău preferat — întrebări, personalizări sau o melodie aparte.
+        </p>
       </div>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2.5">
@@ -158,6 +128,34 @@ export function ConnectSection() {
           </a>
         ))}
       </div>
+
+      {/* B2B partnership strip — discreet, placed last just above the footer */}
+      <a
+        href={b2bHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-center gap-3 mt-12 max-w-2xl mx-auto rounded-full border border-[color:var(--gold)]/25 bg-[oklch(0.22_0.04_45)]/70 backdrop-blur-sm text-[color:var(--cream)] pl-3 pr-3 py-2 shadow-[0_10px_30px_-20px_oklch(0.55_0.18_55/0.5)] hover:border-[color:var(--gold)]/50 transition-colors"
+        aria-label="Discută parteneriat B2B pe WhatsApp"
+      >
+        <span className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 border border-[color:var(--gold)]/30 bg-[oklch(0.18_0.03_40)]">
+          <Handshake className="w-3.5 h-3.5 text-[color:var(--gold)]" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 text-[9.5px] uppercase tracking-[0.22em] text-[color:var(--gold)]/85">
+            <Sparkles className="w-2.5 h-2.5" />
+            <span>Parteneriate B2B</span>
+          </div>
+          <p className="text-[12.5px] md:text-[13px] text-[color:var(--cream)]/85 leading-snug truncate">
+            Cadouri corporate & comenzi în volum — scrie-ne pe WhatsApp.
+          </p>
+        </div>
+        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#25d366]/95 text-white px-2.5 py-1 text-[11px] font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
+          <MessageCircle className="w-3 h-3" />
+          WhatsApp
+          <ArrowRight className="w-3 h-3" />
+        </span>
+        <ArrowRight className="sm:hidden w-4 h-4 text-[color:var(--gold)] shrink-0" />
+      </a>
     </section>
   );
 }
