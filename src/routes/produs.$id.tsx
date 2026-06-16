@@ -5,7 +5,7 @@ import { Heart, ShoppingBag, Music, Truck, Gift, Sparkles, Minus, Plus } from "l
 import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
-import { BackButton } from "@/components/site/BackButton";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/produs/$id")({
@@ -83,9 +83,8 @@ function ProductPage() {
 
   return (
     <div>
-      <div className="max-w-7xl mx-auto px-4 pt-8">
-        <BackButton to="/produse" label="Înapoi la cutiuțe" />
-      </div>
+
+
 
 
       <div className="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
