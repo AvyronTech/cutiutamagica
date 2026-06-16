@@ -30,10 +30,15 @@ export function ProductCarouselSection({
     <section className="relative overflow-hidden">
       {bgImage ? (
         <>
-          <div
+          <img
+            src={bgImage}
+            alt=""
             aria-hidden
-            className="absolute inset-0 -z-10 bg-cover bg-center"
-            style={{ backgroundImage: `url(${bgImage})` }}
+            loading="lazy"
+            decoding="async"
+            width={1600}
+            height={1024}
+            className="absolute inset-0 -z-10 w-full h-full object-cover"
           />
           {/* Subtle vignette — keep edges of the background photo visible around the rotating card */}
           <div
