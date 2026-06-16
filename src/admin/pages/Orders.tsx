@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { getAdminOrders } from '@/lib/admin.functions';
 import {
   Search,
   Filter,
@@ -24,7 +27,7 @@ import {
   Copy,
   MessageSquare
 } from 'lucide-react';
-import { orders as allOrders, type Order, platformColors } from '@/admin/data/mockData';
+import { orders as mockOrders, type Order, platformColors } from '@/admin/data/mockData';
 
 const platforms = ['Toate', 'Cutiuța Magică', 'eMag', 'OLX', 'Vinted', 'Facebook', 'Instagram', 'TikTok'];
 const statuses = ['Toate', 'Nouă', 'Procesare', 'Expediată', 'Livrată', 'Returnată', 'Anulată'];
