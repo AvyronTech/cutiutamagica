@@ -3,7 +3,7 @@ import { Heart } from "lucide-react";
 import { products } from "@/data/products";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
-import { BackButton } from "@/components/site/BackButton";
+
 
 export const Route = createFileRoute("/favorite")({
   component: FavPage,
@@ -25,7 +25,7 @@ function FavPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-8 pb-14">
-      <div className="flex justify-start mb-6"><BackButton /></div>
+
       <div className="flex items-center gap-3">
         <Heart className="w-6 h-6 text-[color:var(--gold)] fill-current" />
         <h1 className="font-display text-5xl">Favoritele tale</h1>

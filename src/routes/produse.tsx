@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { products } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
-import { BackButton } from "@/components/site/BackButton";
+
 
 export const Route = createFileRoute("/produse")({
   component: ProductsPage,
@@ -26,9 +26,8 @@ function ProductsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10 text-center">
-      <div className="flex justify-start mb-6">
-        <BackButton />
-      </div>
+
+
 
       <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">Catalog</div>
       <h1 className="font-display text-4xl md:text-6xl mt-1">Cutiuțele originale rămase</h1>

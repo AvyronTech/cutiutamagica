@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BackButton } from "@/components/site/BackButton";
+
 import workshopBg from "@/assets/poveste-workshop.webp";
 import workshopBgSm from "@/assets/poveste-workshop-sm.webp";
 
@@ -64,9 +64,8 @@ function StoryPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-8 text-[color:var(--cream)]">
-        <div className="flex justify-start">
-          <BackButton />
-        </div>
+
+
 
         <article className="py-12 text-center">
           <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--gold)]">Despre noi</div>

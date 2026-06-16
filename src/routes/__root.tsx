@@ -104,10 +104,27 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
+  const showBack = isChrome && pathname !== "/";
+  const isProductPage = pathname.startsWith("/produs/");
   return (
     <QueryClientProvider client={queryClient}>
       <ShopProvider>
         {isChrome && <Header />}
+        {showBack && (
+          <div className="max-w-7xl mx-auto px-4 pt-4">
+            <Link
+              to={isProductPage ? "/produse" : "/"}
+              className="group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5 text-sm font-medium text-[color:var(--wood-dark)] bg-[color:var(--cream)]/55 backdrop-blur-md border border-[color:var(--gold)]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:bg-[color:var(--cream)]/85 hover:border-[color:var(--gold)] hover:-translate-y-0.5 transition-all"
+            >
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[color:var(--cream)] border border-[color:var(--gold)]/50 group-hover:-translate-x-0.5 transition-transform">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                  <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+                </svg>
+              </span>
+              {isProductPage ? "Înapoi la cutiuțe" : "Înapoi acasă"}
+            </Link>
+          </div>
+        )}
         <main className="min-h-[60vh]"><Outlet /></main>
         {isChrome && <Footer />}
         {isChrome && <SideScrollMagic />}
@@ -116,3 +133,4 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
+
