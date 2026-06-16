@@ -9,7 +9,7 @@ type Props = {
   eyebrow?: string;
 };
 
-export function RotatingSpotlight({ products, intervalMs = 4600, eyebrow = "Aleasă pentru tine" }: Props) {
+export function RotatingSpotlight({ products, intervalMs = 4600, eyebrow }: Props) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,11 +47,13 @@ export function RotatingSpotlight({ products, intervalMs = 4600, eyebrow = "Alea
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="flex items-center gap-3 mb-4 text-[color:var(--gold)]">
-        <span aria-hidden className="h-px w-8 bg-[color:var(--gold)]/60" />
-        <span className="text-[10px] md:text-[11px] uppercase tracking-[0.32em]">{eyebrow}</span>
-        <span aria-hidden className="h-px w-8 bg-[color:var(--gold)]/60" />
-      </div>
+      {eyebrow && (
+        <div className="flex items-center gap-3 mb-4 text-[color:var(--gold)]">
+          <span aria-hidden className="h-px w-8 bg-[color:var(--gold)]/60" />
+          <span className="text-[10px] md:text-[11px] uppercase tracking-[0.32em]">{eyebrow}</span>
+          <span aria-hidden className="h-px w-8 bg-[color:var(--gold)]/60" />
+        </div>
+      )}
 
       <div
         className="relative w-[min(92vw,320px)] sm:w-[340px]"

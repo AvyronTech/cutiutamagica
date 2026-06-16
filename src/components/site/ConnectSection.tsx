@@ -1,4 +1,4 @@
-import { Instagram, Facebook, Phone, Mail, MessageCircle, Sparkles, Handshake, ArrowRight } from "lucide-react";
+import { Instagram, Facebook, Phone, Mail, MessageCircle, Sparkles, Handshake, ArrowRight, Star, Music, Feather, Compass } from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
 import { PHONE_TEL, PHONE_DISPLAY, waLink, messageForPath, B2B_MESSAGE } from "@/lib/whatsapp";
 
