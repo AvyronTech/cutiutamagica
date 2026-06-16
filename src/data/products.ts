@@ -169,82 +169,8 @@ export const products: Product[] = [
     story: "Pisicuța luminoasă de pe capac creează imediat o stare blândă și jucăușă. Pentru pagina produsului am folosit doar fotografia originală și am pus accent pe zonele relevante: ilustrația, interiorul vizibil și forma cutiuței. Așa rămâne clar că vezi produsul real, nu o reinterpretare.",
     details: ["Capac ilustrat cu tematică delicată", "Cutie din lemn natur", "Melodie cu ton romantic și blând", "Transport 25 lei pentru 1 sau 2 bucăți"],
   },
-  {
-    id: "pernuta-auto",
-    name: "Pernuță auto pentru gât",
-    tagline: "Confort instant pentru drumuri lungi — disponibilă în 2 culori.",
-    category: "Obiecte unice",
-    image: pillowBlack,
-    gallery: [
-      { src: pillowBlack, label: "Negru", position: "center" },
-      { src: pillowBeige, label: "Bej", position: "center" },
-    ],
-    description: "Pernuță ergonomică pentru tetieră, cu material catifelat moale, perfect pentru drumurile zilnice sau călătoriile lungi. Sprijină gâtul în poziție naturală și reduce oboseala.",
-    story: "Disponibilă în două culori — negru clasic și bej delicat — se potrivește în orice interior auto. Aceeași pernuță, două variante pentru a se asorta cu mașina ta.",
-    details: ["Material catifelat premium", "Umplutură memory foam moale", "Curea elastică pentru tetieră", "2 variante de culoare disponibile"],
-    price: 49,
-  },
-  {
-    id: "set-termos",
-    name: "Set termos vacuum 500ml + 2 căni",
-    tagline: "Păstrează cald sau rece până la 12 ore — cadou perfect pentru pasionați.",
-    category: "Obiecte unice",
-    image: thermos1,
-    gallery: [
-      { src: thermos1, label: "Setul în cutia cadou", position: "center" },
-      { src: thermos2, label: "Componente detaliate", position: "center" },
-      { src: thermos3, label: "Hot & Cold 12h", position: "center" },
-    ],
-    description: "Set complet din oțel inoxidabil: termos de 500ml plus două căni asortate, livrat într-o cutie cadou elegantă. Izolație vacuum dublă care păstrează băuturile la temperatura ideală până la 12 ore.",
-    story: "Trei imagini ale aceluiași set: ambalajul cadou, vederea pe componente cu dimensiuni reale și demonstrația de izolație termică. Ideal pentru excursii, birou sau cafeaua de dimineață.",
-    details: ["Oțel inoxidabil 304", "500ml termos + 2 căni 160ml", "Păstrează cald 12h / rece 12h", "Ambalaj cadou inclus"],
-    price: 129,
-  },
-  {
-    id: "pieptene-barba",
-    name: "Pieptene barbă „The Men Times”",
-    tagline: "Accesoriu metalic premium pentru îngrijirea bărbii.",
-    category: "Obiecte unice",
-    image: comb1,
-    gallery: [
-      { src: comb1, label: "Detaliu mâner gravat", position: "center" },
-      { src: comb2, label: "În uz la barber shop", position: "center" },
-    ],
-    description: "Pieptene din oțel inoxidabil cu mâner sculptat în relief — un detaliu vintage pentru orice frizerie sau colecție personală. Dinți fini și groși pe aceeași față.",
-    story: "Două perspective ale aceluiași produs: detaliu macro pe mâner și demonstrație în context real, într-un salon de barber.",
-    details: ["Oțel inoxidabil rezistent", "Design vintage tip cameo", "Dinți dubli — fini și groși", "Mărime de buzunar"],
-    price: 39,
-  },
-  {
-    id: "suport-telefon",
-    name: "Suport telefon pliabil reglabil",
-    tagline: "Unghi reglabil pe 110° — compact, ușor de transportat.",
-    category: "Obiecte unice",
-    image: phonestand1,
-    gallery: [
-      { src: phonestand1, label: "În uz cu telefonul", position: "center" },
-      { src: phonestand2, label: "Mecanism reglare 110°", position: "center" },
-    ],
-    description: "Suport ultra-pliabil pentru telefon sau tabletă, cu sistem de reglare a unghiului pe 110°. Se pliază plat pentru transport în buzunar sau geantă.",
-    story: "Aceeași piesă în două ipostaze: în uz pe birou și schema mecanismului de reglare.",
-    details: ["Reglare unghi pe 110°", "Compatibil telefon și tabletă", "Plastic ABS rezistent", "Se pliază plat"],
-    price: 29,
-  },
-  {
-    id: "ceas-buzunar",
-    name: "Ceas de buzunar vintage bronz",
-    tagline: "Cifre romane, gravură ornamentală — un cadou cu suflet de epocă.",
-    category: "Obiecte unice",
-    image: pocketwatch1,
-    gallery: [
-      { src: pocketwatch1, label: "Vedere completă pe ziar", position: "center" },
-    ],
-    description: "Ceas de buzunar cu mecanism quartz, finisaj bronz patinat și capac gravat cu motive florale. Vine cu lanț metalic pentru atașare.",
-    story: "Un obiect care arată ca scos dintr-un sertar de bunic — perfect ca dar pentru pasionați de vintage, steampunk sau colecții.",
-    details: ["Mecanism quartz fiabil", "Cifre romane pe cadran", "Capac gravat ornamental", "Lanț metalic inclus"],
-    price: 59,
-  },
 ];
+
 
 export const getProduct = (id: string) => products.find((p) => p.id === id);
 
