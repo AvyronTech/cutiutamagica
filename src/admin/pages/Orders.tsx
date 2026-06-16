@@ -326,13 +326,26 @@ function AddOrderModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function Orders() {
-  const [orders, setOrders] = useState<Order[]>(allOrders);
+  const fetchOrders = useServerFn(getAdminOrders);
+  const { data: live } = useQuery({
+    queryKey: ['admin', 'orders'],
+    queryFn: () => fetchOrders(),
+    staleTime: 30_000,
+  });
+  const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('Toate');
   const [selectedStatus, setSelectedStatus] = useState('Toate');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showAddOrder, setShowAddOrder] = useState(false);
+
+  // Replace state with live DB data when available; fall back to mock for demo
+  useEffect(() => {
+    if (live?.orders && live.orders.length > 0) {
+      setOrders(live.orders as Order[]);
+    }
+  }, [live]);
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch = order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
