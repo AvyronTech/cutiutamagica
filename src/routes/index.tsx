@@ -40,9 +40,6 @@ export const Route = createFileRoute("/")({
 function Index() {
   const hero = products[0];
 
-  const povesteIds = ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"];
-  const emotieIds = ["fairy", "kitten", "hp-always", "lotr-rings"];
-  const dedicateIds = ["halloween", "fairy", "hp-keeper", "kitten"];
 
   const povesteSpotlight = ["hp-keeper", "lotr-rings", "starwars-dad"];
   const emotieSpotlight = ["fairy", "kitten", "hp-always"];
