@@ -40,9 +40,6 @@ export const Route = createFileRoute("/")({
 function Index() {
   const hero = products[0];
 
-  const povesteIds = ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"];
-  const emotieIds = ["fairy", "kitten", "hp-always", "lotr-rings"];
-  const dedicateIds = ["halloween", "fairy", "hp-keeper", "kitten"];
 
   const povesteSpotlight = ["hp-keeper", "lotr-rings", "starwars-dad"];
   const emotieSpotlight = ["fairy", "kitten", "hp-always"];
@@ -185,7 +182,6 @@ function Index() {
       <ProductCarouselSection
         title="Descoperă povestea"
         description="Cutiuțe inspirate din filmele și universurile care ne-au marcat copilăria."
-        products={byIds(povesteIds)}
         secondaryCta={{ label: "Vezi povestea", to: "/poveste" }}
         bgImage={bgPoveste}
         tone="cream"
@@ -195,7 +191,6 @@ function Index() {
       <ProductCarouselSection
         title="Trăiește emoția"
         description="Modele delicate, pentru momente romantice și cadouri din suflet."
-        products={byIds(emotieIds)}
         bgImage={bgEmotie}
         tone="cream"
         spotlight={<RotatingSpotlight products={byIds(emotieSpotlight)} eyebrow="Inima săptămânii" />}
@@ -204,7 +199,6 @@ function Index() {
       <ProductCarouselSection
         title="Descoperă Cutiuțe dedicate"
         description="Cutiuțe cu teme de Crăciun, Paște, religioase și alte ocazii speciale — pregătite pentru momente cu însemnătate."
-        products={byIds(dedicateIds)}
         bgImage={bgUnice}
         tone="cream"
         spotlight={<RotatingSpotlight products={byIds(dedicateSpotlight)} eyebrow="Tema momentului" />}

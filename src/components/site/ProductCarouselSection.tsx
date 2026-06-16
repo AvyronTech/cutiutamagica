@@ -1,16 +1,10 @@
-import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
-import AutoScroll from "embla-carousel-auto-scroll";
-import useEmblaCarousel from "embla-carousel-react";
-import { ProductCard } from "@/components/site/ProductCard";
-import type { Product } from "@/data/products";
+import { ArrowRight, Sparkles, BookOpen } from "lucide-react";
 
 type Props = {
   eyebrow?: string;
   title: string;
   description?: string;
-  products: Product[];
   ctaLabel?: string;
   ctaTo?: string;
   secondaryCta?: { label: string; to: string };
@@ -19,14 +13,10 @@ type Props = {
   spotlight?: React.ReactNode;
 };
 
-const arrowClasses =
-  "h-12 w-12 md:h-14 md:w-14 inline-flex items-center justify-center rounded-full bg-[color:var(--cream)]/90 backdrop-blur border-2 border-[color:var(--gold)]/60 text-[color:var(--wood-dark)] shadow-warm hover:bg-[color:var(--gold)] hover:text-[color:var(--wood-dark)] hover:scale-110 active:scale-95 transition-all";
-
 export function ProductCarouselSection({
   eyebrow,
   title,
   description,
-  products,
   ctaLabel = "Descoperă și alte obiecte magice",
   ctaTo = "/produse",
   secondaryCta,
@@ -35,31 +25,6 @@ export function ProductCarouselSection({
   spotlight,
 }: Props) {
   const isCream = tone === "cream";
-
-  const autoScroll = useRef(
-    AutoScroll({
-      speed: 0.55,
-      startDelay: 0,
-      stopOnInteraction: false,
-      stopOnMouseEnter: true,
-      stopOnFocusIn: true,
-      playOnInit: true,
-    }),
-  );
-
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    { align: "start", loop: true, dragFree: true, containScroll: false, watchDrag: true, duration: 35 },
-    [autoScroll.current],
-  );
-
-  const nudge = (dir: "prev" | "next") => {
-    if (!emblaApi) return;
-    const plugin = emblaApi.plugins().autoScroll as ReturnType<typeof AutoScroll> | undefined;
-    plugin?.stop();
-    if (dir === "prev") emblaApi.scrollPrev();
-    else emblaApi.scrollNext();
-    window.setTimeout(() => plugin?.play(), 1800);
-  };
 
   return (
     <section className="relative overflow-hidden">
@@ -70,7 +35,6 @@ export function ProductCarouselSection({
             className="absolute inset-0 -z-10 bg-cover bg-center"
             style={{ backgroundImage: `url(${bgImage})` }}
           />
-          {/* Heavier readable overlay */}
           <div
             aria-hidden
             className="absolute inset-0 -z-10"
@@ -80,7 +44,6 @@ export function ProductCarouselSection({
                 : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.6) 0%, oklch(0.95 0.03 75 / 0.4) 45%, oklch(0.95 0.03 75 / 0.75) 100%)",
             }}
           />
-          {/* Top + bottom vignette for crisp text */}
           <div
             aria-hidden
             className="absolute inset-x-0 top-0 h-40 -z-10"
@@ -122,50 +85,11 @@ export function ProductCarouselSection({
           )}
         </div>
 
-        <div className="relative px-2 md:px-16">
-          <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex -ml-3 md:-ml-5">
-              {products.map((p, i) => (
-                <div
-                  key={p.id}
-                  className="min-w-0 shrink-0 grow-0 pl-3 md:pl-5 basis-[82%] sm:basis-[60%] md:basis-[46%] lg:basis-[32%]"
-                >
-                  <ProductCard product={p} index={i} />
-                </div>
-              ))}
-            </div>
+        {spotlight && (
+          <div className="flex justify-center">
+            {spotlight}
           </div>
-
-          <button
-            type="button"
-            aria-label="Anterior"
-            onClick={() => nudge("prev")}
-            className={`hidden md:flex absolute top-1/2 -translate-y-1/2 -left-1 z-10 ${arrowClasses}`}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <button
-            type="button"
-            aria-label="Următor"
-            onClick={() => nudge("next")}
-            className={`hidden md:flex absolute top-1/2 -translate-y-1/2 -right-1 z-10 ${arrowClasses}`}
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          <div className="md:hidden mt-5 flex items-center justify-center gap-8">
-            <button type="button" aria-label="Anterior" onClick={() => nudge("prev")} className={arrowClasses}>
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button type="button" aria-label="Următor" onClick={() => nudge("next")} className={arrowClasses}>
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-
-        {spotlight}
-
-
+        )}
 
         <div className="mt-8 flex justify-center">
           <Link
