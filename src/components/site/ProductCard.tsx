@@ -62,11 +62,21 @@ export function ProductCard({
           }
         >
           <h3 className="font-display text-base leading-tight">{product.name}</h3>
-          <div className="mt-1.5 flex items-baseline justify-center gap-2">
+          {product.tagline && (
+            <p
+              className={`mt-1 text-[11.5px] md:text-xs leading-snug line-clamp-2 ${
+                isGlass ? "text-[color:var(--cream)]/85" : "text-foreground/70"
+              }`}
+            >
+              {product.tagline}
+            </p>
+          )}
+          <div className="mt-2 flex items-baseline justify-center gap-2">
             <span className={`font-display text-xl ${isGlass ? "text-[color:var(--gold)]" : ""}`}>
               {displayPrice} <span className={`text-xs ${isGlass ? "text-[color:var(--cream)]/90" : ""}`}>lei</span>
             </span>
           </div>
+
         </div>
       </Link>
       <div className="px-4 pb-4 mt-auto flex flex-col gap-2">

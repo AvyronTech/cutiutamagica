@@ -105,14 +105,21 @@
   }
   .animate-reviews-marquee {
     animation: reviews-marquee 48s linear infinite;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
   }
   .animate-reviews-marquee:hover { animation-play-state: paused; }
 }
 
 @keyframes reviews-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-reviews-marquee { animation: none; }
+}
+
 
 /* ===== Hide native scrollbar — SideScrollMagic is the only visual progress bar ===== */
 html, body {
