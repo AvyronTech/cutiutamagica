@@ -185,7 +185,6 @@ function Index() {
       <ProductCarouselSection
         title="Descoperă povestea"
         description="Cutiuțe inspirate din filmele și universurile care ne-au marcat copilăria."
-        products={byIds(povesteIds)}
         secondaryCta={{ label: "Vezi povestea", to: "/poveste" }}
         bgImage={bgPoveste}
         tone="cream"
