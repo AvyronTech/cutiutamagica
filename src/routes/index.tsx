@@ -6,6 +6,7 @@ import { ProductCarouselSection } from "@/components/site/ProductCarouselSection
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { ReviewsStrip } from "@/components/site/ReviewsStrip";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
+import { RotatingSpotlight } from "@/components/site/RotatingSpotlight";
 
 import bgPoveste from "@/assets/bg-poveste.jpg";
 import bgEmotie from "@/assets/bg-emotie.jpg";
@@ -41,7 +42,11 @@ function Index() {
 
   const povesteIds = ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"];
   const emotieIds = ["fairy", "kitten", "hp-always", "lotr-rings"];
-  const uniceIds = ["pernuta-auto", "set-termos", "pieptene-barba", "suport-telefon", "ceas-buzunar"];
+  const dedicateIds = ["halloween", "fairy", "hp-keeper", "kitten"];
+
+  const povesteSpotlight = ["hp-keeper", "lotr-rings", "starwars-dad"];
+  const emotieSpotlight = ["fairy", "kitten", "hp-always"];
+  const dedicateSpotlight = ["halloween", "hp-keeper", "fairy"];
 
   const byIds = (ids: string[]) => ids
     .map((id) => products.find((p) => p.id === id))
@@ -184,6 +189,7 @@ function Index() {
         secondaryCta={{ label: "Vezi povestea", to: "/poveste" }}
         bgImage={bgPoveste}
         tone="cream"
+        spotlight={<RotatingSpotlight products={byIds(povesteSpotlight)} eyebrow="Aleasă din poveste" />}
       />
 
       <ProductCarouselSection
@@ -192,14 +198,16 @@ function Index() {
         products={byIds(emotieIds)}
         bgImage={bgEmotie}
         tone="cream"
+        spotlight={<RotatingSpotlight products={byIds(emotieSpotlight)} eyebrow="Inima săptămânii" />}
       />
 
       <ProductCarouselSection
-        title="Descoperă alte obiecte unice"
-        description="Piese cu personalitate, perfecte pentru colecționari și cadouri memorabile."
-        products={byIds(uniceIds)}
+        title="Descoperă Cutiuțe dedicate"
+        description="Cutiuțe cu teme de Crăciun, Paște, religioase și alte ocazii speciale — pregătite pentru momente cu însemnătate."
+        products={byIds(dedicateIds)}
         bgImage={bgUnice}
         tone="cream"
+        spotlight={<RotatingSpotlight products={byIds(dedicateSpotlight)} eyebrow="Tema momentului" />}
       />
 
       <ReviewsStrip />
