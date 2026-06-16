@@ -75,7 +75,7 @@ export function ConnectSection() {
             <Star className="w-3.5 h-3.5" />
           </span>
         </div>
-        <p className="text-sm md:text-[15px] text-[color:var(--cream)]/90 max-w-xl mx-auto drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]">
+        <p className="inline-block text-sm md:text-[15px] text-[color:var(--cream)] max-w-xl mx-auto px-4 py-1.5 rounded-full bg-[oklch(0.18_0.03_40/0.55)] border border-[color:var(--gold)]/20 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
           Lansări noi, culise din atelier și melodii rare — direct în feed-ul tău.
         </p>
       </div>
@@ -133,7 +133,7 @@ export function ConnectSection() {
             <Feather className="w-3.5 h-3.5" />
           </span>
         </div>
-        <p className="text-sm md:text-[15px] text-[color:var(--cream)]/90 max-w-xl mx-auto drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]">
+        <p className="inline-block text-sm md:text-[15px] text-[color:var(--cream)] max-w-xl mx-auto px-4 py-1.5 rounded-full bg-[oklch(0.18_0.03_40/0.55)] border border-[color:var(--gold)]/20 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
           Răspuns rapid pe canalul tău preferat — întrebări, personalizări sau o melodie aparte.
         </p>
       </div>
