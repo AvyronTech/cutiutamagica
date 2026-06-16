@@ -194,7 +194,6 @@ function Index() {
       <ProductCarouselSection
         title="Trăiește emoția"
         description="Modele delicate, pentru momente romantice și cadouri din suflet."
-        products={byIds(emotieIds)}
         bgImage={bgEmotie}
         tone="cream"
         spotlight={<RotatingSpotlight products={byIds(emotieSpotlight)} eyebrow="Inima săptămânii" />}
@@ -203,7 +202,6 @@ function Index() {
       <ProductCarouselSection
         title="Descoperă Cutiuțe dedicate"
         description="Cutiuțe cu teme de Crăciun, Paște, religioase și alte ocazii speciale — pregătite pentru momente cu însemnătate."
-        products={byIds(dedicateIds)}
         bgImage={bgUnice}
         tone="cream"
         spotlight={<RotatingSpotlight products={byIds(dedicateSpotlight)} eyebrow="Tema momentului" />}
