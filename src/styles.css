@@ -109,6 +109,12 @@
     backface-visibility: hidden;
   }
   .animate-reviews-marquee:hover { animation-play-state: paused; }
+
+  .animate-header-sheen {
+    animation: header-sheen 7s ease-in-out infinite;
+    transform: translate3d(0, 0, 0);
+    will-change: transform, opacity;
+  }
 }
 
 @keyframes reviews-marquee {
@@ -116,8 +122,16 @@
   to { transform: translate3d(-50%, 0, 0); }
 }
 
+@keyframes header-sheen {
+  0%   { transform: translate3d(-20%, 0, 0); opacity: 0; }
+  35%  { opacity: 0.9; }
+  70%  { opacity: 0.9; }
+  100% { transform: translate3d(260%, 0, 0); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-reviews-marquee { animation: none; }
+  .animate-reviews-marquee,
+  .animate-header-sheen { animation: none; }
 }
 
 
