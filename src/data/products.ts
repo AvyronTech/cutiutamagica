@@ -6,16 +6,7 @@ import kitten from "@/assets/box-kitten.jpg";
 import lotrRing from "@/assets/box-lotr-ring.jpg";
 import pirates from "@/assets/box-pirates.jpg";
 import starwarsDad from "@/assets/box-starwars-dad.jpg";
-import pillowBlack from "@/assets/extras/pillow-black-1.jpg";
-import pillowBeige from "@/assets/extras/pillow-beige-2.jpg";
-import thermos1 from "@/assets/extras/thermos-1.jpg";
-import thermos2 from "@/assets/extras/thermos-2.jpg";
-import thermos3 from "@/assets/extras/thermos-3.jpg";
-import comb1 from "@/assets/extras/comb-1.jpg";
-import comb2 from "@/assets/extras/comb-2.jpg";
-import phonestand1 from "@/assets/extras/phonestand-1.jpg";
-import phonestand2 from "@/assets/extras/phonestand-2.jpg";
-import pocketwatch1 from "@/assets/extras/pocketwatch-1.jpg";
+
 
 export type ProductGalleryImage = {
   src: string;
