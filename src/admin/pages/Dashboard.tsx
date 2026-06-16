@@ -125,7 +125,9 @@ export default function Dashboard() {
     },
   ];
 
-  const recentOrders = orders.slice(0, 7);
+  const recentOrders = (live?.recentOrders && live.recentOrders.length > 0)
+    ? live.recentOrders
+    : orders.slice(0, 7);
   const [currentTime, setCurrentTime] = useState(getFormattedTime());
   const greeting = getGreeting();
 
