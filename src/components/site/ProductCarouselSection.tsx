@@ -30,17 +30,8 @@ export function ProductCarouselSection({
     <section className="relative overflow-hidden">
       {bgImage ? (
         <>
-          {/* Background image with soft edge mask — fades top & bottom so sections blend instead of cutting hard */}
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 overflow-hidden"
-            style={{
-              WebkitMaskImage:
-                "linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%)",
-              maskImage:
-                "linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%)",
-            }}
-          >
+          {/* Background image — clean, full-bleed */}
+          <div aria-hidden className="absolute inset-0 -z-20">
             <img
               src={bgImage}
               alt=""
@@ -53,38 +44,31 @@ export function ProductCarouselSection({
               style={{ transform: "translateZ(0)" }}
             />
           </div>
-          {/* Subtle vignette — keep edges of the background photo visible around the rotating card */}
+          {/* Subtle readability overlay — keeps text crisp without killing the photo */}
           <div
             aria-hidden
             className="absolute inset-0 -z-10"
             style={{
               background: isCream
-                ? "radial-gradient(60% 55% at 50% 55%, oklch(0.18 0.04 40 / 0.55) 0%, oklch(0.18 0.04 40 / 0.18) 55%, transparent 80%), linear-gradient(180deg, oklch(0.15 0.03 40 / 0.85) 0%, oklch(0.18 0.04 40 / 0.25) 14%, transparent 30%, transparent 70%, oklch(0.18 0.04 40 / 0.35) 86%, oklch(0.15 0.03 40 / 0.85) 100%)"
-                : "linear-gradient(180deg, oklch(0.15 0.03 40 / 0.7) 0%, oklch(0.95 0.03 75 / 0.3) 14%, oklch(0.95 0.03 75 / 0.2) 50%, oklch(0.95 0.03 75 / 0.45) 86%, oklch(0.15 0.03 40 / 0.7) 100%)",
+                ? "linear-gradient(180deg, oklch(0.15 0.03 40 / 0.55) 0%, oklch(0.18 0.04 40 / 0.35) 30%, oklch(0.18 0.04 40 / 0.35) 70%, oklch(0.15 0.03 40 / 0.55) 100%)"
+                : "linear-gradient(180deg, oklch(0.92 0.03 75 / 0.25) 0%, oklch(0.95 0.03 75 / 0.15) 40%, oklch(0.95 0.03 75 / 0.15) 60%, oklch(0.92 0.03 75 / 0.3) 100%)",
             }}
           />
-          {/* Extra blur halos at top & bottom — makes the transition between adjacent section backgrounds feel like a soft blur fade */}
+          {/* Whisper-thin edge feather — 24px soft blur only at the very top/bottom seams */}
           <div
             aria-hidden
-            className="absolute inset-x-0 top-0 h-24 -z-10 backdrop-blur-md"
+            className="absolute inset-x-0 top-0 h-6 -z-10"
             style={{
-              WebkitMaskImage: "linear-gradient(180deg, #000, transparent)",
-              maskImage: "linear-gradient(180deg, #000, transparent)",
+              background: "linear-gradient(180deg, oklch(0.15 0.03 40 / 0.35), transparent)",
             }}
           />
           <div
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-24 -z-10 backdrop-blur-md"
+            className="absolute inset-x-0 bottom-0 h-6 -z-10"
             style={{
-              WebkitMaskImage: "linear-gradient(0deg, #000, transparent)",
-              maskImage: "linear-gradient(0deg, #000, transparent)",
+              background: "linear-gradient(0deg, oklch(0.15 0.03 40 / 0.35), transparent)",
             }}
           />
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 opacity-[0.05] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]"
-          />
-
         </>
       ) : (
         <>
@@ -92,6 +76,7 @@ export function ProductCarouselSection({
           <div aria-hidden className="absolute inset-0 -z-10 opacity-[0.07] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]" />
         </>
       )}
+
 
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-9">
         <div className="text-center mb-5 md:mb-7">
