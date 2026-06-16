@@ -193,7 +193,7 @@ function Index() {
         description="Modele delicate, pentru momente romantice și cadouri din suflet."
         bgImage={bgEmotie}
         tone="cream"
-        spotlight={<RotatingSpotlight products={byIds(emotieSpotlight)} eyebrow="Inima săptămânii" />}
+        spotlight={<RotatingSpotlight products={byIds(emotieSpotlight)} />}
       />
 
       <ProductCarouselSection
@@ -201,7 +201,7 @@ function Index() {
         description="Cutiuțe cu teme de Crăciun, Paște, religioase și alte ocazii speciale — pregătite pentru momente cu însemnătate."
         bgImage={bgUnice}
         tone="cream"
-        spotlight={<RotatingSpotlight products={byIds(dedicateSpotlight)} eyebrow="Tema momentului" />}
+        spotlight={<RotatingSpotlight products={byIds(dedicateSpotlight)} />}
       />
 
       <ReviewsStrip />
