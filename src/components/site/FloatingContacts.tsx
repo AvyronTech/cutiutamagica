@@ -8,7 +8,7 @@ export function FloatingContacts() {
 
   const items = [
     {
-      label: "Sună-ne",
+      label: "Telefon",
       href: `tel:${PHONE_TEL}`,
       Icon: Phone,
       bg: "linear-gradient(135deg, oklch(0.65 0.16 145), oklch(0.5 0.14 150))",
