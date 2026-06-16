@@ -41,7 +41,7 @@ export function ReviewsStrip() {
         className="relative overflow-hidden mask-fade reviews-marquee"
         aria-label="Recenzii care se derulează"
       >
-        <div className="reviews-marquee-track flex gap-3 py-1 will-change-transform">
+        <div className="animate-reviews-marquee flex gap-3 py-1 w-max will-change-transform">
           {loop.map((r, i) => (
             <article
               key={i}
