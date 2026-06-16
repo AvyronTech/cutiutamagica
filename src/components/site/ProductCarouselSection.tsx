@@ -16,6 +16,7 @@ type Props = {
   secondaryCta?: { label: string; to: string };
   bgImage?: string;
   tone?: "warm" | "cream";
+  spotlight?: React.ReactNode;
 };
 
 const arrowClasses =
@@ -31,6 +32,7 @@ export function ProductCarouselSection({
   secondaryCta,
   bgImage,
   tone = "warm",
+  spotlight,
 }: Props) {
   const isCream = tone === "cream";
 
@@ -160,6 +162,10 @@ export function ProductCarouselSection({
             </button>
           </div>
         </div>
+
+        {spotlight}
+
+
 
         <div className="mt-8 flex justify-center">
           <Link
