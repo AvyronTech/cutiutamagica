@@ -35,24 +35,26 @@ export function ProductCarouselSection({
             className="absolute inset-0 -z-10 bg-cover bg-center"
             style={{ backgroundImage: `url(${bgImage})` }}
           />
+          {/* Subtle vignette — keep edges of the background photo visible around the rotating card */}
           <div
             aria-hidden
             className="absolute inset-0 -z-10"
             style={{
               background: isCream
-                ? "linear-gradient(180deg, oklch(0.18 0.04 40 / 0.86) 0%, oklch(0.18 0.04 40 / 0.62) 45%, oklch(0.18 0.04 40 / 0.88) 100%)"
-                : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.6) 0%, oklch(0.95 0.03 75 / 0.4) 45%, oklch(0.95 0.03 75 / 0.75) 100%)",
+                ? "radial-gradient(60% 55% at 50% 55%, oklch(0.18 0.04 40 / 0.55) 0%, oklch(0.18 0.04 40 / 0.18) 55%, transparent 80%), linear-gradient(180deg, oklch(0.18 0.04 40 / 0.35) 0%, transparent 18%, transparent 82%, oklch(0.18 0.04 40 / 0.55) 100%)"
+                : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.55) 0%, oklch(0.95 0.03 75 / 0.3) 45%, oklch(0.95 0.03 75 / 0.65) 100%)",
             }}
           />
           <div
             aria-hidden
-            className="absolute inset-x-0 top-0 h-40 -z-10"
-            style={{ background: "linear-gradient(180deg, oklch(0.15 0.03 40 / 0.55), transparent)" }}
+            className="absolute inset-x-0 top-0 h-32 -z-10"
+            style={{ background: "linear-gradient(180deg, oklch(0.15 0.03 40 / 0.45), transparent)" }}
           />
           <div
             aria-hidden
-            className="absolute inset-0 -z-10 opacity-[0.07] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]"
+            className="absolute inset-0 -z-10 opacity-[0.05] mix-blend-overlay bg-[repeating-linear-gradient(115deg,transparent_0_22px,oklch(0.3_0.05_40)_22px_23px)]"
           />
+
         </>
       ) : (
         <>
