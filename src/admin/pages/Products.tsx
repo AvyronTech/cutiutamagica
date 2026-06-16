@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { getAdminProducts } from '@/lib/admin.functions';
 import {
   Search,
   Plus,
@@ -48,6 +51,12 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function Products() {
+  const fetchProducts = useServerFn(getAdminProducts);
+  const { data: live } = useQuery({
+    queryKey: ['admin', 'products'],
+    queryFn: () => fetchProducts(),
+    staleTime: 30_000,
+  });
   const [products, setProducts] = useState<Product[]>(realProducts);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('toate');
@@ -56,6 +65,13 @@ export default function Products() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [showBulkPromo, setShowBulkPromo] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
+
+  useEffect(() => {
+    if (live?.products && live.products.length > 0) {
+      // Merge: preserve sales/stock/rating mock fields if present
+      setProducts(live.products as Product[]);
+    }
+  }, [live]);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

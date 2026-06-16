@@ -125,7 +125,9 @@ export default function Dashboard() {
     },
   ];
 
-  const recentOrders = orders.slice(0, 7);
+  const recentOrders = (live?.recentOrders && live.recentOrders.length > 0)
+    ? live.recentOrders
+    : orders.slice(0, 7);
   const [currentTime, setCurrentTime] = useState(getFormattedTime());
   const greeting = getGreeting();
 
@@ -197,7 +199,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2 md:gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-[#1E293B] flex items-center justify-center flex-shrink-0">
                     <span className="text-[10px] font-bold text-purple-300">
-                      {order.customer.split(' ').map(n => n[0]).join('')}
+                      {order.customer.split(' ').map((n: string) => n[0]).join('')}
                     </span>
                   </div>
                   <div className="min-w-0">
