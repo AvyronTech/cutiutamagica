@@ -30,30 +30,55 @@ export function ProductCarouselSection({
     <section className="relative overflow-hidden">
       {bgImage ? (
         <>
-          <img
-            src={bgImage}
-            alt=""
+          {/* Background image with soft edge mask — fades top & bottom so sections blend instead of cutting hard */}
+          <div
             aria-hidden
-            loading="lazy"
-            decoding="async"
-            width={1600}
-            height={1024}
-            className="absolute inset-0 -z-10 w-full h-full object-cover"
-          />
+            className="absolute inset-0 -z-10 overflow-hidden"
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%)",
+              maskImage:
+                "linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%)",
+            }}
+          >
+            <img
+              src={bgImage}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              decoding="async"
+              width={1600}
+              height={1024}
+              className="w-full h-full object-cover"
+              style={{ transform: "translateZ(0)" }}
+            />
+          </div>
           {/* Subtle vignette — keep edges of the background photo visible around the rotating card */}
           <div
             aria-hidden
             className="absolute inset-0 -z-10"
             style={{
               background: isCream
-                ? "radial-gradient(60% 55% at 50% 55%, oklch(0.18 0.04 40 / 0.55) 0%, oklch(0.18 0.04 40 / 0.18) 55%, transparent 80%), linear-gradient(180deg, oklch(0.18 0.04 40 / 0.35) 0%, transparent 18%, transparent 82%, oklch(0.18 0.04 40 / 0.55) 100%)"
-                : "linear-gradient(180deg, oklch(0.95 0.03 75 / 0.55) 0%, oklch(0.95 0.03 75 / 0.3) 45%, oklch(0.95 0.03 75 / 0.65) 100%)",
+                ? "radial-gradient(60% 55% at 50% 55%, oklch(0.18 0.04 40 / 0.55) 0%, oklch(0.18 0.04 40 / 0.18) 55%, transparent 80%), linear-gradient(180deg, oklch(0.15 0.03 40 / 0.85) 0%, oklch(0.18 0.04 40 / 0.25) 14%, transparent 30%, transparent 70%, oklch(0.18 0.04 40 / 0.35) 86%, oklch(0.15 0.03 40 / 0.85) 100%)"
+                : "linear-gradient(180deg, oklch(0.15 0.03 40 / 0.7) 0%, oklch(0.95 0.03 75 / 0.3) 14%, oklch(0.95 0.03 75 / 0.2) 50%, oklch(0.95 0.03 75 / 0.45) 86%, oklch(0.15 0.03 40 / 0.7) 100%)",
+            }}
+          />
+          {/* Extra blur halos at top & bottom — makes the transition between adjacent section backgrounds feel like a soft blur fade */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-24 -z-10 backdrop-blur-md"
+            style={{
+              WebkitMaskImage: "linear-gradient(180deg, #000, transparent)",
+              maskImage: "linear-gradient(180deg, #000, transparent)",
             }}
           />
           <div
             aria-hidden
-            className="absolute inset-x-0 top-0 h-32 -z-10"
-            style={{ background: "linear-gradient(180deg, oklch(0.15 0.03 40 / 0.45), transparent)" }}
+            className="absolute inset-x-0 bottom-0 h-24 -z-10 backdrop-blur-md"
+            style={{
+              WebkitMaskImage: "linear-gradient(0deg, #000, transparent)",
+              maskImage: "linear-gradient(0deg, #000, transparent)",
+            }}
           />
           <div
             aria-hidden
