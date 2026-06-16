@@ -61,53 +61,36 @@ export function ConnectSection() {
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="connect-heading">
-      {/* B2B partnership strip — sits between reviews and socials */}
+      {/* B2B partnership strip — discreet, between reviews and socials */}
       <a
         href={b2bHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="group block mb-10 md:mb-12 relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/30 bg-[oklch(0.22_0.04_45)] text-[color:var(--cream)] shadow-[0_20px_60px_-30px_oklch(0.55_0.18_55/0.6)]"
+        className="group flex items-center gap-3 mb-8 md:mb-10 max-w-2xl mx-auto rounded-full border border-[color:var(--gold)]/25 bg-[oklch(0.22_0.04_45)]/70 backdrop-blur-sm text-[color:var(--cream)] pl-3 pr-3 py-2 shadow-[0_10px_30px_-20px_oklch(0.55_0.18_55/0.5)] hover:border-[color:var(--gold)]/50 transition-colors"
         aria-label="Discută parteneriat B2B pe WhatsApp"
       >
         <span
-          aria-hidden
-          className="absolute inset-0 opacity-90 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(60% 120% at 0% 0%, oklch(0.55 0.16 55 / 0.35) 0%, transparent 55%), radial-gradient(50% 120% at 100% 100%, oklch(0.45 0.14 30 / 0.35) 0%, transparent 60%)",
-          }}
-        />
-        <span
-          aria-hidden
-          className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl opacity-50 pointer-events-none"
-          style={{ background: "oklch(0.78 0.18 65 / 0.6)" }}
-        />
-        <div className="relative flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 px-5 md:px-8 py-5 md:py-6">
-          <span
-            className="flex items-center justify-center w-12 h-12 rounded-xl shrink-0 border border-[color:var(--gold)]/40"
-            style={{ background: "linear-gradient(135deg, oklch(0.78 0.16 70), oklch(0.55 0.16 45))" }}
-          >
-            <Handshake className="w-6 h-6 text-[color:var(--wood-dark)]" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[color:var(--gold)]/90">
-              <Sparkles className="w-3 h-3" />
-              <span>Parteneriate B2B</span>
-            </div>
-            <h3 className="font-display text-xl md:text-2xl leading-tight mt-1">
-              Cadouri corporate, comenzi în volum & personalizări
-            </h3>
-            <p className="text-sm md:text-[15px] text-[color:var(--cream)]/80 mt-1.5 max-w-2xl">
-              Lucrăm cu branduri, agenții și magazine pentru cadouri memorabile cu poveste. Hai să discutăm direct pe WhatsApp — îți răspundem în câteva minute.
-            </p>
+          className="flex items-center justify-center w-7 h-7 rounded-full shrink-0 border border-[color:var(--gold)]/30 bg-[oklch(0.18_0.03_40)]"
+        >
+          <Handshake className="w-3.5 h-3.5 text-[color:var(--gold)]" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 text-[9.5px] uppercase tracking-[0.22em] text-[color:var(--gold)]/85">
+            <Sparkles className="w-2.5 h-2.5" />
+            <span>Parteneriate B2B</span>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#25d366] text-white px-4 py-2 text-sm font-medium shadow-soft transition-transform group-hover:translate-x-0.5 shrink-0">
-            <MessageCircle className="w-4 h-4" />
-            Discută pe WhatsApp
-            <ArrowRight className="w-4 h-4" />
-          </span>
+          <p className="text-[12.5px] md:text-[13px] text-[color:var(--cream)]/85 leading-snug truncate">
+            Cadouri corporate & comenzi în volum — scrie-ne pe WhatsApp.
+          </p>
         </div>
+        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#25d366]/95 text-white px-2.5 py-1 text-[11px] font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
+          <MessageCircle className="w-3 h-3" />
+          WhatsApp
+          <ArrowRight className="w-3 h-3" />
+        </span>
+        <ArrowRight className="sm:hidden w-4 h-4 text-[color:var(--gold)] shrink-0" />
       </a>
+
 
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[color:var(--gold)]">
