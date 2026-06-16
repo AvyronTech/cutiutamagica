@@ -1,54 +1,106 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ShoppingBag } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useShop } from "@/store/shop";
 import { ScrollFuse } from "./ScrollFuse";
 import { BrandMark } from "./BrandMark";
 
 export function Header() {
   const { totalQty, favorites } = useShop();
-  const [scrolled, setScrolled] = useState(false);
+  // 0 → 1 progres condensare, smoothed cu rAF pentru fluiditate maximă
+  const [p, setP] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const targetRef = useRef(0);
+  const currentRef = useRef(0);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const MAX = 160; // px de scroll până la condensare completă
+    const tick = () => {
+      const diff = targetRef.current - currentRef.current;
+      // easing exponențial — animație fluidă, fără jank
+      currentRef.current += diff * 0.18;
+      if (Math.abs(diff) < 0.001) {
+        currentRef.current = targetRef.current;
+        setP(currentRef.current);
+        rafRef.current = null;
+        return;
+      }
+      setP(currentRef.current);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    const onScroll = () => {
+      targetRef.current = Math.min(1, Math.max(0, window.scrollY / MAX));
+      if (rafRef.current == null) rafRef.current = requestAnimationFrame(tick);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
+  const scrolled = p > 0.35;
+  // valori interpolate fluid
+  const blur = 10 + p * 16; // 10 → 26
+  const sat = 130 + p * 50; // 130 → 180
+  const bgA = 0.45 + p * 0.3; // opacitate fundal cald
+  const bgB = 0.32 + p * 0.28;
+  const shadow = 0.12 + p * 0.45;
+  const borderA = 0.15 + p * 0.35;
+  const padY = 12 - p * 6; // 12 → 6 px
+  const logoSize = 56 - p * 16; // 56 → 40 px (mobile baseline)
+  const titleSize = 20 + (1 - p) * 4; // 20 → 24 (md va prelua)
+
   return (
-    <header className="sticky top-0 z-40">
+    <header className="sticky top-0 z-40 will-change-transform">
       {/* Fitilul magic deasupra */}
       <ScrollFuse />
 
-      {/* Fundal liquid glass cald, condensare la scroll */}
+      {/* Fundal liquid glass cald — interpolare fluidă pe scroll */}
       <div
-        className={`relative transition-[backdrop-filter,background,box-shadow,border-color] duration-500 ease-out border-b ${
-          scrolled
-            ? "border-[color:var(--gold)]/35 shadow-[0_18px_40px_-28px_oklch(0.45_0.1_45/0.55)]"
-            : "border-[color:var(--gold)]/15"
-        }`}
+        className="relative border-b"
         style={{
-          backdropFilter: scrolled ? "blur(22px) saturate(170%)" : "blur(10px) saturate(130%)",
+          backdropFilter: `blur(${blur}px) saturate(${sat}%)`,
+          borderColor: `oklch(0.78 0.13 70 / ${borderA})`,
+          boxShadow: `0 ${10 + p * 18}px ${24 + p * 24}px -${22 - p * 4}px oklch(0.45 0.1 45 / ${shadow})`,
+          transition: "border-color 200ms ease-out",
         }}
       >
+        {/* Strat 1 — cremă caldă, opacitate care creste cu scrollul */}
         <div
           aria-hidden
-          className={`absolute inset-0 -z-10 transition-opacity duration-500 ${scrolled ? "opacity-100" : "opacity-80"}`}
+          className="absolute inset-0 -z-10"
           style={{
-            background:
-              "linear-gradient(180deg, oklch(0.96 0.03 75 / 0.55), oklch(0.9 0.045 65 / 0.45))",
+            background: `linear-gradient(180deg, oklch(0.96 0.03 75 / ${bgA}), oklch(0.9 0.045 65 / ${bgB}))`,
           }}
         />
+        {/* Strat 2 — aurore aurii laterale */}
         <div
           aria-hidden
-          className={`absolute inset-0 -z-10 pointer-events-none transition-opacity duration-500 ${scrolled ? "opacity-90" : "opacity-60"}`}
+          className="absolute inset-0 -z-10 pointer-events-none"
           style={{
+            opacity: 0.55 + p * 0.4,
             background:
               "radial-gradient(60% 120% at 15% -10%, oklch(0.92 0.09 80 / 0.5), transparent 60%), radial-gradient(50% 120% at 85% 110%, oklch(0.78 0.1 50 / 0.32), transparent 60%)",
           }}
         />
-        {/* Specular sheen — liquid glass highlight */}
+        {/* Strat 3 — specular sheen animat, liquid glass premium */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 pointer-events-none overflow-hidden"
+          style={{ opacity: 0.35 + p * 0.5 }}
+        >
+          <div
+            className="absolute -inset-y-4 -left-1/3 w-2/3 animate-header-sheen"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 30%, oklch(0.99 0.04 95 / 0.55) 50%, transparent 70%)",
+              filter: "blur(8px)",
+            }}
+          />
+        </div>
+        {/* Highlight + lowlight 1px — buza de cristal */}
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 h-px -z-10"
@@ -57,19 +109,17 @@ export function Header() {
         <div
           aria-hidden
           className="absolute inset-x-0 bottom-0 h-px -z-10"
-          style={{ background: "linear-gradient(90deg, transparent, oklch(0.6 0.08 50 / 0.4), transparent)" }}
+          style={{ background: `linear-gradient(90deg, transparent, oklch(0.6 0.08 50 / ${0.3 + p * 0.4}), transparent)` }}
         />
 
         <div
-          className={`max-w-7xl mx-auto flex items-center justify-between px-4 transition-[padding] duration-500 ease-out ${
-            scrolled ? "py-1.5 md:py-2" : "py-3"
-          }`}
+          className="max-w-7xl mx-auto flex items-center justify-between px-4"
+          style={{ paddingTop: `${padY}px`, paddingBottom: `${padY}px` }}
         >
           <Link to="/" className="flex items-center gap-3 group">
             <span
-              className={`relative flex items-center justify-center transition-all duration-500 ease-out group-hover:-rotate-3 group-hover:scale-105 ${
-                scrolled ? "w-10 h-10 md:w-12 md:h-12" : "w-14 h-14 md:w-16 md:h-16"
-              }`}
+              className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-rotate-3 group-hover:scale-105"
+              style={{ width: `${logoSize}px`, height: `${logoSize}px` }}
             >
               <span
                 aria-hidden
@@ -80,16 +130,18 @@ export function Header() {
             </span>
             <div className="leading-tight">
               <div
-                className={`font-display tracking-tight text-[color:var(--wood-dark)] transition-[font-size] duration-500 ${
-                  scrolled ? "text-lg md:text-xl" : "text-xl md:text-2xl"
-                }`}
+                className="font-display tracking-tight text-[color:var(--wood-dark)]"
+                style={{ fontSize: `${titleSize}px` }}
               >
                 Cutiuța <span className="gold-text italic">Magică</span>
               </div>
               <div
-                className={`uppercase tracking-[0.2em] text-[color:var(--wood-dark)]/65 transition-all duration-500 overflow-hidden ${
-                  scrolled ? "max-h-0 opacity-0" : "max-h-4 opacity-100 text-[10px]"
-                }`}
+                className="uppercase tracking-[0.2em] text-[color:var(--wood-dark)]/65 overflow-hidden transition-all duration-500"
+                style={{
+                  maxHeight: scrolled ? 0 : 16,
+                  opacity: scrolled ? 0 : 1,
+                  fontSize: 10,
+                }}
               >
                 piesă originală · mecanism durabil
               </div>
