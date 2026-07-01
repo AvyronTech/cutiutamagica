@@ -2,6 +2,14 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Self-hosted fonts — elimină lanțul de blocare fonts.googleapis.com + fonts.gstatic.com */
+@import "@fontsource/cormorant-garamond/400.css";
+@import "@fontsource/cormorant-garamond/500.css";
+@import "@fontsource/cormorant-garamond/600.css";
+@import "@fontsource/cormorant-garamond/700.css";
+@import "@fontsource/cormorant-garamond/400-italic.css";
+@import "@fontsource-variable/inter";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -33,7 +41,7 @@
   --color-wood: var(--wood);
   --color-cream: var(--cream);
   --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
 }
 
 :root {

@@ -51,6 +51,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Cutiuța Magică — Cutiuțe muzicale din lemn" },
       { name: "description", content: "Cutiuțe muzicale din lemn cu mecanism manual durabil și melodii din universuri îndrăgite. Cadou perfect, livrare în toată România." },
       { name: "keywords", content: "cutiuta muzicala, cutiute muzicale lemn, harry potter, game of thrones, lord of the rings, cadou handmade, music box romania" },
+      { name: "google-site-verification", content: "qIm8mkNBA6rC0vDEbBupl5-0tB_p1GpgJnylo2aKYKo" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Cutiuța Magică" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -59,9 +60,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" },
     ],
     scripts: [
       {
