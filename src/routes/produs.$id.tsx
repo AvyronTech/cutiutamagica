@@ -17,16 +17,22 @@ export const Route = createFileRoute("/produs/$id")({
   },
   head: ({ loaderData, params }) => {
     if (!loaderData) return {};
-    const url = `https://cutiutamagica.lovable.app/produs/${params.id}`;
+    const url = `https://cutiutamagica.eu/produs/${params.id}`;
+    const image = loaderData.product.image.startsWith("http")
+      ? loaderData.product.image
+      : `https://cutiutamagica.eu${loaderData.product.image}`;
     return {
       meta: [
         { title: `${loaderData.product.name} — Cutiuța Magică` },
         { name: "description", content: loaderData.product.description },
         { property: "og:title", content: loaderData.product.name },
         { property: "og:description", content: loaderData.product.description },
-        { property: "og:image", content: loaderData.product.image },
+        { property: "og:image", content: image },
+        { name: "twitter:image", content: image },
         { property: "og:url", content: url },
         { property: "og:type", content: "product" },
+        { property: "product:price:amount", content: "119" },
+        { property: "product:price:currency", content: "RON" },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
@@ -36,16 +42,35 @@ export const Route = createFileRoute("/produs/$id")({
             "@context": "https://schema.org",
             "@type": "Product",
             name: loaderData.product.name,
-            image: loaderData.product.image,
+            image: [image],
             description: loaderData.product.description,
             category: loaderData.product.category,
+            brand: { "@type": "Brand", name: "Cutiuța Magică" },
             offers: {
               "@type": "Offer",
-              price: "89",
+              price: "119",
               priceCurrency: "RON",
               availability: "https://schema.org/InStock",
               url,
+              priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
+              shippingDetails: {
+                "@type": "OfferShippingDetails",
+                shippingRate: { "@type": "MonetaryAmount", value: "25", currency: "RON" },
+                shippingDestination: { "@type": "DefinedRegion", addressCountry: "RO" },
+              },
             },
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Acasă", item: "https://cutiutamagica.eu/" },
+              { "@type": "ListItem", position: 2, name: "Produse", item: "https://cutiutamagica.eu/produse" },
+              { "@type": "ListItem", position: 3, name: loaderData.product.name, item: url },
+            ],
           }),
         },
       ],
