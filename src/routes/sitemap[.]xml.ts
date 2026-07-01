@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { products } from "@/data/products";
 
-const BASE_URL = "https://cutiutamagica.lovable.app";
+const BASE_URL = "https://cutiutamagica.eu";
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const today = new Date().toISOString().slice(0, 10);
         const paths = [
           { path: "/", priority: "1.0", changefreq: "weekly" },
           { path: "/produse", priority: "0.9", changefreq: "weekly" },
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const urls = paths
           .map(
             (e) =>
-              `  <url>\n    <loc>${BASE_URL}${e.path}</loc>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`,
+              `  <url>\n    <loc>${BASE_URL}${e.path}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`,
           )
           .join("\n");
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;

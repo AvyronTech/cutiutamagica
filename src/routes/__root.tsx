@@ -60,6 +60,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "canonical", href: "https://cutiutamagica.eu/" },
     ],
     scripts: [
       {
@@ -68,8 +69,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@context": "https://schema.org",
           "@type": "Organization",
           name: "Cutiuța Magică",
-          url: "https://cutiutamagica.lovable.app",
+          url: "https://cutiutamagica.eu",
+          logo: "https://cutiutamagica.eu/favicon.ico",
           description: "Cutiuțe muzicale din lemn cu mecanism manual durabil, gravate cu pasiune în România.",
+          address: { "@type": "PostalAddress", addressCountry: "RO" },
+          contactPoint: {
+            "@type": "ContactPoint",
+            telephone: "+40734605742",
+            contactType: "customer service",
+            availableLanguage: ["Romanian", "English"],
+            areaServed: ["RO", "BG", "HU"],
+          },
+          sameAs: [
+            "https://www.facebook.com/profile.php?id=61590919580877",
+            "https://www.instagram.com/cutiutamagicaofficial/",
+            "https://www.tiktok.com/@cutiua.magic",
+          ],
         }),
       },
       {
@@ -78,7 +93,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "Cutiuța Magică",
-          url: "https://cutiutamagica.lovable.app",
+          url: "https://cutiutamagica.eu",
+          inLanguage: "ro-RO",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://cutiutamagica.eu/produse?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
         }),
       },
     ],
