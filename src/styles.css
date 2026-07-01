@@ -41,7 +41,7 @@
   --color-wood: var(--wood);
   --color-cream: var(--cream);
   --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
 }
 
 :root {
