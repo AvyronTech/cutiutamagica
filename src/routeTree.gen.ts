@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as PovesteRouteImport } from './routes/poveste'
+import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
 import { Route as FavoriteRouteImport } from './routes/favorite'
 import { Route as ComandaRouteImport } from './routes/comanda'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -43,6 +44,12 @@ const PovesteRoute = PovesteRouteImport.update({
   path: '/poveste',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GhidCadouriPersonalizateRoute =
+  GhidCadouriPersonalizateRouteImport.update({
+    id: '/ghid-cadouri-personalizate',
+    path: '/ghid-cadouri-personalizate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const FavoriteRoute = FavoriteRouteImport.update({
   id: '/favorite',
   path: '/favorite',
@@ -130,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
+  '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -149,6 +157,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
+  '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -169,6 +178,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
+  '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comanda'
     | '/favorite'
+    | '/ghid-cadouri-personalizate'
     | '/poveste'
     | '/produse'
     | '/sitemap.xml'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comanda'
     | '/favorite'
+    | '/ghid-cadouri-personalizate'
     | '/poveste'
     | '/produse'
     | '/sitemap.xml'
@@ -228,6 +240,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/comanda'
     | '/favorite'
+    | '/ghid-cadouri-personalizate'
     | '/poveste'
     | '/produse'
     | '/sitemap.xml'
@@ -249,6 +262,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ComandaRoute: typeof ComandaRoute
   FavoriteRoute: typeof FavoriteRoute
+  GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
   PovesteRoute: typeof PovesteRoute
   ProduseRoute: typeof ProduseRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -276,6 +290,13 @@ declare module '@tanstack/react-router' {
       path: '/poveste'
       fullPath: '/poveste'
       preLoaderRoute: typeof PovesteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ghid-cadouri-personalizate': {
+      id: '/ghid-cadouri-personalizate'
+      path: '/ghid-cadouri-personalizate'
+      fullPath: '/ghid-cadouri-personalizate'
+      preLoaderRoute: typeof GhidCadouriPersonalizateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorite': {
@@ -431,6 +452,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ComandaRoute: ComandaRoute,
   FavoriteRoute: FavoriteRoute,
+  GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
   PovesteRoute: PovesteRoute,
   ProduseRoute: ProduseRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

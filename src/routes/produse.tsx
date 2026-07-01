@@ -12,9 +12,9 @@ export const Route = createFileRoute("/produse")({
       { name: "description", content: "Catalog cu fotografii reale pentru cutiuțe muzicale din lemn. 119 lei bucata, 150 lei la 2, 75 lei/buc de la 3." },
       { property: "og:title", content: "Catalogul Cutiuța Magică — cutiuțe muzicale din lemn" },
       { property: "og:description", content: "Catalog cu fotografii reale pentru cutiuțele muzicale, gata de dăruit." },
-      { property: "og:url", content: "https://cutiutamagica.lovable.app/produse" },
+      { property: "og:url", content: "https://cutiutamagica.eu/produse" },
     ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/produse" }],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/produse" }],
   }),
 });
 
