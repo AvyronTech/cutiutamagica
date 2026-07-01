@@ -11,6 +11,7 @@ export const Route = createFileRoute("/favorite")({
     meta: [
       { title: "Favorite — Cutiuța Magică" },
       { name: "description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
+      { name: "robots", content: "noindex" },
       { property: "og:title", content: "Favorite — Cutiuța Magică" },
       { property: "og:description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
       { property: "og:url", content: "https://cutiutamagica.eu/favorite" },

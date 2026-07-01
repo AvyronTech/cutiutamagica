@@ -56,4 +56,7 @@ function AdminGate() {
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminGate,
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
 });
