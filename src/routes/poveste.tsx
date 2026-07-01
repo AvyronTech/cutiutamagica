@@ -11,11 +11,11 @@ export const Route = createFileRoute("/poveste")({
       { name: "description", content: "Cum au prins viață cutiuțele muzicale Cutiuța Magică: lemn, laser, melodii și multă răbdare." },
       { property: "og:title", content: "Povestea Cutiuței Magice" },
       { property: "og:description", content: "Cum au prins viață cutiuțele muzicale: lemn, laser, melodii și multă răbdare." },
-      { property: "og:url", content: "https://cutiutamagica.lovable.app/poveste" },
+      { property: "og:url", content: "https://cutiutamagica.eu/poveste" },
       { property: "og:image", content: workshopBg },
     ],
     links: [
-      { rel: "canonical", href: "https://cutiutamagica.lovable.app/poveste" },
+      { rel: "canonical", href: "https://cutiutamagica.eu/poveste" },
       // Preload the LCP background — responsive: small file on phones, full image on desktop.
       {
         rel: "preload",

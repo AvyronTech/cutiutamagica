@@ -13,9 +13,9 @@ export const Route = createFileRoute("/favorite")({
       { name: "description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
       { property: "og:title", content: "Favorite — Cutiuța Magică" },
       { property: "og:description", content: "Cutiuțele tale preferate, salvate pentru mai târziu." },
-      { property: "og:url", content: "https://cutiutamagica.lovable.app/favorite" },
+      { property: "og:url", content: "https://cutiutamagica.eu/favorite" },
     ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.lovable.app/favorite" }],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/favorite" }],
   }),
 });
 
