@@ -1,18 +1,40 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, Music, Sparkles, Gift, Palette, Clock } from "lucide-react";
+import { Gift, Heart, Music, Search, Settings2 } from "lucide-react";
 
 const URL = "https://cutiutamagica.eu/ghid-cadouri-personalizate";
-const TITLE = "Ghid: cum alegi o cutie muzicală personalizată — cadou unic 2026";
+const TITLE = "Ghid cadou: cum alegi o cutiuță muzicală cu manivelă";
 const DESC =
-  "Ghid complet pentru alegerea unei cutii muzicale personalizate: melodii, teme (Harry Potter, LOTR, GoT), gravură și ocazii. Cadou emoționant, handmade din lemn.";
+  "Află cum alegi o cutiuță muzicală cadou după melodie, temă și ocazie. Ghid pentru modele din lemn cu manivelă și mecanism mecanic manual.";
+
+const faq = [
+  {
+    question: "Cum funcționează o cutiuță muzicală cu manivelă?",
+    answer:
+      "Manivela acționează mecanic mecanismul muzical. Nu sunt necesare baterii, iar ritmul depinde de viteza cu care este rotită manivela.",
+  },
+  {
+    question: "Cum aleg melodia potrivită pentru cadou?",
+    answer:
+      "Pornește de la filmul, povestea sau amintirea preferată a persoanei. Pe fiecare pagină de produs sunt afișate tema și melodia modelului.",
+  },
+  {
+    question: "Există cutiuțe muzicale Harry Potter sau LOTR?",
+    answer:
+      "Catalogul include modele tematice asociate universurilor Harry Potter și Stăpânul Inelelor. Fotografia și melodia fiecărui model pot fi verificate înainte de comandă.",
+  },
+  {
+    question: "Cât costă o cutiuță muzicală?",
+    answer:
+      "Prețul curent este afișat pe pagina fiecărui produs și în coș. Verifică sumarul comenzii înainte de trimitere, inclusiv eventualele reduceri de cantitate.",
+  },
+];
 
 export const Route = createFileRoute("/ghid-cadouri-personalizate")({
   component: GuidePage,
   head: () => ({
     meta: [
-      { title: TITLE },
+      { title: `${TITLE} | Cutiuța Magică` },
       { name: "description", content: DESC },
-      { name: "keywords", content: "cutie muzicala personalizata, cadou personalizat, cutiuta muzicala harry potter, cadou aniversare, cadou handmade" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:url", content: URL },
@@ -29,11 +51,14 @@ export const Route = createFileRoute("/ghid-cadouri-personalizate")({
           headline: TITLE,
           description: DESC,
           author: { "@type": "Organization", name: "Cutiuța Magică" },
-          publisher: { "@type": "Organization", name: "Cutiuța Magică", url: "https://cutiutamagica.eu" },
+          publisher: {
+            "@type": "Organization",
+            name: "Cutiuța Magică",
+            url: "https://cutiutamagica.eu",
+          },
           mainEntityOfPage: URL,
           inLanguage: "ro-RO",
-          datePublished: "2026-07-01",
-          dateModified: new Date().toISOString().slice(0, 10),
+          dateModified: "2026-09-05",
         }),
       },
       {
@@ -41,40 +66,11 @@ export const Route = createFileRoute("/ghid-cadouri-personalizate")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          mainEntity: [
-            {
-              "@type": "Question",
-              name: "Cât costă o cutie muzicală personalizată?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "Prețul de bază pentru o cutie muzicală personalizată Cutiuța Magică este de 119 lei, cu livrare prin easybox (12,99 lei) sau curier la domiciliu (25 lei). Comenzile peste 250 lei beneficiază de transport gratuit.",
-              },
-            },
-            {
-              "@type": "Question",
-              name: "Ce melodii pot alege pentru cutia muzicală?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "Oferim melodii din universuri iconice: Harry Potter (Hedwig's Theme), Lord of the Rings, Game of Thrones, Pirații din Caraibe, dar și piese clasice pentru copii, nunți sau aniversări.",
-              },
-            },
-            {
-              "@type": "Question",
-              name: "Cutia muzicală are baterii?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "Nu. Mecanismul este 100% manual, cu manivelă — durabil, silențios, fără piese electronice care se pot strica. O cutie autentică rezistă zeci de ani.",
-              },
-            },
-            {
-              "@type": "Question",
-              name: "Cât durează livrarea?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "24–48 de ore în toată România. Poți programa livrarea pentru o anumită zi dacă o vrei cadou de aniversare sau eveniment.",
-              },
-            },
-          ],
+          mainEntity: faq.map((item) => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: { "@type": "Answer", text: item.answer },
+          })),
         }),
       },
     ],
@@ -84,89 +80,106 @@ export const Route = createFileRoute("/ghid-cadouri-personalizate")({
 function GuidePage() {
   return (
     <main className="min-h-screen bg-background pb-24">
-      <article className="mx-auto max-w-3xl px-4 pt-24 md:pt-28">
+      <article className="mx-auto max-w-3xl px-4 pt-20 md:pt-24">
         <p className="text-xs uppercase tracking-[0.3em] text-primary/80">Ghid Cutiuța Magică</p>
-        <h1 className="mt-3 font-display text-4xl md:text-5xl leading-tight text-foreground">
-          Cum alegi o cutie muzicală personalizată — cadoul care rămâne o viață
+        <h1 className="mt-3 font-display text-4xl leading-tight text-foreground md:text-5xl">
+          Cum alegi o cutiuță muzicală cadou
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          O cutie muzicală personalizată nu este un obiect. Este un moment încremenit — melodia
-          preferată, tema unui univers îndrăgit, o gravură care spune „te-am ținut minte". Iată
-          cum alegi cutiuța potrivită pentru persoana potrivită.
+        <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+          O cutiuță muzicală poate lega un obiect mic de o melodie, un film sau o amintire comună.
+          Alegerea bună pornește de la persoana care primește cadoul, nu doar de la modelul care
+          arată cel mai spectaculos.
         </p>
 
         <section className="mt-10 space-y-4">
-          <h2 className="font-display text-2xl text-foreground flex items-center gap-2">
-            <Music className="h-5 w-5 text-primary" /> 1. Alege melodia (contează mai mult decât crezi)
+          <h2 className="flex items-center gap-2 font-display text-2xl text-foreground">
+            <Music className="h-5 w-5 text-primary" /> 1. Pornește de la melodie
           </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Melodia este sufletul cutiei. Pentru un fan Harry Potter, Hedwig's Theme declanșează
-            instantaneu nostalgia primului roman. Pentru cineva romantic, Concerning Hobbits sau
-            River Flows in You transformă orice după-amiază într-o scenă de film. Cutiuța Magică
-            oferă zeci de melodii din universurile Harry Potter, Lord of the Rings, Game of Thrones
-            și Pirații din Caraibe — plus piese clasice pentru copii, nunți și aniversări.
+          <p className="leading-relaxed text-muted-foreground">
+            Melodia este partea pe care destinatarul o va recunoaște de fiecare dată când rotește
+            manivela. Pentru un fan al poveștilor fantasy poți alege o cutiuță muzicală Harry Potter
+            sau un model cu piesă asociată universului LOTR. Pentru un cadou romantic ori delicat,
+            caută o melodie cu o semnificație personală.
           </p>
         </section>
 
         <section className="mt-10 space-y-4">
-          <h2 className="font-display text-2xl text-foreground flex items-center gap-2">
-            <Palette className="h-5 w-5 text-primary" /> 2. Alege tema care spune ceva
+          <h2 className="flex items-center gap-2 font-display text-2xl text-foreground">
+            <Gift className="h-5 w-5 text-primary" /> 2. Potrivește tema cu ocazia
           </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Fiecare cutiuță este gravată cu simboluri autentice: Deathly Hallows, One Ring, House
-            Stark, compasul piraților. Pentru cineva care își așteaptă încă scrisoarea de la
-            Hogwarts, „I'm a Keeper" este cadoul care spune totul fără cuvinte. Pentru fanii LOTR,
-            „One Ring to Rule Them All" este ritualul deschis la fiecare aniversare.
-          </p>
-        </section>
-
-        <section className="mt-10 space-y-4">
-          <h2 className="font-display text-2xl text-foreground flex items-center gap-2">
-            <Gift className="h-5 w-5 text-primary" /> 3. Potrivește-o ocaziei
-          </h2>
-          <ul className="text-muted-foreground leading-relaxed space-y-2 list-disc pl-5">
-            <li><strong className="text-foreground">Aniversare</strong> — melodia din anul copilăriei sau tema serialului preferat.</li>
-            <li><strong className="text-foreground">Nuntă / aniversare de căsătorie</strong> — prima melodie dansată împreună.</li>
-            <li><strong className="text-foreground">Cadou pentru copil</strong> — teme din poveștile lui preferate.</li>
-            <li><strong className="text-foreground">Cadou corporate B2B</strong> — pachete personalizate pentru evenimente, edituri, cafenele tematice.</li>
+          <ul className="list-disc space-y-2 pl-5 leading-relaxed text-muted-foreground">
+            <li>
+              <strong className="text-foreground">Aniversare:</strong> tema filmului, serialului sau
+              personajului preferat.
+            </li>
+            <li>
+              <strong className="text-foreground">Cadou pentru partener:</strong> o melodie asociată
+              unei amintiri comune.
+            </li>
+            <li>
+              <strong className="text-foreground">Crăciun:</strong> un obiect mic, ușor de așezat
+              într-un pachet cadou.
+            </li>
+            <li>
+              <strong className="text-foreground">Cadou pentru tata:</strong> un mesaj dedicat și o
+              temă pe care o recunoaște.
+            </li>
+            <li>
+              <strong className="text-foreground">Halloween:</strong> un model sezonier, cu
+              ilustrație și melodie tematică.
+            </li>
           </ul>
         </section>
 
         <section className="mt-10 space-y-4">
-          <h2 className="font-display text-2xl text-foreground flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" /> 4. De ce personalizată bate „gata de raft"
+          <h2 className="flex items-center gap-2 font-display text-2xl text-foreground">
+            <Settings2 className="h-5 w-5 text-primary" /> 3. Înțelege mecanismul clasic
           </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Un cadou de la magazin se uită într-o săptămână. O cutie muzicală personalizată devine
-            obiectul care stă pe biroul cuiva zece ani. Lemnul se încălzește la atingere, mecanismul
-            manual cere un gest — întorci manivela, aștepți nota. Este ritual, nu consum.
+          <p className="leading-relaxed text-muted-foreground">
+            Modelele din catalog sunt cutiuțe muzicale cu manivelă. Mecanismul este acționat manual,
+            fără baterii: rotești manivela și controlezi ritmul. Acest gest simplu este partea
+            interactivă a cadoului și îl diferențiază de o boxă sau de un obiect decorativ obișnuit.
           </p>
         </section>
 
         <section className="mt-10 space-y-4">
-          <h2 className="font-display text-2xl text-foreground flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" /> 5. Livrare rapidă, personalizare fină
+          <h2 className="flex items-center gap-2 font-display text-2xl text-foreground">
+            <Search className="h-5 w-5 text-primary" /> 4. Verifică produsul înainte de comandă
           </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Comanzi azi, primești în 24–48h prin easybox sau curier. Pentru cadouri programate
-            (aniversare, Crăciun, Valentine's), poți alege data exactă la checkout. Peste 250 lei
-            transportul este gratuit.
+          <p className="leading-relaxed text-muted-foreground">
+            Compară fotografia, denumirea melodiei, materialul și detaliile mecanismului. O pagină
+            de produs trebuie să te ajute să înțelegi ce primești, nu să înlocuiască produsul real
+            cu o reprezentare generică. Dacă un detaliu comercial nu este clar, confirmă-l înainte
+            de trimiterea comenzii.
           </p>
         </section>
 
-        <div className="mt-14 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-background p-8 text-center">
+        <section className="mt-12 rounded-lg border border-border bg-card p-6">
+          <h2 className="font-display text-2xl text-foreground">Întrebări frecvente</h2>
+          <div className="mt-5 space-y-5">
+            {faq.map((item) => (
+              <div key={item.question}>
+                <h3 className="font-medium text-foreground">{item.question}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="mt-14 rounded-lg border border-primary/20 bg-primary/5 p-8 text-center">
           <Heart className="mx-auto h-8 w-8 text-primary" />
-          <h3 className="mt-3 font-display text-2xl text-foreground">
-            Gata să alegi cutiuța ta?
-          </h3>
+          <h2 className="mt-3 font-display text-2xl text-foreground">
+            Alege după persoană și melodie
+          </h2>
           <p className="mt-2 text-muted-foreground">
-            Explorează catalogul — fiecare cutiuță are melodia și tema descrisă în detaliu.
+            Catalogul poate fi filtrat și căutat după temă, melodie sau tipul de cadou.
           </p>
           <Link
             to="/produse"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground font-medium shadow-lg hover:shadow-xl transition-shadow"
+            search={{ q: "cadou" }}
+            className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground"
           >
-            Vezi toate cutiuțele
+            Vezi cutiuțele cadou
           </Link>
         </div>
       </article>

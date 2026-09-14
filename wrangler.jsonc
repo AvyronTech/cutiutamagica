@@ -1,7 +1,139 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
-  "compatibility_date": "2025-09-24",
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cutiuta-magica-local",
+  "compatibility_date": "2026-09-14",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+  "vars": {
+    "APP_ENV": "local",
+    "PUBLIC_SITE_URL": "http://localhost:3000",
+    "ADMIN_AUTH_MODE": "development",
+    "DEV_ADMIN_EMAIL": "cutiutamagica@gmail.com",
+    "CF_ACCESS_TEAM_DOMAIN": "",
+    "CF_ACCESS_AUD": "",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cutiuta-magica-local",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "preview_database_id": "cutiuta-magica-local",
+      "migrations_dir": "cloudflare/d1/migrations",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "00000000000000000000000000000001",
+      "preview_id": "cutiuta-magica-local",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "cutiuta-magica-media-local",
+      "preview_bucket_name": "cutiuta-magica-media-local",
+    },
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "COMMERCE_EVENTS",
+        "queue": "cutiuta-magica-commerce-local",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "cutiuta-magica-commerce-local",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "retry_delay": 30,
+        "dead_letter_queue": "cutiuta-magica-commerce-local-dlq",
+      },
+    ],
+  },
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS",
+      "dataset": "cutiuta_magica_local",
+    },
+  ],
+  "env": {
+    "production": {
+      "name": "cutiuta-magica-store",
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "cutiutamagica.eu",
+          "custom_domain": true,
+        },
+        {
+          "pattern": "www.cutiutamagica.eu",
+          "custom_domain": true,
+        },
+      ],
+      "vars": {
+        "APP_ENV": "production",
+        "PUBLIC_SITE_URL": "https://cutiutamagica.eu",
+        "ADMIN_AUTH_MODE": "cloudflare-access",
+        "DEV_ADMIN_EMAIL": "",
+        "CF_ACCESS_TEAM_DOMAIN": "cutiuta-magica.cloudflareaccess.com",
+        "CF_ACCESS_AUD": "8a1277e5b8bfa8edc6659beb88365316536dea6fc3863fb8780ce57273d1564c",
+      },
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 0.1,
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cutiutamagica-db",
+          "database_id": "878ccd18-1dc3-4797-9ba8-16f274f61c09",
+          "migrations_dir": "cloudflare/d1/migrations",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "CACHE",
+          "id": "4b47446eaddb4bff9dd4f374afd72fb5",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "MEDIA",
+          "bucket_name": "cutiutamagica",
+        },
+      ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "COMMERCE_EVENTS",
+            "queue": "cutiutamagica-commerce",
+          },
+        ],
+        "consumers": [
+          {
+            "queue": "cutiutamagica-commerce",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "retry_delay": 30,
+            "dead_letter_queue": "cutiutamagica-commerce-dlq",
+          },
+        ],
+      },
+      "analytics_engine_datasets": [
+        {
+          "binding": "ANALYTICS",
+          "dataset": "cutiuta_magica_production",
+        },
+      ],
+    },
+  },
 }

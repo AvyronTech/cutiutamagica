@@ -9,39 +9,58 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ProduseRouteImport } from './routes/produse'
-import { Route as PovesteRouteImport } from './routes/poveste'
-import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
-import { Route as FavoriteRouteImport } from './routes/favorite'
-import { Route as ComandaRouteImport } from './routes/comanda'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProdusIdRouteImport } from './routes/produs.$id'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ComandaRouteImport } from './routes/comanda'
+import { Route as FavoriteRouteImport } from './routes/favorite'
+import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
+import { Route as PovesteRouteImport } from './routes/poveste'
+import { Route as ProduseRouteImport } from './routes/produse'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
+import { Route as ProdusIdRouteImport } from './routes/produs.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
-import { Route as AuthenticatedAdminStatisticsRouteImport } from './routes/_authenticated/admin/statistics'
-import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
-import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_authenticated/admin/qr-generator'
-import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin/products'
-import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin/orders'
-import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin/integrations'
+import { Route as AuthenticatedAdminAiRouteImport } from './routes/_authenticated/admin/ai'
+import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin/billing'
+import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as AuthenticatedAdminFinanciarRouteImport } from './routes/_authenticated/admin/financiar'
+import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin/integrations'
+import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authenticated/admin/inventory'
+import { Route as AuthenticatedAdminNewsletterRouteImport } from './routes/_authenticated/admin/newsletter'
+import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin/notifications'
+import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin/orders'
+import { Route as AuthenticatedAdminPlatformsRouteImport } from './routes/_authenticated/admin/platforms'
+import { Route as AuthenticatedAdminPostsRouteImport } from './routes/_authenticated/admin/posts'
+import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin/products'
+import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_authenticated/admin/qr-generator'
+import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
+import { Route as AuthenticatedAdminShippingRouteImport } from './routes/_authenticated/admin/shipping'
+import { Route as AuthenticatedAdminStatisticsRouteImport } from './routes/_authenticated/admin/statistics'
+import { Route as AuthenticatedAdminProductsIdRouteImport } from './routes/_authenticated/admin/products.$id'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProduseRoute = ProduseRouteImport.update({
-  id: '/produse',
-  path: '/produse',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PovesteRoute = PovesteRouteImport.update({
-  id: '/poveste',
-  path: '/poveste',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComandaRoute = ComandaRouteImport.update({
+  id: '/comanda',
+  path: '/comanda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoriteRoute = FavoriteRouteImport.update({
+  id: '/favorite',
+  path: '/favorite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GhidCadouriPersonalizateRoute =
@@ -50,33 +69,19 @@ const GhidCadouriPersonalizateRoute =
     path: '/ghid-cadouri-personalizate',
     getParentRoute: () => rootRouteImport,
   } as any)
-const FavoriteRoute = FavoriteRouteImport.update({
-  id: '/favorite',
-  path: '/favorite',
+const PovesteRoute = PovesteRouteImport.update({
+  id: '/poveste',
+  path: '/poveste',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ComandaRoute = ComandaRouteImport.update({
-  id: '/comanda',
-  path: '/comanda',
+const ProduseRoute = ProduseRouteImport.update({
+  id: '/produse',
+  path: '/produse',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProdusIdRoute = ProdusIdRouteImport.update({
-  id: '/produs/$id',
-  path: '/produs/$id',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -84,39 +89,37 @@ const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ProdusIdRoute = ProdusIdRouteImport.update({
+  id: '/produs/$id',
+  path: '/produs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
-const AuthenticatedAdminStatisticsRoute =
-  AuthenticatedAdminStatisticsRouteImport.update({
-    id: '/statistics',
-    path: '/statistics',
+const AuthenticatedAdminAiRoute = AuthenticatedAdminAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
+const AuthenticatedAdminBillingRoute =
+  AuthenticatedAdminBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
-const AuthenticatedAdminSettingsRoute =
-  AuthenticatedAdminSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
+const AuthenticatedAdminCustomersRoute =
+  AuthenticatedAdminCustomersRouteImport.update({
+    id: '/customers',
+    path: '/customers',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
-const AuthenticatedAdminQrGeneratorRoute =
-  AuthenticatedAdminQrGeneratorRouteImport.update({
-    id: '/qr-generator',
-    path: '/qr-generator',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminProductsRoute =
-  AuthenticatedAdminProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminOrdersRoute =
-  AuthenticatedAdminOrdersRouteImport.update({
-    id: '/orders',
-    path: '/orders',
+const AuthenticatedAdminFinanciarRoute =
+  AuthenticatedAdminFinanciarRouteImport.update({
+    id: '/financiar',
+    path: '/financiar',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminIntegrationsRoute =
@@ -125,11 +128,76 @@ const AuthenticatedAdminIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
-const AuthenticatedAdminFinanciarRoute =
-  AuthenticatedAdminFinanciarRouteImport.update({
-    id: '/financiar',
-    path: '/financiar',
+const AuthenticatedAdminInventoryRoute =
+  AuthenticatedAdminInventoryRouteImport.update({
+    id: '/inventory',
+    path: '/inventory',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminNewsletterRoute =
+  AuthenticatedAdminNewsletterRouteImport.update({
+    id: '/newsletter',
+    path: '/newsletter',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminNotificationsRoute =
+  AuthenticatedAdminNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminOrdersRoute =
+  AuthenticatedAdminOrdersRouteImport.update({
+    id: '/orders',
+    path: '/orders',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminPlatformsRoute =
+  AuthenticatedAdminPlatformsRouteImport.update({
+    id: '/platforms',
+    path: '/platforms',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminPostsRoute = AuthenticatedAdminPostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
+const AuthenticatedAdminProductsRoute =
+  AuthenticatedAdminProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminQrGeneratorRoute =
+  AuthenticatedAdminQrGeneratorRouteImport.update({
+    id: '/qr-generator',
+    path: '/qr-generator',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminShippingRoute =
+  AuthenticatedAdminShippingRouteImport.update({
+    id: '/shipping',
+    path: '/shipping',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminStatisticsRoute =
+  AuthenticatedAdminStatisticsRouteImport.update({
+    id: '/statistics',
+    path: '/statistics',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminProductsIdRoute =
+  AuthenticatedAdminProductsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAdminProductsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -143,14 +211,24 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
+  '/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
+  '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
-  '/admin/products': typeof AuthenticatedAdminProductsRoute
+  '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
+  '/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -162,14 +240,24 @@ export interface FileRoutesByTo {
   '/produse': typeof ProduseRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produs/$id': typeof ProdusIdRoute
+  '/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
+  '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
-  '/admin/products': typeof AuthenticatedAdminProductsRoute
+  '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
+  '/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -184,14 +272,24 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
+  '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
+  '/_authenticated/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/_authenticated/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
-  '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRoute
+  '/_authenticated/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
+  '/_authenticated/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/_authenticated/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/_authenticated/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -206,14 +304,24 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/produs/$id'
+    | '/admin/ai'
+    | '/admin/billing'
+    | '/admin/customers'
     | '/admin/financiar'
     | '/admin/integrations'
+    | '/admin/inventory'
+    | '/admin/newsletter'
+    | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/platforms'
+    | '/admin/posts'
     | '/admin/products'
     | '/admin/qr-generator'
     | '/admin/settings'
+    | '/admin/shipping'
     | '/admin/statistics'
     | '/admin/'
+    | '/admin/products/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -225,14 +333,24 @@ export interface FileRouteTypes {
     | '/produse'
     | '/sitemap.xml'
     | '/produs/$id'
+    | '/admin/ai'
+    | '/admin/billing'
+    | '/admin/customers'
     | '/admin/financiar'
     | '/admin/integrations'
+    | '/admin/inventory'
+    | '/admin/newsletter'
+    | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/platforms'
+    | '/admin/posts'
     | '/admin/products'
     | '/admin/qr-generator'
     | '/admin/settings'
+    | '/admin/shipping'
     | '/admin/statistics'
     | '/admin'
+    | '/admin/products/$id'
   id:
     | '__root__'
     | '/'
@@ -246,14 +364,24 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/produs/$id'
+    | '/_authenticated/admin/ai'
+    | '/_authenticated/admin/billing'
+    | '/_authenticated/admin/customers'
     | '/_authenticated/admin/financiar'
     | '/_authenticated/admin/integrations'
+    | '/_authenticated/admin/inventory'
+    | '/_authenticated/admin/newsletter'
+    | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/orders'
+    | '/_authenticated/admin/platforms'
+    | '/_authenticated/admin/posts'
     | '/_authenticated/admin/products'
     | '/_authenticated/admin/qr-generator'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/shipping'
     | '/_authenticated/admin/statistics'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/products/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -271,53 +399,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/produse': {
-      id: '/produse'
-      path: '/produse'
-      fullPath: '/produse'
-      preLoaderRoute: typeof ProduseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/poveste': {
-      id: '/poveste'
-      path: '/poveste'
-      fullPath: '/poveste'
-      preLoaderRoute: typeof PovesteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ghid-cadouri-personalizate': {
-      id: '/ghid-cadouri-personalizate'
-      path: '/ghid-cadouri-personalizate'
-      fullPath: '/ghid-cadouri-personalizate'
-      preLoaderRoute: typeof GhidCadouriPersonalizateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/favorite': {
-      id: '/favorite'
-      path: '/favorite'
-      fullPath: '/favorite'
-      preLoaderRoute: typeof FavoriteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/comanda': {
-      id: '/comanda'
-      path: '/comanda'
-      fullPath: '/comanda'
-      preLoaderRoute: typeof ComandaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -327,18 +413,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/produs/$id': {
-      id: '/produs/$id'
-      path: '/produs/$id'
-      fullPath: '/produs/$id'
-      preLoaderRoute: typeof ProdusIdRouteImport
+    '/comanda': {
+      id: '/comanda'
+      path: '/comanda'
+      fullPath: '/comanda'
+      preLoaderRoute: typeof ComandaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorite': {
+      id: '/favorite'
+      path: '/favorite'
+      fullPath: '/favorite'
+      preLoaderRoute: typeof FavoriteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ghid-cadouri-personalizate': {
+      id: '/ghid-cadouri-personalizate'
+      path: '/ghid-cadouri-personalizate'
+      fullPath: '/ghid-cadouri-personalizate'
+      preLoaderRoute: typeof GhidCadouriPersonalizateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/poveste': {
+      id: '/poveste'
+      path: '/poveste'
+      fullPath: '/poveste'
+      preLoaderRoute: typeof PovesteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/produse': {
+      id: '/produse'
+      path: '/produse'
+      fullPath: '/produse'
+      preLoaderRoute: typeof ProduseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -348,6 +469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/produs/$id': {
+      id: '/produs/$id'
+      path: '/produs/$id'
+      fullPath: '/produs/$id'
+      preLoaderRoute: typeof ProdusIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -355,46 +483,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/_authenticated/admin/statistics': {
-      id: '/_authenticated/admin/statistics'
-      path: '/statistics'
-      fullPath: '/admin/statistics'
-      preLoaderRoute: typeof AuthenticatedAdminStatisticsRouteImport
+    '/_authenticated/admin/ai': {
+      id: '/_authenticated/admin/ai'
+      path: '/ai'
+      fullPath: '/admin/ai'
+      preLoaderRoute: typeof AuthenticatedAdminAiRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/_authenticated/admin/settings': {
-      id: '/_authenticated/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+    '/_authenticated/admin/billing': {
+      id: '/_authenticated/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
-    '/_authenticated/admin/qr-generator': {
-      id: '/_authenticated/admin/qr-generator'
-      path: '/qr-generator'
-      fullPath: '/admin/qr-generator'
-      preLoaderRoute: typeof AuthenticatedAdminQrGeneratorRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/products': {
-      id: '/_authenticated/admin/products'
-      path: '/products'
-      fullPath: '/admin/products'
-      preLoaderRoute: typeof AuthenticatedAdminProductsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/orders': {
-      id: '/_authenticated/admin/orders'
-      path: '/orders'
-      fullPath: '/admin/orders'
-      preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/integrations': {
-      id: '/_authenticated/admin/integrations'
-      path: '/integrations'
-      fullPath: '/admin/integrations'
-      preLoaderRoute: typeof AuthenticatedAdminIntegrationsRouteImport
+    '/_authenticated/admin/customers': {
+      id: '/_authenticated/admin/customers'
+      path: '/customers'
+      fullPath: '/admin/customers'
+      preLoaderRoute: typeof AuthenticatedAdminCustomersRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/financiar': {
@@ -404,28 +511,152 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFinanciarRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/integrations': {
+      id: '/_authenticated/admin/integrations'
+      path: '/integrations'
+      fullPath: '/admin/integrations'
+      preLoaderRoute: typeof AuthenticatedAdminIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/inventory': {
+      id: '/_authenticated/admin/inventory'
+      path: '/inventory'
+      fullPath: '/admin/inventory'
+      preLoaderRoute: typeof AuthenticatedAdminInventoryRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/newsletter': {
+      id: '/_authenticated/admin/newsletter'
+      path: '/newsletter'
+      fullPath: '/admin/newsletter'
+      preLoaderRoute: typeof AuthenticatedAdminNewsletterRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/notifications': {
+      id: '/_authenticated/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/orders': {
+      id: '/_authenticated/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/platforms': {
+      id: '/_authenticated/admin/platforms'
+      path: '/platforms'
+      fullPath: '/admin/platforms'
+      preLoaderRoute: typeof AuthenticatedAdminPlatformsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/posts': {
+      id: '/_authenticated/admin/posts'
+      path: '/posts'
+      fullPath: '/admin/posts'
+      preLoaderRoute: typeof AuthenticatedAdminPostsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/products': {
+      id: '/_authenticated/admin/products'
+      path: '/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AuthenticatedAdminProductsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/qr-generator': {
+      id: '/_authenticated/admin/qr-generator'
+      path: '/qr-generator'
+      fullPath: '/admin/qr-generator'
+      preLoaderRoute: typeof AuthenticatedAdminQrGeneratorRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/shipping': {
+      id: '/_authenticated/admin/shipping'
+      path: '/shipping'
+      fullPath: '/admin/shipping'
+      preLoaderRoute: typeof AuthenticatedAdminShippingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/statistics': {
+      id: '/_authenticated/admin/statistics'
+      path: '/statistics'
+      fullPath: '/admin/statistics'
+      preLoaderRoute: typeof AuthenticatedAdminStatisticsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/products/$id': {
+      id: '/_authenticated/admin/products/$id'
+      path: '/$id'
+      fullPath: '/admin/products/$id'
+      preLoaderRoute: typeof AuthenticatedAdminProductsIdRouteImport
+      parentRoute: typeof AuthenticatedAdminProductsRoute
+    }
   }
 }
 
+interface AuthenticatedAdminProductsRouteChildren {
+  AuthenticatedAdminProductsIdRoute: typeof AuthenticatedAdminProductsIdRoute
+}
+
+const AuthenticatedAdminProductsRouteChildren: AuthenticatedAdminProductsRouteChildren =
+  {
+    AuthenticatedAdminProductsIdRoute: AuthenticatedAdminProductsIdRoute,
+  }
+
+const AuthenticatedAdminProductsRouteWithChildren =
+  AuthenticatedAdminProductsRoute._addFileChildren(
+    AuthenticatedAdminProductsRouteChildren,
+  )
+
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminAiRoute: typeof AuthenticatedAdminAiRoute
+  AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
+  AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminFinanciarRoute: typeof AuthenticatedAdminFinanciarRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
+  AuthenticatedAdminInventoryRoute: typeof AuthenticatedAdminInventoryRoute
+  AuthenticatedAdminNewsletterRoute: typeof AuthenticatedAdminNewsletterRoute
+  AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
-  AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRoute
+  AuthenticatedAdminPlatformsRoute: typeof AuthenticatedAdminPlatformsRoute
+  AuthenticatedAdminPostsRoute: typeof AuthenticatedAdminPostsRoute
+  AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRouteWithChildren
   AuthenticatedAdminQrGeneratorRoute: typeof AuthenticatedAdminQrGeneratorRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminShippingRoute: typeof AuthenticatedAdminShippingRoute
   AuthenticatedAdminStatisticsRoute: typeof AuthenticatedAdminStatisticsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminAiRoute: AuthenticatedAdminAiRoute,
+    AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
+    AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminFinanciarRoute: AuthenticatedAdminFinanciarRoute,
     AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
+    AuthenticatedAdminInventoryRoute: AuthenticatedAdminInventoryRoute,
+    AuthenticatedAdminNewsletterRoute: AuthenticatedAdminNewsletterRoute,
+    AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
     AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
-    AuthenticatedAdminProductsRoute: AuthenticatedAdminProductsRoute,
+    AuthenticatedAdminPlatformsRoute: AuthenticatedAdminPlatformsRoute,
+    AuthenticatedAdminPostsRoute: AuthenticatedAdminPostsRoute,
+    AuthenticatedAdminProductsRoute:
+      AuthenticatedAdminProductsRouteWithChildren,
     AuthenticatedAdminQrGeneratorRoute: AuthenticatedAdminQrGeneratorRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+    AuthenticatedAdminShippingRoute: AuthenticatedAdminShippingRoute,
     AuthenticatedAdminStatisticsRoute: AuthenticatedAdminStatisticsRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   }
@@ -461,3 +692,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

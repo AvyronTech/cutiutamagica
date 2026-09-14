@@ -36,8 +36,7 @@ export function ScrollFuse() {
           width: `${pct}%`,
           background:
             "linear-gradient(90deg, oklch(0.55 0.12 55) 0%, oklch(0.72 0.16 70) 40%, oklch(0.86 0.18 85) 90%, oklch(0.95 0.16 95) 100%)",
-          boxShadow:
-            "0 0 8px oklch(0.78 0.16 80 / 0.85), 0 0 18px oklch(0.74 0.16 70 / 0.55)",
+          boxShadow: "0 0 8px oklch(0.78 0.16 80 / 0.85), 0 0 18px oklch(0.74 0.16 70 / 0.55)",
         }}
       />
       {/* flacără / sclipire la vârf */}

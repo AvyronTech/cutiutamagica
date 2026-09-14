@@ -5,12 +5,7 @@
  */
 export function BrandMark({ className = "" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 64 64"
-      className={className}
-      aria-hidden="true"
-      fill="none"
-    >
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true" fill="none">
       <defs>
         <linearGradient id="bm2-wood" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="oklch(0.58 0.08 50)" />
@@ -58,23 +53,67 @@ export function BrandMark({ className = "" }: { className?: string }) {
       {/* dunga aurie */}
       <rect x="12" y="42" width="40" height="1.4" fill="url(#bm2-gold)" opacity="0.9" />
       {/* miez de lumină pe lemn */}
-      <rect x="14" y="35.5" width="36" height="1" rx="0.5" fill="oklch(0.78 0.08 70)" opacity="0.35" />
+      <rect
+        x="14"
+        y="35.5"
+        width="36"
+        height="1"
+        rx="0.5"
+        fill="oklch(0.78 0.08 70)"
+        opacity="0.35"
+      />
 
       {/* cheița */}
-      <circle cx="50" cy="48" r="2.6" fill="url(#bm2-gold)" stroke="oklch(0.35 0.06 45)" strokeWidth="0.5" />
+      <circle
+        cx="50"
+        cy="48"
+        r="2.6"
+        fill="url(#bm2-gold)"
+        stroke="oklch(0.35 0.06 45)"
+        strokeWidth="0.5"
+      />
       <path d="M50 48 L55 48" stroke="url(#bm2-gold)" strokeWidth="1.6" strokeLinecap="round" />
       <circle cx="50" cy="48" r="0.8" fill="oklch(0.3 0.05 40)" />
 
       {/* tija notei + nota magică */}
       <path d="M36 8 L36 22" stroke="url(#bm2-gold)" strokeWidth="2" strokeLinecap="round" />
-      <ellipse cx="33.5" cy="22" rx="3.2" ry="2.4" fill="url(#bm2-gold)" stroke="oklch(0.35 0.06 45)" strokeWidth="0.4" />
-      <path d="M36 8 Q42 10 42.5 15" stroke="url(#bm2-gold)" strokeWidth="1.7" strokeLinecap="round" fill="none" />
+      <ellipse
+        cx="33.5"
+        cy="22"
+        rx="3.2"
+        ry="2.4"
+        fill="url(#bm2-gold)"
+        stroke="oklch(0.35 0.06 45)"
+        strokeWidth="0.4"
+      />
+      <path
+        d="M36 8 Q42 10 42.5 15"
+        stroke="url(#bm2-gold)"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        fill="none"
+      />
 
       {/* sclipiri magice */}
       <g fill="url(#bm2-gold)">
-        <path d="M22 10 l1.4 1.4 M23.4 10 l-1.4 1.4" stroke="url(#bm2-gold)" strokeWidth="1.1" strokeLinecap="round" />
-        <path d="M46 6 l1 1 M47 6 l-1 1" stroke="url(#bm2-gold)" strokeWidth="1" strokeLinecap="round" />
-        <path d="M50 18 l1.2 1.2 M51.2 18 l-1.2 1.2" stroke="url(#bm2-gold)" strokeWidth="1" strokeLinecap="round" />
+        <path
+          d="M22 10 l1.4 1.4 M23.4 10 l-1.4 1.4"
+          stroke="url(#bm2-gold)"
+          strokeWidth="1.1"
+          strokeLinecap="round"
+        />
+        <path
+          d="M46 6 l1 1 M47 6 l-1 1"
+          stroke="url(#bm2-gold)"
+          strokeWidth="1"
+          strokeLinecap="round"
+        />
+        <path
+          d="M50 18 l1.2 1.2 M51.2 18 l-1.2 1.2"
+          stroke="url(#bm2-gold)"
+          strokeWidth="1"
+          strokeLinecap="round"
+        />
         <circle cx="28" cy="16" r="0.9" />
         <circle cx="44" cy="22" r="0.7" />
         <circle cx="18" cy="22" r="0.55" />

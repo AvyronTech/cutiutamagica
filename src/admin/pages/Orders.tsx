@@ -1,60 +1,74 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
-import { getAdminOrders } from '@/lib/admin.functions';
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
-  Search,
-  Filter,
+  AlertCircle,
+  CheckCircle2,
+  Copy,
   Download,
   Eye,
-  QrCode,
-  ChevronLeft,
-  ChevronRight,
-  Phone,
+  Filter,
   MapPin,
-  Calendar,
   Package,
-  Plus,
-  X,
-  Save,
-  Edit3,
-  Truck,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
+  Phone,
+  QrCode,
+  RefreshCw,
   RotateCcw,
+  Save,
+  Search,
+  Truck,
+  X,
   XCircle,
-  Copy,
-  MessageSquare
-} from 'lucide-react';
-import { orders as mockOrders, type Order, platformColors } from '@/admin/data/mockData';
+  Clock,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  ADMIN_ORDER_STATUSES,
+  type AdminOrder,
+  type AdminOrderStatus,
+} from "@/lib/admin-contracts";
+import { getAdminOrders, updateAdminOrderStatus } from "@/lib/admin.functions";
+import { canTransitionOrderStatus } from "@/lib/order-status";
 
-const platforms = ['Toate', 'Cutiuța Magică', 'eMag', 'OLX', 'Vinted', 'Facebook', 'Instagram', 'TikTok'];
-const statuses = ['Toate', 'Nouă', 'Procesare', 'Expediată', 'Livrată', 'Returnată', 'Anulată'];
+const PLATFORM_COLORS: Record<string, string> = {
+  "Cutiuța Magică": "platform-cutiuta",
+  eMAG: "platform-emag",
+  OLX: "platform-olx",
+  Instagram: "platform-instagram",
+  TikTok: "platform-tiktok",
+  Facebook: "platform-facebook",
+};
 
-function StatusIcon({ status }: { status: string }) {
+function StatusIcon({ status }: { status: AdminOrderStatus }) {
   switch (status) {
-    case 'Nouă': return <AlertCircle className="w-3.5 h-3.5 text-blue-400" />;
-    case 'Procesare': return <Clock className="w-3.5 h-3.5 text-amber-400" />;
-    case 'Expediată': return <Truck className="w-3.5 h-3.5 text-purple-400" />;
-    case 'Livrată': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-    case 'Returnată': return <RotateCcw className="w-3.5 h-3.5 text-red-400" />;
-    case 'Anulată': return <XCircle className="w-3.5 h-3.5 text-gray-400" />;
-    default: return null;
+    case "Nouă":
+      return <AlertCircle className="h-3.5 w-3.5 text-blue-400" />;
+    case "Procesare":
+      return <Clock className="h-3.5 w-3.5 text-amber-400" />;
+    case "Expediată":
+      return <Truck className="h-3.5 w-3.5 text-purple-400" />;
+    case "Livrată":
+      return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;
+    case "Returnată":
+      return <RotateCcw className="h-3.5 w-3.5 text-red-400" />;
+    case "Anulată":
+      return <XCircle className="h-3.5 w-3.5 text-slate-400" />;
   }
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    'Nouă': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-    'Procesare': 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    'Expediată': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-    'Livrată': 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    'Returnată': 'bg-red-500/20 text-red-300 border-red-500/30',
-    'Anulată': 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+function StatusBadge({ status }: { status: AdminOrderStatus }) {
+  const colors: Record<AdminOrderStatus, string> = {
+    Nouă: "border-blue-500/30 bg-blue-500/20 text-blue-300",
+    Procesare: "border-amber-500/30 bg-amber-500/20 text-amber-300",
+    Expediată: "border-purple-500/30 bg-purple-500/20 text-purple-300",
+    Livrată: "border-emerald-500/30 bg-emerald-500/20 text-emerald-300",
+    Returnată: "border-red-500/30 bg-red-500/20 text-red-300",
+    Anulată: "border-slate-500/30 bg-slate-500/20 text-slate-300",
   };
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${colors[status] || ''}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium ${colors[status]}`}
+    >
       <StatusIcon status={status} />
       {status}
     </span>
@@ -62,437 +76,404 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function PlatformBadge({ platform }: { platform: string }) {
-  const cls = platform === 'Cutiuța Magică' ? 'platform-cutiuta' :
-    platform === 'eMag' ? 'platform-emag' :
-    platform === 'OLX' ? 'platform-olx' :
-    platform === 'Vinted' ? 'platform-vinted' :
-    platform === 'Instagram' ? 'platform-instagram' :
-    platform === 'TikTok' ? 'platform-tiktok' : 'platform-facebook';
   return (
-    <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${cls}`}>
+    <span
+      className={`rounded px-2 py-0.5 text-[10px] font-medium ${PLATFORM_COLORS[platform] ?? "bg-slate-700 text-slate-200"}`}
+    >
       {platform}
     </span>
   );
 }
 
-// Order Detail/Edit Panel
-function OrderDetailPanel({ order, onClose, onUpdateStatus }: {
-  order: Order;
+function OrderDetailPanel({
+  order,
+  onClose,
+  onUpdateStatus,
+}: {
+  order: AdminOrder;
   onClose: () => void;
-  onUpdateStatus: (orderId: string, status: Order['status']) => void;
+  onUpdateStatus: (status: AdminOrderStatus) => Promise<void>;
 }) {
   const [currentStatus, setCurrentStatus] = useState(order.status);
-  const [notes, setNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleCopyAWB = () => {
-    if (order.awb) {
-      navigator.clipboard.writeText(order.awb);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const save = async () => {
+    if (currentStatus === order.status) {
+      onClose();
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await onUpdateStatus(currentStatus);
+      onClose();
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleSaveStatus = () => {
-    onUpdateStatus(order.id, currentStatus);
-    onClose();
+  const copyAwb = async () => {
+    if (!order.awb) return;
+    await navigator.clipboard.writeText(order.awb);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-      <div className="bg-[#1E293B] rounded-t-2xl md:rounded-2xl border border-[#334155] w-full max-w-lg p-5 md:p-6 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm md:items-center md:p-4">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-xl border border-[#334155] bg-[#1E293B] p-5 md:rounded-xl md:p-6">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-              <Package className="w-5 h-5 text-purple-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
+              <Package className="h-5 w-5 text-purple-400" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">{order.orderNumber}</h3>
+              <h2 className="text-base font-bold text-white">{order.orderNumber}</h2>
               <div className="flex items-center gap-2">
                 <PlatformBadge platform={order.platform} />
                 <span className="text-[10px] text-slate-500">{order.date}</span>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#334155] text-slate-400">
-            <X className="w-5 h-5" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-[#334155]"
+            aria-label="Închide"
+          >
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Client Info */}
-        <div className="p-3 rounded-xl bg-[#0F172A] border border-[#334155]/50 mb-4">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Client</p>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-white font-medium">{order.customer}</span>
-              <a href={`tel:${order.phone}`} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/20 text-emerald-300 text-xs hover:bg-emerald-500/30 transition-colors">
-                <Phone className="w-3 h-3" />
-                Sună
+        <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Client
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-white">{order.customer}</span>
+            {order.phone && (
+              <a
+                href={`tel:${order.phone}`}
+                className="flex items-center gap-1.5 rounded-md bg-emerald-500/20 px-2 py-1 text-xs text-emerald-300"
+              >
+                <Phone className="h-3 w-3" /> Sună
               </a>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <MapPin className="w-3 h-3" />
-              <span>{order.address}, {order.city}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Order Details */}
-        <div className="p-3 rounded-xl bg-[#0F172A] border border-[#334155]/50 mb-4">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Detalii Comandă</p>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400">Produse:</span>
-              <span className="text-sm text-white">{order.products}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400">Total:</span>
-              <span className="text-lg font-bold text-white">{order.total} RON</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400">Livrare:</span>
-              <span className="text-sm text-slate-200">{order.deliveryMethod}</span>
-            </div>
-            {order.awb && (
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">AWB:</span>
-                <button onClick={handleCopyAWB} className="flex items-center gap-1.5 text-sm text-purple-300 font-mono hover:text-purple-200">
-                  {order.awb}
-                  <Copy className="w-3 h-3" />
-                  {copied && <span className="text-[10px] text-emerald-400">✓</span>}
-                </button>
-              </div>
             )}
           </div>
-        </div>
+          {(order.address || order.city) && (
+            <p className="mt-2 flex items-start gap-2 text-xs text-slate-400">
+              <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0" />
+              {[order.address, order.city, order.county].filter(Boolean).join(", ")}
+            </p>
+          )}
+          {order.email && <p className="mt-1 text-xs text-slate-500">{order.email}</p>}
+        </section>
 
-        {/* Status Update */}
-        <div className="p-3 rounded-xl bg-[#0F172A] border border-[#334155]/50 mb-4">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Actualizează Status</p>
-          <div className="grid grid-cols-3 gap-2">
-            {(['Nouă', 'Procesare', 'Expediată', 'Livrată', 'Returnată', 'Anulată'] as Order['status'][]).map((s) => (
-              <button
-                key={s}
-                onClick={() => setCurrentStatus(s)}
-                className={`flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
-                  currentStatus === s
-                    ? 'bg-purple-600/30 text-purple-200 border border-purple-500/50 ring-1 ring-purple-500/30'
-                    : 'bg-[#1E293B] text-slate-400 border border-[#334155] hover:text-white hover:border-[#475569]'
-                }`}
-              >
-                <StatusIcon status={s} />
-                {s}
-              </button>
-            ))}
+        <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3 text-sm">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Comandă
+          </p>
+          <p className="mb-2 text-slate-200">{order.products}</p>
+          <div className="flex items-center justify-between border-t border-[#334155]/50 pt-2">
+            <span className="text-xs text-slate-400">Total</span>
+            <strong className="text-lg text-white">
+              {order.total.toLocaleString("ro-RO")} {order.currency}
+            </strong>
           </div>
-        </div>
-
-        {/* Notes */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Notă internă</p>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-xs text-slate-400">Livrare</span>
+            <span className="text-xs text-slate-200">{order.deliveryMethod}</span>
           </div>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Adaugă o notă pentru această comandă..."
-            rows={2}
-            className="w-full px-3 py-2 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"
-          />
-        </div>
+          {order.awb && (
+            <button
+              type="button"
+              onClick={copyAwb}
+              className="mt-2 flex w-full items-center justify-end gap-1.5 text-xs font-mono text-purple-300"
+            >
+              {order.awb} <Copy className="h-3 w-3" /> {copied && "Copiat"}
+            </button>
+          )}
+        </section>
 
-        {/* Actions */}
+        <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Actualizează statusul
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {ADMIN_ORDER_STATUSES.map((status) => {
+              const allowed = canTransitionOrderStatus(order.status, status);
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  disabled={!allowed || isSaving}
+                  onClick={() => setCurrentStatus(status)}
+                  className={`flex items-center justify-center gap-1 rounded-lg border px-2 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                    currentStatus === status
+                      ? "border-purple-500/50 bg-purple-600/30 text-purple-200"
+                      : "border-[#334155] bg-[#1E293B] text-slate-400"
+                  }`}
+                >
+                  <StatusIcon status={status} /> {status}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         <div className="flex gap-3">
           <button
-            onClick={handleSaveStatus}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+            type="button"
+            onClick={save}
+            disabled={isSaving}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
           >
-            <Save className="w-4 h-4" /> Salvează
+            {isSaving ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Salvează
           </button>
           <a
-            href={`/qr-generator?order=${order.orderNumber}`}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#334155] hover:bg-[#475569] text-white rounded-lg text-sm font-medium transition-colors"
+            href={`/qr-generator?order=${encodeURIComponent(order.orderNumber)}`}
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#334155] px-4 py-2.5 text-sm font-medium text-white"
           >
-            <QrCode className="w-4 h-4" /> QR
+            <QrCode className="h-4 w-4" /> QR
           </a>
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 bg-[#334155] hover:bg-[#475569] text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            Închide
-          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// Add Order Modal (Mini Cash Register)
-function AddOrderModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState({
-    customer: '',
-    phone: '',
-    address: '',
-    city: '',
-    platform: 'Cutiuța Magică' as Order['platform'],
-    products: '',
-    total: '',
-    deliveryMethod: 'EasyBox' as Order['deliveryMethod'],
-    notes: ''
-  });
-
-  const handleSubmit = () => {
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-      <div className="bg-[#1E293B] rounded-t-2xl md:rounded-2xl border border-[#334155] w-full max-w-lg p-5 md:p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h3 className="text-lg font-bold text-white">🧾 Adaugă Comandă Nouă</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Mini casă de marcat</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#334155] text-slate-400">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div className="p-3 rounded-xl bg-[#0F172A]/50 border border-[#334155]/50 space-y-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Client</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">Nume *</label>
-                <input type="text" value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} placeholder="Maria Popescu" className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">Telefon *</label>
-                <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0721 234 567" className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-              </div>
-            </div>
-            <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Adresă / EasyBox" className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-            <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Oraș" className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-          </div>
-
-          <div className="p-3 rounded-xl bg-[#0F172A]/50 border border-[#334155]/50 space-y-3">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Comandă</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">Platformă</label>
-                <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value as Order['platform'] })} className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-                  {Object.keys(platformColors).map((p) => (<option key={p} value={p}>{p}</option>))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">Livrare</label>
-                <select value={form.deliveryMethod} onChange={(e) => setForm({ ...form, deliveryMethod: e.target.value as Order['deliveryMethod'] })} className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-                  <option value="EasyBox">EasyBox</option>
-                  <option value="Curier SameDay">SameDay</option>
-                  <option value="Curier FanCourier">FanCourier</option>
-                  <option value="Curier Cargus">Cargus</option>
-                  <option value="Curier DPD">DPD</option>
-                  <option value="Ridicare personală">Ridicare</option>
-                </select>
-              </div>
-            </div>
-            <input type="text" value={form.products} onChange={(e) => setForm({ ...form, products: e.target.value })} placeholder="Produse (ex: Set bijuterii x2)" className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">Total (RON) *</label>
-                <input type="number" value={form.total} onChange={(e) => setForm({ ...form, total: e.target.value })} placeholder="189.99" className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 mb-1 block">Notă</label>
-                <input type="text" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Opțional" className="w-full px-3 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 flex gap-3">
-          <button onClick={handleSubmit} className="flex-1 flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors">
-            <Save className="w-4 h-4" /> Salvează Comanda
-          </button>
-          <button onClick={onClose} className="px-5 py-3 bg-[#334155] hover:bg-[#475569] text-white rounded-lg text-sm font-medium transition-colors">
-            Anulează
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function exportOrdersCsv(orders: AdminOrder[]): void {
+  const columns = [
+    "Număr",
+    "Canal",
+    "Client",
+    "Produse",
+    "Total",
+    "Monedă",
+    "Status",
+    "Data",
+    "AWB",
+  ];
+  const quote = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+  const rows = orders.map((order) => [
+    order.orderNumber,
+    order.platform,
+    order.customer,
+    order.products,
+    order.total,
+    order.currency,
+    order.status,
+    order.date,
+    order.awb ?? "",
+  ]);
+  const csv = [columns, ...rows].map((row) => row.map(quote).join(",")).join("\n");
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `comenzi-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function Orders() {
+  const queryClient = useQueryClient();
   const fetchOrders = useServerFn(getAdminOrders);
-  const { data: live } = useQuery({
-    queryKey: ['admin', 'orders'],
+  const changeOrderStatus = useServerFn(updateAdminOrderStatus);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("Toate");
+  const [selectedStatus, setSelectedStatus] = useState("Toate");
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const ordersQuery = useQuery({
+    queryKey: ["admin", "orders"],
     queryFn: () => fetchOrders(),
     staleTime: 30_000,
   });
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPlatform, setSelectedPlatform] = useState('Toate');
-  const [selectedStatus, setSelectedStatus] = useState('Toate');
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
-  const [showAddOrder, setShowAddOrder] = useState(false);
 
-  // Replace state with live DB data when available; fall back to mock for demo
-  useEffect(() => {
-    if (live?.orders && live.orders.length > 0) {
-      setOrders(live.orders as Order[]);
-    }
-  }, [live]);
+  const statusMutation = useMutation({
+    mutationFn: ({ order, status }: { order: AdminOrder; status: AdminOrderStatus }) =>
+      changeOrderStatus({
+        data: {
+          orderId: order.id,
+          status,
+          expectedVersion: order.version,
+        },
+      }),
+    onSuccess: ({ order }) => {
+      queryClient.setQueryData<{ orders: AdminOrder[] }>(["admin", "orders"], (current) => ({
+        orders: (current?.orders ?? []).map((entry) => (entry.id === order.id ? order : entry)),
+      }));
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      toast.success("Statusul comenzii a fost actualizat");
+    },
+    onError: (error) => {
+      toast.error("Statusul nu a putut fi actualizat", {
+        description:
+          error instanceof Error ? error.message : "Reîncarcă datele și încearcă din nou.",
+      });
+      ordersQuery.refetch();
+    },
+  });
 
+  const orders = useMemo(() => ordersQuery.data?.orders ?? [], [ordersQuery.data?.orders]);
+  const platforms = useMemo(
+    () => Array.from(new Set(orders.map((order) => order.platform))).sort(),
+    [orders],
+  );
+  const normalizedSearch = searchTerm.trim().toLocaleLowerCase("ro-RO");
   const filteredOrders = orders.filter((order) => {
-    const matchesSearch = order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.products.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPlatform = selectedPlatform === 'Toate' || order.platform === selectedPlatform;
-    const matchesStatus = selectedStatus === 'Toate' || order.status === selectedStatus;
+    const matchesSearch =
+      !normalizedSearch ||
+      [order.customer, order.orderNumber, order.products].some((value) =>
+        value.toLocaleLowerCase("ro-RO").includes(normalizedSearch),
+      );
+    const matchesPlatform = selectedPlatform === "Toate" || order.platform === selectedPlatform;
+    const matchesStatus = selectedStatus === "Toate" || order.status === selectedStatus;
     return matchesSearch && matchesPlatform && matchesStatus;
   });
 
-  const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-  };
-
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white">Comenzi</h1>
-          <p className="text-slate-400 text-xs md:text-sm mt-1">{filteredOrders.length} comenzi • Gestionare multi-platformă</p>
+          <h1 className="text-xl font-bold text-white md:text-2xl">Comenzi</h1>
+          <p className="mt-1 text-xs text-slate-400 md:text-sm">
+            {filteredOrders.length} comenzi din sursa centrală D1
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <button
-            onClick={() => setShowAddOrder(true)}
-            className="flex items-center gap-2 px-3 md:px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs md:text-sm font-medium transition-colors shadow-lg shadow-purple-500/20"
+            type="button"
+            onClick={() => ordersQuery.refetch()}
+            disabled={ordersQuery.isFetching}
+            className="flex items-center gap-2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2.5 text-xs font-medium text-slate-200 disabled:opacity-50"
           >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Adaugă Comandă</span>
-            <span className="sm:hidden">Adaugă</span>
+            <RefreshCw className={`h-4 w-4 ${ordersQuery.isFetching ? "animate-spin" : ""}`} />{" "}
+            Actualizează
           </button>
-          <button className="hidden sm:flex items-center gap-2 px-3 py-2.5 bg-[#1E293B] hover:bg-[#334155] border border-[#334155] text-slate-300 rounded-lg text-xs font-medium transition-colors">
-            <Download className="w-4 h-4" />
-            Export
+          <button
+            type="button"
+            onClick={() => exportOrdersCsv(filteredOrders)}
+            disabled={filteredOrders.length === 0}
+            className="flex items-center gap-2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2.5 text-xs font-medium text-slate-200 disabled:opacity-40"
+          >
+            <Download className="h-4 w-4" /> Export CSV
           </button>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="glass-card rounded-xl p-3 md:p-4">
         <div className="flex flex-col gap-3">
           <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <label className="relative flex-1">
+              <span className="sr-only">Caută o comandă</span>
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                type="text"
-                placeholder="Caută client, nr. comandă..."
+                type="search"
+                placeholder="Caută client, număr sau produs..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#0F172A] border border-[#334155] rounded-lg text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                onChange={(event) => setSearchTerm(event.target.value)}
+                className="w-full rounded-lg border border-[#334155] bg-[#0F172A] py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-500"
               />
-            </div>
+            </label>
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`p-2.5 rounded-lg border transition-colors md:hidden ${
-                showFilters ? 'bg-purple-600/20 border-purple-500/30 text-purple-300' : 'bg-[#0F172A] border-[#334155] text-slate-400'
-              }`}
+              type="button"
+              onClick={() => setShowFilters((value) => !value)}
+              className="rounded-lg border border-[#334155] bg-[#0F172A] p-2.5 text-slate-400 md:hidden"
+              aria-label="Arată filtrele"
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="h-4 w-4" />
             </button>
           </div>
-          <div className={`flex flex-col sm:flex-row gap-2 ${showFilters ? 'flex' : 'hidden md:flex'}`}>
-            <select value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value)} className="bg-[#0F172A] border border-[#334155] rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-              {platforms.map((p) => (<option key={p} value={p}>{p}</option>))}
+          <div className={`flex-col gap-2 md:flex md:flex-row ${showFilters ? "flex" : "hidden"}`}>
+            <select
+              value={selectedPlatform}
+              onChange={(event) => setSelectedPlatform(event.target.value)}
+              className="rounded-lg border border-[#334155] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200"
+            >
+              <option value="Toate">Toate canalele</option>
+              {platforms.map((platform) => (
+                <option key={platform}>{platform}</option>
+              ))}
             </select>
-            <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className="bg-[#0F172A] border border-[#334155] rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50">
-              {statuses.map((s) => (<option key={s} value={s}>{s}</option>))}
+            <select
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
+              className="rounded-lg border border-[#334155] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200"
+            >
+              <option value="Toate">Toate statusurile</option>
+              {ADMIN_ORDER_STATUSES.map((status) => (
+                <option key={status}>{status}</option>
+              ))}
             </select>
           </div>
         </div>
       </div>
 
-      {/* Orders List - Clean card-based design for both mobile and desktop */}
-      <div className="space-y-2 md:space-y-3">
-        {filteredOrders.map((order) => (
-          <div
-            key={order.id}
-            onClick={() => setSelectedOrder(order)}
-            className="glass-card rounded-xl p-3 md:p-4 cursor-pointer hover:border-purple-500/30 hover:bg-[#1E293B]/80 transition-all group"
-          >
-            <div className="flex items-center justify-between">
-              {/* Left: Main info */}
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#0F172A] flex items-center justify-center flex-shrink-0 border border-[#334155]/50">
-                  <span className="text-xs font-bold text-purple-300">
-                    {order.customer.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
+      {ordersQuery.isError && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+          Comenzile D1 nu au putut fi încărcate. Verifică autentificarea și configurarea Workerului.
+        </div>
+      )}
+
+      {ordersQuery.isLoading ? (
+        <div className="py-16 text-center text-sm text-slate-400">Se încarcă comenzile...</div>
+      ) : (
+        <div className="space-y-2 md:space-y-3">
+          {filteredOrders.map((order) => (
+            <button
+              type="button"
+              key={order.id}
+              onClick={() => setSelectedOrder(order)}
+              className="glass-card group w-full rounded-xl p-3 text-left transition-colors hover:border-purple-500/30 md:p-4"
+            >
+              <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium text-white truncate">{order.customer}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-medium text-white">{order.customer}</p>
                     <PlatformBadge platform={order.platform} />
                   </div>
-                  <div className="flex items-center gap-2 md:gap-3 mt-0.5">
-                    <span className="text-[10px] md:text-xs text-slate-500 font-mono">{order.orderNumber}</span>
-                    <span className="text-[10px] text-slate-600">•</span>
-                    <span className="text-[10px] md:text-xs text-slate-500 truncate">{order.products}</span>
+                  <p className="mt-1 truncate text-[10px] text-slate-500 md:text-xs">
+                    <span className="font-mono">{order.orderNumber}</span> · {order.products}
+                  </p>
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-3">
+                  <div className="hidden text-right sm:block">
+                    <p className="text-sm font-bold text-white">
+                      {order.total.toLocaleString("ro-RO")} {order.currency}
+                    </p>
+                    <p className="text-[10px] text-slate-500">{order.date}</p>
                   </div>
+                  <StatusBadge status={order.status} />
+                  <Eye className="hidden h-4 w-4 text-slate-600 group-hover:text-purple-400 md:block" />
                 </div>
               </div>
-
-              {/* Right: Price, status, date */}
-              <div className="flex items-center gap-3 md:gap-4 flex-shrink-0 ml-2">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs text-slate-500">{order.date}</p>
-                  <p className="text-[10px] text-slate-500">{order.deliveryMethod}</p>
-                </div>
-                <p className="text-sm md:text-base font-bold text-white whitespace-nowrap">{order.total} <span className="text-xs text-slate-400">RON</span></p>
-                <StatusBadge status={order.status} />
-                <Eye className="w-4 h-4 text-slate-600 group-hover:text-purple-400 transition-colors hidden md:block" />
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-16">
-            <Package className="w-14 h-14 text-slate-700 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm">Nu s-au găsit comenzi</p>
-            <p className="text-slate-500 text-xs mt-1">Încearcă alte filtre sau adaugă o comandă nouă</p>
-          </div>
-        )}
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-400">
-          {filteredOrders.length} din {orders.length} comenzi
-        </p>
-        <div className="flex items-center gap-2">
-          <button className="p-2 rounded-lg hover:bg-[#334155] text-slate-400 transition-colors">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="px-3 py-1 rounded-lg bg-purple-600/20 text-purple-300 text-sm font-medium">1</span>
-          <button className="p-2 rounded-lg hover:bg-[#334155] text-slate-400 transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            </button>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Modals */}
-      {showAddOrder && <AddOrderModal onClose={() => setShowAddOrder(false)} />}
+      {!ordersQuery.isLoading && filteredOrders.length === 0 && (
+        <div className="py-16 text-center">
+          <Package className="mx-auto mb-3 h-14 w-14 text-slate-700" />
+          <p className="text-sm text-slate-400">Nu există comenzi pentru filtrul selectat.</p>
+          <p className="mt-1 text-xs text-slate-500">Nu sunt afișate date demonstrative.</p>
+        </div>
+      )}
+
       {selectedOrder && (
         <OrderDetailPanel
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          onUpdateStatus={handleUpdateStatus}
+          onUpdateStatus={async (status) => {
+            await statusMutation.mutateAsync({ order: selectedOrder, status });
+          }}
         />
       )}
     </div>

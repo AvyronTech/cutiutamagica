@@ -73,10 +73,12 @@ export function ProductCard({
           )}
           <div className="mt-2 flex items-baseline justify-center gap-2">
             <span className={`font-display text-xl ${isGlass ? "text-[color:var(--gold)]" : ""}`}>
-              {displayPrice} <span className={`text-xs ${isGlass ? "text-[color:var(--cream)]/90" : ""}`}>lei</span>
+              {displayPrice}{" "}
+              <span className={`text-xs ${isGlass ? "text-[color:var(--cream)]/90" : ""}`}>
+                lei
+              </span>
             </span>
           </div>
-
         </div>
       </Link>
       <div className="px-4 pb-4 mt-auto flex flex-col gap-2">

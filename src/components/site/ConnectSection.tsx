@@ -1,4 +1,17 @@
-import { Instagram, Facebook, Phone, Mail, MessageCircle, Sparkles, Handshake, ArrowRight, Star, Music, Feather, Compass } from "lucide-react";
+import {
+  Instagram,
+  Facebook,
+  Phone,
+  Mail,
+  MessageCircle,
+  Sparkles,
+  Handshake,
+  ArrowRight,
+  Star,
+  Music,
+  Feather,
+  Compass,
+} from "lucide-react";
 import { useLocation } from "@tanstack/react-router";
 import { PHONE_TEL, PHONE_DISPLAY, waLink, messageForPath, B2B_MESSAGE } from "@/lib/whatsapp";
 
@@ -53,23 +66,55 @@ export function ConnectSection() {
   const b2bHref = waLink(B2B_MESSAGE);
 
   const contacts = [
-    { name: "WhatsApp", href: waHref, Icon: MessageCircle, accent: "bg-[#25d366] text-white", external: true },
-    { name: "Telefon", href: `tel:${PHONE_TEL}`, Icon: Phone, accent: "bg-[color:var(--wood-dark)] text-[color:var(--cream)]", external: false },
-    { name: "Email", href: "mailto:contact@cutiutamagica.ro", Icon: Mail, accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]", external: false },
-    { name: "Messenger", href: "https://m.me/61590919580877", Icon: MessageCircle, accent: "bg-[#0084ff] text-white", external: true },
+    {
+      name: "WhatsApp",
+      href: waHref,
+      Icon: MessageCircle,
+      accent: "bg-[#25d366] text-white",
+      external: true,
+    },
+    {
+      name: "Telefon",
+      href: `tel:${PHONE_TEL}`,
+      Icon: Phone,
+      accent: "bg-[color:var(--wood-dark)] text-[color:var(--cream)]",
+      external: false,
+    },
+    {
+      name: "Email",
+      href: "mailto:contact@cutiutamagica.ro",
+      Icon: Mail,
+      accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]",
+      external: false,
+    },
+    {
+      name: "Messenger",
+      href: "https://m.me/61590919580877",
+      Icon: MessageCircle,
+      accent: "bg-[#0084ff] text-white",
+      external: true,
+    },
   ];
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="connect-heading">
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-3">
-          <span aria-hidden className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60">
+          <span
+            aria-hidden
+            className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60"
+          >
             <Star className="w-3.5 h-3.5" />
             <span className="h-px w-6 bg-[color:var(--gold)]/40" />
             <Music className="w-3 h-3" />
           </span>
-          <h2 id="connect-heading" className="font-display text-2xl md:text-3xl">Urmărește-ne</h2>
-          <span aria-hidden className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60">
+          <h2 id="connect-heading" className="font-display text-2xl md:text-3xl">
+            Urmărește-ne
+          </h2>
+          <span
+            aria-hidden
+            className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60"
+          >
             <Music className="w-3 h-3" />
             <span className="h-px w-6 bg-[color:var(--gold)]/40" />
             <Star className="w-3.5 h-3.5" />
@@ -95,11 +140,17 @@ export function ConnectSection() {
                 "linear-gradient(180deg, oklch(0.22 0.04 45) 0%, oklch(0.16 0.03 40) 100%)",
             }}
           >
-            <span aria-hidden className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: accent }} />
+            <span
+              aria-hidden
+              className="absolute inset-0 opacity-70 pointer-events-none"
+              style={{ background: accent }}
+            />
             <span
               aria-hidden
               className="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{ boxShadow: `inset 0 0 0 1px oklch(0.85 0.16 70 / 0.55), 0 0 28px -8px ${glow}` }}
+              style={{
+                boxShadow: `inset 0 0 0 1px oklch(0.85 0.16 70 / 0.55), 0 0 28px -8px ${glow}`,
+              }}
             />
             <span
               aria-hidden
@@ -121,13 +172,19 @@ export function ConnectSection() {
 
       <div className="mt-12 text-center">
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-3">
-          <span aria-hidden className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60">
+          <span
+            aria-hidden
+            className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60"
+          >
             <Feather className="w-3.5 h-3.5" />
             <span className="h-px w-6 bg-[color:var(--gold)]/40" />
             <Compass className="w-3 h-3" />
           </span>
           <h3 className="font-display text-xl md:text-2xl">Contactează-ne</h3>
-          <span aria-hidden className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60">
+          <span
+            aria-hidden
+            className="hidden sm:flex items-center gap-2 text-[color:var(--gold)]/60"
+          >
             <Compass className="w-3 h-3" />
             <span className="h-px w-6 bg-[color:var(--gold)]/40" />
             <Feather className="w-3.5 h-3.5" />

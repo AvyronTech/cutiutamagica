@@ -1,253 +1,213 @@
-import { ExternalLink, Truck, Package, Search, Globe, ShoppingBag, MapPin, Share2 } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Plug,
+  RefreshCw,
+  ShoppingBag,
+  Truck,
+} from "lucide-react";
+import type { AdminChannelMetric } from "@/lib/admin-contracts";
+import { getAdminIntegrations } from "@/lib/admin.functions";
 
-interface IntegrationItem {
-  name: string;
-  description: string;
-  url: string;
-  color: string;
-  icon: React.ReactNode;
-  category: 'courier' | 'marketplace' | 'social' | 'tools';
-}
+const PORTALS: Record<string, string> = {
+  website: "https://cutiutamagica.eu",
+  emag: "https://marketplace.emag.ro",
+  olx: "https://www.olx.ro",
+  facebook: "https://business.facebook.com",
+  instagram: "https://business.facebook.com",
+  tiktok: "https://business.tiktok.com",
+  pinterest: "https://business.pinterest.com",
+  whatsapp: "https://business.whatsapp.com",
+};
 
-const integrations: IntegrationItem[] = [
-  // Courier Services
-  {
-    name: 'SameDay Courier',
-    description: 'Gestionare livrări, AWB-uri, tracking',
-    url: 'https://www.sameday.ro',
-    color: '#F59E0B',
-    icon: <Truck className="w-6 h-6" />,
-    category: 'courier'
-  },
-  {
-    name: 'FanCourier',
-    description: 'Expediții, tracking, EasyBox',
-    url: 'https://www.fancourier.ro',
-    color: '#10B981',
-    icon: <Truck className="w-6 h-6" />,
-    category: 'courier'
-  },
-  {
-    name: 'Cargus',
-    description: 'Livrări naționale și internaționale',
-    url: 'https://www.cargus.ro',
-    color: '#3B82F6',
-    icon: <Truck className="w-6 h-6" />,
-    category: 'courier'
-  },
-  {
-    name: 'DPD Romania',
-    description: 'Servicii curierat rapid',
-    url: 'https://www.dpd.ro',
-    color: '#EF4444',
-    icon: <Truck className="w-6 h-6" />,
-    category: 'courier'
-  },
-  {
-    name: 'GLS Romania',
-    description: 'Livrări colete România și Europa',
-    url: 'https://gls-group.eu/RO',
-    color: '#F97316',
-    icon: <Truck className="w-6 h-6" />,
-    category: 'courier'
-  },
-  {
-    name: 'Verificare AWB',
-    description: 'Tracking rapid pentru orice AWB',
-    url: 'https://www.sameday.ro/tracking',
-    color: '#8B5CF6',
-    icon: <Search className="w-6 h-6" />,
-    category: 'courier'
-  },
-  // Marketplaces
-  {
-    name: 'eMag Marketplace',
-    description: 'Gestionare produse și comenzi eMag',
-    url: 'https://marketplace.emag.ro',
-    color: '#F59E0B',
-    icon: <ShoppingBag className="w-6 h-6" />,
-    category: 'marketplace'
-  },
-  {
-    name: 'OLX',
-    description: 'Anunțuri și vânzări OLX',
-    url: 'https://www.olx.ro',
-    color: '#10B981',
-    icon: <Globe className="w-6 h-6" />,
-    category: 'marketplace'
-  },
-  {
-    name: 'Vinted',
-    description: 'Platformă vânzări fashion',
-    url: 'https://www.vinted.ro',
-    color: '#06B6D4',
-    icon: <ShoppingBag className="w-6 h-6" />,
-    category: 'marketplace'
-  },
-  {
-    name: 'Facebook Marketplace',
-    description: 'Vânzări pe Facebook Marketplace',
-    url: 'https://www.facebook.com/marketplace',
-    color: '#3B82F6',
-    icon: <Globe className="w-6 h-6" />,
-    category: 'marketplace'
-  },
-  // Social Media
-  {
-    name: 'Instagram',
-    description: 'Postări, Stories, Reels, Instagram Shop',
-    url: 'https://www.instagram.com',
-    color: '#E1306C',
-    icon: <Share2 className="w-6 h-6" />,
-    category: 'social'
-  },
-  {
-    name: 'Facebook Page',
-    description: 'Pagina de business, postări, mesaje',
-    url: 'https://business.facebook.com',
-    color: '#1877F2',
-    icon: <Share2 className="w-6 h-6" />,
-    category: 'social'
-  },
-  {
-    name: 'TikTok Business',
-    description: 'Conținut video, TikTok Shop',
-    url: 'https://www.tiktok.com/business',
-    color: '#000000',
-    icon: <Share2 className="w-6 h-6" />,
-    category: 'social'
-  },
-  {
-    name: 'Pinterest Business',
-    description: 'Pinuri, cataloage, Pinterest Shopping',
-    url: 'https://business.pinterest.com',
-    color: '#E60023',
-    icon: <Share2 className="w-6 h-6" />,
-    category: 'social'
-  },
-  {
-    name: 'YouTube Studio',
-    description: 'Gestionare canal, videoclipuri produs',
-    url: 'https://studio.youtube.com',
-    color: '#FF0000',
-    icon: <Share2 className="w-6 h-6" />,
-    category: 'social'
-  },
-  // Tools
-  {
-    name: 'EasyBox Lockers',
-    description: 'Localizare lockere EasyBox',
-    url: 'https://www.sameday.ro/easybox',
-    color: '#7C3AED',
-    icon: <Package className="w-6 h-6" />,
-    category: 'tools'
-  },
-  {
-    name: 'Google Maps',
-    description: 'Verificare adrese livrare',
-    url: 'https://maps.google.com',
-    color: '#10B981',
-    icon: <MapPin className="w-6 h-6" />,
-    category: 'tools'
-  },
-  {
-    name: 'Canva',
-    description: 'Design grafic pentru postări social media',
-    url: 'https://www.canva.com',
-    color: '#00C4CC',
-    icon: <Globe className="w-6 h-6" />,
-    category: 'tools'
-  }
-];
+const STATUS_LABELS: Record<string, string> = {
+  active: "Activ",
+  connected: "Conectat",
+  setup_required: "Necesită configurare",
+  degraded: "Atenție",
+  disabled: "Dezactivat",
+  revoked: "Revocat",
+};
 
-export default function Integrations() {
-  const courierIntegrations = integrations.filter(i => i.category === 'courier');
-  const marketplaceIntegrations = integrations.filter(i => i.category === 'marketplace');
-  const socialIntegrations = integrations.filter(i => i.category === 'social');
-  const toolIntegrations = integrations.filter(i => i.category === 'tools');
-
+function StatusPill({ status }: { status: string }) {
+  const ready = status === "active" || status === "connected";
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-white">Integrări & Acces Rapid</h1>
-        <p className="text-slate-400 text-xs md:text-sm mt-1">Butoane rapide către curierat, marketplace-uri, rețele sociale și instrumente</p>
-      </div>
-
-      {/* Courier Services */}
-      <div>
-        <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4 flex items-center gap-2">
-          <Truck className="w-5 h-5 text-purple-400" />
-          Servicii Curierat
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {courierIntegrations.map((item) => (
-            <IntegrationCard key={item.name} item={item} />
-          ))}
-        </div>
-      </div>
-
-      {/* Marketplaces */}
-      <div>
-        <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4 flex items-center gap-2">
-          <ShoppingBag className="w-5 h-5 text-amber-400" />
-          Marketplace-uri
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {marketplaceIntegrations.map((item) => (
-            <IntegrationCard key={item.name} item={item} />
-          ))}
-        </div>
-      </div>
-
-      {/* Social Media */}
-      <div>
-        <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4 flex items-center gap-2">
-          <Share2 className="w-5 h-5 text-pink-400" />
-          Rețele de Socializare
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {socialIntegrations.map((item) => (
-            <IntegrationCard key={item.name} item={item} />
-          ))}
-        </div>
-      </div>
-
-      {/* Tools */}
-      <div>
-        <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4 flex items-center gap-2">
-          <Package className="w-5 h-5 text-emerald-400" />
-          Instrumente Utile
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {toolIntegrations.map((item) => (
-            <IntegrationCard key={item.name} item={item} />
-          ))}
-        </div>
-      </div>
-    </div>
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium ${
+        ready
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+          : "border-amber-500/30 bg-amber-500/10 text-amber-300"
+      }`}
+    >
+      {ready ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+      {STATUS_LABELS[status] ?? status}
+    </span>
   );
 }
 
-function IntegrationCard({ item }: { item: IntegrationItem }) {
+function ChannelCard({ channel }: { channel: AdminChannelMetric }) {
   return (
-    <a
-      href={item.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="glass-card rounded-xl p-4 md:p-5 flex items-center gap-3 md:gap-4 hover:border-purple-500/50 transition-all group cursor-pointer"
-    >
-      <div
-        className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-        style={{ background: `${item.color}20`, color: item.color }}
-      >
-        {item.icon}
+    <article className="glass-card rounded-xl p-4 md:p-5">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-white">{channel.name}</h3>
+          <p className="mt-1 text-xs text-slate-500">
+            {channel.connectionMode} · {channel.type}
+          </p>
+        </div>
+        <StatusPill status={channel.status} />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">{item.name}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{item.description}</p>
+      <dl className="grid grid-cols-3 gap-2 rounded-lg bg-[#0F172A]/60 p-2 text-center">
+        <div>
+          <dt className="text-[10px] text-slate-500">Comenzi</dt>
+          <dd className="text-sm font-semibold text-white">{channel.validOrdersCount}</dd>
+        </div>
+        <div>
+          <dt className="text-[10px] text-slate-500">Listări</dt>
+          <dd className="text-sm font-semibold text-white">{channel.activeListings}</dd>
+        </div>
+        <div>
+          <dt className="text-[10px] text-slate-500">Erori sync</dt>
+          <dd
+            className={
+              channel.openSyncFailures > 0
+                ? "text-sm font-semibold text-red-300"
+                : "text-sm font-semibold text-white"
+            }
+          >
+            {channel.openSyncFailures}
+          </dd>
+        </div>
+      </dl>
+      {PORTALS[channel.code] && (
+        <a
+          href={PORTALS[channel.code]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 flex items-center justify-center gap-2 rounded-lg border border-[#334155] py-2 text-xs font-medium text-slate-300 hover:text-white"
+        >
+          Deschide portalul <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      )}
+    </article>
+  );
+}
+
+export default function Integrations() {
+  const fetchIntegrations = useServerFn(getAdminIntegrations);
+  const integrationsQuery = useQuery({
+    queryKey: ["admin", "integrations"],
+    queryFn: () => fetchIntegrations(),
+    staleTime: 60_000,
+  });
+  const data = integrationsQuery.data;
+
+  return (
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white md:text-2xl">Integrări omnichannel</h1>
+          <p className="mt-1 text-xs text-slate-400 md:text-sm">
+            Starea reală a canalelor, conturilor API și metodelor de livrare.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => integrationsQuery.refetch()}
+          disabled={integrationsQuery.isFetching}
+          className="flex items-center justify-center gap-2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs text-slate-200 disabled:opacity-50"
+        >
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${integrationsQuery.isFetching ? "animate-spin" : ""}`}
+          />{" "}
+          Verifică starea
+        </button>
       </div>
-      <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-purple-400 transition-colors flex-shrink-0" />
-    </a>
+
+      {integrationsQuery.isError && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+          Starea integrărilor nu a putut fi citită din D1.
+        </div>
+      )}
+
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">
+          <ShoppingBag className="h-5 w-5 text-purple-400" /> Canale de vânzare
+        </h2>
+        {integrationsQuery.isLoading ? (
+          <p className="py-10 text-center text-sm text-slate-500">Se încarcă...</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {(data?.channels ?? []).map((channel) => (
+              <ChannelCard key={channel.id} channel={channel} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">
+          <Plug className="h-5 w-5 text-amber-400" /> Conturi API
+        </h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {(data?.accounts ?? []).map((account) => (
+            <div key={account.id} className="glass-card rounded-xl p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-white">{account.label}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {account.provider} · {account.environment}
+                  </p>
+                </div>
+                <StatusPill status={account.status} />
+              </div>
+              {account.lastErrorMessage && (
+                <p className="mt-3 text-xs text-red-300">
+                  {account.lastErrorCode}: {account.lastErrorMessage}
+                </p>
+              )}
+              {!account.lastSuccessAt && (
+                <p className="mt-3 text-xs text-slate-500">
+                  Nu a existat încă nicio sincronizare reușită.
+                </p>
+              )}
+            </div>
+          ))}
+          {!integrationsQuery.isLoading && (data?.accounts.length ?? 0) === 0 && (
+            <p className="text-sm text-slate-500">Nu sunt definite conturi API.</p>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">
+          <Truck className="h-5 w-5 text-emerald-400" /> Curierat
+        </h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {(data?.shippingMethods ?? []).map((method) => (
+            <div key={method.id} className="glass-card rounded-xl p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-white">{method.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {method.provider} · {method.type}
+                  </p>
+                </div>
+                <StatusPill status={method.status} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <p className="text-xs text-slate-500">
+        OLX rămâne pe import manual până la acces oficial. eMAG și feed-urile sociale au modelele
+        pregătite, dar sunt marcate corect drept neconfigurate până la adăugarea secretelor și
+        validarea în sandbox.
+      </p>
+    </div>
   );
 }

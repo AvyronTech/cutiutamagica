@@ -15,7 +15,7 @@ import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
-
+import { StoryLoadingScreen } from "@/components/site/StoryLoadingScreen";
 
 function NotFoundComponent() {
   return (
@@ -23,21 +23,36 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="font-display text-7xl">404</h1>
         <p className="mt-2 text-sm text-muted-foreground">Pagina nu există.</p>
-        <Link to="/" className="mt-6 inline-block bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm">Înapoi acasă</Link>
+        <Link
+          to="/"
+          className="mt-6 inline-block bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm"
+        >
+          Înapoi acasă
+        </Link>
       </div>
     </div>
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="font-display text-2xl">Ceva nu a mers</h1>
-        <p className="mt-2 text-sm text-muted-foreground">A apărut o eroare neașteptată. Te rugăm să încerci din nou.</p>
-        <button onClick={() => { router.invalidate(); reset(); }} className="mt-6 bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm">Reîncearcă</button>
+        <p className="mt-2 text-sm text-muted-foreground">
+          A apărut o eroare neașteptată. Te rugăm să încerci din nou.
+        </p>
+        <button
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
+          className="mt-6 bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm"
+        >
+          Reîncearcă
+        </button>
       </div>
     </div>
   );
@@ -48,19 +63,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#0b1120" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
       { title: "Cutiuța Magică — Cutiuțe muzicale din lemn" },
-      { name: "description", content: "Cutiuțe muzicale din lemn cu mecanism manual durabil și melodii din universuri îndrăgite. Cadou perfect, livrare în toată România." },
-      { name: "keywords", content: "cutiuta muzicala, cutiute muzicale lemn, harry potter, game of thrones, lord of the rings, cadou handmade, music box romania" },
+      {
+        name: "description",
+        content:
+          "Cutiuțe muzicale din lemn cu manivelă, mecanism manual și melodii tematice, prezentate prin fotografiile produselor.",
+      },
       { name: "google-site-verification", content: "qIm8mkNBA6rC0vDEbBupl5-0tB_p1GpgJnylo2aKYKo" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Cutiuța Magică" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/3AoonePxKwae1U6DhrnFrIXZcau1/social-images/social-1778596011877-file_00000000fd8071f58f81d921d486cb74.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/3AoonePxKwae1U6DhrnFrIXZcau1/social-images/social-1778596011877-file_00000000fd8071f58f81d921d486cb74.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "canonical", href: "https://cutiutamagica.eu/" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
     scripts: [
       {
@@ -71,20 +90,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           name: "Cutiuța Magică",
           url: "https://cutiutamagica.eu",
           logo: "https://cutiutamagica.eu/favicon.ico",
-          description: "Cutiuțe muzicale din lemn cu mecanism manual durabil, gravate cu pasiune în România.",
+          description: "Cutiuțe muzicale din lemn cu manivelă și mecanism manual.",
           address: { "@type": "PostalAddress", addressCountry: "RO" },
-          contactPoint: {
-            "@type": "ContactPoint",
-            telephone: "+40734605742",
-            contactType: "customer service",
-            availableLanguage: ["Romanian", "English"],
-            areaServed: ["RO", "BG", "HU"],
-          },
-          sameAs: [
-            "https://www.facebook.com/profile.php?id=61590919580877",
-            "https://www.instagram.com/cutiutamagicaofficial/",
-            "https://www.tiktok.com/@cutiua.magic",
-          ],
         }),
       },
       {
@@ -113,8 +120,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ro">
-      <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
     </html>
   );
 }
@@ -125,9 +137,11 @@ function RootComponent() {
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
   const showBack = isChrome && pathname !== "/";
   const isProductPage = pathname.startsWith("/produs/");
+  const isHome = pathname === "/";
   return (
     <QueryClientProvider client={queryClient}>
       <ShopProvider>
+        {isHome && <StoryLoadingScreen />}
         {isChrome && <Header />}
         {showBack && (
           <div className="max-w-7xl mx-auto px-4 pt-4">
@@ -136,15 +150,26 @@ function RootComponent() {
               className="group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5 text-sm font-medium text-[color:var(--wood-dark)] bg-[color:var(--cream)]/55 backdrop-blur-md border border-[color:var(--gold)]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:bg-[color:var(--cream)]/85 hover:border-[color:var(--gold)] hover:-translate-y-0.5 transition-all"
             >
               <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[color:var(--cream)] border border-[color:var(--gold)]/50 group-hover:-translate-x-0.5 transition-transform">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                  <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-3.5 h-3.5"
+                >
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
                 </svg>
               </span>
               {isProductPage ? "Înapoi la cutiuțe" : "Înapoi acasă"}
             </Link>
           </div>
         )}
-        <main className="min-h-[60vh]"><Outlet /></main>
+        <main className="min-h-[60vh]">
+          <Outlet />
+        </main>
         {isChrome && <Footer />}
         {isChrome && <SideScrollMagic />}
         <Toaster position="top-center" richColors />
@@ -152,4 +177,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

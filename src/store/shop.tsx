@@ -29,7 +29,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       const f = localStorage.getItem("cm_fav");
       if (c) setCart(JSON.parse(c));
       if (f) setFavorites(JSON.parse(f));
-    } catch {}
+    } catch {
+      // Corrupt or unavailable browser storage must not block the storefront.
+    }
     setHydrated(true);
   }, []);
 
@@ -57,11 +59,16 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         setCart((c) => {
           const safeQty = Math.max(1, Math.min(5, qty));
           const ex = c.find((i) => i.id === id);
-          if (ex) return c.map((i) => (i.id === id ? { ...i, qty: Math.min(5, i.qty + safeQty) } : i));
+          if (ex)
+            return c.map((i) => (i.id === id ? { ...i, qty: Math.min(5, i.qty + safeQty) } : i));
           return [...c, { id, qty: safeQty }];
         }),
       setQty: (id, qty) =>
-        setCart((c) => (qty <= 0 ? c.filter((i) => i.id !== id) : c.map((i) => (i.id === id ? { ...i, qty: Math.min(5, Math.max(1, qty)) } : i)))),
+        setCart((c) =>
+          qty <= 0
+            ? c.filter((i) => i.id !== id)
+            : c.map((i) => (i.id === id ? { ...i, qty: Math.min(5, Math.max(1, qty)) } : i)),
+        ),
       removeFromCart: (id) => setCart((c) => c.filter((i) => i.id !== id)),
       clearCart: () => setCart([]),
       toggleFavorite: (id) =>

@@ -1,0 +1,172 @@
+import { listPublicCatalog } from "@/server/db/catalog.repository";
+import { websiteOrderInputSchema } from "@/lib/order-contracts";
+import {
+  CheckoutError,
+  createWebsiteOrder,
+  markOrderNotificationQueued,
+} from "@/server/db/order.repository";
+import { handleAdminMediaApi } from "@/server/api/admin-media";
+import { handleAdminProductExperienceApi } from "@/server/api/admin-product-experience";
+import { handleAdminProductApi } from "@/server/api/admin-product";
+import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
+import { getPublicProductExperience } from "@/server/api/product-experience";
+
+const API_PREFIX = "/api/v1/";
+
+function json(data: unknown, init: ResponseInit = {}): Response {
+  const headers = new Headers(init.headers);
+  headers.set("content-type", "application/json; charset=utf-8");
+  headers.set("cache-control", "no-store");
+  return Response.json(data, { ...init, headers });
+}
+
+function methodNotAllowed(allow: string): Response {
+  return json(
+    { error: { code: "METHOD_NOT_ALLOWED", message: "Metoda nu este permisa." } },
+    { status: 405, headers: { allow } },
+  );
+}
+
+async function createOrder(request: Request, env: Env): Promise<Response> {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) {
+    return json(
+      { error: { code: "ORIGIN_NOT_ALLOWED", message: "Originea cererii nu este permisă." } },
+      { status: 403 },
+    );
+  }
+
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > 32_768) {
+    return json(
+      { error: { code: "PAYLOAD_TOO_LARGE", message: "Cererea este prea mare." } },
+      { status: 413 },
+    );
+  }
+  if (!request.headers.get("content-type")?.toLowerCase().includes("application/json")) {
+    return json(
+      { error: { code: "UNSUPPORTED_MEDIA_TYPE", message: "Conținutul trebuie trimis ca JSON." } },
+      { status: 415 },
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json(
+      { error: { code: "INVALID_JSON", message: "Cererea JSON nu este validă." } },
+      { status: 400 },
+    );
+  }
+
+  const parsed = websiteOrderInputSchema.safeParse(body);
+  if (!parsed.success || parsed.data.website) {
+    return json(
+      {
+        error: { code: "INVALID_ORDER", message: "Verifică datele comenzii și încearcă din nou." },
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const result = await createWebsiteOrder(env.DB, parsed.data);
+    if (result.outboxId) {
+      try {
+        await env.COMMERCE_EVENTS.send({ version: 1, outboxId: result.outboxId });
+        await markOrderNotificationQueued(env.DB, result.outboxId);
+      } catch (error) {
+        console.warn("order.notification_queue_failed", {
+          orderId: result.orderId,
+          outboxId: result.outboxId,
+          error,
+        });
+      }
+    }
+
+    const { outboxId: _outboxId, replayed: _replayed, ...publicResult } = result;
+    return json({ data: publicResult }, { status: result.replayed ? 200 : 201 });
+  } catch (error) {
+    if (error instanceof CheckoutError) {
+      return json(
+        { error: { code: "ORDER_REJECTED", message: error.message } },
+        { status: error.status },
+      );
+    }
+    console.error("api.order_create_failed", error);
+    return json(
+      { error: { code: "ORDER_CREATE_FAILED", message: "Comanda nu a putut fi înregistrată." } },
+      { status: 500 },
+    );
+  }
+}
+
+export async function handleApiRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith(API_PREFIX)) return null;
+
+  const adminMediaResponse = await handleAdminMediaApi(request, env);
+  if (adminMediaResponse) return adminMediaResponse;
+
+  const adminExperienceResponse = await handleAdminProductExperienceApi(request, env);
+  if (adminExperienceResponse) return adminExperienceResponse;
+
+  const adminProductResponse = await handleAdminProductApi(request, env);
+  if (adminProductResponse) return adminProductResponse;
+
+  const adminAvyronResponse = await handleAdminAvyronSyncApi(request, env);
+  if (adminAvyronResponse) return adminAvyronResponse;
+
+  if (url.pathname === "/api/v1/orders") {
+    if (request.method !== "POST") return methodNotAllowed("POST");
+    return createOrder(request, env);
+  }
+
+  if (request.method !== "GET") return methodNotAllowed("GET");
+
+  if (url.pathname === "/api/v1/health") {
+    const schemaVersion = await env.DB.prepare(
+      "SELECT value FROM schema_metadata WHERE key = 'schema_version'",
+    ).first<string>("value");
+
+    return json(
+      {
+        status: schemaVersion ? "ok" : "degraded",
+        environment: env.APP_ENV,
+        schemaVersion,
+        timestamp: new Date().toISOString(),
+      },
+      { status: schemaVersion ? 200 : 503 },
+    );
+  }
+
+  if (url.pathname === "/api/v1/catalog/products") {
+    const cacheKey = "catalog:public:v1";
+    const cached = await env.CACHE.get(cacheKey, "json");
+    if (cached) {
+      return json(cached, {
+        headers: { "cache-control": "public, max-age=60, s-maxage=300", "x-cache": "HIT" },
+      });
+    }
+    const products = await listPublicCatalog(env.DB);
+    const payload = { data: products, meta: { count: products.length, productType: "music_box" } };
+    ctx.waitUntil(env.CACHE.put(cacheKey, JSON.stringify(payload), { expirationTtl: 300 }));
+    return json(payload, {
+      headers: { "cache-control": "public, max-age=60, s-maxage=300", "x-cache": "MISS" },
+    });
+  }
+
+  const experienceMatch = url.pathname.match(
+    /^\/api\/v1\/catalog\/products\/([a-zA-Z0-9-]+)\/experience$/,
+  );
+  if (experienceMatch) {
+    return getPublicProductExperience(env, experienceMatch[1]);
+  }
+
+  return json({ error: { code: "NOT_FOUND", message: "Resursa API nu exista." } }, { status: 404 });
+}

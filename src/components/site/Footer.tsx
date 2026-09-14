@@ -55,7 +55,8 @@ export function Footer() {
             </span>
           </div>
           <p className="max-w-md text-xs md:text-sm italic text-[color:var(--cream)]/70 font-serif">
-            Lemn ales cu grijă, mâini răbdătoare și o melodie șoptită de poveste — fiecare cutiuță, o promisiune făcută cu suflet.
+            Lemn ales cu grijă, mâini răbdătoare și o melodie șoptită de poveste — fiecare cutiuță,
+            o promisiune făcută cu suflet.
           </p>
         </Link>
 
@@ -104,9 +105,7 @@ export function Footer() {
 
         <div className="w-24 h-px bg-gradient-to-r from-transparent via-[color:var(--gold)]/40 to-transparent" />
 
-        <p className="text-[11px] text-[color:var(--cream)]/60">
-          © {year} Cutiuța Magică · Făcut cu drag în România
-        </p>
+        <p className="text-[11px] text-[color:var(--cream)]/60">© {year} Cutiuța Magică</p>
       </div>
     </footer>
   );

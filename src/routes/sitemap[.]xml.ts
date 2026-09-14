@@ -8,24 +8,28 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const today = new Date().toISOString().slice(0, 10);
         const paths = [
-          { path: "/", priority: "1.0", changefreq: "weekly" },
-          { path: "/produse", priority: "0.9", changefreq: "weekly" },
-          { path: "/poveste", priority: "0.6", changefreq: "monthly" },
-          { path: "/comanda", priority: "0.5", changefreq: "monthly" },
-          { path: "/ghid-cadouri-personalizate", priority: "0.7", changefreq: "monthly" },
-          ...products.map((p) => ({ path: `/produs/${p.id}`, priority: "0.8", changefreq: "monthly" })),
+          { path: "/", lastmod: "2026-09-05" },
+          { path: "/produse", lastmod: "2026-09-05" },
+          { path: "/poveste", lastmod: "2026-06-09" },
+          { path: "/ghid-cadouri-personalizate", lastmod: "2026-09-05" },
+          ...products.map((product) => ({
+            path: `/produs/${product.id}`,
+            lastmod: product.updatedAt,
+          })),
         ];
         const urls = paths
           .map(
             (e) =>
-              `  <url>\n    <loc>${BASE_URL}${e.path}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`,
+              `  <url>\n    <loc>${BASE_URL}${e.path}</loc>\n    <lastmod>${e.lastmod}</lastmod>\n  </url>`,
           )
           .join("\n");
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
         return new Response(xml, {
-          headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=3600" },
+          headers: {
+            "Content-Type": "application/xml; charset=utf-8",
+            "Cache-Control": "public, max-age=3600, s-maxage=86400",
+          },
         });
       },
     },

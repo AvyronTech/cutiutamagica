@@ -21,8 +21,10 @@ export function RotatingSpotlight({ products, intervalMs = 4600, eyebrow }: Prop
     const el = containerRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(
-      ([entry]) => { inView.current = entry.isIntersecting; },
-      { threshold: 0.2 }
+      ([entry]) => {
+        inView.current = entry.isIntersecting;
+      },
+      { threshold: 0.2 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -62,9 +64,13 @@ export function RotatingSpotlight({ products, intervalMs = 4600, eyebrow }: Prop
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={current.id}
-            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.96, filter: "blur(6px)" }}
+            initial={
+              reduced ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.96, filter: "blur(6px)" }
+            }
             animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.98, filter: "blur(4px)" }}
+            exit={
+              reduced ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.98, filter: "blur(4px)" }
+            }
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             style={{ willChange: "transform, opacity, filter" }}
           >

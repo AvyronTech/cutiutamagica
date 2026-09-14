@@ -3,11 +3,11 @@
 @import "tw-animate-css";
 
 /* Self-hosted fonts — elimină lanțul de blocare fonts.googleapis.com + fonts.gstatic.com */
-@import "@fontsource/cormorant-garamond/400.css";
-@import "@fontsource/cormorant-garamond/500.css";
-@import "@fontsource/cormorant-garamond/600.css";
-@import "@fontsource/cormorant-garamond/700.css";
-@import "@fontsource/cormorant-garamond/400-italic.css";
+@import "@fontsource/cormorant-garamond/latin-400.css";
+@import "@fontsource/cormorant-garamond/latin-500.css";
+@import "@fontsource/cormorant-garamond/latin-600.css";
+@import "@fontsource/cormorant-garamond/latin-700.css";
+@import "@fontsource/cormorant-garamond/latin-400-italic.css";
 @import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
@@ -77,7 +77,9 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -86,19 +88,28 @@
       radial-gradient(at 20% 0%, oklch(0.92 0.04 75 / 0.5), transparent 50%),
       radial-gradient(at 80% 100%, oklch(0.88 0.05 60 / 0.4), transparent 50%);
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
 }
 
 @layer utilities {
-  .text-balance { text-wrap: balance; }
+  .text-balance {
+    text-wrap: balance;
+  }
   .wood-grain {
     background-color: oklch(0.3 0.045 40);
-    background-image:
-      repeating-linear-gradient(90deg,
-        oklch(0.28 0.04 40) 0px,
-        oklch(0.32 0.05 42) 2px,
-        oklch(0.26 0.04 38) 4px,
-        oklch(0.31 0.05 40) 7px);
+    background-image: repeating-linear-gradient(
+      90deg,
+      oklch(0.28 0.04 40) 0px,
+      oklch(0.32 0.05 42) 2px,
+      oklch(0.26 0.04 38) 4px,
+      oklch(0.31 0.05 40) 7px
+    );
   }
   .gold-text {
     background: var(--gradient-gold);
@@ -106,7 +117,9 @@
     background-clip: text;
     color: transparent;
   }
-  .perspective-1000 { perspective: 1000px; }
+  .perspective-1000 {
+    perspective: 1000px;
+  }
   .mask-fade {
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
@@ -116,7 +129,9 @@
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
   }
-  .animate-reviews-marquee:hover { animation-play-state: paused; }
+  .animate-reviews-marquee:hover {
+    animation-play-state: paused;
+  }
 
   .animate-header-sheen {
     animation: header-sheen 7s ease-in-out infinite;
@@ -126,32 +141,196 @@
 }
 
 @keyframes reviews-marquee {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-50%, 0, 0); }
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 @keyframes header-sheen {
-  0%   { transform: translate3d(-20%, 0, 0); opacity: 0; }
-  35%  { opacity: 0.9; }
-  70%  { opacity: 0.9; }
-  100% { transform: translate3d(260%, 0, 0); opacity: 0; }
+  0% {
+    transform: translate3d(-20%, 0, 0);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(260%, 0, 0);
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-reviews-marquee,
-  .animate-header-sheen { animation: none; }
+  .animate-header-sheen {
+    animation: none;
+  }
 }
 
+.story-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.5rem;
+  overflow: hidden;
+  color: oklch(0.92 0.09 82);
+  background: oklch(0.19 0.035 43);
+  animation: story-loader-exit 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.story-loader__glow {
+  position: absolute;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, oklch(0.78 0.14 78 / 0.24), transparent 66%);
+  animation: story-loader-glow 1s ease-in-out both;
+}
+
+.story-loader__box {
+  position: relative;
+  width: 5.5rem;
+  height: 3.6rem;
+  border: 1px solid oklch(0.78 0.14 78 / 0.7);
+  border-radius: 0.4rem;
+  background: linear-gradient(135deg, oklch(0.38 0.065 48), oklch(0.24 0.04 38));
+  box-shadow:
+    inset 0 0 0 4px oklch(0.19 0.03 40 / 0.35),
+    0 18px 45px oklch(0 0 0 / 0.35);
+  transform-style: preserve-3d;
+  perspective: 600px;
+}
+
+.story-loader__lid {
+  position: absolute;
+  inset: -0.8rem -0.15rem auto;
+  height: 1rem;
+  border: 1px solid oklch(0.78 0.14 78 / 0.7);
+  border-radius: 0.4rem 0.4rem 0.15rem 0.15rem;
+  background: oklch(0.34 0.06 45);
+  transform-origin: center bottom;
+  animation: story-loader-lid 0.9s 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.story-loader__key {
+  position: absolute;
+  top: 1.25rem;
+  right: -1rem;
+  width: 1.6rem;
+  height: 0.25rem;
+  border-radius: 1rem;
+  background: oklch(0.78 0.14 78);
+  transform-origin: left center;
+  animation: story-loader-key 0.9s ease-in-out both;
+}
+
+.story-loader__note {
+  position: absolute;
+  top: -0.8rem;
+  left: 50%;
+  font-size: 1.25rem;
+  opacity: 0;
+  animation: story-loader-note 0.8s 0.25s ease-out both;
+}
+
+.story-loader__note--two {
+  animation-delay: 0.42s;
+  transform: translateX(1rem);
+}
+.story-loader p {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+
+@keyframes story-loader-key {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  45% {
+    transform: rotate(150deg);
+  }
+}
+@keyframes story-loader-lid {
+  from {
+    transform: rotateX(0);
+  }
+  to {
+    transform: rotateX(-58deg);
+  }
+}
+@keyframes story-loader-note {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0.5rem, 0) scale(0.8);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-0.5rem, -3rem, 0) scale(1.15);
+  }
+}
+@keyframes story-loader-glow {
+  from {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+@keyframes story-loader-exit {
+  0%,
+  78% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-loader {
+    animation-duration: 0.15s;
+  }
+  .story-loader__lid,
+  .story-loader__key,
+  .story-loader__note,
+  .story-loader__glow {
+    animation: none;
+  }
+}
 
 /* ===== Hide native scrollbar — SideScrollMagic is the only visual progress bar ===== */
-html, body {
+html,
+body {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge legacy */
   overflow-x: hidden; /* kill stray horizontal scrollbar at the top */
 }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
-*::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none; -webkit-appearance: none; }
-*::-webkit-scrollbar-corner { background: transparent; }
-
-
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none;
+  -webkit-appearance: none;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

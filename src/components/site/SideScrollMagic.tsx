@@ -64,10 +64,7 @@ export function SideScrollMagic() {
 
       {/* Drifting sparkles tethered to the ember */}
       {!reduced && (
-        <motion.div
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{ top: headTop }}
-        >
+        <motion.div className="absolute left-1/2 -translate-x-1/2" style={{ top: headTop }}>
           {[0, 1, 2].map((i) => (
             <motion.span
               key={i}
