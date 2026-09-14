@@ -10,9 +10,10 @@ export interface WebsiteOrderResult {
   publicToken: string;
   subtotal: number;
   discount: number;
+  shipping: number;
   total: number;
   currency: string;
-  shippingPending: true;
+  shippingPending: boolean;
   replayed: boolean;
   outboxId: string | null;
 }
@@ -33,6 +34,11 @@ interface CatalogItem {
 interface BasketPromotion {
   id: string;
   unitPriceBani: number;
+}
+
+interface ShippingPrice {
+  amountBani: number;
+  pending: boolean;
 }
 
 export class CheckoutError extends Error {
@@ -217,6 +223,62 @@ async function loadBasketPromotion(
   return { id: stringValue(row.id), unitPriceBani: numberValue(row.value) };
 }
 
+async function loadShippingPrice(
+  db: D1Database,
+  subtotalAfterDiscountBani: number,
+  option: WebsiteOrderInput["shippingOption"],
+): Promise<ShippingPrice> {
+  if (option === "manual_confirmation") return { amountBani: 0, pending: true };
+  const row = await db
+    .prepare(
+      `SELECT standard_price_bani, locker_price_bani, free_over_bani,
+              easybox_enabled, validation_status
+       FROM shipping_policy_configs WHERE code = 'RO_STANDARD'`,
+    )
+    .first<DbRow>();
+  if (!row || row.validation_status !== "verified") return { amountBani: 0, pending: true };
+  if (row.free_over_bani != null && subtotalAfterDiscountBani >= numberValue(row.free_over_bani)) {
+    return { amountBani: 0, pending: false };
+  }
+  const amount =
+    option === "easybox" && numberValue(row.easybox_enabled) === 1
+      ? row.locker_price_bani
+      : option === "home_delivery"
+        ? row.standard_price_bani
+        : null;
+  if (amount == null) return { amountBani: 0, pending: true };
+  return { amountBani: numberValue(amount), pending: false };
+}
+
+function riskAssessmentStatement(
+  db: D1Database,
+  orderId: string,
+  score: number,
+  decision: string,
+  incidents: Array<{ incident_type: string; severity: number }>,
+  nowIso: string,
+): D1PreparedStatement {
+  return db
+    .prepare(
+      `INSERT INTO order_risk_assessments (
+        id, order_id, score, decision, factors_json, policy_version, assessed_at
+      ) VALUES (?1, ?2, ?3, ?4, ?5, '2026.09', ?6)`,
+    )
+    .bind(
+      crypto.randomUUID(),
+      orderId,
+      score,
+      decision,
+      JSON.stringify(
+        incidents.map((incident) => ({
+          type: incident.incident_type,
+          severity: incident.severity,
+        })),
+      ),
+      nowIso,
+    );
+}
+
 export async function createWebsiteOrder(
   db: D1Database,
   input: WebsiteOrderInput,
@@ -238,11 +300,17 @@ export async function createWebsiteOrder(
   const normalizedRequest = {
     customer: {
       name: input.customer.name.trim(),
+      email: input.customer.email.trim().toLowerCase(),
       phone: phoneE164,
       address: input.customer.address.trim(),
       city: input.customer.city.trim(),
+      county: input.customer.county.trim(),
+      postalCode: input.customer.postalCode.trim(),
       notes: input.customer.notes.trim(),
     },
+    paymentMethod: input.paymentMethod,
+    shippingOption: input.shippingOption,
+    checkoutConsentVersion: input.checkoutConsentVersion,
     items: normalizedItems,
   };
   const requestHash = await sha256(JSON.stringify(normalizedRequest));
@@ -284,7 +352,9 @@ export async function createWebsiteOrder(
 
   const subtotalBani = pricedItems.reduce((sum, item) => sum + item.lineSubtotalBani, 0);
   const discountBani = pricedItems.reduce((sum, item) => sum + item.lineDiscountBani, 0);
-  const totalBani = subtotalBani - discountBani;
+  const productsTotalBani = subtotalBani - discountBani;
+  const shipping = await loadShippingPrice(db, productsTotalBani, input.shippingOption);
+  const totalBani = productsTotalBani + shipping.amountBani;
   const now = new Date();
   const nowIso = now.toISOString();
   const orderId = crypto.randomUUID();
@@ -301,20 +371,22 @@ export async function createWebsiteOrder(
     publicToken,
     subtotal: subtotalBani / 100,
     discount: discountBani / 100,
+    shipping: shipping.amountBani / 100,
     total: totalBani / 100,
     currency: STORE_CURRENCY,
-    shippingPending: true,
+    shippingPending: shipping.pending,
   };
   const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
   const existingCustomer = await db
     .prepare(
       `
     SELECT id FROM customers
-    WHERE phone_e164 = ?1 AND status = 'active'
+    WHERE status = 'active'
+      AND (phone_e164 = ?1 OR email_normalized = ?2 OR lower(email) = ?2)
     ORDER BY updated_at DESC LIMIT 1
   `,
     )
-    .bind(phoneE164)
+    .bind(phoneE164, normalizedRequest.customer.email)
     .first<DbRow>();
   const resolvedCustomerId = existingCustomer ? stringValue(existingCustomer.id) : customerId;
 
@@ -325,15 +397,21 @@ export async function createWebsiteOrder(
         .prepare(
           `
       UPDATE customers
-      SET full_name = ?1,
-          last_order_at = ?2,
+      SET full_name = ?1, email = ?2, email_normalized = ?2,
+          last_order_at = ?3,
           order_count = order_count + 1,
-          lifetime_value_bani = lifetime_value_bani + ?3,
-          updated_at = ?2
-      WHERE id = ?4
+          lifetime_value_bani = lifetime_value_bani + ?4,
+          updated_at = ?3
+      WHERE id = ?5
     `,
         )
-        .bind(normalizedRequest.customer.name, nowIso, totalBani, resolvedCustomerId),
+        .bind(
+          normalizedRequest.customer.name,
+          normalizedRequest.customer.email,
+          nowIso,
+          totalBani,
+          resolvedCustomerId,
+        ),
     );
   } else {
     statements.push(
@@ -341,12 +419,19 @@ export async function createWebsiteOrder(
         .prepare(
           `
       INSERT INTO customers (
-        id, phone_e164, full_name, customer_type, status, first_order_at,
+        id, phone_e164, email, email_normalized, full_name, customer_type, status, first_order_at,
         last_order_at, order_count, lifetime_value_bani, created_at, updated_at
-      ) VALUES (?1, ?2, ?3, 'guest', 'active', ?4, ?4, 1, ?5, ?4, ?4)
+      ) VALUES (?1, ?2, ?3, ?3, ?4, 'guest', 'active', ?5, ?5, 1, ?6, ?5, ?5)
     `,
         )
-        .bind(customerId, phoneE164, normalizedRequest.customer.name, nowIso, totalBani),
+        .bind(
+          customerId,
+          phoneE164,
+          normalizedRequest.customer.email,
+          normalizedRequest.customer.name,
+          nowIso,
+          totalBani,
+        ),
     );
   }
 
@@ -358,14 +443,16 @@ export async function createWebsiteOrder(
         id, order_number, public_token, idempotency_key, channel_id, customer_id,
         order_status, payment_status, fulfillment_status, currency,
         subtotal_bani, discount_bani, shipping_bani, tax_bani, total_bani,
-        customer_name, customer_phone_e164, customer_note, internal_note,
+        customer_name, customer_email, customer_phone_e164, customer_note, internal_note,
+        payment_method_requested, shipping_option_requested, checkout_consent_version,
         placed_at, created_at, updated_at
       ) VALUES (
         ?1, ?2, ?3, ?4, 'channel_website', ?5,
         'pending', 'unpaid', 'unfulfilled', ?6,
-        ?7, ?8, 0, 0, ?9,
-        ?10, ?11, ?12, ?13,
-        ?14, ?14, ?14
+        ?7, ?8, ?9, 0, ?10,
+        ?11, ?12, ?13, ?14, ?15,
+        ?16, ?17, ?18,
+        ?19, ?19, ?19
       )
     `,
       )
@@ -378,19 +465,27 @@ export async function createWebsiteOrder(
         STORE_CURRENCY,
         subtotalBani,
         discountBani,
+        shipping.amountBani,
         totalBani,
         normalizedRequest.customer.name,
+        normalizedRequest.customer.email,
         phoneE164,
         normalizedRequest.customer.notes || null,
-        "Costul livrării și totalul final trebuie confirmate înainte de plată.",
+        shipping.pending
+          ? "Costul livrării și totalul final trebuie confirmate înainte de plată."
+          : "Costul livrării a fost calculat conform politicii comerciale active.",
+        input.paymentMethod,
+        input.shippingOption,
+        input.checkoutConsentVersion,
         nowIso,
       ),
     db
       .prepare(
         `
       INSERT INTO order_addresses (
-        id, order_id, address_type, full_name, phone_e164, line1, city, country_code, created_at
-      ) VALUES (?1, ?2, 'shipping', ?3, ?4, ?5, ?6, 'RO', ?7)
+        id, order_id, address_type, full_name, phone_e164, line1, city, county,
+        postal_code, country_code, created_at
+      ) VALUES (?1, ?2, 'shipping', ?3, ?4, ?5, ?6, ?7, ?8, 'RO', ?9)
     `,
       )
       .bind(
@@ -400,6 +495,8 @@ export async function createWebsiteOrder(
         phoneE164,
         normalizedRequest.customer.address,
         normalizedRequest.customer.city,
+        normalizedRequest.customer.county || null,
+        normalizedRequest.customer.postalCode || null,
         nowIso,
       ),
   );
@@ -458,6 +555,42 @@ export async function createWebsiteOrder(
     );
   }
 
+  const incidentRows = existingCustomer
+    ? await db
+        .prepare(
+          `SELECT incident_type, severity FROM cod_delivery_incidents
+           WHERE customer_id = ?1 AND resolved_at IS NULL
+           AND created_at >= datetime('now', '-730 days')`,
+        )
+        .bind(resolvedCustomerId)
+        .all<{ incident_type: string; severity: number }>()
+    : { results: [] as Array<{ incident_type: string; severity: number }> };
+  const riskPoints: Record<string, number> = {
+    unclaimed: 35,
+    refused: 25,
+    invalid_address: 15,
+    unreachable: 10,
+    fraud_suspected: 60,
+  };
+  const riskScore = Math.min(
+    100,
+    incidentRows.results.reduce(
+      (score, incident) =>
+        score + (riskPoints[incident.incident_type] ?? 0) * Math.max(1, incident.severity),
+      0,
+    ),
+  );
+  const riskDecision =
+    input.paymentMethod === "card"
+      ? "allow"
+      : riskScore >= 90
+        ? "block"
+        : riskScore >= 60
+          ? "require_prepaid"
+          : riskScore >= 35
+            ? "review"
+            : "allow";
+
   statements.push(
     db
       .prepare(
@@ -474,14 +607,27 @@ export async function createWebsiteOrder(
         JSON.stringify({ source: "website.checkout", idempotencyKey: input.idempotencyKey }),
         nowIso,
       ),
-    db
-      .prepare(
-        `
-      INSERT INTO order_tags (order_id, tag, created_at)
-      VALUES (?1, 'shipping_quote_required', ?2)
-    `,
-      )
-      .bind(orderId, nowIso),
+    ...(shipping.pending
+      ? [
+          db
+            .prepare(
+              `INSERT INTO order_tags (order_id, tag, created_at)
+               VALUES (?1, 'shipping_quote_required', ?2)`,
+            )
+            .bind(orderId, nowIso),
+        ]
+      : []),
+    ...(riskDecision !== "allow"
+      ? [
+          db
+            .prepare(
+              `INSERT INTO order_tags (order_id, tag, created_at)
+               VALUES (?1, ?2, ?3)`,
+            )
+            .bind(orderId, `risk_${riskDecision}`, nowIso),
+        ]
+      : []),
+    riskAssessmentStatement(db, orderId, riskScore, riskDecision, incidentRows.results, nowIso),
     db
       .prepare(
         `
@@ -498,7 +644,7 @@ export async function createWebsiteOrder(
           type: "order",
           severity: "info",
           title: `Comandă nouă ${orderNumber}`,
-          message: `${totalQuantity} produse, ${totalBani / 100} RON; livrarea necesită confirmare.`,
+          message: `${totalQuantity} produse, ${totalBani / 100} RON; ${shipping.pending ? "livrarea necesită confirmare" : "livrare calculată"}.`,
           actionUrl: "/admin/orders",
         }),
         nowIso,

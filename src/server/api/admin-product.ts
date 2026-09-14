@@ -17,6 +17,28 @@ const updateProductSchema = z.object({
   seoTitle: z.string().trim().max(70),
   seoDescription: z.string().trim().max(180),
   searchTerms: z.string().trim().max(1200),
+  variant: z
+    .object({
+      id: z.string().min(1).max(128),
+      expectedVersion: z.number().int().positive(),
+      eanGtin: z.union([z.literal(""), z.string().regex(/^\d{8,14}$/)]),
+      mpn: z.string().trim().max(120),
+      cost: z.number().min(0).max(1_000_000).nullable(),
+      identifierSource: z.enum(["gs1", "manufacturer", "supplier", "marketplace", "internal"]),
+    })
+    .superRefine((variant, context) => {
+      if (
+        variant.eanGtin &&
+        !["gs1", "manufacturer", "supplier"].includes(variant.identifierSource)
+      ) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["identifierSource"],
+          message: "Un GTIN/EAN public trebuie să provină de la GS1, producător sau furnizor.",
+        });
+      }
+    })
+    .optional(),
 });
 
 function json(data: unknown, init: ResponseInit = {}): Response {
@@ -55,7 +77,7 @@ export async function handleAdminProductApi(request: Request, env: Env): Promise
       );
     }
     const data = parsed.data;
-    const result = await env.DB.prepare(
+    const productUpdate = env.DB.prepare(
       `
       UPDATE products
       SET name = ?1, tagline = ?2, short_description = ?3, description = ?4,
@@ -65,29 +87,83 @@ export async function handleAdminProductApi(request: Request, env: Env): Promise
           version = version + 1,
           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE id = ?15 AND product_type = 'music_box' AND version = ?16
+        AND (?17 IS NULL OR EXISTS (
+          SELECT 1 FROM product_variants pv WHERE pv.id = ?17 AND pv.product_id = products.id
+          AND pv.version = ?18 AND pv.status != 'archived'
+        ))
     `,
-    )
-      .bind(
-        data.name,
-        data.tagline || null,
-        data.shortDescription || null,
-        data.description || null,
-        data.story || null,
-        data.category,
-        data.material || null,
-        data.dimensionsText || null,
-        data.weightG,
-        data.rightsStatus,
-        data.rightsNotes || null,
-        data.seoTitle || null,
-        data.seoDescription || null,
-        data.searchTerms || null,
-        match[1],
-        data.expectedVersion,
-      )
-      .run();
-    if (Number(result.meta.changes) !== 1) {
+    ).bind(
+      data.name,
+      data.tagline || null,
+      data.shortDescription || null,
+      data.description || null,
+      data.story || null,
+      data.category,
+      data.material || null,
+      data.dimensionsText || null,
+      data.weightG,
+      data.rightsStatus,
+      data.rightsNotes || null,
+      data.seoTitle || null,
+      data.seoDescription || null,
+      data.searchTerms || null,
+      match[1],
+      data.expectedVersion,
+      data.variant?.id ?? null,
+      data.variant?.expectedVersion ?? null,
+    );
+    const writeStatements: D1PreparedStatement[] = [productUpdate];
+    if (data.variant) {
+      writeStatements.push(
+        env.DB.prepare(
+          `UPDATE product_variants
+           SET ean_gtin = ?1, mpn = ?2, cost_bani = ?3, version = version + 1,
+               updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+           WHERE id = ?4 AND product_id = ?5 AND version = ?6
+             AND EXISTS (SELECT 1 FROM products WHERE id = ?5 AND version = ?7)`,
+        ).bind(
+          data.variant.eanGtin || null,
+          data.variant.mpn || null,
+          data.variant.cost == null ? null : Math.round(data.variant.cost * 100),
+          data.variant.id,
+          match[1],
+          data.variant.expectedVersion,
+          data.expectedVersion + 1,
+        ),
+      );
+    }
+    const writeResults = await env.DB.batch(writeStatements);
+    if (
+      Number(writeResults[0].meta.changes) !== 1 ||
+      (data.variant && Number(writeResults[1]?.meta.changes) !== 1)
+    ) {
       return json({ error: { code: "VERSION_CONFLICT" } }, { status: 409 });
+    }
+    if (data.variant) {
+      const identifierStatements: D1PreparedStatement[] = [
+        env.DB.prepare(
+          `DELETE FROM product_identifier_sources
+           WHERE variant_id = ?1 AND identifier_type IN ('GTIN', 'EAN')`,
+        ).bind(data.variant.id),
+      ];
+      if (data.variant.eanGtin) {
+        identifierStatements.push(
+          env.DB.prepare(
+            `INSERT INTO product_identifier_sources (
+               id, variant_id, identifier_type, identifier_value, source_type,
+               verification_status, verified_at
+             ) VALUES (?1, ?2, 'EAN', ?3, ?4, ?5, ?6)`,
+          ).bind(
+            crypto.randomUUID(),
+            data.variant.id,
+            data.variant.eanGtin,
+            data.variant.identifierSource,
+            data.variant.identifierSource === "internal" ? "rejected" : "pending",
+            null,
+          ),
+        );
+      }
+      await env.DB.batch(identifierStatements);
     }
     await env.DB.prepare(
       `

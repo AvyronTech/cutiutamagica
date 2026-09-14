@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { Minus, Plus, Trash2, ShoppingBag, Check } from "lucide-react";
-import { useShop } from "@/store/shop";
-import { calcTotals, MAX_QTY } from "@/data/products";
-import type { WebsiteOrderPublicResult } from "@/lib/order-contracts";
-
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { calcTotals, MAX_QTY } from "@/data/products";
+import type { CommercePublicConfig } from "@/lib/commerce-operations-contracts";
+import type { WebsiteOrderPublicResult } from "@/lib/order-contracts";
+import { useShop } from "@/store/shop";
 
 export const Route = createFileRoute("/comanda")({
   component: OrderPage,
@@ -14,52 +14,100 @@ export const Route = createFileRoute("/comanda")({
       { title: "Comandă online — Cutiuța Magică" },
       {
         name: "description",
-        content: "Trimite în siguranță cererea de comandă pentru cutiuțele muzicale alese.",
+        content: "Comandă în siguranță cutiuțele muzicale alese, cu livrare în România.",
       },
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Comandă online — Cutiuța Magică" },
-      {
-        property: "og:description",
-        content: "Trimite cererea de comandă pentru cutiuțele muzicale alese.",
-      },
       { property: "og:url", content: "https://cutiutamagica.eu/comanda" },
     ],
     links: [{ rel: "canonical", href: "https://cutiutamagica.eu/comanda" }],
   }),
 });
 
+type PaymentMethod = "cash_on_delivery" | "card";
+type ShippingOption = "home_delivery" | "easybox";
+const emptyForm = {
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  city: "",
+  county: "",
+  postalCode: "",
+  notes: "",
+};
+const inputClass = "rounded-md border border-border bg-card px-3 py-2.5 text-sm";
+
+function money(value: number, currency = "RON") {
+  return new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(value);
+}
+
 function OrderPage() {
   const { itemsDetailed, setQty, removeFromCart, totalQty, clearCart } = useShop();
   const totals = calcTotals(totalQty);
   const idempotencyKey = useRef<string | null>(null);
-  const [confirmation, setConfirmation] = useState<{
-    orderNumber: string;
-    total: number;
-    currency: string;
-  } | null>(null);
+  const [config, setConfig] = useState<CommercePublicConfig | null>(null);
+  const [confirmation, setConfirmation] = useState<WebsiteOrderPublicResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [website, setWebsite] = useState("");
-  const [form, setForm] = useState({ name: "", phone: "", address: "", city: "", notes: "" });
+  const [form, setForm] = useState(emptyForm);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
+  const [shippingOption, setShippingOption] = useState<ShippingOption>("home_delivery");
+  const [consent, setConsent] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/v1/commerce/config", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Config indisponibil");
+        return (await response.json()) as { data: CommercePublicConfig };
+      })
+      .then(({ data }) => setConfig(data))
+      .catch(() => toast.error("Opțiunile comerciale nu au putut fi încărcate."));
+  }, []);
+
+  useEffect(() => {
+    if (shippingOption === "easybox" && !config?.shipping.easyboxEnabled)
+      setShippingOption("home_delivery");
+    if (paymentMethod === "card" && !config?.payments.card.enabled)
+      setPaymentMethod("cash_on_delivery");
+  }, [config, paymentMethod, shippingOption]);
+
+  const shippingCost = useMemo(() => {
+    if (!config || config.shipping.requiresConfirmation) return null;
+    if (config.shipping.freeOver != null && totals.total >= config.shipping.freeOver) return 0;
+    return shippingOption === "easybox"
+      ? config.shipping.lockerPrice
+      : config.shipping.standardPrice;
+  }, [config, shippingOption, totals.total]);
 
   if (confirmation) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-24 text-center">
-        <div className="w-16 h-16 mx-auto rounded-full wood-grain text-[color:var(--gold)] flex items-center justify-center">
-          <Check className="w-8 h-8" />
+      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+        <div className="wood-grain mx-auto flex h-16 w-16 items-center justify-center rounded-full text-[color:var(--gold)]">
+          <Check className="h-8 w-8" />
         </div>
-        <h1 className="font-display text-4xl mt-6">
-          Mulțumim, {form.name.split(" ")[0] || "prieten"}!
-        </h1>
+        <h1 className="font-display mt-6 text-4xl">Comanda a intrat în poveste</h1>
         <p className="mt-3 text-muted-foreground">
-          Cererea <strong>{confirmation.orderNumber}</strong> a fost înregistrată. Te contactăm
-          pentru confirmarea livrării, a totalului final și a plății.
+          Comanda <strong>{confirmation.orderNumber}</strong> a fost înregistrată. Vei primi
+          actualizările la adresa de e-mail completată.
         </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Produse: {confirmation.total} {confirmation.currency}
-        </p>
+        <div className="mt-5 rounded-lg border border-border bg-card p-4 text-sm">
+          <div className="flex justify-between">
+            <span>Livrare</span>
+            <span>
+              {confirmation.shippingPending
+                ? "Se confirmă separat"
+                : money(confirmation.shipping, confirmation.currency)}
+            </span>
+          </div>
+          <div className="mt-2 flex justify-between font-medium">
+            <span>Total</span>
+            <span>{money(confirmation.total, confirmation.currency)}</span>
+          </div>
+        </div>
         <Link
           to="/produse"
-          className="mt-8 inline-block bg-primary text-primary-foreground rounded-md px-6 py-3 text-sm"
+          className="mt-8 inline-block rounded-md bg-primary px-6 py-3 text-sm text-primary-foreground"
         >
           Continuă cumpărăturile
         </Link>
@@ -67,16 +115,13 @@ function OrderPage() {
     );
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.name || !form.phone || !form.address || !form.city) {
-      toast.error("Completează nume, telefon, localitate și adresă.");
-      return;
-    }
-    if (totalQty === 0) {
-      toast.error("Coșul este gol.");
-      return;
-    }
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!config) return toast.error("Așteaptă încărcarea opțiunilor comerciale.");
+    if (!consent) return toast.error("Confirmă termenii comenzii și politica de retur.");
+    if (totalQty === 0) return toast.error("Coșul este gol.");
+    if (paymentMethod === "card" && config.shipping.requiresConfirmation)
+      return toast.error("Plata online devine disponibilă după validarea regulilor de transport.");
     if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID();
     setSubmitting(true);
     try {
@@ -88,30 +133,45 @@ function OrderPage() {
           idempotencyKey: idempotencyKey.current,
           website,
           customer: form,
-          items: itemsDetailed.map((item) => ({
-            productId: item.id,
-            quantity: item.qty,
-          })),
+          paymentMethod,
+          shippingOption,
+          checkoutConsentAccepted: true,
+          checkoutConsentVersion: config.policies.checkoutConsentVersion,
+          items: itemsDetailed.map((item) => ({ productId: item.id, quantity: item.qty })),
         }),
       });
       const payload = (await response.json()) as {
         data?: WebsiteOrderPublicResult;
         error?: { message?: string };
       };
-      if (!response.ok || !payload.data) {
+      if (!response.ok || !payload.data)
         throw new Error(payload.error?.message || "Comanda nu a putut fi înregistrată.");
-      }
       const result = payload.data;
-      setConfirmation({
-        orderNumber: result.orderNumber,
-        total: result.total,
-        currency: result.currency,
-      });
+      if (paymentMethod === "card") {
+        const paymentResponse = await fetch("/api/v1/payments/stripe/checkout", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ orderId: result.orderId, publicToken: result.publicToken }),
+        });
+        const paymentPayload = (await paymentResponse.json()) as {
+          data?: { checkoutUrl: string };
+          error?: { message?: string };
+        };
+        if (!paymentResponse.ok || !paymentPayload.data?.checkoutUrl)
+          throw new Error(
+            paymentPayload.error?.message ||
+              "Plata online nu a putut fi inițiată. Comanda a rămas salvată.",
+          );
+        clearCart();
+        window.location.assign(paymentPayload.data.checkoutUrl);
+        return;
+      }
+      setConfirmation(result);
       clearCart();
     } catch (error) {
-      toast.error("Comanda nu a putut fi înregistrată.", {
-        description:
-          error instanceof Error ? error.message : "Încearcă din nou fără să reîncarci pagina.",
+      toast.error("Operația nu a putut fi finalizată.", {
+        description: error instanceof Error ? error.message : "Încearcă din nou.",
       });
     } finally {
       setSubmitting(false);
@@ -119,167 +179,322 @@ function OrderPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pt-8 pb-14">
-      <div className="grid lg:grid-cols-[1fr_400px] gap-10">
+    <div className="mx-auto max-w-6xl px-4 pb-14 pt-8">
+      <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
         <div>
-          <h1 className="font-display text-5xl text-center lg:text-left">Comandă online</h1>
-          <p className="mt-2 text-muted-foreground text-center lg:text-left">
+          <h1 className="font-display text-center text-5xl lg:text-left">Finalizează comanda</h1>
+          <p className="mt-2 text-center text-muted-foreground lg:text-left">
             {totalQty} produs{totalQty === 1 ? "" : "e"} în coș.
           </p>
-
           {itemsDetailed.length === 0 ? (
-            <div className="mt-12 p-10 border border-dashed border-border rounded-xl text-center">
-              <ShoppingBag className="w-10 h-10 mx-auto text-muted-foreground" />
+            <div className="mt-12 rounded-xl border border-dashed border-border p-10 text-center">
+              <ShoppingBag className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="mt-4 text-muted-foreground">Coșul este gol.</p>
               <Link
                 to="/produse"
-                className="mt-5 inline-block bg-primary text-primary-foreground rounded-md px-5 py-2.5 text-sm"
+                className="mt-5 inline-block rounded-md bg-primary px-5 py-2.5 text-sm text-primary-foreground"
               >
                 Vezi cutiuțele
               </Link>
             </div>
           ) : (
             <div className="mt-6 space-y-3">
-              {itemsDetailed.map((it) => (
+              {itemsDetailed.map((item) => (
                 <div
-                  key={it.id}
-                  className="flex gap-4 p-3 bg-card rounded-xl border border-border items-center"
+                  key={item.id}
+                  className="flex items-center gap-4 rounded-xl border border-border bg-card p-3"
                 >
                   <img
-                    src={it.product.image}
-                    alt={it.product.name}
-                    className="w-24 h-24 rounded-lg object-contain bg-muted/40 p-2"
+                    src={item.product.image}
+                    alt={item.product.name}
+                    className="h-24 w-24 rounded-lg bg-muted/40 object-contain p-2"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display text-lg leading-tight">{it.product.name}</div>
-                    <div className="text-xs text-muted-foreground">{it.product.melody}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-display text-lg leading-tight">{item.product.name}</div>
+                    <div className="text-xs text-muted-foreground">{item.product.melody}</div>
                     <div className="mt-2 flex items-center gap-2">
                       <button
-                        onClick={() => setQty(it.id, Math.max(1, it.qty - 1))}
-                        className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-muted"
+                        type="button"
+                        aria-label="Scade cantitatea"
+                        onClick={() => setQty(item.id, Math.max(1, item.qty - 1))}
+                        className="flex h-7 w-7 items-center justify-center rounded border border-border"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="h-3 w-3" />
                       </button>
-                      <span className="w-8 text-center text-sm">{it.qty}</span>
+                      <span className="w-8 text-center text-sm">{item.qty}</span>
                       <button
-                        onClick={() => setQty(it.id, Math.min(MAX_QTY, it.qty + 1))}
-                        className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-muted"
+                        type="button"
+                        aria-label="Crește cantitatea"
+                        onClick={() => setQty(item.id, Math.min(MAX_QTY, item.qty + 1))}
+                        className="flex h-7 w-7 items-center justify-center rounded border border-border"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="h-3 w-3" />
                       </button>
                     </div>
                   </div>
                   <button
-                    aria-label={`Elimină ${it.product.name} din coș`}
-                    onClick={() => removeFromCart(it.id)}
-                    className="p-2 text-muted-foreground hover:text-destructive self-start"
+                    type="button"
+                    aria-label={`Elimină ${item.product.name}`}
+                    onClick={() => removeFromCart(item.id)}
+                    className="self-start p-2 text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          <h2 className="font-display text-2xl mt-12 text-center lg:text-left">Date livrare</h2>
-          <form onSubmit={submit} className="mt-4 grid sm:grid-cols-2 gap-3">
-            <input
-              required
-              autoComplete="name"
-              aria-label="Nume complet"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Nume complet"
-              className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2"
-            />
-            <input
-              required
-              autoComplete="tel"
-              inputMode="tel"
-              aria-label="Telefon"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="Telefon"
-              className="bg-card border border-border rounded-md px-3 py-2.5 text-sm"
-            />
-            <input
-              required
-              autoComplete="address-level2"
-              aria-label="Localitate"
-              value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-              placeholder="Localitate"
-              className="bg-card border border-border rounded-md px-3 py-2.5 text-sm"
-            />
-            <input
-              required
-              autoComplete="street-address"
-              aria-label="Adresă"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              placeholder="Adresă (stradă, nr, bl, ap)"
-              className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2"
-            />
-            <textarea
-              aria-label="Mesaj cadou sau observații"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="Mesaj cadou sau observații (opțional)"
-              rows={3}
-              className="bg-card border border-border rounded-md px-3 py-2.5 text-sm sm:col-span-2"
-            />
+          <form onSubmit={submit} className="mt-10 space-y-8">
+            <section>
+              <h2 className="font-display text-2xl">Date de contact și livrare</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <input
+                  required
+                  autoComplete="name"
+                  aria-label="Nume complet"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Nume complet"
+                  className={`${inputClass} sm:col-span-2`}
+                />
+                <input
+                  required
+                  type="email"
+                  autoComplete="email"
+                  aria-label="E-mail"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="E-mail"
+                  className={inputClass}
+                />
+                <input
+                  required
+                  autoComplete="tel"
+                  inputMode="tel"
+                  aria-label="Telefon"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="Telefon"
+                  className={inputClass}
+                />
+                <input
+                  required
+                  autoComplete="address-level1"
+                  aria-label="Județ"
+                  value={form.county}
+                  onChange={(e) => setForm({ ...form, county: e.target.value })}
+                  placeholder="Județ"
+                  className={inputClass}
+                />
+                <input
+                  required
+                  autoComplete="address-level2"
+                  aria-label="Localitate"
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  placeholder="Localitate"
+                  className={inputClass}
+                />
+                <input
+                  required
+                  autoComplete="street-address"
+                  aria-label="Adresă"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="Adresă (stradă, nr, bl, ap)"
+                  className={`${inputClass} sm:col-span-2`}
+                />
+                <input
+                  autoComplete="postal-code"
+                  aria-label="Cod poștal"
+                  value={form.postalCode}
+                  onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+                  placeholder="Cod poștal (opțional)"
+                  className={inputClass}
+                />
+                <textarea
+                  aria-label="Mesaj cadou sau observații"
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Mesaj cadou sau observații (opțional)"
+                  rows={3}
+                  className={`${inputClass} sm:col-span-2`}
+                />
+              </div>
+            </section>
+
+            <ChoiceSection title="Livrare">
+              <Choice
+                selected={shippingOption === "home_delivery"}
+                onChange={() => setShippingOption("home_delivery")}
+                icon={<PackageCheck className="h-5 w-5" />}
+                title="Curier la adresă"
+                note={
+                  config?.shipping.requiresConfirmation
+                    ? "Cost confirmat înainte de procesare"
+                    : money(config?.shipping.standardPrice ?? 0)
+                }
+              />
+              <Choice
+                disabled={!config?.shipping.easyboxEnabled}
+                selected={shippingOption === "easybox"}
+                onChange={() => setShippingOption("easybox")}
+                icon={<PackageCheck className="h-5 w-5" />}
+                title="Easybox"
+                note={
+                  config?.shipping.easyboxEnabled
+                    ? config.shipping.requiresConfirmation
+                      ? "Cost confirmat înainte de procesare"
+                      : money(config.shipping.lockerPrice ?? 0)
+                    : "Disponibil după validarea SmartShip"
+                }
+              />
+            </ChoiceSection>
+
+            <ChoiceSection title="Plată">
+              <Choice
+                selected={paymentMethod === "cash_on_delivery"}
+                onChange={() => setPaymentMethod("cash_on_delivery")}
+                icon={<PackageCheck className="h-5 w-5" />}
+                title="Ramburs"
+                note="Poate necesita confirmare antifraudă"
+              />
+              <Choice
+                disabled={
+                  !config?.payments.card.enabled || Boolean(config?.shipping.requiresConfirmation)
+                }
+                selected={paymentMethod === "card"}
+                onChange={() => setPaymentMethod("card")}
+                icon={<CreditCard className="h-5 w-5" />}
+                title="Card online"
+                note={
+                  config?.payments.card.enabled
+                    ? "Procesare securizată prin Stripe"
+                    : "Disponibil după activarea Stripe"
+                }
+              />
+            </ChoiceSection>
+
+            <label className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 text-sm">
+              <input
+                required
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                {config?.policies.checkoutConsentText ??
+                  "Confirm datele comenzii și accept condițiile comerciale."}{" "}
+                <Link to="/retur" className="underline">
+                  Politica de retur și garanție
+                </Link>{" "}
+                face parte din informarea precontractuală.
+              </span>
+            </label>
             <input
               name="website"
               value={website}
-              onChange={(event) => setWebsite(event.target.value)}
+              onChange={(e) => setWebsite(e.target.value)}
               tabIndex={-1}
               autoComplete="off"
               aria-hidden
               className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
             />
             <button
-              disabled={submitting || totalQty === 0}
+              disabled={submitting || totalQty === 0 || !config}
               type="submit"
-              className="sm:col-span-2 mt-2 wood-grain text-[color:var(--cream)] rounded-md py-3.5 font-medium shadow-warm hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="wood-grain w-full rounded-md py-3.5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitting ? "Se înregistrează..." : `Trimite cererea · ${totals.total} lei produse`}
+              {submitting
+                ? "Se procesează..."
+                : paymentMethod === "card"
+                  ? "Continuă către plata securizată"
+                  : "Trimite comanda"}
             </button>
-            <p className="sm:col-span-2 text-xs text-muted-foreground text-center">
-              Nu se face nicio plată acum. Livrarea, totalul final și metoda de plată se confirmă
-              înainte de procesare.
-            </p>
           </form>
         </div>
 
-        <aside className="lg:sticky lg:top-24 h-fit bg-card border border-border rounded-xl p-6">
+        <aside className="h-fit rounded-xl border border-border bg-card p-6 lg:sticky lg:top-24">
           <h3 className="font-display text-2xl">Sumar</h3>
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Preț listă ({totalQty} buc)</span>
-              <span>{totals.baseSubtotal} lei</span>
+              <span>{money(totals.baseSubtotal)}</span>
             </div>
             {totals.discount > 0 && (
               <div className="flex justify-between text-[color:var(--gold)]">
                 <span>Reducere cantitate</span>
-                <span>-{totals.discount} lei</span>
+                <span>-{money(totals.discount)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span>Livrare</span>
-              <span>La confirmare</span>
+              <span>
+                {shippingCost == null
+                  ? "La confirmare"
+                  : shippingCost === 0
+                    ? "Gratuită"
+                    : money(shippingCost)}
+              </span>
             </div>
-            <div className="border-t border-border pt-3 flex justify-between font-display text-xl">
-              <span>Total produse</span>
-              <span>{totals.total} lei</span>
+            <div className="font-display flex justify-between border-t border-border pt-3 text-xl">
+              <span>Total</span>
+              <span>{money(totals.total + (shippingCost ?? 0))}</span>
             </div>
           </div>
-          <div className="mt-5 p-3 bg-[color:var(--gold)]/10 rounded-md text-xs">
-            {totalQty === 0 && "Adaugă primul produs."}
-            {totalQty === 1 && "1 produs: 119 lei."}
-            {totalQty >= 2 && `${totalQty} produse: 75 lei/buc.`}
-          </div>
+          {config?.shipping.freeOver != null && (
+            <p className="mt-5 rounded-md bg-[color:var(--gold)]/10 p-3 text-xs">
+              Transport gratuit pentru comenzi de minimum {money(config.shipping.freeOver)}.
+            </p>
+          )}
+          {config?.shipping.requiresConfirmation && (
+            <p className="mt-5 rounded-md bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+              Regulile de transport nu sunt încă validate. Comanda se salvează fără cost de livrare
+              și este confirmată manual; plata online rămâne blocată.
+            </p>
+          )}
         </aside>
       </div>
     </div>
+  );
+}
+
+function ChoiceSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="font-display text-2xl">{title}</h2>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+function Choice({
+  disabled,
+  selected,
+  onChange,
+  icon,
+  title,
+  note,
+}: {
+  disabled?: boolean;
+  selected: boolean;
+  onChange: () => void;
+  icon: React.ReactNode;
+  title: string;
+  note: string;
+}) {
+  return (
+    <label
+      className={`flex gap-3 rounded-lg border p-4 ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
+    >
+      <input type="radio" disabled={disabled} checked={selected} onChange={onChange} />
+      {icon}
+      <span>
+        <strong className="block text-sm">{title}</strong>
+        <span className="text-xs text-muted-foreground">{note}</span>
+      </span>
+    </label>
   );
 }

@@ -6,11 +6,18 @@ const validOrder = {
   website: "",
   customer: {
     name: "Ana Popescu",
+    email: "ana@example.com",
     phone: "0712345678",
     address: "Strada Poveștii 10",
     city: "București",
+    county: "București",
+    postalCode: "010101",
     notes: "",
   },
+  paymentMethod: "cash_on_delivery",
+  shippingOption: "home_delivery",
+  checkoutConsentAccepted: true,
+  checkoutConsentVersion: "2026.09",
   items: [{ productId: "hp-keeper", quantity: 2 }],
 };
 
@@ -23,6 +30,12 @@ describe("website order contract", () => {
     expect(websiteOrderInputSchema.safeParse({ ...validOrder, website: "spam" }).success).toBe(
       false,
     );
+  });
+
+  it("rejects an order without explicit checkout consent", () => {
+    expect(
+      websiteOrderInputSchema.safeParse({ ...validOrder, checkoutConsentAccepted: false }).success,
+    ).toBe(false);
   });
 
   it("rejects excessive per-item and cart quantities", () => {

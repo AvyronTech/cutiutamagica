@@ -10,6 +10,9 @@ import { handleAdminProductExperienceApi } from "@/server/api/admin-product-expe
 import { handleAdminProductApi } from "@/server/api/admin-product";
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
 import { getPublicProductExperience } from "@/server/api/product-experience";
+import { handleCommerceApi } from "@/server/api/commerce";
+import { sendOrderConfirmation } from "@/server/integrations/resend";
+import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
 const API_PREFIX = "/api/v1/";
 
@@ -27,7 +30,7 @@ function methodNotAllowed(allow: string): Response {
   );
 }
 
-async function createOrder(request: Request, env: Env): Promise<Response> {
+async function createOrder(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) {
     return json(
@@ -84,6 +87,14 @@ async function createOrder(request: Request, env: Env): Promise<Response> {
         });
       }
     }
+    const commerceEnv = env as CommerceEnv;
+    if (commerceEnv.RESEND_API_KEY) {
+      ctx.waitUntil(
+        sendOrderConfirmation(commerceEnv, result.orderId).catch((error) =>
+          console.error("order.customer_email_failed", { orderId: result.orderId, error }),
+        ),
+      );
+    }
 
     const { outboxId: _outboxId, replayed: _replayed, ...publicResult } = result;
     return json({ data: publicResult }, { status: result.replayed ? 200 : 201 });
@@ -122,9 +133,12 @@ export async function handleApiRequest(
   const adminAvyronResponse = await handleAdminAvyronSyncApi(request, env);
   if (adminAvyronResponse) return adminAvyronResponse;
 
+  const commerceResponse = await handleCommerceApi(request, env as CommerceEnv, ctx);
+  if (commerceResponse) return commerceResponse;
+
   if (url.pathname === "/api/v1/orders") {
     if (request.method !== "POST") return methodNotAllowed("POST");
-    return createOrder(request, env);
+    return createOrder(request, env, ctx);
   }
 
   if (request.method !== "GET") return methodNotAllowed("GET");

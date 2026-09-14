@@ -21,17 +21,39 @@ const USAGE_TYPES = [
   "audio",
   "animation",
 ] as const;
+const DOCUMENT_TYPES = [
+  "origin",
+  "conformity",
+  "warranty",
+  "rights",
+  "license",
+  "supplier_invoice",
+  "safety",
+  "instructions",
+  "other",
+] as const;
 
-const uploadMetadataSchema = z.object({
-  mediaType: z.enum(MEDIA_TYPES),
-  usageType: z.enum(USAGE_TYPES),
-  slotCode: z.enum(SLOT_CODES).nullable().optional(),
-  title: z.string().trim().max(120).default(""),
-  promoTextRo: z.string().trim().max(90).default(""),
-  altText: z.string().trim().max(240).default(""),
-  tags: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
-  syncToAvyron: z.boolean().default(false),
-});
+const uploadMetadataSchema = z
+  .object({
+    mediaType: z.enum(MEDIA_TYPES),
+    usageType: z.enum(USAGE_TYPES),
+    slotCode: z.enum(SLOT_CODES).nullable().optional(),
+    title: z.string().trim().max(120).default(""),
+    promoTextRo: z.string().trim().max(90).default(""),
+    altText: z.string().trim().max(240).default(""),
+    tags: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
+    syncToAvyron: z.boolean().default(false),
+    documentType: z.enum(DOCUMENT_TYPES).optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.mediaType === "document" && !value.documentType) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["documentType"],
+        message: "Tipul documentului este obligatoriu.",
+      });
+    }
+  });
 
 const updateMetadataSchema = z.object({
   title: z.string().trim().max(120).optional(),
@@ -57,6 +79,7 @@ const MIME_RULES = {
   "video/mp4": { extension: "mp4", mediaType: "video", max: 80_000_000 },
   "video/webm": { extension: "webm", mediaType: "video", max: 80_000_000 },
   "model/gltf-binary": { extension: "glb", mediaType: "model_3d", max: 50_000_000 },
+  "application/pdf": { extension: "pdf", mediaType: "document", max: 10_000_000 },
 } as const;
 
 type AllowedMime = keyof typeof MIME_RULES;
@@ -98,6 +121,8 @@ function isExpectedSignature(mime: AllowedMime, bytes: Uint8Array): boolean {
       return bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
     case "model/gltf-binary":
       return ascii.slice(0, 4) === "glTF";
+    case "application/pdf":
+      return ascii.slice(0, 5) === "%PDF-";
   }
 }
 
@@ -149,20 +174,21 @@ async function firstBytes(stream: ReadableStream<Uint8Array>, count: number): Pr
 
 async function listProductMedia(request: Request, env: Env, productId: string): Promise<Response> {
   await authenticateAdminRequest(request, env, "catalog.read");
-  const [product, media, audio, spin, animation, spinFrames] = await Promise.all([
-    env.DB.prepare(
-      `
+  const [product, media, audio, spin, animation, spinFrames, documents, variant] =
+    await Promise.all([
+      env.DB.prepare(
+        `
       SELECT id, slug, name, status, tagline, short_description, description, story,
              category, material, dimensions_text, weight_g, rights_status, rights_notes,
              seo_title, seo_description, search_terms, version, updated_at
       FROM products
       WHERE id = ?1 AND product_type = 'music_box'
     `,
-    )
-      .bind(productId)
-      .first(),
-    env.DB.prepare(
-      `
+      )
+        .bind(productId)
+        .first(),
+      env.DB.prepare(
+        `
       SELECT id, media_type, r2_key, source_url, alt_text, mime_type, width, height,
              duration_seconds, slot_code, title, promo_text_ro, tags_json, usage_type,
              marketing_approved, public_access, sync_to_avyron, status, rights_status,
@@ -174,30 +200,48 @@ async function listProductMedia(request: Request, env: Env, productId: string): 
         WHEN '04_dimensions' THEN 4 WHEN '05_mechanism' THEN 5 WHEN '06_melody' THEN 6
         ELSE 99 END, sort_order, created_at
     `,
-    )
-      .bind(productId)
-      .all(),
-    env.DB.prepare("SELECT * FROM product_audio_config WHERE product_id = ?1")
-      .bind(productId)
-      .first(),
-    env.DB.prepare("SELECT * FROM product_360_config WHERE product_id = ?1")
-      .bind(productId)
-      .first(),
-    env.DB.prepare("SELECT * FROM product_animation_config WHERE product_id = ?1")
-      .bind(productId)
-      .first(),
-    env.DB.prepare(
-      `
+      )
+        .bind(productId)
+        .all(),
+      env.DB.prepare("SELECT * FROM product_audio_config WHERE product_id = ?1")
+        .bind(productId)
+        .first(),
+      env.DB.prepare("SELECT * FROM product_360_config WHERE product_id = ?1")
+        .bind(productId)
+        .first(),
+      env.DB.prepare("SELECT * FROM product_animation_config WHERE product_id = ?1")
+        .bind(productId)
+        .first(),
+      env.DB.prepare(
+        `
       SELECT pf.media_id, pf.frame_index, pf.angle_degrees
       FROM product_360_frames pf
       JOIN product_media pm ON pm.id = pf.media_id
       WHERE pf.product_id = ?1 AND pm.status != 'archived'
       ORDER BY pf.frame_index
     `,
-    )
-      .bind(productId)
-      .all(),
-  ]);
+      )
+        .bind(productId)
+        .all(),
+      env.DB.prepare(
+        `SELECT id, media_id, document_type, document_number, issuer, jurisdiction,
+              valid_from, valid_until, review_status, notes, created_at, updated_at
+       FROM product_documents WHERE product_id = ?1 ORDER BY created_at DESC`,
+      )
+        .bind(productId)
+        .all(),
+      env.DB.prepare(
+        `SELECT pv.id, pv.sku, pv.ean_gtin, pv.mpn, pv.cost_bani, pv.weight_g, pv.version,
+              pis.source_type AS identifier_source, pis.verification_status AS identifier_status
+       FROM product_variants pv
+       LEFT JOIN product_identifier_sources pis
+         ON pis.variant_id = pv.id AND pis.identifier_type IN ('GTIN', 'EAN')
+       WHERE pv.product_id = ?1 AND pv.status != 'archived'
+       ORDER BY pv.sort_order LIMIT 1`,
+      )
+        .bind(productId)
+        .first(),
+    ]);
   if (!product) return json({ error: { code: "PRODUCT_NOT_FOUND" } }, { status: 404 });
   return json({
     data: {
@@ -206,6 +250,8 @@ async function listProductMedia(request: Request, env: Env, productId: string): 
       audio,
       spin360: spin ? { ...spin, frames: spinFrames.results } : null,
       animation,
+      documents: documents.results,
+      variant,
     },
   });
 }
@@ -220,7 +266,7 @@ async function uploadProductMedia(
   const declaredSize = Number(
     request.headers.get("x-media-size") ?? request.headers.get("content-length") ?? 0,
   );
-  if (!Number.isFinite(declaredSize) || declaredSize <= 0 || declaredSize > 52_000_000) {
+  if (!Number.isFinite(declaredSize) || declaredSize <= 0 || declaredSize > 80_000_000) {
     return json({ error: { code: "PAYLOAD_TOO_LARGE" } }, { status: 413 });
   }
 
@@ -272,7 +318,11 @@ async function uploadProductMedia(
   const assetId = `media_${crypto.randomUUID().replaceAll("-", "")}`;
   const key = `products/${productId}/${folder(parsed.data)}/${assetId}.${rule.extension}`;
   const storedObject = await env.MEDIA.put(key, uploadStream, {
-    httpMetadata: { contentType, cacheControl: "public, max-age=3600" },
+    httpMetadata: {
+      contentType,
+      cacheControl:
+        parsed.data.mediaType === "document" ? "private, no-store" : "public, max-age=3600",
+    },
     customMetadata: { productId, assetId, uploadedBy: admin.id },
   });
   if (storedObject.size !== declaredSize || storedObject.size > rule.max) {
@@ -327,6 +377,21 @@ async function uploadProductMedia(
         parsed.data.slotCode === "01_hero" ? 1 : 0,
       ),
     );
+    if (parsed.data.mediaType === "document") {
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO product_documents (
+             id, product_id, media_id, document_type, review_status, created_by
+           ) VALUES (?1, ?2, ?3, ?4, 'pending', ?5)`,
+        ).bind(
+          `document_${crypto.randomUUID().replaceAll("-", "")}`,
+          productId,
+          assetId,
+          parsed.data.documentType!,
+          admin.id,
+        ),
+      );
+    }
     statements.push(
       env.DB.prepare(
         `
@@ -368,7 +433,7 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
   if (!parsed.success) return json({ error: { code: "INVALID_MEDIA_UPDATE" } }, { status: 400 });
   const current = await env.DB.prepare(
     `
-    SELECT id, product_id, marketing_approved, public_access, sync_to_avyron,
+    SELECT id, product_id, media_type, marketing_approved, public_access, sync_to_avyron,
            rights_status, status, version
     FROM product_media WHERE id = ?1
   `,
@@ -435,6 +500,15 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
   if (Number(result.meta.changes) !== 1) {
     return json({ error: { code: "VERSION_CONFLICT" } }, { status: 409 });
   }
+  if (current.media_type === "document" && nextStatus === "active") {
+    await env.DB.prepare(
+      `UPDATE product_documents SET review_status = 'verified', verified_by = ?1,
+       verified_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE media_id = ?2`,
+    )
+      .bind(admin.id, mediaId)
+      .run();
+  }
   await env.DB.prepare(
     `
     INSERT INTO audit_log (
@@ -471,17 +545,51 @@ async function previewMedia(request: Request, env: Env, mediaId: string): Promis
   return new Response(request.method === "HEAD" ? null : object.body, { headers });
 }
 
+async function previewBusinessDocument(
+  request: Request,
+  env: Env,
+  documentId: string,
+): Promise<Response> {
+  await authenticateAdminRequest(request, env, "orders.read");
+  const document = await env.DB.prepare(
+    `SELECT r2_key, mime_type, filename FROM business_documents
+     WHERE id = ?1 AND status = 'active'`,
+  )
+    .bind(documentId)
+    .first<{ r2_key: string; mime_type: string; filename: string }>();
+  if (!document) return new Response("Not found", { status: 404 });
+  const object = await env.MEDIA.get(document.r2_key);
+  if (!object) return new Response("Not found", { status: 404 });
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("content-type", document.mime_type);
+  headers.set("content-disposition", `inline; filename="${document.filename.replaceAll('"', "")}"`);
+  headers.set("cache-control", "private, no-store");
+  headers.set("x-content-type-options", "nosniff");
+  return new Response(request.method === "HEAD" ? null : object.body, { headers });
+}
+
 export async function handleAdminMediaApi(request: Request, env: Env): Promise<Response | null> {
   const path = new URL(request.url).pathname;
   const productMatch = path.match(/^\/api\/v1\/admin\/products\/([a-zA-Z0-9_-]+)\/media$/);
   const mediaMatch = path.match(/^\/api\/v1\/admin\/media\/([a-zA-Z0-9_-]+)$/);
   const contentMatch = path.match(/^\/api\/v1\/admin\/media\/([a-zA-Z0-9_-]+)\/content$/);
-  if (!productMatch && !mediaMatch && !contentMatch) return null;
+  const documentMatch = path.match(/^\/api\/v1\/admin\/documents\/([a-zA-Z0-9_-]+)\/content$/);
+  if (!productMatch && !mediaMatch && !contentMatch && !documentMatch) return null;
 
   try {
     if (contentMatch) {
       if (request.method === "GET" || request.method === "HEAD") {
         return previewMedia(request, env, contentMatch[1]);
+      }
+      return json(
+        { error: { code: "METHOD_NOT_ALLOWED" } },
+        { status: 405, headers: { allow: "GET, HEAD" } },
+      );
+    }
+    if (documentMatch) {
+      if (request.method === "GET" || request.method === "HEAD") {
+        return previewBusinessDocument(request, env, documentMatch[1]);
       }
       return json(
         { error: { code: "METHOD_NOT_ALLOWED" } },

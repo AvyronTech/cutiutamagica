@@ -13,6 +13,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/produse", lastmod: "2026-09-05" },
           { path: "/poveste", lastmod: "2026-06-09" },
           { path: "/ghid-cadouri-personalizate", lastmod: "2026-09-05" },
+          { path: "/retur", lastmod: "2026-09-15" },
           ...products.map((product) => ({
             path: `/produs/${product.id}`,
             lastmod: product.updatedAt,

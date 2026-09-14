@@ -4,6 +4,9 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { assertPermission, requireAdminAuth } from "@/lib/admin-auth";
 import { getBusinessHubData } from "@/server/db/business-hub.repository";
+import { getAdminCommerceOperations } from "@/server/db/commerce-operations.repository";
+import { issueFgoInvoiceForOrder } from "@/server/services/commerce-operations.service";
+import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 import { ADMIN_ORDER_STATUSES } from "@/lib/admin-contracts";
 import {
   getAdminDashboardData,
@@ -97,6 +100,214 @@ export const getAdminBusinessHub = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     assertPermission(context.admin, "dashboard.read");
     return getBusinessHubData(env.DB);
+  });
+
+export const getCommerceOperations = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    assertPermission(context.admin, "dashboard.read");
+    const data = await getAdminCommerceOperations(env.DB);
+    const runtime = env as CommerceEnv;
+    return {
+      ...data,
+      providers: data.providers.map((provider) => ({
+        ...provider,
+        secretConfigured:
+          provider.provider === "fgo"
+            ? Boolean(runtime.FGO_PRIVATE_KEY)
+            : provider.provider === "stripe"
+              ? Boolean(runtime.STRIPE_SECRET_KEY && runtime.STRIPE_WEBHOOK_SECRET)
+              : provider.provider === "smartship"
+                ? Boolean(runtime.SMARTSHIP_API_KEY)
+                : provider.provider === "resend"
+                  ? Boolean(runtime.RESEND_API_KEY)
+                  : false,
+      })),
+    };
+  });
+
+const invoiceOrderInput = z.object({ orderId: z.string().uuid() });
+
+export const issueFgoInvoice = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(invoiceOrderInput)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "orders.write");
+    return issueFgoInvoiceForOrder(env as CommerceEnv, data.orderId, {
+      id: context.admin.id,
+      email: context.admin.email,
+    });
+  });
+
+const legalEntityInput = z.object({
+  registrationNumber: z.string().trim().max(80),
+  registeredAddress: z.string().trim().max(500),
+  publicEmail: z.union([z.literal(""), z.string().trim().email().max(254)]),
+  publicPhone: z.string().trim().max(40),
+  bankName: z.string().trim().max(120),
+  ibanMasked: z.string().trim().max(50),
+  markVerified: z.boolean(),
+});
+
+export const saveLegalEntity = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(legalEntityInput)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "team.write");
+    if (
+      data.markVerified &&
+      (!data.registrationNumber || !data.registeredAddress || !data.publicEmail)
+    ) {
+      throw new Error(
+        "Pentru verificare sunt obligatorii numărul de înregistrare, adresa și e-mailul.",
+      );
+    }
+    const status = data.markVerified ? "verified" : "incomplete";
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE legal_entities SET registration_number = ?1, registered_address = ?2,
+           public_email = ?3, public_phone = ?4, bank_name = ?5, iban_masked = ?6,
+           status = ?7, verified_at = CASE WHEN ?7 = 'verified' THEN strftime('%Y-%m-%dT%H:%M:%fZ', 'now') END,
+           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = 'legal_entity_main'`,
+      ).bind(
+        data.registrationNumber || null,
+        data.registeredAddress || null,
+        data.publicEmail || null,
+        data.publicPhone || null,
+        data.bankName || null,
+        data.ibanMasked || null,
+        status,
+      ),
+      env.DB.prepare(
+        `INSERT INTO audit_log (
+          id, actor_admin_user_id, actor_label, action, entity_type, entity_id,
+          after_json, metadata_json
+        ) VALUES (?1, ?2, ?3, 'legal_entity.update', 'legal_entity', 'legal_entity_main', ?4, '{}')`,
+      ).bind(
+        crypto.randomUUID(),
+        context.admin.id,
+        context.admin.email,
+        JSON.stringify({ ...data, status, ibanMasked: data.ibanMasked ? "configured" : "missing" }),
+      ),
+    ]);
+    return { ok: true, status };
+  });
+
+const invoiceSeriesInput = z.object({
+  seriesId: z.string().min(1).max(128),
+  prefix: z
+    .string()
+    .trim()
+    .regex(/^[A-Z0-9_-]{1,20}$/),
+  status: z.enum(["draft", "active", "closed"]),
+});
+
+export const saveInvoiceSeries = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(invoiceSeriesInput)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "orders.write");
+    await env.DB.prepare(
+      `UPDATE invoice_series SET prefix = ?1, status = ?2,
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?3`,
+    )
+      .bind(data.prefix, data.status, data.seriesId)
+      .run();
+    return { ok: true };
+  });
+
+const nullableMoney = z.union([z.number().min(0).max(100_000), z.null()]);
+const shippingPolicyInput = z.object({
+  standardPrice: nullableMoney,
+  lockerPrice: nullableMoney,
+  freeOver: nullableMoney,
+  easyboxEnabled: z.boolean(),
+  useLiveQuotes: z.boolean(),
+  markVerified: z.boolean(),
+});
+
+export const saveShippingPolicy = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(shippingPolicyInput)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "integrations.write");
+    if (data.markVerified && !data.useLiveQuotes && data.standardPrice == null) {
+      throw new Error("Completează costul standard sau activează cotațiile SmartShip.");
+    }
+    if (data.easyboxEnabled && !data.useLiveQuotes && data.lockerPrice == null) {
+      throw new Error("Completează costul Easybox sau activează cotațiile SmartShip.");
+    }
+    await env.DB.prepare(
+      `UPDATE shipping_policy_configs SET standard_price_bani = ?1, locker_price_bani = ?2,
+       free_over_bani = ?3, easybox_enabled = ?4, use_live_quotes = ?5,
+       validation_status = ?6, updated_by = ?7,
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE code = 'RO_STANDARD'`,
+    )
+      .bind(
+        data.standardPrice == null ? null : Math.round(data.standardPrice * 100),
+        data.lockerPrice == null ? null : Math.round(data.lockerPrice * 100),
+        data.freeOver == null ? null : Math.round(data.freeOver * 100),
+        data.easyboxEnabled ? 1 : 0,
+        data.useLiveQuotes ? 1 : 0,
+        data.markVerified ? "verified" : "requires_approval",
+        context.admin.id,
+      )
+      .run();
+    await env.CACHE.delete("commerce:public-config:v1");
+    return { ok: true };
+  });
+
+const returnStatusInput = z.object({
+  returnId: z.string().uuid(),
+  status: z.enum([
+    "submitted",
+    "eligibility_review",
+    "approved",
+    "rejected",
+    "in_transit",
+    "received",
+    "inspecting",
+    "refund_pending",
+    "refunded",
+    "closed",
+    "cancelled",
+  ]),
+});
+
+export const updateReturnStatus = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(returnStatusInput)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "orders.write");
+    const current = await env.DB.prepare("SELECT status FROM return_requests WHERE id = ?1")
+      .bind(data.returnId)
+      .first<{ status: string }>();
+    if (!current) throw new Error("Cererea de retur nu există.");
+    const nowIso = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE return_requests SET status = ?1,
+         approved_at = CASE WHEN ?1 = 'approved' THEN ?2 ELSE approved_at END,
+         received_at = CASE WHEN ?1 = 'received' THEN ?2 ELSE received_at END,
+         closed_at = CASE WHEN ?1 IN ('closed', 'cancelled', 'rejected') THEN ?2 ELSE closed_at END,
+         updated_at = ?2 WHERE id = ?3`,
+      ).bind(data.status, nowIso, data.returnId),
+      env.DB.prepare(
+        `INSERT INTO return_events (
+          id, return_request_id, event_type, from_status, to_status, actor_type,
+          actor_id, message, metadata_json, created_at
+        ) VALUES (?1, ?2, 'return.status_changed', ?3, ?4, 'admin', ?5, ?6, '{}', ?7)`,
+      ).bind(
+        crypto.randomUUID(),
+        data.returnId,
+        current.status,
+        data.status,
+        context.admin.id,
+        `Status schimbat în ${data.status}.`,
+        nowIso,
+      ),
+    ]);
+    return { ok: true };
   });
 
 const trimmedString = (max: number) => z.string().trim().max(max);

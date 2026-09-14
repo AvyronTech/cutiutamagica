@@ -7,6 +7,7 @@ const navItems = [
   { to: "/poveste", label: "Poveste" },
   { to: "/comanda", label: "Comandă" },
   { to: "/favorite", label: "Favorite" },
+  { to: "/retur", label: "Retur și garanție" },
 ] as const;
 
 // Sugestiv: o cutiuță cu o notă muzicală ce se înalță deasupra ei
@@ -105,7 +106,10 @@ export function Footer() {
 
         <div className="w-24 h-px bg-gradient-to-r from-transparent via-[color:var(--gold)]/40 to-transparent" />
 
-        <p className="text-[11px] text-[color:var(--cream)]/60">© {year} Cutiuța Magică</p>
+        <div className="text-[11px] leading-5 text-[color:var(--cream)]/60">
+          <p>© {year} Cutiuța Magică · DIGITAL ECO TECH SOLUTION SRL</p>
+          <p>CUI 55055976 · neplătitor de TVA</p>
+        </div>
       </div>
     </footer>
   );

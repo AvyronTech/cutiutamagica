@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   ExternalLink,
+  FileText,
   Film,
   ImagePlus,
   Library,
@@ -63,7 +64,8 @@ const SLOT_GUIDE = [
   },
 ] as const;
 
-type TabId = "general" | "media" | "audio" | "spin360" | "animation" | "seo" | "avyron";
+type TabId =
+  "general" | "media" | "documents" | "audio" | "spin360" | "animation" | "seo" | "avyron";
 type MediaAsset = {
   id: string;
   media_type: "image" | "audio" | "video" | "spin_360" | "model_3d" | "document";
@@ -113,6 +115,23 @@ type StudioData = {
       })
     | null;
   animation: Record<string, string | number | null> | null;
+  documents: Array<{
+    id: string;
+    media_id: string;
+    document_type: string;
+    review_status: string;
+  }>;
+  variant: {
+    id: string;
+    sku: string;
+    ean_gtin: string | null;
+    mpn: string | null;
+    cost_bani: number | null;
+    weight_g: number | null;
+    version: number;
+    identifier_source: string | null;
+    identifier_status: string | null;
+  } | null;
 };
 
 const inputClass =
@@ -182,14 +201,20 @@ function AssetEditor({
             ? {
                 marketingApproved: true,
                 rightsStatus: "cleared",
-                publicAccess: true,
+                publicAccess: asset.media_type === "document" ? false : true,
                 status: "active",
               }
             : {}),
         }),
       });
       await onChanged();
-      toast.success(publish ? "Asset aprobat și publicat" : "Metadate salvate");
+      toast.success(
+        publish
+          ? asset.media_type === "document"
+            ? "Document validat intern"
+            : "Asset aprobat și publicat"
+          : "Metadate salvate",
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Asset-ul nu a putut fi actualizat.");
     } finally {
@@ -218,6 +243,15 @@ function AssetEditor({
             preload="metadata"
             className="h-full w-full object-contain"
           />
+        ) : asset.media_type === "document" ? (
+          <a
+            href={previewUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-full flex-col items-center justify-center gap-2 text-xs text-cyan-200 hover:text-cyan-100"
+          >
+            <FileText className="h-10 w-10" /> Deschide documentul PDF
+          </a>
         ) : (
           <div className="grid h-full place-items-center text-xs text-slate-500">
             Preview indisponibil
@@ -264,7 +298,11 @@ function AssetEditor({
           onClick={() => update(true)}
           className="rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-[#052014] hover:bg-emerald-300 disabled:opacity-50"
         >
-          {busy ? "Se salvează..." : "Aprobă și publică"}
+          {busy
+            ? "Se salvează..."
+            : asset.media_type === "document"
+              ? "Validează intern"
+              : "Aprobă și publică"}
         </button>
       </div>
     </div>
@@ -330,6 +368,16 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
           seoTitle: data.product.seo_title ?? "",
           seoDescription: data.product.seo_description ?? "",
           searchTerms: data.product.search_terms ?? "",
+          variant: data.variant
+            ? {
+                id: data.variant.id,
+                expectedVersion: data.variant.version,
+                eanGtin: String(form.get("eanGtin") ?? ""),
+                mpn: String(form.get("mpn") ?? ""),
+                cost: form.get("cost") ? Number(form.get("cost")) : null,
+                identifierSource: form.get("identifierSource"),
+              }
+            : undefined,
         }),
       });
       await onChanged();
@@ -375,6 +423,43 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
           type="number"
           min="1"
           defaultValue={p.weight_g ?? ""}
+          className={inputClass}
+        />
+      </Field>
+      <Field label="SKU (read-only)">
+        <input value={data.variant?.sku ?? ""} readOnly className={`${inputClass} opacity-70`} />
+      </Field>
+      <Field label="GTIN / EAN">
+        <input
+          name="eanGtin"
+          inputMode="numeric"
+          pattern="[0-9]{8,14}"
+          defaultValue={data.variant?.ean_gtin ?? ""}
+          placeholder="8–14 cifre"
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Sursa GTIN / EAN">
+        <select
+          name="identifierSource"
+          defaultValue={data.variant?.identifier_source ?? "supplier"}
+          className={inputClass}
+        >
+          <option value="gs1">GS1</option>
+          <option value="manufacturer">Producător</option>
+          <option value="supplier">Furnizor</option>
+        </select>
+      </Field>
+      <Field label="MPN / cod producător">
+        <input name="mpn" defaultValue={data.variant?.mpn ?? ""} className={inputClass} />
+      </Field>
+      <Field label="Cost unitar (RON)">
+        <input
+          name="cost"
+          type="number"
+          min="0"
+          step="0.01"
+          defaultValue={data.variant?.cost_bani == null ? "" : data.variant.cost_bani / 100}
           className={inputClass}
         />
       </Field>
@@ -501,6 +586,7 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
 export default function ProductStudio({ productId }: { productId: string }) {
   const [tab, setTab] = useState<TabId>("media");
   const [uploading, setUploading] = useState<string | null>(null);
+  const [documentType, setDocumentType] = useState("origin");
   const query = useQuery({
     queryKey: ["admin", "product-studio", productId],
     queryFn: () => api<StudioData>(`/api/v1/admin/products/${productId}/media`),
@@ -541,7 +627,13 @@ export default function ProductStudio({ productId }: { productId: string }) {
   async function uploadFiles(
     files: File[],
     marker: string,
-    metadata: { mediaType: string; usageType: string; slotCode?: string | null; title?: string },
+    metadata: {
+      mediaType: string;
+      usageType: string;
+      slotCode?: string | null;
+      title?: string;
+      documentType?: string;
+    },
   ) {
     for (const file of files) {
       await upload.mutateAsync({
@@ -580,10 +672,12 @@ export default function ProductStudio({ productId }: { productId: string }) {
   const spinAssets = data.media.filter((asset) => asset.usage_type === "360");
   const videoAssets = data.media.filter((asset) => asset.media_type === "video");
   const imageAssets = data.media.filter((asset) => asset.media_type === "image");
+  const documentAssets = data.media.filter((asset) => asset.media_type === "document");
 
   const tabs: Array<{ id: TabId; label: string; icon: typeof Library }> = [
     { id: "general", label: "General", icon: Search },
     { id: "media", label: "Media 01–06", icon: Library },
+    { id: "documents", label: "Documente", icon: FileText },
     { id: "audio", label: "Audio", icon: Music2 },
     { id: "spin360", label: "360°", icon: Rotate3D },
     { id: "animation", label: "Animație", icon: Film },
@@ -678,6 +772,70 @@ export default function ProductStudio({ productId }: { productId: string }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {tab === "documents" && (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <section>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {documentAssets.map((asset) => (
+                <div key={asset.id} className="rounded-lg border border-[#2a3951] bg-[#101a2c] p-4">
+                  <p className="mb-3 text-[11px] uppercase tracking-wide text-slate-500">
+                    {data.documents.find((document) => document.media_id === asset.id)
+                      ?.document_type ?? "document"}
+                  </p>
+                  <AssetEditor asset={asset} onChanged={() => query.refetch()} />
+                </div>
+              ))}
+            </div>
+            {documentAssets.length === 0 && (
+              <div className="rounded-lg border border-dashed border-[#334155] p-10 text-center text-xs text-slate-500">
+                Nu există documente pentru acest produs.
+              </div>
+            )}
+          </section>
+          <aside className="h-fit space-y-4 rounded-lg border border-[#2a3951] bg-[#101a2c] p-4">
+            <div>
+              <h2 className="text-sm font-semibold text-white">Dosarul produsului</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                Documentele rămân private în R2 și nu sunt publicate în magazin.
+              </p>
+            </div>
+            <Field label="Tip document">
+              <select
+                value={documentType}
+                onChange={(event) => setDocumentType(event.target.value)}
+                className={inputClass}
+              >
+                <option value="origin">Origine</option>
+                <option value="conformity">Conformitate</option>
+                <option value="warranty">Garanție</option>
+                <option value="rights">Drepturi</option>
+                <option value="license">Licență</option>
+                <option value="supplier_invoice">Factură furnizor</option>
+                <option value="safety">Siguranță</option>
+                <option value="instructions">Instrucțiuni</option>
+                <option value="other">Alt document</option>
+              </select>
+            </Field>
+            <UploadButton
+              accept="application/pdf"
+              busy={uploading === "document"}
+              label="Încarcă PDF privat"
+              onFiles={(files) =>
+                uploadFiles(files, "document", {
+                  mediaType: "document",
+                  usageType: "product",
+                  documentType,
+                })
+              }
+            />
+            <p className="text-[11px] leading-5 text-slate-500">
+              Maxim 10 MB. Fișierul este verificat după semnătura PDF, jurnalizat și legat de
+              produs.
+            </p>
+          </aside>
         </div>
       )}
 

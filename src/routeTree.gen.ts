@@ -17,6 +17,7 @@ import { Route as FavoriteRouteImport } from './routes/favorite'
 import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
 import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as ProduseRouteImport } from './routes/produse'
+import { Route as ReturRouteImport } from './routes/retur'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as ProdusIdRouteImport } from './routes/produs.$id'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedAdminPlatformsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminPostsRouteImport } from './routes/_authenticated/admin/posts'
 import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin/products'
 import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_authenticated/admin/qr-generator'
+import { Route as AuthenticatedAdminReturnsRouteImport } from './routes/_authenticated/admin/returns'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminShippingRouteImport } from './routes/_authenticated/admin/shipping'
 import { Route as AuthenticatedAdminStatisticsRouteImport } from './routes/_authenticated/admin/statistics'
@@ -77,6 +79,11 @@ const PovesteRoute = PovesteRouteImport.update({
 const ProduseRoute = ProduseRouteImport.update({
   id: '/produse',
   path: '/produse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReturRoute = ReturRouteImport.update({
+  id: '/retur',
+  path: '/retur',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -175,6 +182,12 @@ const AuthenticatedAdminQrGeneratorRoute =
     path: '/qr-generator',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminReturnsRoute =
+  AuthenticatedAdminReturnsRouteImport.update({
+    id: '/returns',
+    path: '/returns',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -208,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
+  '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
@@ -224,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
   '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
+  '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -238,6 +253,7 @@ export interface FileRoutesByTo {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
+  '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/produs/$id': typeof ProdusIdRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
@@ -253,6 +269,7 @@ export interface FileRoutesByTo {
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
   '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
+  '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -269,6 +286,7 @@ export interface FileRoutesById {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
+  '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
@@ -285,6 +303,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/posts': typeof AuthenticatedAdminPostsRoute
   '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/_authenticated/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
+  '/_authenticated/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/_authenticated/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -301,6 +320,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/poveste'
     | '/produse'
+    | '/retur'
     | '/sitemap.xml'
     | '/admin'
     | '/produs/$id'
@@ -317,6 +337,7 @@ export interface FileRouteTypes {
     | '/admin/posts'
     | '/admin/products'
     | '/admin/qr-generator'
+    | '/admin/returns'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
@@ -331,6 +352,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/poveste'
     | '/produse'
+    | '/retur'
     | '/sitemap.xml'
     | '/produs/$id'
     | '/admin/ai'
@@ -346,6 +368,7 @@ export interface FileRouteTypes {
     | '/admin/posts'
     | '/admin/products'
     | '/admin/qr-generator'
+    | '/admin/returns'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
@@ -361,6 +384,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/poveste'
     | '/produse'
+    | '/retur'
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/produs/$id'
@@ -377,6 +401,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/posts'
     | '/_authenticated/admin/products'
     | '/_authenticated/admin/qr-generator'
+    | '/_authenticated/admin/returns'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/shipping'
     | '/_authenticated/admin/statistics'
@@ -393,6 +418,7 @@ export interface RootRouteChildren {
   GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
   PovesteRoute: typeof PovesteRoute
   ProduseRoute: typeof ProduseRoute
+  ReturRoute: typeof ReturRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ProdusIdRoute: typeof ProdusIdRoute
 }
@@ -453,6 +479,13 @@ declare module '@tanstack/react-router' {
       path: '/produse'
       fullPath: '/produse'
       preLoaderRoute: typeof ProduseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/retur': {
+      id: '/retur'
+      path: '/retur'
+      fullPath: '/retur'
+      preLoaderRoute: typeof ReturRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -574,6 +607,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQrGeneratorRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/returns': {
+      id: '/_authenticated/admin/returns'
+      path: '/returns'
+      fullPath: '/admin/returns'
+      preLoaderRoute: typeof AuthenticatedAdminReturnsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -633,6 +673,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPostsRoute: typeof AuthenticatedAdminPostsRoute
   AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRouteWithChildren
   AuthenticatedAdminQrGeneratorRoute: typeof AuthenticatedAdminQrGeneratorRoute
+  AuthenticatedAdminReturnsRoute: typeof AuthenticatedAdminReturnsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminShippingRoute: typeof AuthenticatedAdminShippingRoute
   AuthenticatedAdminStatisticsRoute: typeof AuthenticatedAdminStatisticsRoute
@@ -655,6 +696,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminProductsRoute:
       AuthenticatedAdminProductsRouteWithChildren,
     AuthenticatedAdminQrGeneratorRoute: AuthenticatedAdminQrGeneratorRoute,
+    AuthenticatedAdminReturnsRoute: AuthenticatedAdminReturnsRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminShippingRoute: AuthenticatedAdminShippingRoute,
     AuthenticatedAdminStatisticsRoute: AuthenticatedAdminStatisticsRoute,
@@ -686,6 +728,7 @@ const rootRouteChildren: RootRouteChildren = {
   GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
   PovesteRoute: PovesteRoute,
   ProduseRoute: ProduseRoute,
+  ReturRoute: ReturRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ProdusIdRoute: ProdusIdRoute,
 }

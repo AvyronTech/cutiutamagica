@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MAX_CART_QUANTITY, MAX_ITEM_QUANTITY } from "@/lib/pricing";
+import { PAYMENT_METHODS, SHIPPING_OPTIONS } from "@/lib/commerce-operations-contracts";
 
 export const websiteOrderInputSchema = z
   .object({
@@ -7,11 +8,18 @@ export const websiteOrderInputSchema = z
     website: z.string().max(0).optional().default(""),
     customer: z.object({
       name: z.string().trim().min(2).max(120),
+      email: z.string().trim().email().max(254),
       phone: z.string().trim().min(8).max(30),
       address: z.string().trim().min(5).max(300),
       city: z.string().trim().min(2).max(120),
+      county: z.string().trim().max(120).optional().default(""),
+      postalCode: z.string().trim().max(20).optional().default(""),
       notes: z.string().trim().max(1_000),
     }),
+    paymentMethod: z.enum(PAYMENT_METHODS),
+    shippingOption: z.enum(SHIPPING_OPTIONS),
+    checkoutConsentAccepted: z.literal(true),
+    checkoutConsentVersion: z.string().trim().min(1).max(30),
     items: z
       .array(
         z.object({
@@ -43,5 +51,6 @@ export interface WebsiteOrderPublicResult {
   discount: number;
   total: number;
   currency: string;
-  shippingPending: true;
+  shipping: number;
+  shippingPending: boolean;
 }
