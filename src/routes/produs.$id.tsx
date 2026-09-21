@@ -3,6 +3,8 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 import { Heart, ShoppingBag, Music, Package, Gift, Sparkles, Minus, Plus } from "lucide-react";
 import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
+import { getStorePricing } from "@/lib/store-pricing.functions";
+import { catalogProducts } from "@/lib/catalog-products";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
@@ -16,8 +18,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/produs/$id")({
   component: ProductPage,
-  loader: ({ params }) => {
-    const product = getProduct(params.id);
+  loader: async ({ params }) => {
+    const pricing = await getStorePricing();
+    const product = catalogProducts(pricing.catalog).find((p) => p.id === params.id);
     if (!product) throw notFound();
     return { product };
   },
@@ -38,7 +41,7 @@ export const Route = createFileRoute("/produs/$id")({
         { name: "twitter:image", content: image },
         { property: "og:url", content: url },
         { property: "og:type", content: "product" },
-        { property: "product:price:amount", content: "119" },
+        { property: "product:price:amount", content: String(loaderData.product.price) },
         { property: "product:price:currency", content: "RON" },
       ],
       links: [{ rel: "canonical", href: url }],
@@ -63,7 +66,7 @@ export const Route = createFileRoute("/produs/$id")({
             ],
             offers: {
               "@type": "Offer",
-              price: "119",
+              price: loaderData.product.price,
               priceCurrency: "RON",
               url,
               seller: { "@type": "Organization", name: "Cutiuța Magică" },
@@ -99,7 +102,7 @@ export const Route = createFileRoute("/produs/$id")({
 
 function ProductPage() {
   const { product } = Route.useLoaderData();
-  const { addToCart, toggleFavorite, isFavorite } = useShop();
+  const { addToCart, toggleFavorite, isFavorite, promotion, products } = useShop();
   const fav = isFavorite(product.id);
   const ref = useRef<HTMLDivElement>(null);
   const [qty, setQty] = useState(1);
@@ -126,7 +129,7 @@ function ProductPage() {
   const related = useMemo(
     () =>
       products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4),
-    [product.id, product.category],
+    [product.id, product.category, products],
   );
   const remoteGallery =
     experienceQuery.data?.gallery.map((image) => ({
@@ -197,8 +200,15 @@ function ProductPage() {
           <p className="mt-3 text-lg text-muted-foreground">{product.tagline}</p>
 
           <div className="mt-6 flex items-baseline gap-3">
-            <span className="font-display text-4xl">{PRICE} lei</span>
-            <span className="text-sm text-muted-foreground">75 lei/buc de la 2 cutiuțe</span>
+            {product.originalPrice != null && product.originalPrice > (product.price ?? 0) && (
+              <del className="text-muted-foreground">{product.originalPrice} lei</del>
+            )}
+            <span className="font-display text-4xl">{product.price} lei</span>
+            {promotion && promotion.unitPrice < (product.price ?? 0) && (
+              <span className="text-sm text-muted-foreground">
+                {promotion.unitPrice} lei/buc de la {promotion.minQuantity} cutiuțe
+              </span>
+            )}
           </div>
 
           <div className="mt-6 flex items-center gap-3">

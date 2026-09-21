@@ -131,6 +131,7 @@ export async function getBusinessHubData(db: D1Database): Promise<BusinessHubDat
     "ai",
   ];
   const definitions: Record<BusinessArea, Array<[string, string, string?]>> = {
+    traffic: [],
     inventory: [
       ["locations", "Locații"],
       ["on_hand", "În stoc"],
@@ -198,6 +199,7 @@ export async function getBusinessHubData(db: D1Database): Promise<BusinessHubDat
     status: stringValue(row.status),
     detail: stringValue(row.detail),
   }));
+  metricMap.traffic = [];
 
   return { metrics: metricMap, systems, generatedAt: new Date().toISOString() };
 }

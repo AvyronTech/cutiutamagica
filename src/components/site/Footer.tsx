@@ -8,6 +8,8 @@ const navItems = [
   { to: "/comanda", label: "Comandă" },
   { to: "/favorite", label: "Favorite" },
   { to: "/retur", label: "Retur și garanție" },
+  { to: "/termeni-de-utilizare", label: "Termeni de utilizare" },
+  { to: "/politica-de-confidentialitate", label: "Politica de confidențialitate" },
 ] as const;
 
 // Sugestiv: o cutiuță cu o notă muzicală ce se înalță deasupra ei
@@ -87,6 +89,22 @@ export function Footer() {
             </Link>
           ))}
         </nav>
+        <a
+          href="https://reclamatiisal.anpc.ro"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="ANPC: Soluționarea alternativă a litigiilor"
+          className="inline-flex h-[50px] w-[250px] items-center justify-center bg-white"
+        >
+          <img
+            src="/anpc-sal.png"
+            alt="ANPC: Soluționarea alternativă a litigiilor"
+            width={250}
+            height={50}
+            loading="lazy"
+            className="h-[50px] w-[250px] object-contain"
+          />
+        </a>
 
         {/* Logo Avyron */}
         <a
@@ -107,8 +125,7 @@ export function Footer() {
         <div className="w-24 h-px bg-gradient-to-r from-transparent via-[color:var(--gold)]/40 to-transparent" />
 
         <div className="text-[11px] leading-5 text-[color:var(--cream)]/60">
-          <p>© {year} Cutiuța Magică · DIGITAL ECO TECH SOLUTION SRL</p>
-          <p>CUI 55055976 · neplătitor de TVA</p>
+          <p>© {year} Cutiuța Magică</p>
         </div>
       </div>
     </footer>

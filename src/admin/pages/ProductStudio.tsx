@@ -18,6 +18,7 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import SupplierResearch from "./SupplierResearch";
 
 const SLOT_GUIDE = [
   {
@@ -65,7 +66,15 @@ const SLOT_GUIDE = [
 ] as const;
 
 type TabId =
-  "general" | "media" | "documents" | "audio" | "spin360" | "animation" | "seo" | "avyron";
+  | "general"
+  | "media"
+  | "documents"
+  | "audio"
+  | "spin360"
+  | "animation"
+  | "seo"
+  | "avyron"
+  | "suppliers";
 type MediaAsset = {
   id: string;
   media_type: "image" | "audio" | "video" | "spin_360" | "model_3d" | "document";
@@ -682,6 +691,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
     { id: "spin360", label: "360°", icon: Rotate3D },
     { id: "animation", label: "Animație", icon: Film },
     { id: "seo", label: "SEO", icon: Search },
+    { id: "suppliers", label: "Relevanță / furnizori", icon: Search },
     { id: "avyron", label: "Sync AVYRON", icon: Send },
   ];
 
@@ -725,6 +735,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
 
       {tab === "general" && <GeneralForm data={data} onChanged={() => query.refetch()} />}
       {tab === "seo" && <SeoForm data={data} onChanged={() => query.refetch()} />}
+      {tab === "suppliers" && <SupplierResearch productId={data.product.id} />}
 
       {tab === "media" && (
         <div className="space-y-5">

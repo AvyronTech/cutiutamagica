@@ -50,6 +50,8 @@ const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
   { path: "/admin/products", label: "Produse", icon: ShoppingBag },
+  { path: "/admin/promotions", label: "Promoții", icon: Target },
+  { path: "/admin/suppliers", label: "Aprovizionare", icon: Search },
   { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
   { path: "/admin/shipping", label: "Livrare", icon: Truck },
   { path: "/admin/billing", label: "Facturare", icon: FileText },
@@ -59,6 +61,8 @@ const navItems = [
   { path: "/admin/posts", label: "Postări", icon: Send },
   { path: "/admin/customers", label: "Clienți", icon: Users },
   { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
+  { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
+  { path: "/admin/traffic", label: "Trafic", icon: TrendingUp },
   { path: "/admin/notifications", label: "Notificări", icon: BellRing },
   { path: "/admin/ai", label: "Agenți AI", icon: Bot },
   { path: "/admin/statistics", label: "Statistici", icon: BarChart3 },
@@ -244,6 +248,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {isMobile && (
             <button
               onClick={() => setSidebarOpen(false)}
+              aria-label="Închide meniul"
               className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400"
             >
               <X className="w-5 h-5" />
@@ -290,7 +295,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="h-14 md:h-16 border-b border-[#1E293B] bg-[#0B1120]/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 flex-shrink-0 relative z-30">
           <div className="flex items-center gap-3">
@@ -298,6 +303,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {isMobile && (
               <button
                 onClick={() => setSidebarOpen(true)}
+                aria-label="Deschide meniul"
                 className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400 -ml-1"
               >
                 <Menu className="w-5 h-5" />
@@ -459,7 +465,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Floating Action Button - Mobile */}
-      {isMobile && (
+      {isMobile && location.pathname === "/admin" && (
         <div className="fixed bottom-6 right-6 z-50">
           {/* FAB Menu Items */}
           {fabOpen && (
@@ -491,6 +497,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* FAB Button */}
           <button
             onClick={() => setFabOpen(!fabOpen)}
+            aria-label="Acțiuni rapide"
+            aria-expanded={fabOpen}
             className={`w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl flex items-center justify-center transition-all duration-300 ${
               fabOpen ? "rotate-45" : ""
             }`}

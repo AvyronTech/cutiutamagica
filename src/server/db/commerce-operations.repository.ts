@@ -29,6 +29,14 @@ function parseJson<T>(value: DbValue | undefined, fallback: T): T {
     return fallback;
   }
 }
+function countryList(value: DbValue | undefined): string[] {
+  const parsed = parseJson<unknown>(value, ["RO"]);
+  return Array.isArray(parsed) &&
+    parsed.length &&
+    parsed.every((v) => typeof v === "string" && /^[A-Z]{2}$/.test(v))
+    ? parsed
+    : ["RO"];
+}
 
 function normalizePhone(phone: string): string | null {
   if (!phone.trim()) return null;
@@ -72,6 +80,7 @@ export async function getCommercePublicConfig(
   const returnRules = parseJson<{ withdrawal_days?: number }>(returns?.content_json, {});
   const warrantyRules = parseJson<{ legal_guarantee_months?: number }>(warranty?.content_json, {});
   const shippingVerified = shipping.validation_status === "verified";
+  const allowedCountries = countryList(shipping.allowed_countries_json);
 
   return {
     seller: {
@@ -104,6 +113,13 @@ export async function getCommercePublicConfig(
         shippingVerified && shipping.free_over_bani != null
           ? numberValue(shipping.free_over_bani) / 100
           : null,
+      defaultWeightG: numberValue(shipping.default_weight_g),
+      defaultLengthCm: numberValue(shipping.default_length_cm),
+      defaultWidthCm: numberValue(shipping.default_width_cm),
+      defaultHeightCm: numberValue(shipping.default_height_cm),
+      allowedCountries,
+      internationalReady:
+        Array.isArray(allowedCountries) && allowedCountries.some((country) => country !== "RO"),
       currency: stringValue(shipping.currency) || "RON",
       requiresConfirmation: !shippingVerified,
     },
@@ -316,9 +332,14 @@ export async function getAdminCommerceOperations(db: D1Database): Promise<AdminC
        ORDER BY rr.submitted_at DESC LIMIT 100`,
     ),
     db.prepare("SELECT * FROM shipping_policy_configs WHERE code = 'RO_STANDARD'"),
+    db.prepare("SELECT * FROM financial_accounts ORDER BY provider, account_type, currency"),
+    db.prepare(
+      `SELECT source,MAX(imported_at) AS last_sync FROM traffic_daily_metrics GROUP BY source`,
+    ),
   ]);
   const entity = results[0].results[0] ?? {};
   const shipping = results[6].results[0] ?? {};
+  const shippingCountries = countryList(shipping.allowed_countries_json);
   return {
     legalEntity: {
       legalName: stringValue(entity.legal_name),
@@ -350,6 +371,29 @@ export async function getAdminCommerceOperations(db: D1Database): Promise<AdminC
       lastHealthcheckAt: nullableString(row.last_healthcheck_at),
       lastError: nullableString(row.last_error_message),
     })),
+    financialAccounts: results[7].results.map((row) => ({
+      id: stringValue(row.id),
+      provider: stringValue(row.provider),
+      accountType: stringValue(row.account_type),
+      label: stringValue(row.label),
+      currency: stringValue(row.currency),
+      maskedIdentifier: nullableString(row.masked_identifier),
+      secretConfigured: false,
+      status: stringValue(row.status),
+      lastSyncedAt: nullableString(row.last_synced_at),
+    })),
+    trafficReadiness: {
+      googleAnalyticsReady: results[8].results.some((row) => row.source === "ga4"),
+      gscReady: results[8].results.some((row) => row.source === "gsc"),
+      socialReady: results[8].results.some((row) =>
+        ["facebook", "instagram", "tiktok"].includes(stringValue(row.source)),
+      ),
+      lastSyncAt:
+        results[8].results
+          .map((row) => stringValue(row.last_sync))
+          .sort()
+          .at(-1) ?? null,
+    },
     pendingInvoiceOrders: results[3].results.map((row) => ({
       id: stringValue(row.id),
       orderNumber: stringValue(row.order_number),
@@ -385,6 +429,12 @@ export async function getAdminCommerceOperations(db: D1Database): Promise<AdminC
       lockerPriceBani:
         shipping.locker_price_bani == null ? null : numberValue(shipping.locker_price_bani),
       freeOverBani: shipping.free_over_bani == null ? null : numberValue(shipping.free_over_bani),
+      defaultWeightG: numberValue(shipping.default_weight_g),
+      defaultLengthCm: numberValue(shipping.default_length_cm),
+      defaultWidthCm: numberValue(shipping.default_width_cm),
+      defaultHeightCm: numberValue(shipping.default_height_cm),
+      allowedCountries: shippingCountries,
+      internationalReady: shippingCountries.some((country) => country !== "RO"),
       easyboxEnabled: numberValue(shipping.easybox_enabled) === 1,
       useLiveQuotes: numberValue(shipping.use_live_quotes) === 1,
       validationStatus: stringValue(shipping.validation_status),

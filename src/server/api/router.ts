@@ -13,6 +13,7 @@ import { getPublicProductExperience } from "@/server/api/product-experience";
 import { handleCommerceApi } from "@/server/api/commerce";
 import { sendOrderConfirmation } from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
+import { credentialStatuses } from "@/server/services/growth-settings";
 
 const API_PREFIX = "/api/v1/";
 
@@ -88,7 +89,9 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
       }
     }
     const commerceEnv = env as CommerceEnv;
-    if (commerceEnv.RESEND_API_KEY) {
+    if (
+      (await credentialStatuses(commerceEnv)).some((c) => c.provider === "resend" && c.configured)
+    ) {
       ctx.waitUntil(
         sendOrderConfirmation(commerceEnv, result.orderId).catch((error) =>
           console.error("order.customer_email_failed", { orderId: result.orderId, error }),

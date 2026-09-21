@@ -34,6 +34,7 @@ export type Product = {
   details: string[];
   searchTerms: string[];
   price?: number;
+  originalPrice?: number | null;
 };
 
 export const PRICE = PRODUCT_BASE_PRICE_BANI / 100;

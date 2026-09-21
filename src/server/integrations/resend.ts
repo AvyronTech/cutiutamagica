@@ -4,6 +4,7 @@ import {
   requiredSecret,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
+import { credential } from "@/server/services/growth-settings";
 
 function escapeHtml(value: string): string {
   return value
@@ -14,7 +15,7 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#039;");
 }
 
-async function sendEmail(
+export async function sendEmail(
   env: CommerceEnv,
   input: {
     to: string;
@@ -26,7 +27,7 @@ async function sendEmail(
     entityId: string;
   },
 ): Promise<void> {
-  const apiKey = requiredSecret(env.RESEND_API_KEY, "RESEND_API_KEY");
+  const apiKey = requiredSecret((await credential(env, "resend")) ?? undefined, "RESEND_API_KEY");
   const environment = env.APP_ENV === "production" ? "production" : "sandbox";
   const response = await fetchWithTimeout("https://api.resend.com/emails", {
     method: "POST",
@@ -63,7 +64,8 @@ async function sendEmail(
     errorCode: response.ok ? null : "RESEND_SEND_FAILED",
     errorMessage: response.ok ? null : result?.message || `HTTP ${response.status}`,
   });
-  if (!response.ok) throw new Error(result?.message || `Resend HTTP ${response.status}`);
+  if (!response.ok || !result?.id)
+    throw new Error(`Resend HTTP ${response.status}: trimitere neconfirmată`);
 }
 
 export async function sendOrderConfirmation(env: CommerceEnv, orderId: string): Promise<void> {

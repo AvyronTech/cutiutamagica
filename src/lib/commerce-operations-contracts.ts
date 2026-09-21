@@ -50,6 +50,12 @@ export interface CommercePublicConfig {
     standardPrice: number | null;
     lockerPrice: number | null;
     freeOver: number | null;
+    defaultWeightG: number;
+    defaultLengthCm: number;
+    defaultWidthCm: number;
+    defaultHeightCm: number;
+    allowedCountries: string[];
+    internationalReady: boolean;
     currency: string;
     requiresConfirmation: boolean;
   };
@@ -94,6 +100,23 @@ export interface AdminCommerceOperations {
     lastHealthcheckAt: string | null;
     lastError: string | null;
   }>;
+  financialAccounts: Array<{
+    id: string;
+    provider: string;
+    accountType: string;
+    label: string;
+    currency: string;
+    maskedIdentifier: string | null;
+    status: string;
+    secretConfigured: boolean;
+    lastSyncedAt: string | null;
+  }>;
+  trafficReadiness: {
+    googleAnalyticsReady: boolean;
+    gscReady: boolean;
+    socialReady: boolean;
+    lastSyncAt: string | null;
+  };
   pendingInvoiceOrders: Array<{
     id: string;
     orderNumber: string;
@@ -127,6 +150,12 @@ export interface AdminCommerceOperations {
     standardPriceBani: number | null;
     lockerPriceBani: number | null;
     freeOverBani: number | null;
+    defaultWeightG: number;
+    defaultLengthCm: number;
+    defaultWidthCm: number;
+    defaultHeightCm: number;
+    allowedCountries: string[];
+    internationalReady: boolean;
     easyboxEnabled: boolean;
     useLiveQuotes: boolean;
     validationStatus: string;

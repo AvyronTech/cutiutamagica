@@ -16,6 +16,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { StoryLoadingScreen } from "@/components/site/StoryLoadingScreen";
+import { getStorePricing } from "@/lib/store-pricing.functions";
 
 function NotFoundComponent() {
   return (
@@ -59,6 +60,9 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  loader: async ({ location }) => ({
+    pricing: location.pathname.startsWith("/admin") ? null : await getStorePricing(),
+  }),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -132,6 +136,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const { pricing } = Route.useLoaderData();
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
@@ -140,7 +145,7 @@ function RootComponent() {
   const isHome = pathname === "/";
   return (
     <QueryClientProvider client={queryClient}>
-      <ShopProvider>
+      <ShopProvider pricing={pricing}>
         {isHome && <StoryLoadingScreen />}
         {isChrome && <Header />}
         {showBack && (

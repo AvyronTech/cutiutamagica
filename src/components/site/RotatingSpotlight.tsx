@@ -40,7 +40,7 @@ export function RotatingSpotlight({ products, intervalMs = 4600, eyebrow }: Prop
   }, [products.length, intervalMs, paused, reduced]);
 
   if (!products.length) return null;
-  const current = products[i];
+  const current = products[i % products.length];
 
   return (
     <div

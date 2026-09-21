@@ -13,6 +13,7 @@ import {
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
 import { createStripeCheckoutSession, verifyStripeWebhook } from "@/server/integrations/stripe";
+import { credentialStatuses } from "@/server/services/growth-settings";
 
 const stripeCheckoutSchema = z.object({
   orderId: z.string().uuid(),
@@ -73,7 +74,7 @@ async function handleCreateReturn(
     );
   }
   const result = await createReturnRequest(env.DB, parsed.data);
-  if (env.RESEND_API_KEY) {
+  if ((await credentialStatuses(env)).some((c) => c.provider === "resend" && c.configured)) {
     ctx.waitUntil(
       sendReturnAcknowledgement(env, {
         returnId: result.returnId,
@@ -276,9 +277,13 @@ export async function handleCommerceApi(
     if (path === "/api/v1/commerce/config") {
       if (request.method !== "GET")
         return json({ error: { code: "METHOD_NOT_ALLOWED" } }, { status: 405 });
+      const configured = await credentialStatuses(env);
       const config = await getCommercePublicConfig(env.DB, {
-        stripe: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET),
-        smartship: Boolean(env.SMARTSHIP_API_KEY),
+        stripe: Boolean(
+          configured.some((c) => c.provider === "stripe" && c.configured) &&
+          env.STRIPE_WEBHOOK_SECRET,
+        ),
+        smartship: configured.some((c) => c.provider === "smartship" && c.configured),
       });
       return json(
         { data: config },

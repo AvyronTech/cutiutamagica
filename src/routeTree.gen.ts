@@ -15,16 +15,19 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ComandaRouteImport } from './routes/comanda'
 import { Route as FavoriteRouteImport } from './routes/favorite'
 import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
+import { Route as PoliticaDeConfidentialitateRouteImport } from './routes/politica-de-confidentialitate'
 import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as ReturRouteImport } from './routes/retur'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TermeniDeUtilizareRouteImport } from './routes/termeni-de-utilizare'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as ProdusIdRouteImport } from './routes/produs.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminAiRouteImport } from './routes/_authenticated/admin/ai'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin/billing'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
+import { Route as AuthenticatedAdminEmailRouteImport } from './routes/_authenticated/admin/email'
 import { Route as AuthenticatedAdminFinanciarRouteImport } from './routes/_authenticated/admin/financiar'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin/integrations'
 import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authenticated/admin/inventory'
@@ -34,11 +37,14 @@ import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminPlatformsRouteImport } from './routes/_authenticated/admin/platforms'
 import { Route as AuthenticatedAdminPostsRouteImport } from './routes/_authenticated/admin/posts'
 import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin/products'
+import { Route as AuthenticatedAdminPromotionsRouteImport } from './routes/_authenticated/admin/promotions'
 import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_authenticated/admin/qr-generator'
 import { Route as AuthenticatedAdminReturnsRouteImport } from './routes/_authenticated/admin/returns'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminShippingRouteImport } from './routes/_authenticated/admin/shipping'
 import { Route as AuthenticatedAdminStatisticsRouteImport } from './routes/_authenticated/admin/statistics'
+import { Route as AuthenticatedAdminSuppliersRouteImport } from './routes/_authenticated/admin/suppliers'
+import { Route as AuthenticatedAdminTrafficRouteImport } from './routes/_authenticated/admin/traffic'
 import { Route as AuthenticatedAdminProductsIdRouteImport } from './routes/_authenticated/admin/products.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -71,6 +77,12 @@ const GhidCadouriPersonalizateRoute =
     path: '/ghid-cadouri-personalizate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const PoliticaDeConfidentialitateRoute =
+  PoliticaDeConfidentialitateRouteImport.update({
+    id: '/politica-de-confidentialitate',
+    path: '/politica-de-confidentialitate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PovesteRoute = PovesteRouteImport.update({
   id: '/poveste',
   path: '/poveste',
@@ -89,6 +101,11 @@ const ReturRoute = ReturRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermeniDeUtilizareRoute = TermeniDeUtilizareRouteImport.update({
+  id: '/termeni-de-utilizare',
+  path: '/termeni-de-utilizare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
@@ -123,6 +140,11 @@ const AuthenticatedAdminCustomersRoute =
     path: '/customers',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminEmailRoute = AuthenticatedAdminEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminFinanciarRoute =
   AuthenticatedAdminFinanciarRouteImport.update({
     id: '/financiar',
@@ -176,6 +198,12 @@ const AuthenticatedAdminProductsRoute =
     path: '/products',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminPromotionsRoute =
+  AuthenticatedAdminPromotionsRouteImport.update({
+    id: '/promotions',
+    path: '/promotions',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminQrGeneratorRoute =
   AuthenticatedAdminQrGeneratorRouteImport.update({
     id: '/qr-generator',
@@ -206,6 +234,18 @@ const AuthenticatedAdminStatisticsRoute =
     path: '/statistics',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminSuppliersRoute =
+  AuthenticatedAdminSuppliersRouteImport.update({
+    id: '/suppliers',
+    path: '/suppliers',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminTrafficRoute =
+  AuthenticatedAdminTrafficRouteImport.update({
+    id: '/traffic',
+    path: '/traffic',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminProductsIdRoute =
   AuthenticatedAdminProductsIdRouteImport.update({
     id: '/$id',
@@ -219,15 +259,18 @@ export interface FileRoutesByFullPath {
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
+  '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/admin/email': typeof AuthenticatedAdminEmailRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
@@ -237,11 +280,14 @@ export interface FileRoutesByFullPath {
   '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
   '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
+  '/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
+  '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
+  '/admin/traffic': typeof AuthenticatedAdminTrafficRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
 }
@@ -251,14 +297,17 @@ export interface FileRoutesByTo {
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
+  '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/produs/$id': typeof ProdusIdRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/admin/email': typeof AuthenticatedAdminEmailRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
@@ -268,11 +317,14 @@ export interface FileRoutesByTo {
   '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
   '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
+  '/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
+  '/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
+  '/admin/traffic': typeof AuthenticatedAdminTrafficRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
 }
@@ -284,15 +336,18 @@ export interface FileRoutesById {
   '/comanda': typeof ComandaRoute
   '/favorite': typeof FavoriteRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
+  '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
   '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/_authenticated/admin/email': typeof AuthenticatedAdminEmailRoute
   '/_authenticated/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/inventory': typeof AuthenticatedAdminInventoryRoute
@@ -302,11 +357,14 @@ export interface FileRoutesById {
   '/_authenticated/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/_authenticated/admin/posts': typeof AuthenticatedAdminPostsRoute
   '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
+  '/_authenticated/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/_authenticated/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/_authenticated/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/_authenticated/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
+  '/_authenticated/admin/suppliers': typeof AuthenticatedAdminSuppliersRoute
+  '/_authenticated/admin/traffic': typeof AuthenticatedAdminTrafficRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
 }
@@ -318,15 +376,18 @@ export interface FileRouteTypes {
     | '/comanda'
     | '/favorite'
     | '/ghid-cadouri-personalizate'
+    | '/politica-de-confidentialitate'
     | '/poveste'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
+    | '/termeni-de-utilizare'
     | '/admin'
     | '/produs/$id'
     | '/admin/ai'
     | '/admin/billing'
     | '/admin/customers'
+    | '/admin/email'
     | '/admin/financiar'
     | '/admin/integrations'
     | '/admin/inventory'
@@ -336,11 +397,14 @@ export interface FileRouteTypes {
     | '/admin/platforms'
     | '/admin/posts'
     | '/admin/products'
+    | '/admin/promotions'
     | '/admin/qr-generator'
     | '/admin/returns'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
+    | '/admin/suppliers'
+    | '/admin/traffic'
     | '/admin/'
     | '/admin/products/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -350,14 +414,17 @@ export interface FileRouteTypes {
     | '/comanda'
     | '/favorite'
     | '/ghid-cadouri-personalizate'
+    | '/politica-de-confidentialitate'
     | '/poveste'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
+    | '/termeni-de-utilizare'
     | '/produs/$id'
     | '/admin/ai'
     | '/admin/billing'
     | '/admin/customers'
+    | '/admin/email'
     | '/admin/financiar'
     | '/admin/integrations'
     | '/admin/inventory'
@@ -367,11 +434,14 @@ export interface FileRouteTypes {
     | '/admin/platforms'
     | '/admin/posts'
     | '/admin/products'
+    | '/admin/promotions'
     | '/admin/qr-generator'
     | '/admin/returns'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
+    | '/admin/suppliers'
+    | '/admin/traffic'
     | '/admin'
     | '/admin/products/$id'
   id:
@@ -382,15 +452,18 @@ export interface FileRouteTypes {
     | '/comanda'
     | '/favorite'
     | '/ghid-cadouri-personalizate'
+    | '/politica-de-confidentialitate'
     | '/poveste'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
+    | '/termeni-de-utilizare'
     | '/_authenticated/admin'
     | '/produs/$id'
     | '/_authenticated/admin/ai'
     | '/_authenticated/admin/billing'
     | '/_authenticated/admin/customers'
+    | '/_authenticated/admin/email'
     | '/_authenticated/admin/financiar'
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/inventory'
@@ -400,11 +473,14 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/platforms'
     | '/_authenticated/admin/posts'
     | '/_authenticated/admin/products'
+    | '/_authenticated/admin/promotions'
     | '/_authenticated/admin/qr-generator'
     | '/_authenticated/admin/returns'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/shipping'
     | '/_authenticated/admin/statistics'
+    | '/_authenticated/admin/suppliers'
+    | '/_authenticated/admin/traffic'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/products/$id'
   fileRoutesById: FileRoutesById
@@ -416,10 +492,12 @@ export interface RootRouteChildren {
   ComandaRoute: typeof ComandaRoute
   FavoriteRoute: typeof FavoriteRoute
   GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
+  PoliticaDeConfidentialitateRoute: typeof PoliticaDeConfidentialitateRoute
   PovesteRoute: typeof PovesteRoute
   ProduseRoute: typeof ProduseRoute
   ReturRoute: typeof ReturRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermeniDeUtilizareRoute: typeof TermeniDeUtilizareRoute
   ProdusIdRoute: typeof ProdusIdRoute
 }
 
@@ -467,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GhidCadouriPersonalizateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/politica-de-confidentialitate': {
+      id: '/politica-de-confidentialitate'
+      path: '/politica-de-confidentialitate'
+      fullPath: '/politica-de-confidentialitate'
+      preLoaderRoute: typeof PoliticaDeConfidentialitateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/poveste': {
       id: '/poveste'
       path: '/poveste'
@@ -493,6 +578,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termeni-de-utilizare': {
+      id: '/termeni-de-utilizare'
+      path: '/termeni-de-utilizare'
+      fullPath: '/termeni-de-utilizare'
+      preLoaderRoute: typeof TermeniDeUtilizareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -535,6 +627,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/admin/customers'
       preLoaderRoute: typeof AuthenticatedAdminCustomersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/email': {
+      id: '/_authenticated/admin/email'
+      path: '/email'
+      fullPath: '/admin/email'
+      preLoaderRoute: typeof AuthenticatedAdminEmailRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/financiar': {
@@ -600,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProductsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/promotions': {
+      id: '/_authenticated/admin/promotions'
+      path: '/promotions'
+      fullPath: '/admin/promotions'
+      preLoaderRoute: typeof AuthenticatedAdminPromotionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/qr-generator': {
       id: '/_authenticated/admin/qr-generator'
       path: '/qr-generator'
@@ -635,6 +741,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStatisticsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/suppliers': {
+      id: '/_authenticated/admin/suppliers'
+      path: '/suppliers'
+      fullPath: '/admin/suppliers'
+      preLoaderRoute: typeof AuthenticatedAdminSuppliersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/traffic': {
+      id: '/_authenticated/admin/traffic'
+      path: '/traffic'
+      fullPath: '/admin/traffic'
+      preLoaderRoute: typeof AuthenticatedAdminTrafficRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/products/$id': {
       id: '/_authenticated/admin/products/$id'
       path: '/$id'
@@ -663,6 +783,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAiRoute: typeof AuthenticatedAdminAiRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
+  AuthenticatedAdminEmailRoute: typeof AuthenticatedAdminEmailRoute
   AuthenticatedAdminFinanciarRoute: typeof AuthenticatedAdminFinanciarRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminInventoryRoute: typeof AuthenticatedAdminInventoryRoute
@@ -672,11 +793,14 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPlatformsRoute: typeof AuthenticatedAdminPlatformsRoute
   AuthenticatedAdminPostsRoute: typeof AuthenticatedAdminPostsRoute
   AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRouteWithChildren
+  AuthenticatedAdminPromotionsRoute: typeof AuthenticatedAdminPromotionsRoute
   AuthenticatedAdminQrGeneratorRoute: typeof AuthenticatedAdminQrGeneratorRoute
   AuthenticatedAdminReturnsRoute: typeof AuthenticatedAdminReturnsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminShippingRoute: typeof AuthenticatedAdminShippingRoute
   AuthenticatedAdminStatisticsRoute: typeof AuthenticatedAdminStatisticsRoute
+  AuthenticatedAdminSuppliersRoute: typeof AuthenticatedAdminSuppliersRoute
+  AuthenticatedAdminTrafficRoute: typeof AuthenticatedAdminTrafficRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -685,6 +809,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminAiRoute: AuthenticatedAdminAiRoute,
     AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
+    AuthenticatedAdminEmailRoute: AuthenticatedAdminEmailRoute,
     AuthenticatedAdminFinanciarRoute: AuthenticatedAdminFinanciarRoute,
     AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
     AuthenticatedAdminInventoryRoute: AuthenticatedAdminInventoryRoute,
@@ -695,11 +820,14 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminPostsRoute: AuthenticatedAdminPostsRoute,
     AuthenticatedAdminProductsRoute:
       AuthenticatedAdminProductsRouteWithChildren,
+    AuthenticatedAdminPromotionsRoute: AuthenticatedAdminPromotionsRoute,
     AuthenticatedAdminQrGeneratorRoute: AuthenticatedAdminQrGeneratorRoute,
     AuthenticatedAdminReturnsRoute: AuthenticatedAdminReturnsRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminShippingRoute: AuthenticatedAdminShippingRoute,
     AuthenticatedAdminStatisticsRoute: AuthenticatedAdminStatisticsRoute,
+    AuthenticatedAdminSuppliersRoute: AuthenticatedAdminSuppliersRoute,
+    AuthenticatedAdminTrafficRoute: AuthenticatedAdminTrafficRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   }
 
@@ -726,10 +854,12 @@ const rootRouteChildren: RootRouteChildren = {
   ComandaRoute: ComandaRoute,
   FavoriteRoute: FavoriteRoute,
   GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
+  PoliticaDeConfidentialitateRoute: PoliticaDeConfidentialitateRoute,
   PovesteRoute: PovesteRoute,
   ProduseRoute: ProduseRoute,
   ReturRoute: ReturRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermeniDeUtilizareRoute: TermeniDeUtilizareRoute,
   ProdusIdRoute: ProdusIdRoute,
 }
 export const routeTree = rootRouteImport

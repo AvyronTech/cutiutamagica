@@ -6,6 +6,7 @@ import { ProductCarouselSection } from "@/components/site/ProductCarouselSection
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
 import { RotatingSpotlight } from "@/components/site/RotatingSpotlight";
+import { useShop } from "@/store/shop";
 
 import bgPoveste from "@/assets/bg-poveste.jpg";
 import bgEmotie from "@/assets/bg-emotie.jpg";
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { products, promotion } = useShop();
   const hero = products[0];
   const reducedMotion = useReducedMotion();
 
@@ -60,8 +62,8 @@ function Index() {
       <section className="relative overflow-hidden">
         <div className="relative h-[82vh] min-h-[560px] max-h-[820px] w-full">
           <motion.img
-            src={hero.image}
-            alt={hero.name}
+            src={hero?.image || heroImage}
+            alt={hero?.name || "Cutiuța Magică"}
             width={1200}
             height={800}
             fetchPriority="high"
@@ -175,10 +177,12 @@ function Index() {
           <div className="px-4 py-4 bg-[color:var(--gold)]/10">
             <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
             <div className="font-display italic text-base md:text-lg leading-snug text-foreground">
-              Două cutiuțe la <span className="gold-text not-italic font-medium">150 lei</span>
+              {promotion ? <>De la {promotion.minQuantity} cutiuțe</> : "Cadouri cu melodie"}
             </div>
             <div className="font-display text-sm md:text-base mt-0.5 text-[color:var(--wood-dark)]/85">
-              75 lei pentru fiecare cutiuță
+              {promotion
+                ? `${promotion.unitPrice} lei / cutiuță, sau prețul individual mai mic`
+                : "Alege povestea preferată"}
             </div>
             <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
               Poți combina modelele din catalog

@@ -6,6 +6,7 @@ import {
   requiredSecret,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
+import { credential } from "@/server/services/growth-settings";
 
 export interface StripeCheckoutInput {
   orderId: string;
@@ -23,7 +24,7 @@ export async function createStripeCheckoutSession(
   env: CommerceEnv,
   input: StripeCheckoutInput,
 ): Promise<{ id: string; url: string; paymentIntentId: string | null }> {
-  const key = requiredSecret(env.STRIPE_SECRET_KEY, "STRIPE_SECRET_KEY");
+  const key = requiredSecret((await credential(env, "stripe")) ?? undefined, "STRIPE_SECRET_KEY");
   const params = new URLSearchParams();
   params.set("mode", "payment");
   params.set(

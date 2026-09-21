@@ -18,11 +18,13 @@ export function ProductCard({
   index?: number;
   variant?: Variant;
 }) {
-  const { addToCart, toggleFavorite, isFavorite } = useShop();
+  const { addToCart, toggleFavorite, isFavorite, products } = useShop();
+  product = products.find((p) => p.id === product.id) ?? product;
   const fav = isFavorite(product.id);
   const [qty, setQty] = useState(1);
   const displayPrice = product.price ?? PRICE;
   const isGlass = variant === "glass";
+  const discounted = product.originalPrice != null && product.originalPrice > displayPrice;
 
   return (
     <motion.div
@@ -52,6 +54,13 @@ export function ProductCard({
             transition={{ duration: 0.6 }}
             loading="lazy"
           />
+          {discounted && (
+            <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-2 text-sm text-rose-900 shadow-sm">
+              <span className="block text-[10px] uppercase">Un dar, un preț special</span>
+              <del className="mr-2 text-xs text-neutral-500">{product.originalPrice} lei</del>
+              <strong>{displayPrice} lei</strong>
+            </span>
+          )}
         </div>
 
         <div
@@ -72,6 +81,11 @@ export function ProductCard({
             </p>
           )}
           <div className="mt-2 flex items-baseline justify-center gap-2">
+            {discounted && (
+              <del className="text-xs opacity-70" title="Preț anterior de referință documentat">
+                {product.originalPrice} lei
+              </del>
+            )}
             <span className={`font-display text-xl ${isGlass ? "text-[color:var(--gold)]" : ""}`}>
               {displayPrice}{" "}
               <span className={`text-xs ${isGlass ? "text-[color:var(--cream)]/90" : ""}`}>

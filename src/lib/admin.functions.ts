@@ -7,6 +7,7 @@ import { getBusinessHubData } from "@/server/db/business-hub.repository";
 import { getAdminCommerceOperations } from "@/server/db/commerce-operations.repository";
 import { issueFgoInvoiceForOrder } from "@/server/services/commerce-operations.service";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
+import { credentialStatuses, credential } from "@/server/services/growth-settings";
 import { ADMIN_ORDER_STATUSES } from "@/lib/admin-contracts";
 import {
   getAdminDashboardData,
@@ -108,20 +109,23 @@ export const getCommerceOperations = createServerFn({ method: "GET" })
     assertPermission(context.admin, "dashboard.read");
     const data = await getAdminCommerceOperations(env.DB);
     const runtime = env as CommerceEnv;
+    const configured = await credentialStatuses(runtime);
     return {
       ...data,
+      trafficReadiness: data.trafficReadiness,
       providers: data.providers.map((provider) => ({
         ...provider,
         secretConfigured:
           provider.provider === "fgo"
             ? Boolean(runtime.FGO_PRIVATE_KEY)
-            : provider.provider === "stripe"
-              ? Boolean(runtime.STRIPE_SECRET_KEY && runtime.STRIPE_WEBHOOK_SECRET)
-              : provider.provider === "smartship"
-                ? Boolean(runtime.SMARTSHIP_API_KEY)
-                : provider.provider === "resend"
-                  ? Boolean(runtime.RESEND_API_KEY)
-                  : false,
+            : configured.some((c) => c.provider === provider.provider && c.configured),
+      })),
+      financialAccounts: data.financialAccounts.map((account) => ({
+        ...account,
+        secretConfigured:
+          account.provider === "fgo"
+            ? Boolean(runtime.FGO_PRIVATE_KEY)
+            : configured.some((c) => c.provider === account.provider && c.configured),
       })),
     };
   });
@@ -221,16 +225,49 @@ const shippingPolicyInput = z.object({
   standardPrice: nullableMoney,
   lockerPrice: nullableMoney,
   freeOver: nullableMoney,
+  defaultWeightG: z.number().int().min(100).max(10_000),
+  defaultLengthCm: z.number().int().min(1).max(500),
+  defaultWidthCm: z.number().int().min(1).max(500),
+  defaultHeightCm: z.number().int().min(1).max(500),
+  allowedCountries: z.string().max(800).default("RO"),
+  internationalReady: z.boolean(),
   easyboxEnabled: z.boolean(),
   useLiveQuotes: z.boolean(),
   markVerified: z.boolean(),
 });
 
+function parseCountryList(input: string): string[] {
+  const countries = (input ?? "")
+    .split(/[;,\n\r]+/)
+    .map((value) => value.trim().toUpperCase())
+    .filter(Boolean);
+  if (countries.some((value) => !/^[A-Z]{2}$/.test(value)))
+    throw new Error("Folosește coduri de țară ISO din două litere.");
+  const uniqueCountries = Array.from(new Set(countries));
+  return uniqueCountries.length ? uniqueCountries : ["RO"];
+}
+
 export const saveShippingPolicy = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator(shippingPolicyInput)
   .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin)
+      throw new Error("Origine nepermisă.");
     assertPermission(context.admin, "integrations.write");
+    const allowedCountries = parseCountryList(data.allowedCountries);
+    if (data.useLiveQuotes && !(await credential(env as CommerceEnv, "smartship")))
+      throw new Error("Configurează cheia SmartShip înainte de activarea cotațiilor.");
+    if (!allowedCountries.includes("RO")) {
+      throw new Error("RO este obligatoriu pentru transportul de bază.");
+    }
+    if (data.internationalReady && allowedCountries.length <= 1) {
+      throw new Error("Pentru livrare internațională setează cel puțin două țări în listă.");
+    }
+    if (!data.internationalReady) {
+      allowedCountries.length = 1;
+      allowedCountries[0] = "RO";
+    }
     if (data.markVerified && !data.useLiveQuotes && data.standardPrice == null) {
       throw new Error("Completează costul standard sau activează cotațiile SmartShip.");
     }
@@ -238,12 +275,19 @@ export const saveShippingPolicy = createServerFn({ method: "POST" })
       throw new Error("Completează costul Easybox sau activează cotațiile SmartShip.");
     }
     await env.DB.prepare(
-      `UPDATE shipping_policy_configs SET standard_price_bani = ?1, locker_price_bani = ?2,
-       free_over_bani = ?3, easybox_enabled = ?4, use_live_quotes = ?5,
-       validation_status = ?6, updated_by = ?7,
+      `UPDATE shipping_policy_configs SET default_weight_g = ?1, default_length_cm = ?2, default_width_cm = ?3,
+       default_height_cm = ?4, allowed_countries_json = ?5,
+       standard_price_bani = ?6, locker_price_bani = ?7,
+       free_over_bani = ?8, easybox_enabled = ?9, use_live_quotes = ?10,
+       validation_status = ?11, updated_by = ?12,
        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE code = 'RO_STANDARD'`,
     )
       .bind(
+        data.defaultWeightG,
+        data.defaultLengthCm,
+        data.defaultWidthCm,
+        data.defaultHeightCm,
+        JSON.stringify(allowedCountries),
         data.standardPrice == null ? null : Math.round(data.standardPrice * 100),
         data.lockerPrice == null ? null : Math.round(data.lockerPrice * 100),
         data.freeOver == null ? null : Math.round(data.freeOver * 100),

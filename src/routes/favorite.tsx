@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
-import { products } from "@/data/products";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 
@@ -23,7 +22,7 @@ export const Route = createFileRoute("/favorite")({
 });
 
 function FavPage() {
-  const { favorites } = useShop();
+  const { favorites, products } = useShop();
   const list = products.filter((p) => favorites.includes(p.id));
 
   return (

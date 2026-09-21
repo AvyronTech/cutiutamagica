@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Gift, Search, Settings2, X } from "lucide-react";
-import { products } from "@/data/products";
+import { getStorePricing } from "@/lib/store-pricing.functions";
+import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 
 const CATALOG_URL = "https://cutiutamagica.eu/produse";
@@ -20,7 +21,8 @@ export const Route = createFileRoute("/produse")({
     return q ? { q } : {};
   },
   component: ProductsPage,
-  head: () => ({
+  loader: () => getStorePricing(),
+  head: ({ loaderData }) => ({
     meta: [
       { title: "Cutiuțe muzicale cu manivelă din lemn | Cutiuța Magică" },
       {
@@ -49,11 +51,11 @@ export const Route = createFileRoute("/produse")({
           inLanguage: "ro-RO",
           mainEntity: {
             "@type": "ItemList",
-            numberOfItems: products.length,
-            itemListElement: products.map((product, index) => ({
+            numberOfItems: loaderData?.catalog.length ?? 0,
+            itemListElement: (loaderData?.catalog ?? []).map((product, index) => ({
               "@type": "ListItem",
               position: index + 1,
-              url: `https://cutiutamagica.eu/produs/${product.id}`,
+              url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.slug)}`,
               name: product.name,
             })),
           },
@@ -64,12 +66,13 @@ export const Route = createFileRoute("/produse")({
 });
 
 function ProductsPage() {
+  const { products } = useShop();
   const { q } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [category, setCategory] = useState("Toate");
   const categories = useMemo(
     () => ["Toate", ...Array.from(new Set(products.map((product) => product.category)))],
-    [],
+    [products],
   );
   const normalizedQuery = normalizeSearch(q ?? "");
   const list = useMemo(
@@ -90,7 +93,7 @@ function ProductsPage() {
         );
         return matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
       }),
-    [category, normalizedQuery],
+    [category, normalizedQuery, products],
   );
 
   const updateQuery = (value: string) => {

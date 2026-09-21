@@ -158,4 +158,8 @@ export default {
   async queue(batch: MessageBatch<CommerceQueueMessage>, env: Env) {
     await consumeCommerceEvents(batch, env);
   },
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    const { processOwnerReports } = await import("@/server/services/owner-reports");
+    ctx.waitUntil(processOwnerReports(env));
+  },
 } satisfies ExportedHandler<Env, CommerceQueueMessage>;

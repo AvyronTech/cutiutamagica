@@ -67,6 +67,7 @@
   "env": {
     "production": {
       "name": "cutiuta-magica-store",
+      "triggers": { "crons": ["0 * * * *"] },
       "workers_dev": true,
       "routes": [
         {

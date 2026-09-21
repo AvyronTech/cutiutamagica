@@ -1,10 +1,23 @@
 export type CommerceEnv = Env & {
+  INTEGRATION_ENCRYPTION_KEY?: string;
+  BRAVE_SEARCH_API_KEY?: string;
+  GOOGLE_ACCESS_TOKEN?: string;
+  META_ACCESS_TOKEN?: string;
   FGO_PRIVATE_KEY?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   SMARTSHIP_API_KEY?: string;
   RESEND_API_KEY?: string;
   RESEND_WEBHOOK_SECRET?: string;
+  REVOLUT_API_KEY?: string;
+  REVOLUT_CLIENT_SECRET?: string;
+  REVOLUT_SECRET_KEY?: string;
+  REVOLUT_WEBHOOK_SECRET?: string;
+  SPV_API_KEY?: string;
+  SPV_WEBHOOK_SECRET?: string;
+  SPV_CLIENT_SECRET?: string;
+  EFACTURA_API_KEY?: string;
+  EFACTURA_WEBHOOK_SECRET?: string;
 };
 
 export class ProviderError extends Error {
@@ -40,6 +53,41 @@ export async function fetchWithTimeout(
     );
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+export async function readProviderJson(response: Response, maxBytes = 1_000_000): Promise<unknown> {
+  const reader = response.body?.getReader();
+  if (!reader) throw new ProviderError("Răspuns gol.", "PROVIDER_INVALID_RESPONSE");
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    void reader.cancel().catch(() => undefined);
+  }, 15_000);
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (timedOut) throw new ProviderError("Răspuns incomplet.", "PROVIDER_TIMEOUT", 504, true);
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        throw new ProviderError("Răspuns prea mare.", "PROVIDER_INVALID_RESPONSE");
+      }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } finally {
+    clearTimeout(timer);
+    reader.releaseLock();
   }
 }
 

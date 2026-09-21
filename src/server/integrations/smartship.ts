@@ -4,6 +4,7 @@ import {
   requiredSecret,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
+import { credential } from "@/server/services/growth-settings";
 
 export interface SmartShipParty {
   name: string;
@@ -72,7 +73,10 @@ async function smartShipFetch(
   path: string,
   init: RequestInit,
 ): Promise<Response> {
-  const apiKey = requiredSecret(env.SMARTSHIP_API_KEY, "SMARTSHIP_API_KEY");
+  const apiKey = requiredSecret(
+    (await credential(env, "smartship")) ?? undefined,
+    "SMARTSHIP_API_KEY",
+  );
   return fetchWithTimeout(`https://api.smartship.ro${path}`, {
     ...init,
     headers: {

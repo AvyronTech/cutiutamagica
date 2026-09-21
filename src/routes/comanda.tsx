@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { calcTotals, MAX_QTY } from "@/data/products";
+import { MAX_QTY } from "@/data/products";
 import type { CommercePublicConfig } from "@/lib/commerce-operations-contracts";
 import type { WebsiteOrderPublicResult } from "@/lib/order-contracts";
 import { useShop } from "@/store/shop";
@@ -43,8 +43,7 @@ function money(value: number, currency = "RON") {
 }
 
 function OrderPage() {
-  const { itemsDetailed, setQty, removeFromCart, totalQty, clearCart } = useShop();
-  const totals = calcTotals(totalQty);
+  const { itemsDetailed, setQty, removeFromCart, totalQty, clearCart, totals } = useShop();
   const idempotencyKey = useRef<string | null>(null);
   const [config, setConfig] = useState<CommercePublicConfig | null>(null);
   const [confirmation, setConfirmation] = useState<WebsiteOrderPublicResult | null>(null);
@@ -390,7 +389,15 @@ function OrderPage() {
                 <Link to="/retur" className="underline">
                   Politica de retur și garanție
                 </Link>{" "}
-                face parte din informarea precontractuală.
+                și{" "}
+                <Link to="/termeni-de-utilizare" className="underline">
+                  Termenii de utilizare
+                </Link>{" "}
+                fac parte din informarea precontractuală. Datele sunt prelucrate conform{" "}
+                <Link to="/politica-de-confidentialitate" className="underline">
+                  Politicii de confidențialitate
+                </Link>
+                .
               </span>
             </label>
             <input
@@ -411,7 +418,7 @@ function OrderPage() {
                 ? "Se procesează..."
                 : paymentMethod === "card"
                   ? "Continuă către plata securizată"
-                  : "Trimite comanda"}
+                  : "Comandă cu obligație de plată"}
             </button>
           </form>
         </div>
