@@ -410,7 +410,7 @@ export const getAccountVault = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     assertPermission(context.admin, "accounts.read");
-    const [connections, devices, social, accessRequests, recoveryRequests] = await Promise.all([
+    const [connections, devices, social] = await Promise.all([
       env.DB.prepare(
         `SELECT id,owner,provider,label,auth_method AS authMethod,secret_reference AS secretReference,
          status,scopes_json AS scopesJson,last_verified_at AS lastVerifiedAt,expires_at AS expiresAt,notes
@@ -426,22 +426,11 @@ export const getAccountVault = createServerFn({ method: "GET" })
         `SELECT id,provider,label,account_type AS accountType,status,last_synced_at AS lastSyncedAt
          FROM social_accounts ORDER BY provider,label`,
       ).all<Record<string, string | null>>(),
-      env.DB.prepare(
-        `SELECT id,email,display_name AS displayName,reason,status,created_at AS createdAt
-         FROM admin_access_requests ORDER BY created_at DESC LIMIT 50`,
-      ).all<Record<string, string | null>>(),
-      env.DB.prepare(
-        `SELECT r.id,r.status,r.created_at AS createdAt,r.expires_at AS expiresAt,u.email
-         FROM admin_recovery_requests r LEFT JOIN admin_users u ON u.id=r.admin_user_id
-         ORDER BY r.created_at DESC LIMIT 50`,
-      ).all<Record<string, string | null>>(),
     ]);
     return {
       connections: connections.results,
       devices: devices.results,
       social: social.results,
-      accessRequests: accessRequests.results,
-      recoveryRequests: recoveryRequests.results,
     };
   });
 

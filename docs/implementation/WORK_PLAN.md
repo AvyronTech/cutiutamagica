@@ -16,7 +16,7 @@
 
 ## Necesita configurare externa
 
-- [ ] Politica Cloudflare Access pentru cele patru adrese aprobate, cu MFA, plus `CF_ACCESS_TEAM_DOMAIN` si `CF_ACCESS_AUD`.
+- [x] Autentificare admin exclusiv prin e-mail si parola pentru cele patru conturi aprobate, cu sesiuni D1 si fara Cloudflare Access/coduri.
 - [ ] Chei sandbox/live si contracte pentru Stripe, Revolut Business, SmartShip si facturare.
 - [ ] Acreditari si aprobari API pentru eMAG, OLX, Trendyol, Meta, Instagram si TikTok.
 - [ ] Furnizor de e-mail tranzactional/newsletter si politici SPF, DKIM, DMARC.
@@ -29,7 +29,7 @@
 2. Aplicare migrari si seed in D1 productie.
 3. Incarcare imagini HERO in R2.
 4. Deploy initial pe `workers.dev` si smoke tests.
-5. Activare Cloudflare Access pentru admin.
+5. Smoke test pentru autentificarea admin prin e-mail si parola si blocarea accesului neautorizat.
 6. Mutare controlata a domeniilor dupa inventarierea DNS si verificarea releaseului.
 7. Monitorizare loguri, Queue/DLQ si checkout.
 

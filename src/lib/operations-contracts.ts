@@ -90,13 +90,3 @@ export const accountConnectionInputSchema = z.object({
   scopes: z.array(z.string().trim().min(1).max(100)).max(30),
   notes: z.string().trim().max(1000),
 });
-
-export const accessRequestSchema = z.object({
-  email: z.string().trim().email().max(254),
-  displayName: z.string().trim().min(2).max(100),
-  reason: z.string().trim().min(10).max(1000),
-});
-
-export const recoveryRequestSchema = z.object({
-  email: z.string().trim().email().max(254),
-});

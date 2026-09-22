@@ -35,7 +35,7 @@ npm run cf:deploy
 - `/api/v1/health` raspunde si indica mediul `production`.
 - Pagina principala, catalogul, produsul, sitemapul si media R2 raspund corect.
 - D1 are versiunea de schema asteptata, opt produse muzicale si zero incalcari FK.
-- `/admin` este protejat de Cloudflare Access si RBAC D1.
+- `/admin` este protejat prin e-mail, parola, sesiune `HttpOnly` si RBAC D1 pentru cele patru conturi aprobate.
 - Checkoutul recalculeaza server-side si creeaza outbox fara a astepta integrarile externe.
 - Intreruperea endpointului AVYRON nu afecteaza magazinul.
 

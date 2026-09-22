@@ -106,6 +106,13 @@ describe("admin password authentication", () => {
           .map((row) => row.password_salt),
       ).size,
     ).toBe(4);
+    expect(
+      sql
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('admin_access_requests','admin_recovery_requests')",
+        )
+        .all(),
+    ).toEqual([]);
   }, 20_000);
 
   it("stores only a session digest and rotates sessions after password change", async () => {

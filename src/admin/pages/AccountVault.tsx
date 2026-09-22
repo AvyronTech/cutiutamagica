@@ -229,56 +229,6 @@ export default function AccountVault() {
 
       <CredentialPanel providers={["meta"]} />
 
-      <section className="grid gap-5 xl:grid-cols-2">
-        <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
-          <h2 className="font-semibold text-white">Solicitări acces staff</h2>
-          <div className="mt-4 space-y-2">
-            {query.data.accessRequests.length === 0 ? (
-              <p className="text-sm text-slate-500">Nu există solicitări.</p>
-            ) : (
-              query.data.accessRequests.map((request) => (
-                <article
-                  key={String(request.id)}
-                  className="rounded-lg border border-slate-700/80 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-white">{String(request.displayName)}</p>
-                    <span className="text-xs text-amber-200">{String(request.status)}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-cyan-200">{String(request.email)}</p>
-                  <p className="mt-2 text-xs leading-5 text-slate-400">{String(request.reason)}</p>
-                </article>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
-          <h2 className="font-semibold text-white">Solicitări recuperare</h2>
-          <div className="mt-4 space-y-2">
-            {query.data.recoveryRequests.length === 0 ? (
-              <p className="text-sm text-slate-500">Nu există solicitări.</p>
-            ) : (
-              query.data.recoveryRequests.map((request) => (
-                <article
-                  key={String(request.id)}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-700/80 p-4"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-white">
-                      {request.email ? String(request.email) : "Adresă neautorizată / ascunsă"}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {new Date(String(request.createdAt)).toLocaleString("ro-RO")}
-                    </p>
-                  </div>
-                  <span className="text-xs text-amber-200">{String(request.status)}</span>
-                </article>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
       <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
         <h2 className="flex items-center gap-2 font-semibold text-white">
           <Laptop size={17} /> Dispozitive administrative
