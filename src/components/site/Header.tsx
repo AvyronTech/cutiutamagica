@@ -1,13 +1,21 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { Heart, ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useShop } from "@/store/shop";
 import { ScrollFuse } from "./ScrollFuse";
 import { BrandMark } from "./BrandMark";
 import { SoundToggle } from "./SoundToggle";
+import { MiniCart } from "./MiniCart";
 
 export function Header() {
   const { totalQty, favorites } = useShop();
+  const [cartOpen, setCartOpen] = useState(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  // Panoul nu are ce căuta deschis după o navigare sau chiar pe pagina de comandă.
+  useEffect(() => {
+    setCartOpen(false);
+  }, [pathname]);
   // 0 → 1 progres condensare, smoothed cu rAF pentru fluiditate maximă
   const [p, setP] = useState(0);
   const rafRef = useRef<number | null>(null);
@@ -206,12 +214,17 @@ export function Header() {
                 </span>
               )}
             </Link>
-            <Link
-              to="/comanda"
-              aria-label="Coș de cumpărături"
-              className={`group relative inline-flex items-center justify-center rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
-                scrolled ? "w-9 h-9" : "w-9 h-9 sm:w-11 sm:h-11"
-              }`}
+            <button
+              type="button"
+              aria-label={totalQty > 0 ? `Coș de cumpărături (${totalQty})` : "Coș de cumpărături"}
+              aria-expanded={cartOpen}
+              aria-haspopup="dialog"
+              onClick={() => setCartOpen((open) => !open)}
+              className={`group relative inline-flex items-center justify-center rounded-full border backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
+                cartOpen
+                  ? "border-[color:var(--gold)] bg-[color:var(--cream)]/90"
+                  : "border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55"
+              } ${scrolled ? "w-9 h-9" : "w-9 h-9 sm:w-11 sm:h-11"}`}
             >
               <ShoppingBag
                 className={`text-[color:var(--wood-dark)] transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[18px] h-[18px] sm:w-[22px] sm:h-[22px]"}`}
@@ -224,10 +237,12 @@ export function Header() {
                   {totalQty}
                 </span>
               )}
-            </Link>
+            </button>
           </div>
         </div>
       </div>
+
+      <MiniCart open={cartOpen} onClose={() => setCartOpen(false)} />
     </header>
   );
 }

@@ -14,7 +14,7 @@ const canBuy = (id: string) => {
   return Boolean(product && isAvailable(product));
 };
 
-type CartItem = { id: string; qty: number };
+type CartItem = { id: string; qty: number; addedAt?: number };
 type ShopCtx = {
   cart: CartItem[];
   favorites: string[];
@@ -81,10 +81,13 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         setCart((c) => {
           if (!canBuy(id)) return c;
           const safeQty = Math.max(1, Math.min(5, qty));
+          const now = Date.now();
           const ex = c.find((i) => i.id === id);
           if (ex)
-            return c.map((i) => (i.id === id ? { ...i, qty: Math.min(5, i.qty + safeQty) } : i));
-          return [...c, { id, qty: safeQty }];
+            return c.map((i) =>
+              i.id === id ? { ...i, qty: Math.min(5, i.qty + safeQty), addedAt: now } : i,
+            );
+          return [...c, { id, qty: safeQty, addedAt: now }];
         }),
       setQty: (id, qty) =>
         setCart((c) =>

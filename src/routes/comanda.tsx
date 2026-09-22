@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { calcTotals, MAX_QTY, unitPriceBani } from "@/data/products";
 import type { CommercePublicConfig } from "@/lib/commerce-operations-contracts";
 import type { WebsiteOrderPublicResult } from "@/lib/order-contracts";
 import { useShop } from "@/store/shop";
+import { ProductImage } from "@/components/site/ProductImage";
 
 export const Route = createFileRoute("/comanda")({
   component: OrderPage,
@@ -36,7 +37,8 @@ const emptyForm = {
   postalCode: "",
   notes: "",
 };
-const inputClass = "rounded-md border border-border bg-card px-3 py-2.5 text-sm";
+const inputClass =
+  "w-full rounded-xl border border-border bg-card px-3.5 py-3 text-base outline-none transition focus:border-[color:var(--gold)] focus:ring-2 focus:ring-[color:var(--gold)]/25 sm:text-sm";
 
 function money(value: number, currency = "RON") {
   return new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(value);
@@ -59,16 +61,26 @@ function OrderPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
   const [shippingOption, setShippingOption] = useState<ShippingOption>("home_delivery");
   const [consent, setConsent] = useState(false);
+  const [configFailed, setConfigFailed] = useState(false);
 
-  useEffect(() => {
+  const loadConfig = useCallback(() => {
+    setConfigFailed(false);
     fetch("/api/v1/commerce/config", { credentials: "same-origin" })
       .then(async (response) => {
         if (!response.ok) throw new Error("Config indisponibil");
         return (await response.json()) as { data: CommercePublicConfig };
       })
       .then(({ data }) => setConfig(data))
-      .catch(() => toast.error("Opțiunile comerciale nu au putut fi încărcate."));
+      .catch(() => {
+        setConfigFailed(true);
+        // id fix: o singură notificare, chiar dacă efectul se reia.
+        toast.error("Opțiunile comerciale nu au putut fi încărcate.", { id: "commerce-config" });
+      });
   }, []);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   useEffect(() => {
     if (shippingOption === "easybox" && !config?.shipping.easyboxEnabled)
@@ -184,75 +196,113 @@ function OrderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-14 pt-8">
-      <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
+    <div className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:pt-8 lg:pb-14">
+      <div className="grid gap-8 lg:grid-cols-[1fr_400px] lg:gap-10">
         <div>
-          <h1 className="font-display text-center text-5xl lg:text-left">Finalizează comanda</h1>
-          <p className="mt-2 text-center text-muted-foreground lg:text-left">
-            {totalQty} produs{totalQty === 1 ? "" : "e"} în coș.
+          <h1 className="font-display text-3xl sm:text-4xl lg:text-left lg:text-5xl">
+            Finalizează comanda
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground lg:text-left">
+            {totalQty} {totalQty === 1 ? "cutiuță" : "cutiuțe"} în coș.
           </p>
           {itemsDetailed.length === 0 ? (
-            <div className="mt-12 rounded-xl border border-dashed border-border p-10 text-center">
-              <ShoppingBag className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-muted-foreground">Coșul este gol.</p>
+            <div className="mt-8 rounded-2xl border border-dashed border-[color:var(--gold)]/40 bg-card p-8 text-center sm:mt-10 sm:p-10">
+              <ShoppingBag className="mx-auto h-10 w-10 text-[color:var(--gold)]" />
+              <p className="mt-4 font-display text-xl">Coșul este gol.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Alege o cutiuță și melodia ei revine cu tine acasă.
+              </p>
               <Link
                 to="/produse"
-                className="mt-5 inline-block rounded-md bg-primary px-5 py-2.5 text-sm text-primary-foreground"
+                className="wood-grain mt-5 inline-flex min-h-12 items-center rounded-full px-6 text-sm font-medium text-[color:var(--cream)] shadow-warm"
               >
                 Vezi cutiuțele
               </Link>
             </div>
           ) : (
-            <div className="mt-6 space-y-3">
+            <ul className="mt-5 space-y-3">
               {itemsDetailed.map((item) => (
-                <div
+                <li
                   key={item.id}
-                  className="flex items-center gap-4 rounded-xl border border-border bg-card p-3"
+                  className="flex gap-3 rounded-2xl border border-border bg-card p-3 sm:gap-4"
                 >
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="h-24 w-24 rounded-lg bg-muted/40 object-contain p-2"
-                  />
+                  <Link to="/produs/$id" params={{ id: item.product.id }} className="shrink-0">
+                    <ProductImage
+                      src={item.product.image}
+                      alt={item.product.name}
+                      sizes="88px"
+                      className="h-20 w-20 rounded-xl bg-muted/40 object-cover sm:h-24 sm:w-24"
+                    />
+                  </Link>
                   <div className="min-w-0 flex-1">
-                    <div className="font-display text-lg leading-tight">{item.product.name}</div>
-                    <div className="text-xs text-muted-foreground">{item.product.melody}</div>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        to="/produs/$id"
+                        params={{ id: item.product.id }}
+                        className="line-clamp-2 font-display text-base leading-tight hover:underline sm:text-lg"
+                      >
+                        {item.product.name}
+                      </Link>
                       <button
                         type="button"
-                        aria-label="Scade cantitatea"
-                        onClick={() => setQty(item.id, Math.max(1, item.qty - 1))}
-                        className="flex h-7 w-7 items-center justify-center rounded border border-border"
+                        aria-label={`Elimină ${item.product.name}`}
+                        onClick={() => removeFromCart(item.id)}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
                       >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="w-8 text-center text-sm">{item.qty}</span>
-                      <button
-                        type="button"
-                        aria-label="Crește cantitatea"
-                        onClick={() => setQty(item.id, Math.min(MAX_QTY, item.qty + 1))}
-                        className="flex h-7 w-7 items-center justify-center rounded border border-border"
-                      >
-                        <Plus className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
+                    {item.product.melody && (
+                      <div className="mt-0.5 text-xs text-muted-foreground">
+                        {item.product.melody}
+                      </div>
+                    )}
+                    <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+                      <div className="inline-flex items-center rounded-full border border-border bg-background">
+                        <button
+                          type="button"
+                          aria-label={`Scade cantitatea pentru ${item.product.name}`}
+                          onClick={() => setQty(item.id, Math.max(1, item.qty - 1))}
+                          className="grid h-10 w-10 place-items-center rounded-l-full hover:bg-muted"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="w-8 text-center text-sm tabular-nums">{item.qty}</span>
+                        <button
+                          type="button"
+                          aria-label={`Crește cantitatea pentru ${item.product.name}`}
+                          onClick={() => setQty(item.id, Math.min(MAX_QTY, item.qty + 1))}
+                          className="grid h-10 w-10 place-items-center rounded-r-full hover:bg-muted"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-display text-lg tabular-nums">
+                          {money((unitPriceBani(item.product) * item.qty) / 100)}
+                        </div>
+                        {item.qty > 1 && (
+                          <div className="text-[11px] text-muted-foreground">
+                            {money(unitPriceBani(item.product) / 100)} / buc
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    aria-label={`Elimină ${item.product.name}`}
-                    onClick={() => removeFromCart(item.id)}
-                    className="self-start p-2 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
-          <form onSubmit={submit} className="mt-10 space-y-8">
-            <section>
-              <h2 className="font-display text-2xl">Date de contact și livrare</h2>
+          <form
+            id="checkout-form"
+            onSubmit={submit}
+            className="mt-8 space-y-7 sm:mt-10 sm:space-y-8"
+          >
+            <section className="rounded-2xl border border-[color:var(--gold)]/25 bg-card p-4 shadow-soft sm:p-5">
+              <h2 className="font-display text-xl sm:text-2xl">
+                <span className="mr-2 text-[color:var(--gold)]">✦</span>Date de contact
+              </h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <input
                   required
@@ -381,13 +431,13 @@ function OrderPage() {
               />
             </ChoiceSection>
 
-            <label className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 text-sm">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm">
               <input
                 required
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-1"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[color:var(--wood-dark)]"
               />
               <span>
                 {config?.policies.checkoutConsentText ??
@@ -407,10 +457,22 @@ function OrderPage() {
               aria-hidden
               className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
             />
+            {configFailed && (
+              <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+                <p>Nu am putut încărca opțiunile de plată și livrare.</p>
+                <button
+                  type="button"
+                  onClick={loadConfig}
+                  className="mt-2 inline-flex min-h-10 items-center rounded-full border border-amber-600/40 px-4 text-sm font-medium"
+                >
+                  Încearcă din nou
+                </button>
+              </div>
+            )}
             <button
               disabled={submitting || totalQty === 0 || !config}
               type="submit"
-              className="wood-grain w-full rounded-md py-3.5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50"
+              className="wood-grain hidden w-full rounded-xl py-3.5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50 lg:block"
             >
               {submitting
                 ? "Se procesează..."
@@ -421,8 +483,10 @@ function OrderPage() {
           </form>
         </div>
 
-        <aside className="h-fit rounded-xl border border-border bg-card p-6 lg:sticky lg:top-24">
-          <h3 className="font-display text-2xl">Sumar</h3>
+        <aside className="h-fit rounded-2xl border border-border bg-card p-5 sm:p-6 lg:sticky lg:top-24">
+          <h3 className="font-display text-xl sm:text-2xl">
+            <span className="mr-2 text-[color:var(--gold)]">✦</span>Sumar
+          </h3>
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Produse ({totalQty} buc)</span>
@@ -451,14 +515,45 @@ function OrderPage() {
           )}
         </aside>
       </div>
+
+      {/* Bara de acțiune pe telefon: totalul rămâne vizibil, comanda se trimite de aici. */}
+      {itemsDetailed.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[color:var(--gold)]/30 bg-[color:var(--cream)]/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md lg:hidden">
+          <div className="mx-auto flex max-w-6xl items-center gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                Total
+              </div>
+              <div className="font-display text-xl leading-tight tabular-nums">
+                {money(totals.total + (shippingCost ?? 0))}
+              </div>
+            </div>
+            <button
+              form="checkout-form"
+              type="submit"
+              disabled={submitting || totalQty === 0 || !config}
+              className="wood-grain ml-auto min-h-12 flex-1 rounded-full px-5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting
+                ? "Se procesează..."
+                : paymentMethod === "card"
+                  ? "Continuă la plată"
+                  : "Trimite comanda"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function ChoiceSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section>
-      <h2 className="font-display text-2xl">{title}</h2>
+    <section className="rounded-2xl border border-[color:var(--gold)]/25 bg-card p-4 shadow-soft sm:p-5">
+      <h2 className="font-display text-xl sm:text-2xl">
+        <span className="mr-2 text-[color:var(--gold)]">✦</span>
+        {title}
+      </h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">{children}</div>
     </section>
   );
@@ -481,9 +576,15 @@ function Choice({
 }) {
   return (
     <label
-      className={`flex gap-3 rounded-lg border p-4 ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
+      className={`flex min-h-16 items-center gap-3 rounded-xl border p-4 ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
     >
-      <input type="radio" disabled={disabled} checked={selected} onChange={onChange} />
+      <input
+        type="radio"
+        className="h-5 w-5 shrink-0 accent-[color:var(--wood-dark)]"
+        disabled={disabled}
+        checked={selected}
+        onChange={onChange}
+      />
       {icon}
       <span>
         <strong className="block text-sm">{title}</strong>
