@@ -14,7 +14,9 @@ SET price_bani = CASE variant_id
     WHEN 'variant_kitten_standard'     THEN 12900
     WHEN 'variant_sunshine_standard'   THEN 12900
     ELSE price_bani
-  END
+  END,
+  compare_at_bani = NULL,
+  updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE price_list_id = 'price_list_website_ron'
   AND min_quantity = 1
   AND variant_id IN (
@@ -37,3 +39,22 @@ SET value_json = '{"enabled":false}',
     validation_status = 'verified',
     updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE key = 'commercial.volume_pricing';
+
+-- 4. Doar cele cinci modele confirmate rămân comandabile pe canalul website.
+-- Produsele în pregătire rămân publice în catalog, dar checkout-ul le respinge.
+UPDATE channel_listings
+SET status = CASE
+      WHEN product_id IN (
+        'product_hp_keeper',
+        'product_got_winter',
+        'product_halloween',
+        'product_kitten',
+        'product_sunshine'
+      ) THEN 'active'
+      ELSE 'paused'
+    END,
+    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE channel_id = 'channel_website'
+  AND product_id IN (
+    SELECT id FROM products WHERE product_type = 'music_box'
+  );

@@ -167,6 +167,11 @@ async function loadCatalogItems(db: D1Database, slugs: string[]): Promise<Catalo
       LIMIT 1
     )
     JOIN price_lists pl ON pl.id = pli.price_list_id
+    JOIN channel_listings cl
+      ON cl.channel_id = 'channel_website'
+      AND cl.product_id = p.id
+      AND cl.variant_id = pv.id
+      AND cl.status = 'active'
     LEFT JOIN melodies m ON m.id = pv.melody_id
     WHERE p.slug IN (${placeholders})
       AND p.product_type = 'music_box'
