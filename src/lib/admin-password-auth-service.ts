@@ -82,24 +82,16 @@ async function derivePasswordHash(
   salt: string,
   iterations: number,
 ): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      hash: "SHA-256",
-      salt: base64ToBytes(salt),
-      iterations,
-    },
-    key,
-    256,
-  );
-  return bytesToBase64(new Uint8Array(bits));
+  const { pbkdf2 } = await import("node:crypto");
+  return new Promise((resolve, reject) => {
+    pbkdf2(password, base64ToBytes(salt), iterations, 32, "sha256", (error, derivedKey) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(derivedKey.toString("base64"));
+    });
+  });
 }
 
 function equalHash(left: string, right: string): boolean {

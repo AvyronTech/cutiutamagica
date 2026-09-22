@@ -4,6 +4,7 @@ import { deleteCookie, getRequest, setCookie } from "@tanstack/react-start/serve
 import { z } from "zod";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import {
+  AdminAuthError,
   ADMIN_SESSION_COOKIE,
   ADMIN_SESSION_SECONDS,
   changeAdminPassword,
@@ -48,7 +49,14 @@ export const loginAdminAccount = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const request = getRequest();
     requireSameOrigin(request);
-    const result = await loginAdminWithPassword(env.DB, request, data.email, data.password);
+    let result: Awaited<ReturnType<typeof loginAdminWithPassword>>;
+    try {
+      result = await loginAdminWithPassword(env.DB, request, data.email, data.password);
+    } catch (error) {
+      if (error instanceof AdminAuthError) throw error;
+      console.error("admin.login_failed", error);
+      throw new AdminAuthError("Autentificarea nu a reușit. Încearcă din nou.", 500);
+    }
     setCookie(ADMIN_SESSION_COOKIE, result.token, cookieOptions());
     return {
       ok: true,
