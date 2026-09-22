@@ -1,11 +1,11 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Heart, ShoppingBag, Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
 import { PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
-import { toast } from "sonner";
+import { notifyAddedToCart, notifyFavorite } from "@/lib/notify";
 
 type Variant = "solid" | "glass";
 
@@ -19,6 +19,7 @@ export function ProductCard({
   variant?: Variant;
 }) {
   const { addToCart, toggleFavorite, isFavorite } = useShop();
+  const navigate = useNavigate();
   const fav = isFavorite(product.id);
   const [qty, setQty] = useState(1);
   const displayPrice = product.price ?? PRICE;
@@ -108,14 +109,17 @@ export function ProductCard({
             onClick={(e) => {
               e.preventDefault();
               addToCart(product.id, qty);
-              toast.success(`${qty} × adăugat în coș`, { description: product.name });
+              notifyAddedToCart(product.name, qty, () => navigate({ to: "/comanda" }));
             }}
             className="flex-1 inline-flex items-center justify-center gap-2 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] text-[color:var(--wood-dark)] rounded-md py-2 text-sm font-semibold border border-[color:var(--gold)]/60 shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)] transition"
           >
             <ShoppingBag className="w-4 h-4" /> Comandă
           </button>
           <button
-            onClick={() => toggleFavorite(product.id)}
+            onClick={() => {
+              toggleFavorite(product.id);
+              notifyFavorite(product.name, !fav);
+            }}
             className={`p-2 rounded-md border ${
               isGlass
                 ? `border-white/25 ${fav ? "bg-[color:var(--gold)]/30 text-[color:var(--cream)]" : "bg-white/10 text-[color:var(--cream)] hover:bg-white/20"}`

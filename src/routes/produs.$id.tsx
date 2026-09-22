@@ -1,9 +1,20 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
-import { Heart, ShoppingBag, Music, Package, Gift, Sparkles, Minus, Plus } from "lucide-react";
+import {
+  Heart,
+  ShoppingBag,
+  Music,
+  Package,
+  Gift,
+  Sparkles,
+  Minus,
+  Plus,
+  Rotate3D,
+} from "lucide-react";
 import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
+import { notifyAddedToCart, notifyFavorite } from "@/lib/notify";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
   ProductAnimation,
@@ -11,8 +22,6 @@ import {
   ProductSpinViewer,
   useProductExperience,
 } from "@/components/site/ProductMediaExperience";
-
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/produs/$id")({
   component: ProductPage,
@@ -27,6 +36,7 @@ export const Route = createFileRoute("/produs/$id")({
     const image = loaderData.product.image.startsWith("http")
       ? loaderData.product.image
       : `https://cutiutamagica.eu${loaderData.product.image}`;
+    const price = String(loaderData.product.price ?? PRICE);
     const description = `${loaderData.product.tagline} Cutiuță muzicală din lemn, cu manivelă și mecanism manual${loaderData.product.melody ? `, melodia ${loaderData.product.melody}` : ""}.`;
     return {
       meta: [
@@ -38,7 +48,7 @@ export const Route = createFileRoute("/produs/$id")({
         { name: "twitter:image", content: image },
         { property: "og:url", content: url },
         { property: "og:type", content: "product" },
-        { property: "product:price:amount", content: "119" },
+        { property: "product:price:amount", content: price },
         { property: "product:price:currency", content: "RON" },
       ],
       links: [{ rel: "canonical", href: url }],
@@ -61,12 +71,24 @@ export const Route = createFileRoute("/produs/$id")({
                 ? [{ "@type": "PropertyValue", name: "Melodie", value: loaderData.product.melody }]
                 : []),
             ],
+            url,
             offers: {
               "@type": "Offer",
-              price: "119",
+              price,
               priceCurrency: "RON",
+              itemCondition: "https://schema.org/NewCondition",
               url,
               seller: { "@type": "Organization", name: "Cutiuța Magică" },
+              // Exact ce spune /retur: retragere în 14 zile, returul prin curier, cost suportat de client.
+              hasMerchantReturnPolicy: {
+                "@type": "MerchantReturnPolicy",
+                applicableCountry: "RO",
+                returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+                merchantReturnDays: 14,
+                returnMethod: "https://schema.org/ReturnByMail",
+                returnFees: "https://schema.org/ReturnShippingFees",
+                merchantReturnLink: "https://cutiutamagica.eu/retur",
+              },
             },
           }),
         },
@@ -100,10 +122,12 @@ export const Route = createFileRoute("/produs/$id")({
 function ProductPage() {
   const { product } = Route.useLoaderData();
   const { addToCart, toggleFavorite, isFavorite } = useShop();
+  const navigate = useNavigate();
   const fav = isFavorite(product.id);
   const ref = useRef<HTMLDivElement>(null);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
+  const [show360, setShow360] = useState(false);
   const experienceQuery = useProductExperience(product.id);
 
   const x = useMotionValue(0);
@@ -136,47 +160,96 @@ function ProductPage() {
     })) ?? [];
   const gallery = remoteGallery.length > 0 ? remoteGallery : product.gallery;
   const currentImage = gallery[active] ?? gallery[0];
+  const spin = experienceQuery.data?.spin360 ?? null;
+  const has360 = Boolean(
+    spin &&
+    ((spin.spin_type === "image_sequence" && spin.frames.length >= 2) ||
+      (spin.spin_type === "turntable_video" && spin.primaryMediaUrl)),
+  );
+  const spinThumb = spin ? (spin.coverUrl ?? spin.frames[0]?.url ?? null) : null;
 
   return (
     <div>
       <div className="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
         <div className="perspective-1000">
-          <motion.div
-            ref={ref}
-            onMouseMove={handleMove}
-            onMouseLeave={handleLeave}
-            style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-            className="relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card p-4"
-          >
-            <motion.img
-              src={currentImage.src}
-              alt={`${product.name} — ${currentImage.label}`}
-              className="w-full h-full object-contain"
-              style={{
-                transform: "translateZ(36px)",
-                objectPosition: currentImage.position ?? "center",
-              }}
-            />
-            {experienceQuery.data?.audio ? (
-              <ProductAudioOverlay audio={experienceQuery.data.audio} />
-            ) : product.melody ? (
-              <motion.div
-                style={{ transform: "translateZ(60px)" }}
-                className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
-              >
-                <Music className="w-3 h-3" /> {product.melody}
-              </motion.div>
-            ) : null}
-          </motion.div>
+          {show360 && spin && has360 ? (
+            <div className="relative overflow-hidden rounded-2xl shadow-warm">
+              <ProductSpinViewer spin={spin} productName={product.name} />
+            </div>
+          ) : (
+            <motion.div
+              ref={ref}
+              onMouseMove={handleMove}
+              onMouseLeave={handleLeave}
+              style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
+              className="relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card p-4"
+            >
+              <motion.img
+                src={currentImage.src}
+                alt={`${product.name} — ${currentImage.label}`}
+                className="w-full h-full object-contain"
+                style={{
+                  transform: "translateZ(36px)",
+                  objectPosition: currentImage.position ?? "center",
+                }}
+              />
+              {experienceQuery.data?.audio ? (
+                <ProductAudioOverlay audio={experienceQuery.data.audio} />
+              ) : product.melody ? (
+                <motion.div
+                  style={{ transform: "translateZ(60px)" }}
+                  className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
+                >
+                  <Music className="w-3 h-3" /> {product.melody}
+                </motion.div>
+              ) : null}
+            </motion.div>
+          )}
           <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
-            <Sparkles className="w-3 h-3" /> Efect de profunzime aplicat fotografiei produsului
+            {show360 ? (
+              <>
+                <Rotate3D className="w-3 h-3" /> Vedere 360° din cadre reale · trage sau folosește
+                săgețile
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3 h-3" /> Efect de profunzime aplicat fotografiei produsului
+              </>
+            )}
           </p>
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className={`mt-4 grid gap-3 ${has360 ? "grid-cols-4" : "grid-cols-3"}`}>
+            {has360 && (
+              <button
+                type="button"
+                onClick={() => setShow360(true)}
+                aria-pressed={show360}
+                aria-label="Vedere 360 de grade"
+                className={`group relative rounded-xl border p-2 bg-card transition ${show360 ? "border-[color:var(--gold)] shadow-soft" : "border-border hover:bg-muted"}`}
+              >
+                {spinThumb ? (
+                  <img
+                    src={spinThumb}
+                    alt=""
+                    className="aspect-square w-full object-contain opacity-80 transition group-hover:opacity-100"
+                  />
+                ) : (
+                  <span className="block aspect-square w-full" />
+                )}
+                <span className="absolute inset-0 grid place-items-center">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--gold)]/60 bg-[oklch(0.2_0.035_40/0.88)] px-2 py-1 text-[11px] font-semibold tracking-wide text-[color:var(--gold)] shadow-soft backdrop-blur">
+                    <Rotate3D className="h-3.5 w-3.5" /> 360°
+                  </span>
+                </span>
+              </button>
+            )}
             {gallery.map((image, index) => (
               <button
                 key={`${product.id}-${image.label}`}
-                onClick={() => setActive(index)}
-                className={`rounded-xl border p-2 bg-card transition ${active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}
+                onClick={() => {
+                  setActive(index);
+                  setShow360(false);
+                }}
+                className={`rounded-xl border p-2 bg-card transition ${!show360 && active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}
               >
                 <img
                   src={image.src}
@@ -222,14 +295,17 @@ function ProductPage() {
             <button
               onClick={() => {
                 addToCart(product.id, qty);
-                toast.success(`${qty} × ${product.name} adăugată în coș`);
+                notifyAddedToCart(product.name, qty, () => navigate({ to: "/comanda" }));
               }}
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
             >
               <ShoppingBag className="w-4 h-4" /> Adaugă în coș
             </button>
             <button
-              onClick={() => toggleFavorite(product.id)}
+              onClick={() => {
+                toggleFavorite(product.id);
+                notifyFavorite(product.name, !fav);
+              }}
               className={`p-3 rounded-full border ${fav ? "bg-primary/10 border-primary text-primary" : "bg-card hover:bg-muted"}`}
               aria-label="Favorite"
             >
@@ -273,15 +349,6 @@ function ProductPage() {
           </div>
         </div>
       </div>
-
-      {experienceQuery.data?.spin360 && (
-        <section className="mx-auto max-w-5xl px-4 py-12" aria-labelledby="product-360-title">
-          <h2 id="product-360-title" className="mb-6 text-center font-display text-3xl">
-            Descoperă cutiuța din fiecare unghi
-          </h2>
-          <ProductSpinViewer spin={experienceQuery.data.spin360} productName={product.name} />
-        </section>
-      )}
 
       {experienceQuery.data?.animation && (
         <ProductAnimation animation={experienceQuery.data.animation} productName={product.name} />

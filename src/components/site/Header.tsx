@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useShop } from "@/store/shop";
 import { ScrollFuse } from "./ScrollFuse";
 import { BrandMark } from "./BrandMark";
+import { SoundToggle } from "./SoundToggle";
 
 export function Header() {
   const { totalQty, favorites } = useShop();
@@ -123,7 +124,7 @@ export function Header() {
         >
           <Link to="/" className="flex items-center gap-3 group">
             <span
-              className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-rotate-3 group-hover:scale-105"
+              className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:scale-110"
               style={{ width: `${logoSize}px`, height: `${logoSize}px` }}
             >
               <span
@@ -144,7 +145,7 @@ export function Header() {
                 Cutiuța <span className="gold-text italic">Magică</span>
               </div>
               <div
-                className="uppercase tracking-[0.2em] text-[color:var(--wood-dark)]/65 overflow-hidden transition-all duration-500"
+                className="uppercase tracking-[0.2em] text-[color:var(--wood-dark)]/65 overflow-hidden whitespace-nowrap transition-all duration-500 max-[400px]:hidden"
                 style={{
                   maxHeight: scrolled ? 0 : 16,
                   opacity: scrolled ? 0 : 1,
@@ -184,19 +185,23 @@ export function Header() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <SoundToggle compact={scrolled} />
             <Link
               to="/favorite"
               aria-label="Favorite"
               className={`group relative inline-flex items-center justify-center rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
-                scrolled ? "w-9 h-9" : "w-11 h-11"
+                scrolled ? "w-9 h-9" : "w-9 h-9 sm:w-11 sm:h-11"
               }`}
             >
               <Heart
-                className={`text-[color:var(--wood-dark)] group-hover:text-[oklch(0.55_0.18_25)] group-hover:fill-[oklch(0.7_0.2_25)]/30 transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[22px] h-[22px]"}`}
+                className={`text-[color:var(--wood-dark)] group-hover:text-[oklch(0.55_0.18_25)] group-hover:fill-[oklch(0.7_0.2_25)]/30 transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[18px] h-[18px] sm:w-[22px] sm:h-[22px]"}`}
               />
               {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-br from-[color:var(--gold)] to-[oklch(0.62_0.13_55)] text-[color:var(--wood-dark)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]">
+                <span
+                  key={favorites.length}
+                  className="badge-pop absolute -top-1 -right-1 bg-gradient-to-br from-[color:var(--gold)] to-[oklch(0.62_0.13_55)] text-[color:var(--wood-dark)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]"
+                >
                   {favorites.length}
                 </span>
               )}
@@ -205,14 +210,17 @@ export function Header() {
               to="/comanda"
               aria-label="Coș de cumpărături"
               className={`group relative inline-flex items-center justify-center rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
-                scrolled ? "w-9 h-9" : "w-11 h-11"
+                scrolled ? "w-9 h-9" : "w-9 h-9 sm:w-11 sm:h-11"
               }`}
             >
               <ShoppingBag
-                className={`text-[color:var(--wood-dark)] transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[22px] h-[22px]"}`}
+                className={`text-[color:var(--wood-dark)] transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[18px] h-[18px] sm:w-[22px] sm:h-[22px]"}`}
               />
               {totalQty > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[color:var(--wood-dark)] text-[color:var(--cream)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]">
+                <span
+                  key={totalQty}
+                  className="badge-pop absolute -top-1 -right-1 bg-[color:var(--wood-dark)] text-[color:var(--cream)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]"
+                >
                   {totalQty}
                 </span>
               )}
