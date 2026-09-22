@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import { Sparkles, Package, BookOpen, Gift, ArrowRight } from "lucide-react";
-import { products } from "@/data/products";
+import { isAvailable, products } from "@/data/products";
 import { ProductCarouselSection } from "@/components/site/ProductCarouselSection";
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
@@ -11,7 +11,10 @@ import bgPoveste from "@/assets/bg-poveste.jpg";
 import bgEmotie from "@/assets/bg-emotie.jpg";
 import bgUnice from "@/assets/bg-unice.jpg";
 
-const heroImage = products[0].image;
+// Fotografia de hero rămâne cea lată, de ambianță (Stăpânul Inelelor); textul hero-ului e generic.
+// Pozele din anunțurile Vinted au 800 px și s-ar vedea moi pe tot ecranul.
+const heroProduct = products.find((p) => p.id === "lotr-rings") ?? products[0];
+const heroImage = heroProduct.image;
 const socialHeroImage = `https://cutiutamagica.eu${heroImage}`;
 
 export const Route = createFileRoute("/")({
@@ -42,17 +45,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const hero = products[0];
+  const hero = heroProduct;
   const reducedMotion = useReducedMotion();
 
-  const povesteSpotlight = ["hp-keeper", "lotr-rings", "starwars-dad"];
-  const emotieSpotlight = ["fairy", "kitten", "hp-always"];
-  const dedicateSpotlight = ["halloween", "hp-keeper", "fairy"];
+  // Doar modele disponibile acum: vitrina de pe prima pagină trebuie să ducă la coș.
+  const povesteSpotlight = ["hp-keeper", "got-winter", "halloween"];
+  const emotieSpotlight = ["sunshine", "kitten", "hp-keeper"];
+  const dedicateSpotlight = ["halloween", "kitten", "sunshine"];
 
   const byIds = (ids: string[]) =>
     ids
       .map((id) => products.find((p) => p.id === id))
-      .filter((p): p is (typeof products)[number] => Boolean(p));
+      .filter((p): p is (typeof products)[number] => Boolean(p && isAvailable(p)));
 
   return (
     <div>
@@ -61,7 +65,7 @@ function Index() {
         <div className="relative h-[82vh] min-h-[560px] max-h-[820px] w-full">
           <motion.img
             src={hero.image}
-            alt={hero.name}
+            alt="Cutiuță muzicală din lemn cu manivelă, în lumină caldă"
             width={1200}
             height={800}
             fetchPriority="high"

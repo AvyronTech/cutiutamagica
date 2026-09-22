@@ -1,5 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { calcTotals, products, type Product } from "@/data/products";
+import { calcTotals, getProduct, isAvailable, products, type Product } from "@/data/products";
+
+/** Doar produsele puse în vânzare pot sta în coș; modelele „În curând” sunt respinse. */
+const canBuy = (id: string) => {
+  const product = getProduct(id);
+  return Boolean(product && isAvailable(product));
+};
 
 type CartItem = { id: string; qty: number };
 type ShopCtx = {
@@ -27,7 +33,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     try {
       const c = localStorage.getItem("cm_cart");
       const f = localStorage.getItem("cm_fav");
-      if (c) setCart(JSON.parse(c));
+      if (c) {
+        const stored = JSON.parse(c) as CartItem[];
+        // Un coș salvat înainte ca un model să treacă la „În curând” nu trebuie să ajungă la checkout.
+        setCart(Array.isArray(stored) ? stored.filter((item) => canBuy(item.id)) : []);
+      }
       if (f) setFavorites(JSON.parse(f));
     } catch {
       // Corrupt or unavailable browser storage must not block the storefront.
@@ -57,6 +67,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       favorites,
       addToCart: (id, qty = 1) =>
         setCart((c) => {
+          if (!canBuy(id)) return c;
           const safeQty = Math.max(1, Math.min(5, qty));
           const ex = c.find((i) => i.id === id);
           if (ex)

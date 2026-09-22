@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Gift, Search, Settings2, X } from "lucide-react";
-import { products } from "@/data/products";
+import { isAvailable, products } from "@/data/products";
 import { ProductCard } from "@/components/site/ProductCard";
 
 const CATALOG_URL = "https://cutiutamagica.eu/produse";
@@ -143,12 +143,32 @@ function ProductsPage() {
         ))}
       </div>
 
-      <h2 className="sr-only">Modele disponibile</h2>
-      <div className="mt-10 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {list.map((product, index) => (
-          <ProductCard key={product.id} product={product} index={index} variant="solid" />
+      {[
+        { key: "now", title: "Disponibile acum", items: list.filter(isAvailable) },
+        {
+          key: "soon",
+          title: "În curând",
+          note: "Modele pe care le pregătim pentru magazin. Le poți salva la favorite.",
+          items: list.filter((product) => !isAvailable(product)),
+        },
+      ]
+        .filter((group) => group.items.length > 0)
+        .map((group, groupIndex) => (
+          <section key={group.key} className={groupIndex === 0 ? "mt-10" : "mt-16"}>
+            <div className="flex flex-col items-center gap-1">
+              <h2 className="font-display text-2xl md:text-3xl">
+                {group.title}{" "}
+                <span className="text-base text-muted-foreground">({group.items.length})</span>
+              </h2>
+              {group.note && <p className="text-sm text-muted-foreground">{group.note}</p>}
+            </div>
+            <div className="mt-6 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {group.items.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} variant="solid" />
+              ))}
+            </div>
+          </section>
         ))}
-      </div>
 
       {list.length === 0 && (
         <div className="mx-auto mt-12 max-w-md rounded-lg border border-border bg-card p-8">

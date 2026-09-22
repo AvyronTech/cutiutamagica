@@ -5,10 +5,7 @@ import {
 } from "@/lib/pricing";
 
 const fairy = "/media/media_fairy_hero";
-const halloween = "/media/media_halloween_hero";
 const hpAlways = "/media/media_hp_always_hero";
-const hpKeeper = "/media/media_hp_keeper_hero";
-const kitten = "/media/media_kitten_hero";
 const lotrRing = "/media/media_lotr_rings_hero";
 const pirates = "/media/media_pirates_hero";
 const starwarsDad = "/media/media_starwars_dad_hero";
@@ -34,7 +31,13 @@ export type Product = {
   details: string[];
   searchTerms: string[];
   price?: number;
+  /** „available” se poate comanda; „coming_soon” apare în catalog, dar nu intră în coș. */
+  availability: ProductAvailability;
+  /** Anunțul de pe platforma externă din care au fost preluate titlul, pozele și descrierea. */
+  source?: { platform: "vinted"; url: string };
 };
+
+export type ProductAvailability = "available" | "coming_soon";
 
 export const PRICE = PRODUCT_BASE_PRICE_BANI / 100;
 export const MAX_QTY = MAX_ITEM_QUANTITY;
@@ -43,8 +46,229 @@ export const calcTotals = calculateDisplayedTotals;
 
 export const products: Product[] = [
   {
+    id: "hp-keeper",
+    sku: "CM-HP-KEEPER",
+    availability: "available",
+    source: { platform: "vinted", url: "https://www.vinted.ro/items/10090709545" },
+    updatedAt: "2026-09-22",
+    name: "Cutiuță Muzicală Harry Potter cu Manivelă – Cadou de Colecție 14+",
+    tagline: "Un mic obiect de colecție pentru cei care vor să păstreze puțină magie aproape.",
+    melody: "Hedwig's Theme",
+    category: "Harry Potter",
+    image: "/produse/hp-keeper/card.webp",
+    gallery: [
+      {
+        src: "/produse/hp-keeper/1.webp",
+        label: "Cutiuța la lumina lumânării",
+        position: "center",
+      },
+      {
+        src: "/produse/hp-keeper/2.webp",
+        label: "Capacul cu Hogwarts în fundal",
+        position: "center",
+      },
+      { src: "/produse/hp-keeper/3.webp", label: "Dimensiuni și mecanism", position: "center" },
+      { src: "/media/media_hp_keeper_hero", label: "Fotografia din magazin", position: "center" },
+    ],
+    description:
+      "Cutiuța muzicală inspirată din universul Harry Potter combină lemnul închis la culoare, detaliile tematice și mecanismul metalic vizibil într-un obiect compact și memorabil. Ridici capacul, descoperi grafica interioară, apoi rotești ușor manivela pentru a pune mecanismul muzical în mișcare — fără baterii și fără încărcare. Redă o parte din piesa legendară a seriei de filme, creând o atmosferă magică și fidelă, care trezește emoții unice fanilor și colecționarilor.",
+    story:
+      "Este potrivită pentru fani, colecționari, adolescenți 14+, cadouri de aniversare, Crăciun, Secret Santa, dar și ca decor pentru birou, bibliotecă, raft sau vitrină. Mică la dimensiuni. Mare la capitolul magie. Imaginile sunt orientative și pot include elemente decorative care nu fac parte din produs.",
+    details: [
+      "Dimensiuni aprox.: 6,5 × 5 × 4 cm",
+      "Înălțime cu capacul deschis: aprox. 6,2 cm",
+      "Funcționare: mecanică, prin rotirea manuală a manivelei",
+      "Obiect decorativ / de colecție 14+; nu este jucărie",
+    ],
+    searchTerms: [
+      "cutiuță muzicală Harry Potter",
+      "cutiuță muzicală cu manivelă Harry Potter",
+      "cadou fan Harry Potter",
+      "cutiuță muzicală din lemn cadou",
+    ],
+  },
+  {
+    id: "got-winter",
+    sku: "CM-GOT-WINTER",
+    availability: "available",
+    source: { platform: "vinted", url: "https://www.vinted.ro/items/10039606794" },
+    updatedAt: "2026-09-22",
+    name: "Cutiuță Muzicală Game of Thrones „Winter Is Coming” cu Manivelă – Cadou de Colecție 14+",
+    tagline: "Iarna vine… dar de data aceasta aduce și muzică.",
+    melody: "Game of Thrones — Main Theme",
+    category: "Fantasy",
+    image: "/produse/got-winter/card.webp",
+    gallery: [
+      { src: "/produse/got-winter/1.webp", label: "Iarna începe cu magie", position: "center" },
+      { src: "/produse/got-winter/2.webp", label: "Un dar cu poveste", position: "center" },
+      {
+        src: "/produse/got-winter/3.webp",
+        label: "Capacul „Winter Is Coming”",
+        position: "center",
+      },
+      { src: "/produse/got-winter/4.webp", label: "Dimensiuni compacte", position: "center" },
+      {
+        src: "/produse/got-winter/5.webp",
+        label: "Pieptene, cilindru și manivelă",
+        position: "center",
+      },
+      { src: "/produse/got-winter/6.webp", label: "Pentru seri cu farmec", position: "center" },
+    ],
+    description:
+      "O cutiuță muzicală cu atmosferă medieval-fantasy, creată pentru fanii Game of Thrones, colecționari și cei care caută un cadou mic, dar memorabil. Designul negru cu lupul direwolf, mesajul „Winter Is Coming” și mecanismul metalic vizibil îi oferă un aspect aparte, potrivit atât pentru colecție, cât și pentru decor.",
+    story:
+      "Rotește ușor manivela metalică, iar mecanismul clasic pune melodia în mișcare — manual, fără baterii și fără încărcare. Poate fi oferită la aniversări, Crăciun, Secret Santa sau altor pasionați de universuri fantasy și poate completa perfect un birou, o bibliotecă, un raft sau o vitrină de colecție. Mică la dimensiuni. Legendară prin atmosferă. Imaginile sunt orientative și pot include elemente de decor care nu fac parte din produs.",
+    details: [
+      "Dimensiuni aprox.: 6,5 × 4 × 5 cm / 2.55 × 1.57 × 1.96 in",
+      "Funcționare: mecanică, prin rotirea manivelei",
+      "Obiect decorativ / de colecție 14+; nu este jucărie",
+    ],
+    searchTerms: [
+      "cutiuță muzicală Game of Thrones",
+      "cutiuță muzicală Winter Is Coming",
+      "cadou fan Game of Thrones",
+      "cutiuță muzicală cu manivelă fantasy",
+    ],
+  },
+  {
+    id: "kitten",
+    sku: "CM-KITTEN",
+    availability: "available",
+    source: { platform: "vinted", url: "https://www.vinted.ro/items/10039491875" },
+    updatedAt: "2026-09-22",
+    name: "Cutiuță Muzicală cu Pisicuță și Lună – Manivelă, Cadou de Colecție 14+",
+    tagline: "O cutiuță mică, o scenă de poveste și o melodie care face momentul mai cald.",
+    melody: "La Vie en Rose",
+    category: "Cadouri Speciale",
+    image: "/produse/kitten/card.webp",
+    gallery: [
+      {
+        src: "/produse/kitten/1.webp",
+        label: "Pisicuța și luna, la lumina caldă",
+        position: "center",
+      },
+      { src: "/produse/kitten/2.webp", label: "Ambalajul pentru cadou", position: "center" },
+      {
+        src: "/produse/kitten/3.webp",
+        label: "Cutiuța închisă, cu decor gravat",
+        position: "center",
+      },
+      { src: "/produse/kitten/4.webp", label: "Dimensiuni produs", position: "center" },
+      { src: "/produse/kitten/5.webp", label: "Farmec clasic, fără baterii", position: "center" },
+      { src: "/produse/kitten/6.webp", label: "Un dar plin de tandrețe", position: "center" },
+      { src: "/media/media_kitten_hero", label: "Fotografia din magazin", position: "center" },
+    ],
+    description:
+      "Cutiuța muzicală cu pisicuță, lună strălucitoare și fluturi este un obiect decorativ și de colecție cu un farmec aparte. Ridici capacul, descoperi ilustrația, apoi rotești ușor manivela pentru a pune în mișcare mecanismul muzical metalic — fără baterii și fără încărcare.",
+    story:
+      "Realizată din lemn deschis la culoare, cu modele decorative gravate și mecanism vizibil, este potrivită pentru iubitorii de pisici, colecționari, familie, cupluri sau persoane dragi. Poate fi oferită la aniversări, zile de naștere, Crăciun sau pur și simplu ca un mic dar-surpriză și poate fi păstrată ca decor pe birou, raft, bibliotecă ori într-o vitrină. Un dar mic, pentru bucurii mari. Imaginile sunt orientative și pot include elemente decorative care nu fac parte din produs.",
+    details: [
+      "Dimensiuni aprox.: 6,4 × 3,6 × 5 cm",
+      "Funcționare: mecanică, prin rotirea manuală a manivelei",
+      "Lemn deschis la culoare, cu modele gravate",
+      "Obiect decorativ / de colecție 14+; nu este jucărie",
+    ],
+    searchTerms: [
+      "cutiuță muzicală cu pisică",
+      "cutiuță muzicală pisicuță și lună",
+      "cadou iubitori de pisici",
+      "cutiuță muzicală cu manivelă cadou",
+    ],
+  },
+  {
+    id: "halloween",
+    sku: "CM-HALLOWEEN",
+    availability: "available",
+    source: { platform: "vinted", url: "https://www.vinted.ro/items/10039375629" },
+    updatedAt: "2026-09-22",
+    name: "Cutiuță Muzicală Halloween cu Manivelă – Cadou Misterios & Decor Tematic",
+    tagline: "O cutiuță mică, o melodie misterioasă și puțină magie de Halloween.",
+    melody: "This Is Halloween",
+    category: "Halloween",
+    image: "/produse/halloween/card.webp",
+    gallery: [
+      {
+        src: "/produse/halloween/1.webp",
+        label: "Capacul ilustrat, între dovleci",
+        position: "center",
+      },
+      {
+        src: "/produse/halloween/2.webp",
+        label: "Atmosferă de noapte de Halloween",
+        position: "center",
+      },
+      { src: "/produse/halloween/3.webp", label: "Mecanismul în detaliu", position: "center" },
+      { src: "/produse/halloween/4.webp", label: "Dimensiuni produs", position: "center" },
+      { src: "/produse/halloween/5.webp", label: "Cadoul care vrăjește", position: "center" },
+      {
+        src: "/produse/halloween/6.webp",
+        label: "Pornește magia de Halloween",
+        position: "center",
+      },
+      { src: "/produse/halloween/7.webp", label: "Mică cutie, vrajă mare", position: "center" },
+      { src: "/media/media_halloween_hero", label: "Fotografia din magazin", position: "center" },
+    ],
+    description:
+      "Ridică capacul, rotește manivela și lasă mecanismul muzical să dea viață atmosferei. Designul tematic, detaliile de Halloween și mecanismul vizibil transformă această cutiuță într-un cadou aparte și într-un decor memorabil.",
+    story:
+      "Potrivită pentru cadouri, colecționari, petreceri și evenimente tematice, decoruri de Halloween sau adolescenți 12+. Funcționează mecanic, prin rotirea manivelei, fără baterii. Mică la dimensiuni. Mare la atmosferă. Imaginile sunt orientative și pot include elemente decorative care nu fac parte din produs.",
+    details: [
+      "Dimensiuni: 6,4 × 3,8 × 5 cm / 2.51 × 1.49 × 1.96 in",
+      "Funcționare: mecanică, prin rotirea manivelei, fără baterii",
+      "Design tematic Halloween cu mecanism vizibil",
+      "Recomandat 12+",
+    ],
+    searchTerms: [
+      "cutiuță muzicală Halloween",
+      "cadou Halloween",
+      "cutiuță muzicală cu manivelă Halloween",
+      "decor Halloween cutiuță",
+    ],
+  },
+  {
+    id: "sunshine",
+    sku: "CM-SUNSHINE",
+    availability: "available",
+    source: { platform: "vinted", url: "https://www.vinted.ro/items/10039368670" },
+    updatedAt: "2026-09-22",
+    name: "Cutiuță Muzicală „You Are My Sunshine” cu Manivelă – Cadou de Colecție 14+",
+    tagline: "Uneori, cele mai frumoase amintiri încap într-o cutiuță.",
+    melody: "You Are My Sunshine",
+    category: "Cadouri Speciale",
+    image: "/produse/sunshine/card.webp",
+    gallery: [
+      { src: "/produse/sunshine/1.webp", label: "Un dar care cântă iubirea", position: "center" },
+      { src: "/produse/sunshine/2.webp", label: "O amintire care rămâne", position: "center" },
+      {
+        src: "/produse/sunshine/3.webp",
+        label: "Cutiuța închisă, cu decor gravat",
+        position: "center",
+      },
+      { src: "/produse/sunshine/4.webp", label: "Dimensiuni produs", position: "center" },
+      { src: "/produse/sunshine/5.webp", label: "Farmec clasic, fără baterii", position: "center" },
+      { src: "/produse/sunshine/6.webp", label: "Melodia You Are My Sunshine", position: "center" },
+    ],
+    description:
+      "Cutiuța muzicală „You Are My Sunshine” este un mic obiect de colecție creat pentru a transforma un gest simplu într-un moment special. Designul din lemn, detaliile decorative și mesajul ascuns sub capac o fac potrivită atât pentru cupluri și familie, cât și pentru cei care iubesc obiectele cu poveste. Rotești ușor manivela metalică, cilindrul mecanismului pune în mișcare pieptenele muzical, iar melodia începe să se audă — fără baterii și fără încărcare.",
+    story:
+      "Mecanismul rămâne vizibil atunci când capacul este deschis, ceea ce îi oferă un farmec aparte și o transformă într-un obiect interesant de păstrat și expus. Este o alegere potrivită pentru aniversări, zile de naștere, Valentine’s Day, Crăciun, cadouri pentru partener, părinți sau persoane apropiate, dar și ca decor pentru birou, bibliotecă, vitrină, dormitor sau o colecție personală. Mică la dimensiuni, dar făcută să păstreze momente mari. Imaginile de prezentare sunt orientative; decorurile și accesoriile din fotografii nu sunt incluse.",
+    details: [
+      "Melodie: You Are My Sunshine",
+      "Dimensiuni: aprox. 6,5 × 3,8 × 5 cm / 2.55 × 1.5 × 1.97 in",
+      "Lemn închis la culoare, ornamente decorative și mecanism metalic vizibil",
+      "Obiect de colecție 14+; nu este jucărie",
+    ],
+    searchTerms: [
+      "cutiuță muzicală You Are My Sunshine",
+      "cutiuță muzicală cadou cuplu",
+      "cutiuță muzicală din lemn cu manivelă",
+      "cadou Valentine's Day cutiuță",
+    ],
+  },
+  {
     id: "lotr-rings",
     sku: "CM-LOTR-RINGS",
+    availability: "coming_soon",
     updatedAt: "2026-09-05",
     name: "Stăpânul Inelelor — One Ring",
     tagline: "Un dar pentru cei care știu ce înseamnă prețioasa comoară.",
@@ -76,6 +300,7 @@ export const products: Product[] = [
   {
     id: "hp-always",
     sku: "CM-HP-ALWAYS",
+    availability: "coming_soon",
     updatedAt: "2026-09-05",
     name: "Harry Potter — I Solemnly Swear",
     tagline: "Pentru Potterhead-ul care zâmbește din prima la Harta Hoinarului.",
@@ -105,70 +330,9 @@ export const products: Product[] = [
     ],
   },
   {
-    id: "hp-keeper",
-    sku: "CM-HP-KEEPER",
-    updatedAt: "2026-09-05",
-    name: "Harry Potter — I'm a Keeper",
-    tagline: "Un cadou fermecător pentru cineva care încă își așteaptă scrisoarea.",
-    melody: "Hedwig's Theme",
-    category: "Harry Potter",
-    image: hpKeeper,
-    gallery: [
-      { src: hpKeeper, label: "Vedere completă", position: "center" },
-      { src: hpKeeper, label: "Capac în detaliu", position: "center top" },
-      { src: hpKeeper, label: "Mecanism în cadru", position: "right center" },
-    ],
-    description:
-      "Acest model are o energie jucăușă și nostalgică în același timp. Îi va impresiona pe fanii care iubesc universul Harry Potter, colecționează obiecte tematice sau caută un cadou diferit, cu poveste și emoție. Este o alegere foarte bună pentru adolescenți, prietene, surori sau pentru oricine încă se simte puțin elev la Hogwarts.",
-    story:
-      "Designul de pe capac și mesajul de pe laterala cutiuței îi dau personalitate imediată. Pentru că fotografia originală surprinde bine atât cutiuța, cât și interiorul, am construit galeria exclusiv din încadrări reale ale aceleiași imagini, fără să schimb produsul sau să inventăm alte unghiuri artificiale.",
-    details: [
-      "Lemn închis la culoare",
-      "Capac ilustrat Harry Potter",
-      "Mecanism vizibil în fotografia originală",
-      "Preț promo: 75 lei/buc de la 3 bucăți",
-    ],
-    searchTerms: [
-      "cutiuță muzicală Harry Potter cadou",
-      "cutiuță cu mecanism clasic",
-      "cutiuță cu manivelă",
-      "cadou tematic magic",
-    ],
-  },
-  {
-    id: "halloween",
-    sku: "CM-HALLOWEEN",
-    updatedAt: "2026-09-05",
-    name: "Halloween — Castelul Bântuit",
-    tagline: "Pentru cei care iubesc atmosfera spooky, nu doar sărbătoarea.",
-    melody: "This Is Halloween",
-    category: "Halloween",
-    image: halloween,
-    gallery: [
-      { src: halloween, label: "Vedere completă", position: "center" },
-      { src: halloween, label: "Capac în detaliu", position: "center top" },
-      { src: halloween, label: "Mecanism & lateral", position: "right center" },
-    ],
-    description:
-      "Modelul acesta are exact genul de prezență care atrage privirea imediat: contrast puternic, dovleci expresivi și un aer misterios care îl face perfect pentru un fan al Halloween-ului, al universurilor gotice sau al cadourilor cu personalitate. E genul de piesă care stă bine pe birou, într-o bibliotecă sau într-un colț decorativ cu tematică de toamnă.",
-    story:
-      "Ilustrația de pe capac spune instant povestea — castel, lună plină și acel vibe de film cult de Halloween. Din fotografia originală se vede foarte bine cutiuța reală, inclusiv porțiunea de mecanism, așa că galeria pune accent pe claritate și autenticitate, nu pe efecte artificiale.",
-    details: [
-      "Design tematic Halloween",
-      "Decor ornamental pe lemn",
-      "Melodie recognoscibilă pentru fanii genului",
-      "Mecanism clasic cu manivelă",
-    ],
-    searchTerms: [
-      "cutiuță muzicală Halloween",
-      "cadou Halloween",
-      "cutiuță mecanică din lemn",
-      "cutiuță cu manivelă",
-    ],
-  },
-  {
     id: "fairy",
     sku: "CM-FAIRY",
+    availability: "coming_soon",
     updatedAt: "2026-09-05",
     name: "Zâna Pădurii Fermecate",
     tagline: "Un cadou delicat pentru visătoare și iubitoare de magie.",
@@ -200,6 +364,7 @@ export const products: Product[] = [
   {
     id: "pirates",
     sku: "CM-PIRATES",
+    availability: "coming_soon",
     updatedAt: "2026-09-05",
     name: "Pirații Caraibilor — Furtuna",
     tagline: "Pentru cei care aleg mereu aventura, nu varianta cuminte.",
@@ -231,6 +396,7 @@ export const products: Product[] = [
   {
     id: "starwars-dad",
     sku: "CM-STARWARS-DAD",
+    availability: "coming_soon",
     updatedAt: "2026-09-05",
     name: "Star Wars — Best Dad in the Galaxy",
     tagline: "Genul de cadou care îl face pe tata să zâmbească imediat.",
@@ -259,37 +425,11 @@ export const products: Product[] = [
       "cadou cutiuță muzicală",
     ],
   },
-  {
-    id: "kitten",
-    sku: "CM-KITTEN",
-    updatedAt: "2026-09-05",
-    name: "Pisicuța cu Stele",
-    tagline: "O alegere dulce pentru cineva care adoră pisicile și gesturile fine.",
-    melody: "La Vie en Rose",
-    category: "Cadouri Speciale",
-    image: kitten,
-    gallery: [
-      { src: kitten, label: "Vedere completă", position: "center" },
-      { src: kitten, label: "Capac în detaliu", position: "center top" },
-      { src: kitten, label: "Mecanism & lateral", position: "right center" },
-    ],
-    description:
-      "Modelul cu pisicuță este cald, drăgălaș și foarte ușor de oferit în dar fără să pară banal. Îi va impresiona pe iubitorii de pisici, pe fanele cadourilor delicate sau pe cineva care apreciază obiectele mici, frumoase și cu atmosferă. Se potrivește minunat pentru aniversări, surprize romantice discrete sau un cadou de suflet oferit din senin.",
-    story:
-      "Pisicuța luminoasă de pe capac creează imediat o stare blândă și jucăușă. Pentru pagina produsului am folosit doar fotografia originală și am pus accent pe zonele relevante: ilustrația, interiorul vizibil și forma cutiuței. Așa rămâne clar că vezi produsul real, nu o reinterpretare.",
-    details: [
-      "Capac ilustrat cu tematică delicată",
-      "Cutie din lemn",
-      "Melodie cu ton romantic și blând",
-      "Mecanism manual cu manivelă",
-    ],
-    searchTerms: [
-      "cutiuță muzicală cu pisică",
-      "cutiuță cadou",
-      "cadou aniversare",
-      "cutiuță muzicală cu manivelă",
-    ],
-  },
 ];
+
+export const isAvailable = (product: Pick<Product, "availability">) =>
+  product.availability === "available";
+
+export const availableProducts = () => products.filter(isAvailable);
 
 export const getProduct = (id: string) => products.find((p) => p.id === id);

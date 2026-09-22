@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 import {
   Heart,
@@ -11,9 +11,13 @@ import {
   Minus,
   Plus,
   Rotate3D,
+  Hourglass,
 } from "lucide-react";
-import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
+import { getProduct, isAvailable, products, PRICE, MAX_QTY } from "@/data/products";
 import { useShop } from "@/store/shop";
+import { ProductImage } from "@/components/site/ProductImage";
+import { ProductLightbox } from "@/components/site/ProductLightbox";
+import { playTick } from "@/lib/sound";
 import { notifyAddedToCart, notifyFavorite } from "@/lib/notify";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
@@ -37,6 +41,12 @@ export const Route = createFileRoute("/produs/$id")({
       ? loaderData.product.image
       : `https://cutiutamagica.eu${loaderData.product.image}`;
     const price = String(loaderData.product.price ?? PRICE);
+    const absolute = (src: string) =>
+      src.startsWith("http") ? src : `https://cutiutamagica.eu${src}`;
+    const images = loaderData.product.source
+      ? [image, ...loaderData.product.gallery.map((entry) => absolute(entry.src))]
+      : [image];
+    const inStock = isAvailable(loaderData.product);
     const description = `${loaderData.product.tagline} Cutiuță muzicală din lemn, cu manivelă și mecanism manual${loaderData.product.melody ? `, melodia ${loaderData.product.melody}` : ""}.`;
     return {
       meta: [
@@ -50,6 +60,7 @@ export const Route = createFileRoute("/produs/$id")({
         { property: "og:type", content: "product" },
         { property: "product:price:amount", content: price },
         { property: "product:price:currency", content: "RON" },
+        { property: "product:availability", content: inStock ? "in stock" : "out of stock" },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
@@ -60,7 +71,7 @@ export const Route = createFileRoute("/produs/$id")({
             "@type": "Product",
             name: loaderData.product.name,
             sku: loaderData.product.sku,
-            image: [image],
+            image: images,
             description,
             category: loaderData.product.category,
             material: "Lemn",
@@ -76,6 +87,9 @@ export const Route = createFileRoute("/produs/$id")({
               "@type": "Offer",
               price,
               priceCurrency: "RON",
+              availability: inStock
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
               itemCondition: "https://schema.org/NewCondition",
               url,
               seller: { "@type": "Organization", name: "Cutiuța Magică" },
@@ -149,7 +163,15 @@ function ProductPage() {
 
   const related = useMemo(
     () =>
-      products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4),
+      products
+        .filter((p) => p.id !== product.id)
+        // Întâi modelele disponibile acum, apoi cele din aceeași categorie.
+        .sort(
+          (a, b) =>
+            Number(isAvailable(b)) - Number(isAvailable(a)) ||
+            Number(b.category === product.category) - Number(a.category === product.category),
+        )
+        .slice(0, 4),
     [product.id, product.category],
   );
   const remoteGallery =
@@ -158,7 +180,11 @@ function ProductPage() {
       label: image.alt_text || image.title || product.name,
       position: "center",
     })) ?? [];
-  const gallery = remoteGallery.length > 0 ? remoteGallery : product.gallery;
+  // Produsele preluate din anunțurile Vinted își păstrează galeria de acolo;
+  // restul folosesc media din admin când există.
+  const gallery = !product.source && remoteGallery.length > 0 ? remoteGallery : product.gallery;
+  const available = isAvailable(product);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const currentImage = gallery[active] ?? gallery[0];
   const spin = experienceQuery.data?.spin360 ?? null;
   const has360 = Boolean(
@@ -184,14 +210,39 @@ function ProductPage() {
               style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
               className="relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card p-4"
             >
-              <motion.img
-                src={currentImage.src}
-                alt={`${product.name} — ${currentImage.label}`}
-                className="w-full h-full object-contain"
-                style={{
-                  transform: "translateZ(36px)",
-                  objectPosition: currentImage.position ?? "center",
-                }}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.button
+                  type="button"
+                  key={currentImage.src}
+                  onClick={() => setZoomOpen(true)}
+                  aria-label="Vezi fotografia mărită"
+                  initial={{ opacity: 0, scale: 0.985 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.01 }}
+                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute inset-4 cursor-zoom-in"
+                  style={{ transform: "translateZ(36px)" }}
+                >
+                  <ProductImage
+                    src={currentImage.src}
+                    alt={`${product.name} — ${currentImage.label}`}
+                    loading="eager"
+                    fetchPriority="high"
+                    sizes="(max-width: 768px) 92vw, 620px"
+                    className="h-full w-full object-contain"
+                    style={{ objectPosition: currentImage.position ?? "center" }}
+                  />
+                </motion.button>
+              </AnimatePresence>
+              {/* Halou cald peste fotografie: dă senzația de lumină de lumânare, fără să acopere produsul. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(85%_65%_at_50%_15%,oklch(0.95_0.12_85/0.14),transparent_62%)]"
+                style={{ transform: "translateZ(50px)" }}
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[color:var(--gold)]/25"
               />
               {experienceQuery.data?.audio ? (
                 <ProductAudioOverlay audio={experienceQuery.data.audio} />
@@ -213,11 +264,11 @@ function ProductPage() {
               </>
             ) : (
               <>
-                <Sparkles className="w-3 h-3" /> Efect de profunzime aplicat fotografiei produsului
+                <Sparkles className="w-3 h-3" /> Atinge fotografia pentru vedere mărită
               </>
             )}
           </p>
-          <div className={`mt-4 grid gap-3 ${has360 ? "grid-cols-4" : "grid-cols-3"}`}>
+          <div className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-5">
             {has360 && (
               <button
                 type="button"
@@ -248,12 +299,14 @@ function ProductPage() {
                 onClick={() => {
                   setActive(index);
                   setShow360(false);
+                  playTick();
                 }}
                 className={`rounded-xl border p-2 bg-card transition ${!show360 && active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}
               >
-                <img
+                <ProductImage
                   src={image.src}
                   alt={image.label}
+                  sizes="120px"
                   className="aspect-square w-full object-contain"
                   style={{ objectPosition: image.position ?? "center" }}
                 />
@@ -269,38 +322,61 @@ function ProductPage() {
           <h1 className="font-display text-4xl md:text-5xl mt-2">{product.name}</h1>
           <p className="mt-3 text-lg text-muted-foreground">{product.tagline}</p>
 
-          <div className="mt-6 flex items-baseline gap-3">
-            <span className="font-display text-4xl">{PRICE} lei</span>
-            <span className="text-sm text-muted-foreground">75 lei/buc de la 2 cutiuțe</span>
-          </div>
+          {available ? (
+            <div className="mt-6 flex items-baseline gap-3">
+              <span className="font-display text-4xl">{PRICE} lei</span>
+              <span className="text-sm text-muted-foreground">75 lei/buc de la 2 cutiuțe</span>
+            </div>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 p-4">
+              <p className="inline-flex items-center gap-2 font-display text-2xl">
+                <Hourglass className="h-5 w-5 text-[color:var(--gold)]" aria-hidden />
+                Disponibilă în curând
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Pregătim acest model pentru magazin. Salvează-l la favorite ca să îl găsești ușor
+                când revine, sau alege una dintre cutiuțele disponibile acum.
+              </p>
+              <Link
+                to="/produse"
+                className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                Vezi cutiuțele disponibile
+              </Link>
+            </div>
+          )}
 
           <div className="mt-6 flex items-center gap-3">
-            <div className="inline-flex items-center rounded-full border bg-card">
-              <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="p-2.5 hover:bg-muted rounded-l-full"
-                aria-label="Scade"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="px-4 font-medium tabular-nums">{qty}</span>
-              <button
-                onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
-                className="p-2.5 hover:bg-muted rounded-r-full"
-                aria-label="Crește"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                addToCart(product.id, qty);
-                notifyAddedToCart(product.name, qty, () => navigate({ to: "/comanda" }));
-              }}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
-            >
-              <ShoppingBag className="w-4 h-4" /> Adaugă în coș
-            </button>
+            {available && (
+              <>
+                <div className="inline-flex items-center rounded-full border bg-card">
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="p-2.5 hover:bg-muted rounded-l-full"
+                    aria-label="Scade"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="px-4 font-medium tabular-nums">{qty}</span>
+                  <button
+                    onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
+                    className="p-2.5 hover:bg-muted rounded-r-full"
+                    aria-label="Crește"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    addToCart(product.id, qty);
+                    notifyAddedToCart(product.name, qty, () => navigate({ to: "/comanda" }));
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
+                >
+                  <ShoppingBag className="w-4 h-4" /> Adaugă în coș
+                </button>
+              </>
+            )}
             <button
               onClick={() => {
                 toggleFavorite(product.id);
@@ -313,12 +389,14 @@ function ProductPage() {
             </button>
           </div>
 
-          <Link
-            to="/comanda"
-            className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full border border-primary/40 px-6 py-3 text-sm font-medium hover:bg-primary/5"
-          >
-            <Gift className="w-4 h-4" /> Finalizează comanda
-          </Link>
+          {available && (
+            <Link
+              to="/comanda"
+              className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full border border-primary/40 px-6 py-3 text-sm font-medium hover:bg-primary/5"
+            >
+              <Gift className="w-4 h-4" /> Finalizează comanda
+            </Link>
+          )}
 
           <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2 rounded-xl border p-3">
@@ -364,6 +442,18 @@ function ProductPage() {
           </div>
         </section>
       )}
+
+      <AnimatePresence>
+        {zoomOpen && (
+          <ProductLightbox
+            images={gallery}
+            index={active}
+            productName={product.name}
+            onClose={() => setZoomOpen(false)}
+            onIndexChange={setActive}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
