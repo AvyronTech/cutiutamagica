@@ -18,8 +18,10 @@ const input = "w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 
 const button =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50";
 const labels: Record<CredentialProvider, string> = {
+  fgo: "FGO · cheie privată API",
   smartship: "SmartShip",
   stripe: "Stripe",
+  stripe_webhook: "Stripe · secret webhook",
   revolut: "Revolut Business (token OAuth)",
   resend: "Resend",
   brave: "Brave Search",
@@ -141,8 +143,12 @@ export function CredentialPanel({ providers }: { providers: CredentialProvider[]
 
 export default function GrowthSettings({
   section,
+  embedded = false,
+  showCredentials = true,
 }: {
   section: "owner_reports" | "traffic" | "finance" | "supplier_research";
+  embedded?: boolean;
+  showCredentials?: boolean;
 }) {
   const query = useSettings(),
     client = useQueryClient(),
@@ -254,7 +260,11 @@ export default function GrowthSettings({
   );
   return (
     <section className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">{title}</h1>
+      {embedded ? (
+        <h2 className="text-xl font-semibold text-white">{title}</h2>
+      ) : (
+        <h1 className="text-2xl font-semibold text-white">{title}</h1>
+      )}
       <form key={section} onSubmit={submit} className="grid max-w-3xl gap-5">
         {section === "owner_reports" && (
           <>
@@ -350,17 +360,19 @@ export default function GrowthSettings({
           Salvează setările
         </button>
       </form>
-      <CredentialPanel
-        providers={
-          section === "owner_reports"
-            ? ["resend"]
-            : section === "traffic"
-              ? ["google", "meta"]
-              : section === "finance"
-                ? ["stripe", "revolut"]
-                : ["brave"]
-        }
-      />
+      {showCredentials && (
+        <CredentialPanel
+          providers={
+            section === "owner_reports"
+              ? ["resend"]
+              : section === "traffic"
+                ? ["google", "meta"]
+                : section === "finance"
+                  ? ["stripe", "stripe_webhook", "revolut"]
+                  : ["brave"]
+          }
+        />
+      )}
       {(section === "owner_reports" || section === "finance") && (
         <div className="space-y-4">
           <button

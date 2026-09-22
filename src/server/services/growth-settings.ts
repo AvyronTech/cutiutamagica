@@ -39,14 +39,25 @@ export function activity(
     .bind(crypto.randomUUID(), actor, action, entity, now);
 }
 const secretNames = {
+  fgo: "FGO_PRIVATE_KEY",
   smartship: "SMARTSHIP_API_KEY",
   stripe: "STRIPE_SECRET_KEY",
+  stripe_webhook: "STRIPE_WEBHOOK_SECRET",
   revolut: "REVOLUT_API_KEY",
   resend: "RESEND_API_KEY",
   brave: "BRAVE_SEARCH_API_KEY",
   google: "GOOGLE_ACCESS_TOKEN",
   meta: "META_ACCESS_TOKEN",
 } as const;
+
+const providerAliases: Partial<Record<CredentialProvider, string>> = {
+  stripe_webhook: "stripe",
+  revolut: "revolut_business",
+};
+
+function providerCode(provider: CredentialProvider): string {
+  return providerAliases[provider] ?? provider;
+}
 function bytes(value: string) {
   return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
 }
@@ -92,12 +103,34 @@ export async function storeCredential(
     new TextEncoder().encode(value),
   );
   const now = new Date().toISOString();
+  const providerName = providerCode(provider);
   await env.DB.batch([
     env.DB.prepare(
       `INSERT INTO integration_credentials(provider,ciphertext,iv,updated_by,updated_at) VALUES(?1,?2,?3,?4,?5)
       ON CONFLICT(provider) DO UPDATE SET ciphertext=excluded.ciphertext,iv=excluded.iv,updated_by=excluded.updated_by,updated_at=excluded.updated_at,checked_at=NULL,check_status='unverified'`,
     ).bind(provider, base64(new Uint8Array(encrypted)), base64(iv), actor, now),
     activity(env.DB, actor, "credential.replaced", provider, now),
+    env.DB.prepare(
+      `UPDATE provider_configurations
+       SET status = CASE WHEN status = 'disabled' THEN status ELSE 'ready_for_test' END,
+           last_error_code = NULL, last_error_message = NULL, updated_at = ?2
+       WHERE provider = ?1`,
+    ).bind(providerName, now),
+    env.DB.prepare(
+      `UPDATE financial_accounts
+       SET status = CASE WHEN status = 'disabled' THEN status ELSE 'setup_required' END,
+           updated_at = ?2 WHERE provider = ?1`,
+    ).bind(providerName, now),
+    env.DB.prepare(
+      `UPDATE delivery_provider_accounts
+       SET status = CASE WHEN status = 'disabled' THEN status ELSE 'setup_required' END,
+           updated_at = ?2 WHERE provider = ?1`,
+    ).bind(providerName, now),
+    env.DB.prepare(
+      `UPDATE connector_secret_refs
+       SET status = 'configured', last_verified_at = NULL, updated_at = ?2
+       WHERE provider = ?1`,
+    ).bind(providerName, now),
   ]);
 }
 export async function credentialStatuses(env: CommerceEnv) {

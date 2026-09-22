@@ -1,223 +1,139 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useShop } from "@/store/shop";
 import { ScrollFuse } from "./ScrollFuse";
 import { BrandMark } from "./BrandMark";
 
 export function Header() {
-  const { totalQty, favorites } = useShop();
-  // 0 → 1 progres condensare, smoothed cu rAF pentru fluiditate maximă
-  const [p, setP] = useState(0);
-  const rafRef = useRef<number | null>(null);
-  const targetRef = useRef(0);
-  const currentRef = useRef(0);
+  const { totalQty } = useShop();
+  const [compact, setCompact] = useState(false);
+  const compactRef = useRef(false);
 
   useEffect(() => {
-    const MAX = 160; // px de scroll până la condensare completă
-    const tick = () => {
-      const diff = targetRef.current - currentRef.current;
-      // easing exponențial — animație fluidă, fără jank
-      currentRef.current += diff * 0.18;
-      if (Math.abs(diff) < 0.001) {
-        currentRef.current = targetRef.current;
-        setP(currentRef.current);
-        rafRef.current = null;
-        return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const next = window.scrollY > 72;
+      if (next !== compactRef.current) {
+        compactRef.current = next;
+        setCompact(next);
       }
-      setP(currentRef.current);
-      rafRef.current = requestAnimationFrame(tick);
     };
     const onScroll = () => {
-      targetRef.current = Math.min(1, Math.max(0, window.scrollY / MAX));
-      if (rafRef.current == null) rafRef.current = requestAnimationFrame(tick);
+      if (!frame) frame = requestAnimationFrame(update);
     };
-    onScroll();
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 
-  const scrolled = p > 0.35;
-  // valori interpolate fluid
-  const blur = 10 + p * 16; // 10 → 26
-  const sat = 130 + p * 50; // 130 → 180
-  const bgA = 0.45 + p * 0.3; // opacitate fundal cald
-  const bgB = 0.32 + p * 0.28;
-  const shadow = 0.12 + p * 0.45;
-  const borderA = 0.15 + p * 0.35;
-  const padY = 12 - p * 6; // 12 → 6 px
-  const logoSize = 56 - p * 16; // 56 → 40 px (mobile baseline)
-  const titleSize = 20 + (1 - p) * 4; // 20 → 24 (md va prelua)
-
   return (
-    <header className="sticky top-0 z-40 will-change-transform">
-      {/* Fitilul magic deasupra */}
+    <header className="sticky top-0 z-50 isolate" data-compact={compact || undefined}>
       <ScrollFuse />
-
-      {/* Fundal liquid glass cald — interpolare fluidă pe scroll */}
       <div
-        className="relative border-b"
-        style={{
-          backdropFilter: `blur(${blur}px) saturate(${sat}%)`,
-          borderColor: `oklch(0.78 0.13 70 / ${borderA})`,
-          boxShadow: `0 ${10 + p * 18}px ${24 + p * 24}px -${22 - p * 4}px oklch(0.45 0.1 45 / ${shadow})`,
-          transition: "border-color 200ms ease-out",
-        }}
+        className={`relative overflow-hidden border-b border-[color:var(--gold)]/35 bg-[color:var(--cream)]/72 shadow-[0_12px_34px_-24px_rgba(72,38,16,0.72)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,box-shadow] duration-300 supports-[backdrop-filter]:bg-[color:var(--cream)]/55 ${
+          compact
+            ? "shadow-[0_18px_38px_-22px_rgba(72,38,16,0.78)] supports-[backdrop-filter]:bg-[color:var(--cream)]/76"
+            : ""
+        }`}
       >
-        {/* Strat 1 — cremă caldă, opacitate care creste cu scrollul */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{
-            background: `linear-gradient(180deg, oklch(0.96 0.03 75 / ${bgA}), oklch(0.9 0.045 65 / ${bgB}))`,
-          }}
-        />
-        {/* Strat 2 — aurore aurii laterale */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 pointer-events-none"
-          style={{
-            opacity: 0.55 + p * 0.4,
-            background:
-              "radial-gradient(60% 120% at 15% -10%, oklch(0.92 0.09 80 / 0.5), transparent 60%), radial-gradient(50% 120% at 85% 110%, oklch(0.78 0.1 50 / 0.32), transparent 60%)",
-          }}
-        />
-        {/* Strat 3 — specular sheen animat, liquid glass premium */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 pointer-events-none overflow-hidden"
-          style={{ opacity: 0.35 + p * 0.5 }}
-        >
-          <div
-            className="absolute -inset-y-4 -left-1/3 w-2/3 animate-header-sheen"
-            style={{
-              background:
-                "linear-gradient(110deg, transparent 30%, oklch(0.99 0.04 95 / 0.55) 50%, transparent 70%)",
-              filter: "blur(8px)",
-            }}
-          />
-        </div>
-        {/* Highlight + lowlight 1px — buza de cristal */}
-        <div
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-px -z-10"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, oklch(0.99 0.04 95 / 0.85), transparent)",
-          }}
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_140%_at_8%_-25%,rgba(255,248,213,.9),transparent_64%),radial-gradient(52%_120%_at_92%_120%,rgba(206,150,76,.28),transparent_68%)]"
         />
         <div
           aria-hidden
-          className="absolute inset-x-0 bottom-0 h-px -z-10"
-          style={{
-            background: `linear-gradient(90deg, transparent, oklch(0.6 0.08 50 / ${0.3 + p * 0.4}), transparent)`,
-          }}
+          className="animate-header-sheen pointer-events-none absolute -inset-y-8 -left-1/3 w-2/3 bg-[linear-gradient(110deg,transparent_28%,rgba(255,255,255,.48)_50%,transparent_72%)] blur-lg motion-reduce:hidden"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/80"
         />
 
         <div
-          className="max-w-7xl mx-auto flex items-center justify-between px-4"
-          style={{ paddingTop: `${padY}px`, paddingBottom: `${padY}px` }}
+          className={`relative mx-auto flex max-w-7xl items-center justify-between px-4 transition-[padding] duration-300 ${
+            compact ? "py-1.5" : "py-3"
+          }`}
         >
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link
+            to="/"
+            className="group flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]"
+          >
             <span
-              className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-rotate-3 group-hover:scale-105"
-              style={{ width: `${logoSize}px`, height: `${logoSize}px` }}
+              className={`relative flex shrink-0 items-center justify-center transition-[width,height,transform] duration-300 group-hover:-rotate-3 ${
+                compact ? "h-10 w-10" : "h-12 w-12 sm:h-14 sm:w-14"
+              }`}
             >
               <span
                 aria-hidden
-                className="absolute inset-0 rounded-full blur-md opacity-70 group-hover:opacity-100 transition-opacity"
-                style={{
-                  background:
-                    "radial-gradient(circle, oklch(0.86 0.16 85 / 0.55), transparent 65%)",
-                }}
+                className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(218,170,91,.52),transparent_68%)] blur-md"
               />
-              <BrandMark className="relative w-full h-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.45)]" />
+              <BrandMark className="relative h-full w-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.4)]" />
             </span>
-            <div className="leading-tight">
-              <div
-                className="font-display tracking-tight text-[color:var(--wood-dark)]"
-                style={{ fontSize: `${titleSize}px` }}
+            <span className="min-w-0 leading-tight">
+              <span
+                className={`block truncate font-display tracking-normal text-[color:var(--wood-dark)] transition-[font-size] duration-300 ${
+                  compact ? "text-xl" : "text-[1.35rem] sm:text-2xl"
+                }`}
               >
                 Cutiuța <span className="gold-text italic">Magică</span>
-              </div>
-              <div
-                className="uppercase tracking-[0.2em] text-[color:var(--wood-dark)]/65 overflow-hidden transition-all duration-500"
-                style={{
-                  maxHeight: scrolled ? 0 : 16,
-                  opacity: scrolled ? 0 : 1,
-                  fontSize: 10,
-                }}
+              </span>
+              <span
+                className={`block overflow-hidden uppercase tracking-[0.18em] text-[color:var(--wood-dark)]/60 transition-[max-height,opacity] duration-300 ${
+                  compact ? "max-h-0 opacity-0" : "max-h-4 text-[9px] opacity-100"
+                }`}
               >
                 lemn · manivelă · melodie
-              </div>
-            </div>
+              </span>
+            </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm text-[color:var(--wood-dark)]/90">
+          <nav className="hidden items-center gap-7 text-sm text-[color:var(--wood-dark)]/85 md:flex">
             <Link
               to="/"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
+              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
               activeOptions={{ exact: true }}
             >
               Acasă
             </Link>
             <Link
               to="/produse"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
+              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
             >
               Produse
             </Link>
             <Link
               to="/poveste"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
+              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
             >
               Poveste
             </Link>
-            <Link
-              to="/comanda"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
-            >
-              Comandă
-            </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
-            <Link
-              to="/favorite"
-              aria-label="Favorite"
-              className={`group relative inline-flex items-center justify-center rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
-                scrolled ? "w-9 h-9" : "w-11 h-11"
-              }`}
-            >
-              <Heart
-                className={`text-[color:var(--wood-dark)] group-hover:text-[oklch(0.55_0.18_25)] group-hover:fill-[oklch(0.7_0.2_25)]/30 transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[22px] h-[22px]"}`}
-              />
-              {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-br from-[color:var(--gold)] to-[oklch(0.62_0.13_55)] text-[color:var(--wood-dark)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]">
-                  {favorites.length}
-                </span>
-              )}
-            </Link>
-            <Link
-              to="/comanda"
-              aria-label="Coș de cumpărături"
-              className={`group relative inline-flex items-center justify-center rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
-                scrolled ? "w-9 h-9" : "w-11 h-11"
-              }`}
-            >
-              <ShoppingBag
-                className={`text-[color:var(--wood-dark)] transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[22px] h-[22px]"}`}
-              />
-              {totalQty > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[color:var(--wood-dark)] text-[color:var(--cream)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]">
-                  {totalQty}
-                </span>
-              )}
-            </Link>
-          </div>
+          <Link
+            to="/comanda"
+            aria-label={`Coș de cumpărături, ${totalQty} produse`}
+            className={`group relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/55 bg-white/45 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.75),0_8px_22px_-12px_rgba(88,48,20,.75)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] ${
+              compact ? "h-10 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"
+            }`}
+          >
+            <ShoppingBag
+              className={`transition-transform group-hover:scale-105 ${compact ? "h-[18px] w-[18px]" : "h-5 w-5"}`}
+            />
+            <span className="hidden text-sm sm:inline">Coș</span>
+            {totalQty > 0 ? (
+              <span
+                aria-live="polite"
+                className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--wood-dark)] px-1.5 text-[10px] font-bold text-[color:var(--cream)] shadow-sm"
+              >
+                {totalQty}
+              </span>
+            ) : null}
+          </Link>
         </div>
       </div>
     </header>

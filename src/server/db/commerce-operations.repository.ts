@@ -438,6 +438,13 @@ export async function getAdminCommerceOperations(db: D1Database): Promise<AdminC
       easyboxEnabled: numberValue(shipping.easybox_enabled) === 1,
       useLiveQuotes: numberValue(shipping.use_live_quotes) === 1,
       validationStatus: stringValue(shipping.validation_status),
+      senderName: stringValue(shipping.sender_name),
+      senderAddress: stringValue(shipping.sender_address),
+      senderEmail: stringValue(shipping.sender_email),
+      senderPhone: stringValue(shipping.sender_phone),
+      senderCityId: shipping.sender_city_id == null ? null : numberValue(shipping.sender_city_id),
+      senderSector: numberValue(shipping.sender_sector),
+      senderCountryCode: stringValue(shipping.sender_country_code) || "RO",
     },
   };
 }

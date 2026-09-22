@@ -8,13 +8,10 @@ type ShopCtx = {
   products: Product[];
   promotion: { unitPrice: number; minQuantity: number } | null;
   cart: CartItem[];
-  favorites: string[];
   addToCart: (id: string, qty?: number) => void;
   setQty: (id: string, qty: number) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
-  toggleFavorite: (id: string) => void;
-  isFavorite: (id: string) => boolean;
   totalQty: number;
   totals: ReturnType<typeof calcTotals>;
   itemsDetailed: (CartItem & { product: Product })[];
@@ -31,15 +28,12 @@ export function ShopProvider({
 }) {
   const products = useMemo(() => catalogProducts(pricing?.catalog ?? []), [pricing?.catalog]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const c = localStorage.getItem("cm_cart");
-      const f = localStorage.getItem("cm_fav");
       const parsedCart: unknown = c ? JSON.parse(c) : [];
-      const parsedFavorites: unknown = f ? JSON.parse(f) : [];
       if (Array.isArray(parsedCart))
         setCart(
           parsedCart
@@ -56,10 +50,7 @@ export function ShopProvider({
               (item, index, items) => items.findIndex((other) => other.id === item.id) === index,
             ),
         );
-      if (Array.isArray(parsedFavorites))
-        setFavorites(
-          parsedFavorites.filter((id): id is string => typeof id === "string").slice(0, 200),
-        );
+      localStorage.removeItem("cm_fav");
     } catch {
       // Corrupt or unavailable browser storage must not block the storefront.
     }
@@ -73,14 +64,6 @@ export function ShopProvider({
       /* Storage may be disabled by the browser. */
     }
   }, [cart, hydrated]);
-  useEffect(() => {
-    try {
-      if (hydrated) localStorage.setItem("cm_fav", JSON.stringify(favorites));
-    } catch {
-      /* Keep favorites usable for this session. */
-    }
-  }, [favorites, hydrated]);
-
   const value = useMemo<ShopCtx>(() => {
     const itemsDetailed = cart
       .map((i) => {
@@ -117,7 +100,6 @@ export function ShopProvider({
       products,
       promotion,
       cart,
-      favorites,
       addToCart: (id, qty = 1) =>
         setCart((c) => {
           if (!Number.isFinite(qty) || !products.some((p) => p.id === id)) return c;
@@ -139,14 +121,11 @@ export function ShopProvider({
         ),
       removeFromCart: (id) => setCart((c) => c.filter((i) => i.id !== id)),
       clearCart: () => setCart([]),
-      toggleFavorite: (id) =>
-        setFavorites((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id])),
-      isFavorite: (id) => favorites.includes(id),
       totalQty,
       totals,
       itemsDetailed,
     };
-  }, [cart, favorites, products, pricing?.promotion]);
+  }, [cart, products, pricing?.promotion]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

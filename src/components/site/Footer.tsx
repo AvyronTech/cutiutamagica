@@ -6,7 +6,6 @@ const navItems = [
   { to: "/produse", label: "Produse" },
   { to: "/poveste", label: "Poveste" },
   { to: "/comanda", label: "Comandă" },
-  { to: "/favorite", label: "Favorite" },
   { to: "/retur", label: "Retur și garanție" },
   { to: "/termeni-de-utilizare", label: "Termeni de utilizare" },
   { to: "/politica-de-confidentialitate", label: "Politica de confidențialitate" },
@@ -89,22 +88,63 @@ export function Footer() {
             </Link>
           ))}
         </nav>
-        <a
-          href="https://reclamatiisal.anpc.ro"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="ANPC: Soluționarea alternativă a litigiilor"
-          className="inline-flex h-[50px] w-[250px] items-center justify-center bg-white"
-        >
-          <img
-            src="/anpc-sal.png"
-            alt="ANPC: Soluționarea alternativă a litigiilor"
-            width={250}
-            height={50}
-            loading="lazy"
-            className="h-[50px] w-[250px] object-contain"
-          />
-        </a>
+        <section aria-label="Protecția consumatorului și plăți" className="w-full">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="https://reclamatiisal.anpc.ro"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="ANPC: Soluționarea alternativă a litigiilor"
+              className="inline-flex h-[50px] w-[250px] items-center justify-center overflow-hidden rounded-sm bg-white shadow-sm ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <img
+                src="/anpc-sal.png"
+                alt="ANPC: Soluționarea alternativă a litigiilor"
+                width={250}
+                height={50}
+                loading="lazy"
+                className="h-[50px] w-[250px] object-contain"
+              />
+            </a>
+            <a
+              href="https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/resolve-your-consumer-complaint/alternative-dispute-resolution-consumers_ro"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Comisia Europeană: soluționarea alternativă a litigiilor pentru consumatori"
+              className="inline-flex h-[50px] w-[250px] items-center gap-3 rounded-sm bg-[#0646a5] px-4 text-left text-white shadow-sm ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <span aria-hidden className="text-xl font-semibold tracking-tight">
+                EU
+              </span>
+              <span className="border-l border-white/30 pl-3 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em]">
+                Soluționarea litigiilor
+                <span className="mt-0.5 block font-normal normal-case tracking-normal text-white/80">
+                  ADR și ECC-Net
+                </span>
+              </span>
+            </a>
+            <a
+              href="https://stripe.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Plăți securizate procesate prin Stripe"
+              className="inline-flex h-[50px] w-[250px] items-center justify-center rounded-sm bg-white px-8 shadow-sm ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <img
+                src="/powered-by-stripe.svg"
+                alt="Powered by Stripe"
+                width={150}
+                height={34}
+                loading="lazy"
+                className="h-[34px] w-[150px] object-contain"
+              />
+            </a>
+          </div>
+          <p className="mx-auto mt-2 max-w-3xl text-[10px] leading-4 text-[color:var(--cream)]/55">
+            Platforma europeană SOL a fost închisă. Pentru soluționarea litigiilor sunt disponibile
+            SAL ANPC și mecanismele europene ADR actuale.
+          </p>
+        </section>
 
         {/* Logo Avyron */}
         <a

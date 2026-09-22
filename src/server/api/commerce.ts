@@ -13,7 +13,7 @@ import {
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
 import { createStripeCheckoutSession, verifyStripeWebhook } from "@/server/integrations/stripe";
-import { credentialStatuses } from "@/server/services/growth-settings";
+import { credential, credentialStatuses } from "@/server/services/growth-settings";
 
 const stripeCheckoutSchema = z.object({
   orderId: z.string().uuid(),
@@ -215,7 +215,7 @@ async function handleStripeWebhook(request: Request, env: CommerceEnv): Promise<
   const valid = await verifyStripeWebhook(
     payload,
     request.headers.get("stripe-signature"),
-    env.STRIPE_WEBHOOK_SECRET,
+    (await credential(env, "stripe_webhook")) ?? undefined,
   );
   if (!valid) return json({ error: { code: "INVALID_SIGNATURE" } }, { status: 401 });
   const event = JSON.parse(payload) as StripeEvent;
@@ -281,7 +281,7 @@ export async function handleCommerceApi(
       const config = await getCommercePublicConfig(env.DB, {
         stripe: Boolean(
           configured.some((c) => c.provider === "stripe" && c.configured) &&
-          env.STRIPE_WEBHOOK_SECRET,
+          configured.some((c) => c.provider === "stripe_webhook" && c.configured),
         ),
         smartship: configured.some((c) => c.provider === "smartship" && c.configured),
       });

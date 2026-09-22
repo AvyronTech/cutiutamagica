@@ -74,8 +74,10 @@ export const financeSettingsSchema = z.object({
   avyronSummaryEnabled: z.literal(false).default(false),
 });
 export const credentialProviderSchema = z.enum([
+  "fgo",
   "smartship",
   "stripe",
+  "stripe_webhook",
   "revolut",
   "resend",
   "brave",

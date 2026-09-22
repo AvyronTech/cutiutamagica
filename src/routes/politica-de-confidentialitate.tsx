@@ -58,9 +58,9 @@ function Privacy() {
       </LegalSection>
       <LegalSection title="Stocare în browser și statistici">
         <p>
-          Coșul și favoritele folosesc stocarea locală a browserului pentru a păstra alegerile tale
-          între vizite. Le poți elimina din magazin sau din setările browserului. Funcțiile de
-          securitate și autentificare pot utiliza identificatori strict necesari.
+          Coșul folosește stocarea locală a browserului pentru a păstra produsele alese între
+          vizite. Îl poți goli din magazin sau din setările browserului. Funcțiile de securitate și
+          autentificare pot utiliza identificatori strict necesari.
         </p>
         <p>
           Setările de import Google Analytics și Search Console din administrare citesc rapoarte ale

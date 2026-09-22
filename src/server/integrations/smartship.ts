@@ -1,6 +1,7 @@
 import {
   fetchWithTimeout,
   ProviderError,
+  readProviderJson,
   requiredSecret,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
@@ -101,7 +102,7 @@ export async function quoteSmartShip(
       content: content(input.content),
     }),
   });
-  const result = (await response.json().catch(() => null)) as {
+  const result = (await readProviderJson(response).catch(() => null)) as {
     status?: number;
     costs?: Array<{
       courier_id?: number;
@@ -155,7 +156,10 @@ export async function createSmartShipAwb(
       content: content(input.content),
     }),
   });
-  const result = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  const result = (await readProviderJson(response).catch(() => null)) as Record<
+    string,
+    unknown
+  > | null;
   const awb = result && (result.awb ?? result.AWB ?? result.awb_number);
   if (!response.ok || typeof awb !== "string") {
     throw new ProviderError(

@@ -159,5 +159,12 @@ export interface AdminCommerceOperations {
     easyboxEnabled: boolean;
     useLiveQuotes: boolean;
     validationStatus: string;
+    senderName: string;
+    senderAddress: string;
+    senderEmail: string;
+    senderPhone: string;
+    senderCityId: number | null;
+    senderSector: number;
+    senderCountryCode: string;
   };
 }

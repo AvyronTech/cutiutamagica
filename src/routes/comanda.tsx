@@ -1,8 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import AutoScroll from "embla-carousel-auto-scroll";
+import {
+  Check,
+  CreditCard,
+  Minus,
+  PackageCheck,
+  Plus,
+  ShoppingBag,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
-import { MAX_QTY } from "@/data/products";
+import { MAX_QTY, type Product } from "@/data/products";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import type { CommercePublicConfig } from "@/lib/commerce-operations-contracts";
 import type { WebsiteOrderPublicResult } from "@/lib/order-contracts";
 import { useShop } from "@/store/shop";
@@ -42,8 +59,32 @@ function money(value: number, currency = "RON") {
   return new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(value);
 }
 
+function usePrefersReducedMotion() {
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return reducedMotion;
+}
+
 function OrderPage() {
-  const { itemsDetailed, setQty, removeFromCart, totalQty, clearCart, totals } = useShop();
+  const {
+    products,
+    promotion,
+    itemsDetailed,
+    addToCart,
+    setQty,
+    removeFromCart,
+    totalQty,
+    clearCart,
+    totals,
+  } = useShop();
   const idempotencyKey = useRef<string | null>(null);
   const [config, setConfig] = useState<CommercePublicConfig | null>(null);
   const [confirmation, setConfirmation] = useState<WebsiteOrderPublicResult | null>(null);
@@ -53,6 +94,14 @@ function OrderPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
   const [shippingOption, setShippingOption] = useState<ShippingOption>("home_delivery");
   const [consent, setConsent] = useState(false);
+  const cartProductIds = useMemo(
+    () => new Set(itemsDetailed.map((item) => item.product.id)),
+    [itemsDetailed],
+  );
+  const recommendations = useMemo(
+    () => products.filter((product) => !cartProductIds.has(product.id)).slice(0, 8),
+    [cartProductIds, products],
+  );
 
   useEffect(() => {
     fetch("/api/v1/commerce/config", { credentials: "same-origin" })
@@ -244,6 +293,36 @@ function OrderPage() {
             </div>
           )}
 
+          {promotion && (
+            <div className="mt-5 flex items-start gap-3 rounded-xl border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/10 p-4 text-left">
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--gold)]" />
+              <p className="text-sm leading-relaxed">
+                {totalQty >= promotion.minQuantity ? (
+                  <>
+                    <strong>Oferta de cantitate este activă.</strong> Fiecare cutiuță eligibilă
+                    ajunge la {money(promotion.unitPrice)}.
+                  </>
+                ) : (
+                  <>
+                    Mai adaugă <strong>{promotion.minQuantity - totalQty}</strong>{" "}
+                    {promotion.minQuantity - totalQty === 1 ? "cutiuță" : "cutiuțe"} și fiecare
+                    produs eligibil ajunge la <strong>{money(promotion.unitPrice)}</strong>.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+
+          {recommendations.length > 0 && (
+            <CartRecommendations
+              products={recommendations}
+              onAdd={(product) => {
+                addToCart(product.id);
+                toast.success("Adăugată în coș", { description: product.name });
+              }}
+            />
+          )}
+
           <form onSubmit={submit} className="mt-10 space-y-8">
             <section>
               <h2 className="font-display text-2xl">Date de contact și livrare</h2>
@@ -423,7 +502,7 @@ function OrderPage() {
           </form>
         </div>
 
-        <aside className="h-fit rounded-xl border border-border bg-card p-6 lg:sticky lg:top-24">
+        <aside className="h-fit rounded-xl border border-border bg-card p-6 lg:sticky lg:top-28">
           <h3 className="font-display text-2xl">Sumar</h3>
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
@@ -465,6 +544,102 @@ function OrderPage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+function CartRecommendations({
+  products,
+  onAdd,
+}: {
+  products: Product[];
+  onAdd: (product: Product) => void;
+}) {
+  const reducedMotion = usePrefersReducedMotion();
+  const autoScroll = useMemo(
+    () =>
+      AutoScroll({
+        speed: 0.65,
+        stopOnInteraction: false,
+        stopOnMouseEnter: true,
+        stopOnFocusIn: true,
+      }),
+    [],
+  );
+  const plugins = useMemo(() => (reducedMotion ? [] : [autoScroll]), [autoScroll, reducedMotion]);
+
+  return (
+    <section className="mt-9" aria-labelledby="cart-recommendations-title">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--wood)]">
+            Mai încape puțină magie
+          </p>
+          <h2 id="cart-recommendations-title" className="font-display text-2xl">
+            Completează povestea
+          </h2>
+        </div>
+        <Link to="/produse" className="shrink-0 text-xs font-medium text-primary hover:underline">
+          Vezi catalogul
+        </Link>
+      </div>
+      <Carousel
+        opts={{ align: "start", loop: products.length > 2 }}
+        plugins={plugins}
+        className="px-2 sm:px-5"
+        aria-label="Alte cutiuțe muzicale recomandate"
+      >
+        <CarouselContent>
+          {products.map((product) => (
+            <CarouselItem key={product.id} className="basis-[86%] sm:basis-1/2">
+              <article className="flex h-full overflow-hidden rounded-xl border border-[color:var(--gold)]/25 bg-card shadow-sm">
+                <Link
+                  to="/produs/$id"
+                  params={{ id: product.id }}
+                  className="w-28 shrink-0 bg-[color:var(--gold)]/10 sm:w-32"
+                  aria-label={`Vezi ${product.name}`}
+                >
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    loading="lazy"
+                    className="h-full min-h-40 w-full object-contain p-2"
+                  />
+                </Link>
+                <div className="flex min-w-0 flex-1 flex-col p-3">
+                  <Link to="/produs/$id" params={{ id: product.id }} className="hover:underline">
+                    <h3 className="font-display text-base leading-tight line-clamp-2">
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground line-clamp-2">
+                    {product.tagline}
+                  </p>
+                  <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+                    <span className="font-display text-lg">{money(product.price ?? 0)}</span>
+                    <button
+                      type="button"
+                      onClick={() => onAdd(product)}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:brightness-110"
+                      aria-label={`Adaugă ${product.name} în coș`}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Adaugă
+                    </button>
+                  </div>
+                </div>
+              </article>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious
+          aria-label="Recomandarea anterioară"
+          className="left-0 hidden border-[color:var(--gold)]/40 bg-card sm:inline-flex"
+        />
+        <CarouselNext
+          aria-label="Recomandarea următoare"
+          className="right-0 hidden border-[color:var(--gold)]/40 bg-card sm:inline-flex"
+        />
+      </Carousel>
+    </section>
   );
 }
 

@@ -11,6 +11,7 @@ import { handleAdminProductApi } from "@/server/api/admin-product";
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
 import { getPublicProductExperience } from "@/server/api/product-experience";
 import { handleCommerceApi } from "@/server/api/commerce";
+import { handleChatApi } from "@/server/api/chat";
 import { sendOrderConfirmation } from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 import { credentialStatuses } from "@/server/services/growth-settings";
@@ -138,6 +139,9 @@ export async function handleApiRequest(
 
   const commerceResponse = await handleCommerceApi(request, env as CommerceEnv, ctx);
   if (commerceResponse) return commerceResponse;
+
+  const chatResponse = await handleChatApi(request, env);
+  if (chatResponse) return chatResponse;
 
   if (url.pathname === "/api/v1/orders") {
     if (request.method !== "POST") return methodNotAllowed("POST");

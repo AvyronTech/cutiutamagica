@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
-import { Heart, ShoppingBag, Music, Package, Gift, Sparkles, Minus, Plus } from "lucide-react";
+import { ShoppingBag, Music, Package, Gift, Sparkles, Minus, Plus } from "lucide-react";
 import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { catalogProducts } from "@/lib/catalog-products";
@@ -102,8 +102,7 @@ export const Route = createFileRoute("/produs/$id")({
 
 function ProductPage() {
   const { product } = Route.useLoaderData();
-  const { addToCart, toggleFavorite, isFavorite, promotion, products } = useShop();
-  const fav = isFavorite(product.id);
+  const { addToCart, promotion, products } = useShop();
   const ref = useRef<HTMLDivElement>(null);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
@@ -237,13 +236,6 @@ function ProductPage() {
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
             >
               <ShoppingBag className="w-4 h-4" /> Adaugă în coș
-            </button>
-            <button
-              onClick={() => toggleFavorite(product.id)}
-              className={`p-3 rounded-full border ${fav ? "bg-primary/10 border-primary text-primary" : "bg-card hover:bg-muted"}`}
-              aria-label="Favorite"
-            >
-              <Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} />
             </button>
           </div>
 

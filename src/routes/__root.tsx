@@ -16,6 +16,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { StoryLoadingScreen } from "@/components/site/StoryLoadingScreen";
+import { ChatWidget } from "@/components/site/ChatWidget";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 
 function NotFoundComponent() {
@@ -61,7 +62,10 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async ({ location }) => ({
-    pricing: location.pathname.startsWith("/admin") ? null : await getStorePricing(),
+    pricing:
+      location.pathname.startsWith("/admin") || location.pathname === "/auth"
+        ? null
+        : await getStorePricing(),
   }),
   head: () => ({
     meta: [
@@ -69,6 +73,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#0b1120" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Cutiuta Admin" },
       { title: "Cutiuța Magică — Cutiuțe muzicale din lemn" },
       {
         name: "description",
@@ -177,6 +183,7 @@ function RootComponent() {
         </main>
         {isChrome && <Footer />}
         {isChrome && <SideScrollMagic />}
+        {isChrome && <ChatWidget />}
         <Toaster position="top-center" richColors />
       </ShopProvider>
     </QueryClientProvider>

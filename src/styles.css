@@ -321,7 +321,8 @@ html,
 body {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge legacy */
-  overflow-x: hidden; /* kill stray horizontal scrollbar at the top */
+  /* Unlike hidden, clip does not create a scroll container that breaks sticky headers. */
+  overflow-x: clip;
 }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
@@ -333,4 +334,41 @@ body::-webkit-scrollbar,
 }
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+.chat-panel {
+  animation: chat-panel-in 220ms cubic-bezier(0.2, 0.85, 0.3, 1) both;
+}
+
+.chat-bubble {
+  animation: chat-bubble-in 420ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+@keyframes chat-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes chat-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-panel,
+  .chat-bubble {
+    animation: none;
+  }
 }

@@ -44,7 +44,12 @@ import {
   Bot,
   Volume2,
   VolumeX,
+  MessageCircle,
+  Megaphone,
+  DatabaseBackup,
+  ShieldCheck,
 } from "lucide-react";
+import { logoutAdminAccount } from "@/lib/admin-auth.functions";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -58,15 +63,19 @@ const navItems = [
   { path: "/admin/returns", label: "Retururi", icon: RotateCcw },
   { path: "/admin/financiar", label: "Financiar", icon: Wallet },
   { path: "/admin/platforms", label: "Platforme", icon: Store },
+  { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { path: "/admin/posts", label: "Postări", icon: Send },
   { path: "/admin/customers", label: "Clienți", icon: Users },
   { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
   { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
+  { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
   { path: "/admin/traffic", label: "Trafic", icon: TrendingUp },
   { path: "/admin/notifications", label: "Notificări", icon: BellRing },
   { path: "/admin/ai", label: "Agenți AI", icon: Bot },
   { path: "/admin/statistics", label: "Statistici", icon: BarChart3 },
   { path: "/admin/integrations", label: "Conectori", icon: Plug },
+  { path: "/admin/accounts", label: "Conturi și dispozitive", icon: ShieldCheck },
+  { path: "/admin/backups", label: "Backup", icon: DatabaseBackup },
   { path: "/admin/qr-generator", label: "Coduri QR", icon: QrCode },
   { path: "/admin/settings", label: "Setări", icon: Settings },
 ];
@@ -97,6 +106,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const readNotification = useServerFn(markNotificationRead);
   const readAllNotifications = useServerFn(markAllNotificationsRead);
   const removeNotification = useServerFn(dismissNotification);
+  const logout = useServerFn(logoutAdminAccount);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -113,8 +123,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   });
   const notifications = notificationsQuery.data?.notifications ?? [];
 
-  const handleLogout = () => {
-    window.location.assign("/cdn-cgi/access/logout");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      window.location.assign("/auth");
+    }
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;

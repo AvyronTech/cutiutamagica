@@ -31,22 +31,6 @@ export const getMyRole = createServerFn({ method: "GET" })
     return { ...context.admin, userId: context.admin.id, isAdmin: true };
   });
 
-export const completeAdminOnboarding = createServerFn({ method: "POST" })
-  .middleware([requireAdminAuth])
-  .handler(async ({ context }) => {
-    await env.DB.prepare(
-      `
-      UPDATE admin_users
-      SET onboarding_status = 'complete',
-          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE id = ?1
-    `,
-    )
-      .bind(context.admin.id)
-      .run();
-    return { ok: true };
-  });
-
 export const getAdminOrders = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
@@ -115,17 +99,16 @@ export const getCommerceOperations = createServerFn({ method: "GET" })
       trafficReadiness: data.trafficReadiness,
       providers: data.providers.map((provider) => ({
         ...provider,
-        secretConfigured:
-          provider.provider === "fgo"
-            ? Boolean(runtime.FGO_PRIVATE_KEY)
-            : configured.some((c) => c.provider === provider.provider && c.configured),
+        secretConfigured: configured.some((c) => c.provider === provider.provider && c.configured),
       })),
       financialAccounts: data.financialAccounts.map((account) => ({
         ...account,
-        secretConfigured:
-          account.provider === "fgo"
-            ? Boolean(runtime.FGO_PRIVATE_KEY)
-            : configured.some((c) => c.provider === account.provider && c.configured),
+        secretConfigured: configured.some(
+          (c) =>
+            c.provider ===
+              (account.provider === "revolut_business" ? "revolut" : account.provider) &&
+            c.configured,
+        ),
       })),
     };
   });
@@ -234,6 +217,12 @@ const shippingPolicyInput = z.object({
   easyboxEnabled: z.boolean(),
   useLiveQuotes: z.boolean(),
   markVerified: z.boolean(),
+  senderName: z.string().trim().max(120),
+  senderAddress: z.string().trim().max(300),
+  senderEmail: z.union([z.literal(""), z.string().trim().email().max(254)]),
+  senderPhone: z.string().trim().max(20),
+  senderCityId: z.union([z.number().int().positive(), z.null()]),
+  senderSector: z.number().int().min(0).max(6),
 });
 
 function parseCountryList(input: string): string[] {
@@ -256,7 +245,8 @@ export const saveShippingPolicy = createServerFn({ method: "POST" })
       throw new Error("Origine nepermisă.");
     assertPermission(context.admin, "integrations.write");
     const allowedCountries = parseCountryList(data.allowedCountries);
-    if (data.useLiveQuotes && !(await credential(env as CommerceEnv, "smartship")))
+    const smartshipCredential = await credential(env as CommerceEnv, "smartship");
+    if (data.useLiveQuotes && !smartshipCredential)
       throw new Error("Configurează cheia SmartShip înainte de activarea cotațiilor.");
     if (!allowedCountries.includes("RO")) {
       throw new Error("RO este obligatoriu pentru transportul de bază.");
@@ -274,15 +264,32 @@ export const saveShippingPolicy = createServerFn({ method: "POST" })
     if (data.easyboxEnabled && !data.useLiveQuotes && data.lockerPrice == null) {
       throw new Error("Completează costul Easybox sau activează cotațiile SmartShip.");
     }
-    await env.DB.prepare(
-      `UPDATE shipping_policy_configs SET default_weight_g = ?1, default_length_cm = ?2, default_width_cm = ?3,
+    if (
+      data.markVerified &&
+      data.useLiveQuotes &&
+      (!data.senderName ||
+        !data.senderAddress ||
+        !data.senderEmail ||
+        !/^0\d{9}$/.test(data.senderPhone.replace(/[\s().-]/g, "")) ||
+        !data.senderCityId)
+    ) {
+      throw new Error(
+        "Pentru SmartShip verificat sunt obligatorii numele, adresa, e-mailul, telefonul românesc și ID-ul localității expeditorului.",
+      );
+    }
+    const operationalStatus =
+      data.markVerified && smartshipCredential ? "active" : "setup_required";
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE shipping_policy_configs SET default_weight_g = ?1, default_length_cm = ?2, default_width_cm = ?3,
        default_height_cm = ?4, allowed_countries_json = ?5,
        standard_price_bani = ?6, locker_price_bani = ?7,
        free_over_bani = ?8, easybox_enabled = ?9, use_live_quotes = ?10,
-       validation_status = ?11, updated_by = ?12,
+       validation_status = ?11, updated_by = ?12, sender_name = ?13,
+       sender_address = ?14, sender_email = ?15, sender_phone = ?16,
+       sender_city_id = ?17, sender_sector = ?18, sender_country_code = 'RO',
        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE code = 'RO_STANDARD'`,
-    )
-      .bind(
+      ).bind(
         data.defaultWeightG,
         data.defaultLengthCm,
         data.defaultWidthCm,
@@ -295,8 +302,22 @@ export const saveShippingPolicy = createServerFn({ method: "POST" })
         data.useLiveQuotes ? 1 : 0,
         data.markVerified ? "verified" : "requires_approval",
         context.admin.id,
-      )
-      .run();
+        data.senderName || null,
+        data.senderAddress || null,
+        data.senderEmail || null,
+        data.senderPhone || null,
+        data.senderCityId,
+        data.senderSector,
+      ),
+      env.DB.prepare(
+        `UPDATE shipping_methods SET status = ?1,
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE provider = 'smartship'`,
+      ).bind(operationalStatus),
+      env.DB.prepare(
+        `UPDATE delivery_provider_accounts SET status = ?1,
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE provider = 'smartship'`,
+      ).bind(operationalStatus),
+    ]);
     await env.CACHE.delete("commerce:public-config:v1");
     return { ok: true };
   });

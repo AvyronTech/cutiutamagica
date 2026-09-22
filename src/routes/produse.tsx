@@ -6,6 +6,23 @@ import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 
 const CATALOG_URL = "https://cutiutamagica.eu/produse";
+const catalogGroups = [
+  {
+    id: "legendary-worlds",
+    label: "Lumi legendare",
+    productIds: ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"],
+  },
+  {
+    id: "magic-mystery",
+    label: "Magie & mister",
+    productIds: ["halloween", "fairy", "hp-always", "hp-keeper", "lotr-rings"],
+  },
+  {
+    id: "heartfelt-gifts",
+    label: "Cadouri cu suflet",
+    productIds: ["kitten", "fairy", "starwars-dad", "hp-keeper", "lotr-rings"],
+  },
+] as const;
 
 function normalizeSearch(value: string): string {
   return value
@@ -69,16 +86,20 @@ function ProductsPage() {
   const { products } = useShop();
   const { q } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const [category, setCategory] = useState("Toate");
-  const categories = useMemo(
-    () => ["Toate", ...Array.from(new Set(products.map((product) => product.category)))],
-    [products],
+  const [groupId, setGroupId] = useState<(typeof catalogGroups)[number]["id"]>(catalogGroups[0].id);
+  const [productId, setProductId] = useState<string | null>(null);
+  const activeGroup = catalogGroups.find((group) => group.id === groupId) ?? catalogGroups[0];
+  const groupProducts = useMemo(
+    () =>
+      activeGroup.productIds
+        .map((id) => products.find((product) => product.id === id))
+        .filter((product): product is (typeof products)[number] => Boolean(product)),
+    [activeGroup, products],
   );
   const normalizedQuery = normalizeSearch(q ?? "");
   const list = useMemo(
     () =>
       products.filter((product) => {
-        const matchesCategory = category === "Toate" || product.category === category;
         const searchable = normalizeSearch(
           [
             product.name,
@@ -91,9 +112,11 @@ function ProductsPage() {
             .filter(Boolean)
             .join(" "),
         );
-        return matchesCategory && (!normalizedQuery || searchable.includes(normalizedQuery));
+        if (normalizedQuery) return searchable.includes(normalizedQuery);
+        if (productId) return product.id === productId;
+        return activeGroup.productIds.some((id) => id === product.id);
       }),
-    [category, normalizedQuery, products],
+    [activeGroup, normalizedQuery, productId, products],
   );
 
   const updateQuery = (value: string) => {
@@ -133,18 +156,55 @@ function ProductsPage() {
         </label>
       </div>
 
-      <div className="mt-6 flex flex-wrap justify-center gap-2" aria-label="Filtrează după temă">
-        {categories.map((item) => (
-          <button
-            type="button"
-            key={item}
-            onClick={() => setCategory(item)}
-            className={`rounded-full border px-4 py-1.5 text-sm transition ${category === item ? "wood-grain border-transparent text-[color:var(--cream)]" : "border-border hover:bg-muted"}`}
+      <section className="mx-auto mt-6 max-w-4xl" aria-labelledby="catalog-filter-title">
+        <h2 id="catalog-filter-title" className="sr-only">
+          Filtrează catalogul
+        </h2>
+        <div className="flex flex-wrap justify-center gap-2" aria-label="Alege categoria">
+          {catalogGroups.map((group) => (
+            <button
+              type="button"
+              key={group.id}
+              aria-pressed={groupId === group.id}
+              onClick={() => {
+                setGroupId(group.id);
+                setProductId(null);
+                if (q) updateQuery("");
+              }}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${groupId === group.id && !normalizedQuery ? "wood-grain border-transparent text-[color:var(--cream)] shadow-warm" : "border-border bg-card/70 hover:bg-muted"}`}
+            >
+              {group.label}
+            </button>
+          ))}
+        </div>
+
+        {!normalizedQuery && (
+          <div
+            className="mt-3 flex flex-wrap justify-center gap-1.5 rounded-xl border border-border/70 bg-card/50 p-2.5"
+            aria-label={`Modele din categoria ${activeGroup.label}`}
           >
-            {item}
-          </button>
-        ))}
-      </div>
+            <button
+              type="button"
+              aria-pressed={productId === null}
+              onClick={() => setProductId(null)}
+              className={`rounded-full px-3 py-1.5 text-xs transition ${productId === null ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+            >
+              Toate modelele
+            </button>
+            {groupProducts.map((product) => (
+              <button
+                type="button"
+                key={product.id}
+                aria-pressed={productId === product.id}
+                onClick={() => setProductId(product.id)}
+                className={`max-w-full truncate rounded-full px-3 py-1.5 text-xs transition ${productId === product.id ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              >
+                {product.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
 
       <h2 className="sr-only">Modele disponibile</h2>
       <div className="mt-10 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -161,7 +221,8 @@ function ProductsPage() {
             type="button"
             onClick={() => {
               updateQuery("");
-              setCategory("Toate");
+              setGroupId(catalogGroups[0].id);
+              setProductId(null);
             }}
             className="mt-4 rounded-full border border-primary/40 px-4 py-2 text-sm hover:bg-primary/5"
           >

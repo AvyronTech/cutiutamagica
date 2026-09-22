@@ -5,15 +5,14 @@ import {
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
 import { credential } from "@/server/services/growth-settings";
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
+import {
+  emailTextToHtml,
+  fromAddress,
+  getEmailSettings,
+  getEmailTemplate,
+  renderEmailTemplate,
+} from "@/server/services/email-center";
+import type { EmailChannel } from "@/lib/email-contracts";
 
 export async function sendEmail(
   env: CommerceEnv,
@@ -22,12 +21,14 @@ export async function sendEmail(
     subject: string;
     html: string;
     text: string;
+    channel?: EmailChannel;
     idempotencyKey: string;
     entityType: string;
     entityId: string;
   },
 ): Promise<void> {
   const apiKey = requiredSecret((await credential(env, "resend")) ?? undefined, "RESEND_API_KEY");
+  const settings = await getEmailSettings(env.DB);
   const environment = env.APP_ENV === "production" ? "production" : "sandbox";
   const response = await fetchWithTimeout("https://api.resend.com/emails", {
     method: "POST",
@@ -37,9 +38,9 @@ export async function sendEmail(
       "idempotency-key": input.idempotencyKey,
     },
     body: JSON.stringify({
-      from: "Cutiuța Magică <comenzi@cutiutamagica.eu>",
+      from: `${settings.senderName} <${fromAddress(settings, input.channel ?? "default")}>`,
       to: [input.to],
-      reply_to: "cutiutamagica@gmail.com",
+      reply_to: settings.replyToEmail,
       subject: input.subject,
       html: input.html,
       text: input.text,
@@ -69,6 +70,11 @@ export async function sendEmail(
 }
 
 export async function sendOrderConfirmation(env: CommerceEnv, orderId: string): Promise<void> {
+  const [settings, template] = await Promise.all([
+    getEmailSettings(env.DB),
+    getEmailTemplate(env.DB, "order_confirmation"),
+  ]);
+  if (!settings.customerEmailsEnabled || !template?.enabled) return;
   const row = await env.DB.prepare(
     `SELECT order_number, customer_name, customer_email, total_bani, currency
      FROM orders WHERE id = ?1`,
@@ -86,16 +92,20 @@ export async function sendOrderConfirmation(env: CommerceEnv, orderId: string): 
     style: "currency",
     currency: row.currency,
   });
-  const name = escapeHtml(row.customer_name);
-  const number = escapeHtml(row.order_number);
+  const rendered = renderEmailTemplate(template, {
+    customer_name: row.customer_name,
+    order_number: row.order_number,
+    total,
+  });
   await sendEmail(env, {
     to: row.customer_email,
-    subject: `Am primit comanda ${row.order_number}`,
+    channel: "orders",
+    subject: rendered.subject,
     idempotencyKey: `order-confirmation/${orderId}`,
     entityType: "order",
     entityId: orderId,
-    text: `Bună, ${row.customer_name}. Am primit comanda ${row.order_number}, în valoare de ${total}. Revenim cu confirmarea livrării.`,
-    html: `<div style="font-family:system-ui;color:#3c2d24;max-width:600px;margin:auto"><h1 style="font-family:Georgia,serif">Comanda ta a intrat în poveste</h1><p>Bună, ${name}.</p><p>Am primit comanda <strong>${number}</strong>, în valoare de <strong>${escapeHtml(total)}</strong>.</p><p>Revenim cu confirmarea livrării și următorii pași.</p><p style="color:#77665c">Cutiuța Magică</p></div>`,
+    text: rendered.text,
+    html: emailTextToHtml(rendered.text),
   });
 }
 
@@ -103,13 +113,23 @@ export async function sendReturnAcknowledgement(
   env: CommerceEnv,
   input: { returnId: string; returnNumber: string; customerName: string; email: string },
 ): Promise<void> {
+  const [settings, template] = await Promise.all([
+    getEmailSettings(env.DB),
+    getEmailTemplate(env.DB, "return_acknowledgement"),
+  ]);
+  if (!settings.customerEmailsEnabled || !template?.enabled) return;
+  const rendered = renderEmailTemplate(template, {
+    customer_name: input.customerName,
+    return_number: input.returnNumber,
+  });
   await sendEmail(env, {
     to: input.email,
-    subject: `Cererea de retur ${input.returnNumber} a fost înregistrată`,
+    channel: "returns",
+    subject: rendered.subject,
     idempotencyKey: `return-ack/${input.returnId}`,
     entityType: "return",
     entityId: input.returnId,
-    text: `Bună, ${input.customerName}. Cererea ${input.returnNumber} a fost înregistrată și va fi verificată.`,
-    html: `<div style="font-family:system-ui;color:#3c2d24;max-width:600px;margin:auto"><h1 style="font-family:Georgia,serif">Cererea a ajuns la noi</h1><p>Bună, ${escapeHtml(input.customerName)}.</p><p>Cererea <strong>${escapeHtml(input.returnNumber)}</strong> a fost înregistrată. O verificăm și revenim cu pașii de expediere sau remediere.</p><p style="color:#77665c">Cutiuța Magică</p></div>`,
+    text: rendered.text,
+    html: emailTextToHtml(rendered.text),
   });
 }

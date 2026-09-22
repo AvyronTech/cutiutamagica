@@ -3,8 +3,11 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleApiRequest } from "./server/api/router";
+import { API_HOSTNAME, APP_HOSTNAME, resolveHostRoute } from "./server/host-routing";
 import { handlePublicMediaRequest } from "./server/media-public";
 import { consumeCommerceEvents, type CommerceQueueMessage } from "./server/queue/commerce-consumer";
+import { purgeExpiredChatConversations } from "./server/db/chat.repository";
+import { processScheduledBackup } from "./server/services/backup-center";
 
 type ServerEntry = {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response> | Response;
@@ -37,8 +40,21 @@ function withOperationalHeaders(request: Request, response: Response, requestId:
   headers.set("x-request-id", requestId);
 
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin")) {
+  if (
+    url.hostname === API_HOSTNAME ||
+    url.hostname === APP_HOSTNAME ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/admin") ||
+    url.pathname === "/auth"
+  ) {
     headers.set("x-robots-tag", "noindex, nofollow");
+  }
+  if (url.pathname.startsWith("/admin") || url.pathname === "/auth") {
+    headers.set("cache-control", "private, no-store");
+  }
+  if (url.hostname === API_HOSTNAME) {
+    headers.set("content-security-policy", "default-src 'none'; frame-ancestors 'none'");
+    headers.set("x-frame-options", "DENY");
   }
   if (url.protocol === "https:") {
     headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
@@ -94,6 +110,15 @@ function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boole
   );
 }
 
+function jsonResponse(payload: unknown, status = 200): Response {
+  return Response.json(payload, {
+    status,
+    headers: {
+      "cache-control": "no-store",
+    },
+  });
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
@@ -111,20 +136,47 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+  async fetch(originalRequest: Request, env: Env, ctx: ExecutionContext) {
     const startedAt = Date.now();
-    const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+    const requestId = originalRequest.headers.get("x-request-id") ?? crypto.randomUUID();
+    let request = originalRequest;
     try {
       const requestUrl = new URL(request.url);
-      if (requestUrl.hostname === "www.cutiutamagica.eu") {
-        requestUrl.hostname = "cutiutamagica.eu";
+      const hostRoute = resolveHostRoute(requestUrl, request.method);
+      if (hostRoute.type === "redirect") {
         const redirect = withOperationalHeaders(
           request,
-          Response.redirect(requestUrl.toString(), 308),
+          Response.redirect(hostRoute.location, 308),
           requestId,
         );
         recordRequestMetric(env, request, redirect, startedAt);
         return redirect;
+      }
+      if (hostRoute.type === "api-index") {
+        const response = withOperationalHeaders(
+          request,
+          jsonResponse({
+            service: "cutiuta-magica-api",
+            version: "v1",
+            environment: env.APP_ENV,
+            health: "https://api.cutiutamagica.eu/v1/health",
+          }),
+          requestId,
+        );
+        recordRequestMetric(env, request, response, startedAt);
+        return response;
+      }
+      if (hostRoute.type === "api-not-found") {
+        const response = withOperationalHeaders(
+          request,
+          jsonResponse({ error: "not_found", requestId }, 404),
+          requestId,
+        );
+        recordRequestMetric(env, request, response, startedAt);
+        return response;
+      }
+      if (hostRoute.type === "rewrite") {
+        request = new Request(hostRoute.url, request);
       }
 
       const mediaResponse = await handlePublicMediaRequest(request, env);
@@ -149,8 +201,8 @@ export default {
       return response;
     } catch (error) {
       console.error("request.failed", { requestId, error });
-      const fallback = withOperationalHeaders(request, brandedErrorResponse(), requestId);
-      recordRequestMetric(env, request, fallback, startedAt);
+      const fallback = withOperationalHeaders(originalRequest, brandedErrorResponse(), requestId);
+      recordRequestMetric(env, originalRequest, fallback, startedAt);
       return fallback;
     }
   },
@@ -160,6 +212,12 @@ export default {
   },
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     const { processOwnerReports } = await import("@/server/services/owner-reports");
-    ctx.waitUntil(processOwnerReports(env));
+    ctx.waitUntil(
+      Promise.all([
+        processOwnerReports(env),
+        purgeExpiredChatConversations(env.DB),
+        processScheduledBackup(env),
+      ]).then(() => undefined),
+    );
   },
 } satisfies ExportedHandler<Env, CommerceQueueMessage>;

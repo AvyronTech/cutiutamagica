@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "cutiuta-magica-local",
+  "account_id": "51abbee1bab5f1fc9bfbfd9dcea5f3dc",
   "compatibility_date": "2026-09-14",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
@@ -12,10 +13,6 @@
   "vars": {
     "APP_ENV": "local",
     "PUBLIC_SITE_URL": "http://localhost:3000",
-    "ADMIN_AUTH_MODE": "development",
-    "DEV_ADMIN_EMAIL": "cutiutamagica@gmail.com",
-    "CF_ACCESS_TEAM_DOMAIN": "",
-    "CF_ACCESS_AUD": "",
   },
   "d1_databases": [
     {
@@ -67,6 +64,7 @@
   "env": {
     "production": {
       "name": "cutiuta-magica-store",
+      "account_id": "51abbee1bab5f1fc9bfbfd9dcea5f3dc",
       "triggers": { "crons": ["0 * * * *"] },
       "workers_dev": true,
       "routes": [
@@ -78,14 +76,18 @@
           "pattern": "www.cutiutamagica.eu",
           "custom_domain": true,
         },
+        {
+          "pattern": "api.cutiutamagica.eu",
+          "custom_domain": true,
+        },
+        {
+          "pattern": "app.cutiutamagica.eu",
+          "custom_domain": true,
+        },
       ],
       "vars": {
         "APP_ENV": "production",
         "PUBLIC_SITE_URL": "https://cutiutamagica.eu",
-        "ADMIN_AUTH_MODE": "cloudflare-access",
-        "DEV_ADMIN_EMAIL": "",
-        "CF_ACCESS_TEAM_DOMAIN": "cutiuta-magica.cloudflareaccess.com",
-        "CF_ACCESS_AUD": "8a1277e5b8bfa8edc6659beb88365316536dea6fc3863fb8780ce57273d1564c",
       },
       "observability": {
         "enabled": true,

@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ComandaRouteImport } from './routes/comanda'
-import { Route as FavoriteRouteImport } from './routes/favorite'
 import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
 import { Route as PoliticaDeConfidentialitateRouteImport } from './routes/politica-de-confidentialitate'
 import { Route as PovesteRouteImport } from './routes/poveste'
@@ -24,13 +23,17 @@ import { Route as TermeniDeUtilizareRouteImport } from './routes/termeni-de-util
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as ProdusIdRouteImport } from './routes/produs.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedAdminAccountsRouteImport } from './routes/_authenticated/admin/accounts'
 import { Route as AuthenticatedAdminAiRouteImport } from './routes/_authenticated/admin/ai'
+import { Route as AuthenticatedAdminBackupsRouteImport } from './routes/_authenticated/admin/backups'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin/billing'
+import { Route as AuthenticatedAdminChatRouteImport } from './routes/_authenticated/admin/chat'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as AuthenticatedAdminEmailRouteImport } from './routes/_authenticated/admin/email'
 import { Route as AuthenticatedAdminFinanciarRouteImport } from './routes/_authenticated/admin/financiar'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin/integrations'
 import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authenticated/admin/inventory'
+import { Route as AuthenticatedAdminMarketingRouteImport } from './routes/_authenticated/admin/marketing'
 import { Route as AuthenticatedAdminNewsletterRouteImport } from './routes/_authenticated/admin/newsletter'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin/notifications'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin/orders'
@@ -64,11 +67,6 @@ const AuthRoute = AuthRouteImport.update({
 const ComandaRoute = ComandaRouteImport.update({
   id: '/comanda',
   path: '/comanda',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FavoriteRoute = FavoriteRouteImport.update({
-  id: '/favorite',
-  path: '/favorite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GhidCadouriPersonalizateRoute =
@@ -123,17 +121,34 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminAccountsRoute =
+  AuthenticatedAdminAccountsRouteImport.update({
+    id: '/accounts',
+    path: '/accounts',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminAiRoute = AuthenticatedAdminAiRouteImport.update({
   id: '/ai',
   path: '/ai',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminBackupsRoute =
+  AuthenticatedAdminBackupsRouteImport.update({
+    id: '/backups',
+    path: '/backups',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminBillingRoute =
   AuthenticatedAdminBillingRouteImport.update({
     id: '/billing',
     path: '/billing',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminChatRoute = AuthenticatedAdminChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminCustomersRoute =
   AuthenticatedAdminCustomersRouteImport.update({
     id: '/customers',
@@ -161,6 +176,12 @@ const AuthenticatedAdminInventoryRoute =
   AuthenticatedAdminInventoryRouteImport.update({
     id: '/inventory',
     path: '/inventory',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminMarketingRoute =
+  AuthenticatedAdminMarketingRouteImport.update({
+    id: '/marketing',
+    path: '/marketing',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminNewsletterRoute =
@@ -257,7 +278,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
-  '/favorite': typeof FavoriteRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
@@ -267,13 +287,17 @@ export interface FileRoutesByFullPath {
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
+  '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/admin/backups': typeof AuthenticatedAdminBackupsRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/chat': typeof AuthenticatedAdminChatRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email': typeof AuthenticatedAdminEmailRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/admin/marketing': typeof AuthenticatedAdminMarketingRoute
   '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -295,7 +319,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
-  '/favorite': typeof FavoriteRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
@@ -304,13 +327,17 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/produs/$id': typeof ProdusIdRoute
+  '/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/admin/backups': typeof AuthenticatedAdminBackupsRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/chat': typeof AuthenticatedAdminChatRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email': typeof AuthenticatedAdminEmailRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/admin/marketing': typeof AuthenticatedAdminMarketingRoute
   '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -334,7 +361,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
-  '/favorite': typeof FavoriteRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
@@ -344,13 +370,17 @@ export interface FileRoutesById {
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/produs/$id': typeof ProdusIdRoute
+  '/_authenticated/admin/accounts': typeof AuthenticatedAdminAccountsRoute
   '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
+  '/_authenticated/admin/backups': typeof AuthenticatedAdminBackupsRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/_authenticated/admin/chat': typeof AuthenticatedAdminChatRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/email': typeof AuthenticatedAdminEmailRoute
   '/_authenticated/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/_authenticated/admin/marketing': typeof AuthenticatedAdminMarketingRoute
   '/_authenticated/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -374,7 +404,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/comanda'
-    | '/favorite'
     | '/ghid-cadouri-personalizate'
     | '/politica-de-confidentialitate'
     | '/poveste'
@@ -384,13 +413,17 @@ export interface FileRouteTypes {
     | '/termeni-de-utilizare'
     | '/admin'
     | '/produs/$id'
+    | '/admin/accounts'
     | '/admin/ai'
+    | '/admin/backups'
     | '/admin/billing'
+    | '/admin/chat'
     | '/admin/customers'
     | '/admin/email'
     | '/admin/financiar'
     | '/admin/integrations'
     | '/admin/inventory'
+    | '/admin/marketing'
     | '/admin/newsletter'
     | '/admin/notifications'
     | '/admin/orders'
@@ -412,7 +445,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/comanda'
-    | '/favorite'
     | '/ghid-cadouri-personalizate'
     | '/politica-de-confidentialitate'
     | '/poveste'
@@ -421,13 +453,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/produs/$id'
+    | '/admin/accounts'
     | '/admin/ai'
+    | '/admin/backups'
     | '/admin/billing'
+    | '/admin/chat'
     | '/admin/customers'
     | '/admin/email'
     | '/admin/financiar'
     | '/admin/integrations'
     | '/admin/inventory'
+    | '/admin/marketing'
     | '/admin/newsletter'
     | '/admin/notifications'
     | '/admin/orders'
@@ -450,7 +486,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/comanda'
-    | '/favorite'
     | '/ghid-cadouri-personalizate'
     | '/politica-de-confidentialitate'
     | '/poveste'
@@ -460,13 +495,17 @@ export interface FileRouteTypes {
     | '/termeni-de-utilizare'
     | '/_authenticated/admin'
     | '/produs/$id'
+    | '/_authenticated/admin/accounts'
     | '/_authenticated/admin/ai'
+    | '/_authenticated/admin/backups'
     | '/_authenticated/admin/billing'
+    | '/_authenticated/admin/chat'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/email'
     | '/_authenticated/admin/financiar'
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/inventory'
+    | '/_authenticated/admin/marketing'
     | '/_authenticated/admin/newsletter'
     | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/orders'
@@ -490,7 +529,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ComandaRoute: typeof ComandaRoute
-  FavoriteRoute: typeof FavoriteRoute
   GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
   PoliticaDeConfidentialitateRoute: typeof PoliticaDeConfidentialitateRoute
   PovesteRoute: typeof PovesteRoute
@@ -529,13 +567,6 @@ declare module '@tanstack/react-router' {
       path: '/comanda'
       fullPath: '/comanda'
       preLoaderRoute: typeof ComandaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/favorite': {
-      id: '/favorite'
-      path: '/favorite'
-      fullPath: '/favorite'
-      preLoaderRoute: typeof FavoriteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ghid-cadouri-personalizate': {
@@ -608,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/accounts': {
+      id: '/_authenticated/admin/accounts'
+      path: '/accounts'
+      fullPath: '/admin/accounts'
+      preLoaderRoute: typeof AuthenticatedAdminAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/ai': {
       id: '/_authenticated/admin/ai'
       path: '/ai'
@@ -615,11 +653,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAiRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/backups': {
+      id: '/_authenticated/admin/backups'
+      path: '/backups'
+      fullPath: '/admin/backups'
+      preLoaderRoute: typeof AuthenticatedAdminBackupsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/billing': {
       id: '/_authenticated/admin/billing'
       path: '/billing'
       fullPath: '/admin/billing'
       preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/chat': {
+      id: '/_authenticated/admin/chat'
+      path: '/chat'
+      fullPath: '/admin/chat'
+      preLoaderRoute: typeof AuthenticatedAdminChatRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/customers': {
@@ -655,6 +707,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/admin/inventory'
       preLoaderRoute: typeof AuthenticatedAdminInventoryRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/marketing': {
+      id: '/_authenticated/admin/marketing'
+      path: '/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AuthenticatedAdminMarketingRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/newsletter': {
@@ -780,13 +839,17 @@ const AuthenticatedAdminProductsRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminAccountsRoute: typeof AuthenticatedAdminAccountsRoute
   AuthenticatedAdminAiRoute: typeof AuthenticatedAdminAiRoute
+  AuthenticatedAdminBackupsRoute: typeof AuthenticatedAdminBackupsRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
+  AuthenticatedAdminChatRoute: typeof AuthenticatedAdminChatRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminEmailRoute: typeof AuthenticatedAdminEmailRoute
   AuthenticatedAdminFinanciarRoute: typeof AuthenticatedAdminFinanciarRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminInventoryRoute: typeof AuthenticatedAdminInventoryRoute
+  AuthenticatedAdminMarketingRoute: typeof AuthenticatedAdminMarketingRoute
   AuthenticatedAdminNewsletterRoute: typeof AuthenticatedAdminNewsletterRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
@@ -806,13 +869,17 @@ interface AuthenticatedAdminRouteRouteChildren {
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminAccountsRoute: AuthenticatedAdminAccountsRoute,
     AuthenticatedAdminAiRoute: AuthenticatedAdminAiRoute,
+    AuthenticatedAdminBackupsRoute: AuthenticatedAdminBackupsRoute,
     AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
+    AuthenticatedAdminChatRoute: AuthenticatedAdminChatRoute,
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminEmailRoute: AuthenticatedAdminEmailRoute,
     AuthenticatedAdminFinanciarRoute: AuthenticatedAdminFinanciarRoute,
     AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
     AuthenticatedAdminInventoryRoute: AuthenticatedAdminInventoryRoute,
+    AuthenticatedAdminMarketingRoute: AuthenticatedAdminMarketingRoute,
     AuthenticatedAdminNewsletterRoute: AuthenticatedAdminNewsletterRoute,
     AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
     AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
@@ -852,7 +919,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ComandaRoute: ComandaRoute,
-  FavoriteRoute: FavoriteRoute,
   GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
   PoliticaDeConfidentialitateRoute: PoliticaDeConfidentialitateRoute,
   PovesteRoute: PovesteRoute,

@@ -117,6 +117,22 @@ describe("growth and commerce integration", () => {
     sql.exec("UPDATE integration_credentials SET provider='stripe'");
     await expect(credential(env, "stripe")).rejects.toThrow();
   });
+  it("moves FGO onboarding to ready for test without exposing its key", async () => {
+    const { db, sql, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("b".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "fgo", "fgo-private-test-value", actor);
+    expect(await credential(env, "fgo")).toBe("fgo-private-test-value");
+    expect(
+      sql
+        .prepare(
+          "SELECT status FROM provider_configurations WHERE provider='fgo' AND environment='production'",
+        )
+        .get(),
+    ).toMatchObject({ status: "ready_for_test" });
+    expect(
+      JSON.stringify(sql.prepare("SELECT * FROM integration_credentials").all()),
+    ).not.toContain("fgo-private-test-value");
+  });
   it("deduplicates monthly reports and excludes customer identity", async () => {
     const { db, actor } = database();
     const env = { DB: db, APP_ENV: "production", RESEND_API_KEY: "test-token" } as CommerceEnv;

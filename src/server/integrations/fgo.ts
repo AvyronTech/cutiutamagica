@@ -2,9 +2,11 @@ import {
   digestHex,
   fetchWithTimeout,
   ProviderError,
+  readProviderJson,
   requiredSecret,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
+import { credential } from "@/server/services/growth-settings";
 
 export interface FgoInvoiceInput {
   orderId: string;
@@ -47,7 +49,7 @@ export async function emitFgoInvoice(
   env: CommerceEnv,
   input: FgoInvoiceInput,
 ): Promise<FgoInvoiceResult> {
-  const privateKey = requiredSecret(env.FGO_PRIVATE_KEY, "FGO_PRIVATE_KEY");
+  const privateKey = requiredSecret((await credential(env, "fgo")) ?? undefined, "FGO_PRIVATE_KEY");
   const production = env.APP_ENV === "production";
   const baseUrl = production ? "https://api.fgo.ro/v1" : "https://api-testuat.fgo.ro/v1";
   const taxId = "55055976";
@@ -95,7 +97,7 @@ export async function emitFgoInvoice(
     },
     15_000,
   );
-  const result = (await response.json().catch(() => null)) as FgoResponse | null;
+  const result = (await readProviderJson(response).catch(() => null)) as FgoResponse | null;
   if (!response.ok || !result?.Success || !result.Factura?.Numar || !result.Factura.Serie) {
     throw new ProviderError(
       result?.Message || `FGO a răspuns cu HTTP ${response.status}.`,

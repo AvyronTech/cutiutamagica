@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag, Minus, Plus } from "lucide-react";
+import { ShoppingBag, Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
@@ -18,9 +18,8 @@ export function ProductCard({
   index?: number;
   variant?: Variant;
 }) {
-  const { addToCart, toggleFavorite, isFavorite, products } = useShop();
+  const { addToCart, products } = useShop();
   product = products.find((p) => p.id === product.id) ?? product;
-  const fav = isFavorite(product.id);
   const [qty, setQty] = useState(1);
   const displayPrice = product.price ?? PRICE;
   const isGlass = variant === "glass";
@@ -117,29 +116,16 @@ export function ProductCard({
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              addToCart(product.id, qty);
-              toast.success(`${qty} × adăugat în coș`, { description: product.name });
-            }}
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] text-[color:var(--wood-dark)] rounded-md py-2 text-sm font-semibold border border-[color:var(--gold)]/60 shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)] transition"
-          >
-            <ShoppingBag className="w-4 h-4" /> Comandă
-          </button>
-          <button
-            onClick={() => toggleFavorite(product.id)}
-            className={`p-2 rounded-md border ${
-              isGlass
-                ? `border-white/25 ${fav ? "bg-[color:var(--gold)]/30 text-[color:var(--cream)]" : "bg-white/10 text-[color:var(--cream)] hover:bg-white/20"}`
-                : `border-border ${fav ? "bg-[color:var(--gold)]/20 text-[color:var(--wood-dark)]" : "hover:bg-muted"}`
-            }`}
-            aria-label="Favorite"
-          >
-            <Heart className={`w-4 h-4 ${fav ? "fill-current" : ""}`} />
-          </button>
-        </div>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            addToCart(product.id, qty);
+            toast.success(`${qty} × adăugat în coș`, { description: product.name });
+          }}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
+        >
+          <ShoppingBag className="h-4 w-4" /> Adaugă în coș
+        </button>
       </div>
     </motion.div>
   );
