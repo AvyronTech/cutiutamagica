@@ -30,7 +30,7 @@ export const Route = createFileRoute("/poveste")({
         href: workshopBg,
         imageSrcSet: `${workshopBgSm} 1100w, ${workshopBg} 1920w`,
         imageSizes: "100vw",
-        fetchpriority: "high",
+        fetchPriority: "high",
       } as unknown as { rel: string },
     ],
   }),

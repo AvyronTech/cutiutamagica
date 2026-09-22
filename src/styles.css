@@ -372,3 +372,198 @@ body::-webkit-scrollbar,
     animation: none;
   }
 }
+
+/* ===== BrandMark 3D — straturi în adâncime reală, conduse de transform CSS ===== */
+.bm3d {
+  position: relative;
+  display: block;
+  perspective: 150px;
+  perspective-origin: 50% 45%;
+}
+.bm3d-rig {
+  --bm-rx: 0deg;
+  --bm-ry: 0deg;
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--bm-rx)) rotateY(var(--bm-ry));
+  animation: bm3d-float 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+.bm3d-rig > svg {
+  transform-style: preserve-3d;
+  transition:
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 700ms ease;
+}
+.bm3d-halo {
+  transform: translateZ(-16px) scale(1.12);
+}
+.bm3d-body {
+  transform: translateZ(0);
+  filter: drop-shadow(0 2px 2px oklch(0.25 0.05 40 / 0.45));
+}
+.bm3d-lid {
+  transform: translateZ(5px);
+  transform-origin: 50% 51%;
+  animation: bm3d-intro-lid 1.8s 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.bm3d-note {
+  transform: translateZ(13px);
+  transform-origin: 55% 30%;
+  animation: bm3d-intro-note 1.8s 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.bm3d-sparks {
+  transform: translateZ(20px);
+}
+.bm3d-note > * {
+  animation: bm3d-glint 6.5s 2.4s ease-in-out infinite;
+}
+
+.bm3d-spark {
+  animation: bm3d-twinkle 3.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.bm3d-spark:nth-child(2) {
+  animation-delay: 0.9s;
+}
+.bm3d-spark:nth-child(3) {
+  animation-delay: 1.7s;
+}
+
+/* Hover pe tot link-ul din header (clasa `group`) sau direct pe logo. */
+.group:hover .bm3d-lid,
+.bm3d:hover .bm3d-lid {
+  transform: translateZ(7px) rotateX(-34deg) translateY(-1.5px);
+}
+.group:hover .bm3d-note,
+.bm3d:hover .bm3d-note {
+  transform: translateZ(16px) translateY(-3px) rotate(-7deg);
+  filter: drop-shadow(0 0 3px oklch(0.9 0.16 85 / 0.9));
+}
+.group:hover .bm3d-halo,
+.bm3d:hover .bm3d-halo {
+  transform: translateZ(-16px) scale(1.28);
+}
+.group:hover .bm3d-sparks,
+.bm3d:hover .bm3d-sparks {
+  transform: translateZ(24px) scale(1.06);
+}
+
+@keyframes bm3d-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -1.5px;
+  }
+}
+/* Lumina prinde nota de aur, scurt, o dată la câteva secunde. */
+@keyframes bm3d-glint {
+  0%,
+  82%,
+  100% {
+    filter: brightness(1);
+  }
+  88% {
+    filter: brightness(1.45) drop-shadow(0 0 1.5px oklch(0.95 0.12 90));
+  }
+}
+@keyframes bm3d-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    scale: 0.7;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.15;
+  }
+}
+/* O singură dată, la încărcare: capacul se deschide, nota se înalță, apoi se așază. */
+@keyframes bm3d-intro-lid {
+  0% {
+    transform: translateZ(5px) rotateX(0deg);
+  }
+  40% {
+    transform: translateZ(7px) rotateX(-38deg) translateY(-1.5px);
+  }
+  100% {
+    transform: translateZ(5px) rotateX(0deg);
+  }
+}
+@keyframes bm3d-intro-note {
+  0% {
+    transform: translateZ(13px) translateY(5px);
+    opacity: 0;
+  }
+  45% {
+    transform: translateZ(17px) translateY(-4px) rotate(-8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateZ(13px) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Inelul care pulsează în jurul comutatorului de sunet când e pornit. */
+@keyframes sound-ring {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.8 0.15 75 / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 9px oklch(0.8 0.15 75 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.8 0.15 75 / 0);
+  }
+}
+
+/* Badge-ul coșului „sare" când crește numărul — notificare discretă, fără pop-up. */
+@keyframes badge-pop {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.45;
+  }
+  60% {
+    scale: 0.9;
+  }
+  100% {
+    scale: 1;
+  }
+}
+.badge-pop {
+  animation: badge-pop 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Bara de progres urcă o singură dată, la prima apariție. */
+.cart-progress {
+  pointer-events: none;
+  animation: cart-progress-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bm3d-rig,
+  .bm3d-lid,
+  .bm3d-note,
+  .bm3d-spark,
+  .bm3d-note > *,
+  .cart-progress,
+  .badge-pop {
+    animation: none !important;
+  }
+  .bm3d-rig {
+    transform: none;
+  }
+  .group:hover .bm3d-lid,
+  .bm3d:hover .bm3d-lid,
+  .group:hover .bm3d-note,
+  .bm3d:hover .bm3d-note {
+    transform: translateZ(5px);
+  }
+}

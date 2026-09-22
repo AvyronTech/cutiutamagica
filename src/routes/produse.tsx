@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Gift, Search, Settings2, X } from "lucide-react";
+import { isAvailable } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -10,17 +11,17 @@ const catalogGroups = [
   {
     id: "legendary-worlds",
     label: "Lumi legendare",
-    productIds: ["lotr-rings", "hp-always", "hp-keeper", "pirates", "starwars-dad"],
+    productIds: ["hp-keeper", "got-winter", "lotr-rings", "hp-always", "pirates", "starwars-dad"],
   },
   {
     id: "magic-mystery",
     label: "Magie & mister",
-    productIds: ["halloween", "fairy", "hp-always", "hp-keeper", "lotr-rings"],
+    productIds: ["halloween", "got-winter", "hp-keeper", "fairy", "hp-always", "lotr-rings"],
   },
   {
     id: "heartfelt-gifts",
     label: "Cadouri cu suflet",
-    productIds: ["kitten", "fairy", "starwars-dad", "hp-keeper", "lotr-rings"],
+    productIds: ["kitten", "sunshine", "hp-keeper", "fairy", "starwars-dad", "lotr-rings"],
   },
 ] as const;
 
@@ -93,7 +94,9 @@ function ProductsPage() {
     () =>
       activeGroup.productIds
         .map((id) => products.find((product) => product.id === id))
-        .filter((product): product is (typeof products)[number] => Boolean(product)),
+        .filter((product): product is (typeof products)[number] =>
+          Boolean(product && isAvailable(product)),
+        ),
     [activeGroup, products],
   );
   const normalizedQuery = normalizeSearch(q ?? "");
@@ -206,12 +209,32 @@ function ProductsPage() {
         )}
       </section>
 
-      <h2 className="sr-only">Modele disponibile</h2>
-      <div className="mt-10 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {list.map((product, index) => (
-          <ProductCard key={product.id} product={product} index={index} variant="solid" />
+      {[
+        { key: "now", title: "Disponibile acum", items: list.filter(isAvailable) },
+        {
+          key: "soon",
+          title: "În curând",
+          note: "Modele pe care le pregătim pentru magazin.",
+          items: list.filter((product) => !isAvailable(product)),
+        },
+      ]
+        .filter((group) => group.items.length > 0)
+        .map((group, groupIndex) => (
+          <section key={group.key} className={groupIndex === 0 ? "mt-10" : "mt-16"}>
+            <div className="flex flex-col items-center gap-1">
+              <h2 className="font-display text-2xl md:text-3xl">
+                {group.title}{" "}
+                <span className="text-base text-muted-foreground">({group.items.length})</span>
+              </h2>
+              {group.note && <p className="text-sm text-muted-foreground">{group.note}</p>}
+            </div>
+            <div className="mt-6 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {group.items.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} variant="solid" />
+              ))}
+            </div>
+          </section>
         ))}
-      </div>
 
       {list.length === 0 && (
         <div className="mx-auto mt-12 max-w-md rounded-lg border border-border bg-card p-8">

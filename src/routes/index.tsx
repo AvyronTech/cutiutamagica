@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import { Sparkles, Package, BookOpen, Gift, ArrowRight } from "lucide-react";
-import { products } from "@/data/products";
+import { isAvailable, products } from "@/data/products";
 import { ProductCarouselSection } from "@/components/site/ProductCarouselSection";
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
@@ -12,7 +12,10 @@ import bgPoveste from "@/assets/bg-poveste.jpg";
 import bgEmotie from "@/assets/bg-emotie.jpg";
 import bgUnice from "@/assets/bg-unice.jpg";
 
-const heroImage = products[0].image;
+// Fotografia de hero rămâne cea lată, de ambianță (Stăpânul Inelelor); textul hero-ului e generic.
+// Pozele din anunțurile Vinted au 800 px și s-ar vedea moi pe tot ecranul.
+const heroProduct = products.find((p) => p.id === "lotr-rings") ?? products[0];
+const heroImage = heroProduct.image;
 const socialHeroImage = `https://cutiutamagica.eu${heroImage}`;
 
 export const Route = createFileRoute("/")({
@@ -37,24 +40,25 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: "https://cutiutamagica.eu/" },
-      { rel: "preload", as: "image", href: heroImage, fetchpriority: "high" },
+      { rel: "preload", as: "image", href: heroImage, fetchPriority: "high" },
     ],
   }),
 });
 
 function Index() {
-  const { products, promotion } = useShop();
-  const hero = products[0];
+  const { products } = useShop();
+  const hero = products.find((p) => p.id === "lotr-rings") ?? products[0];
   const reducedMotion = useReducedMotion();
 
-  const povesteSpotlight = ["hp-keeper", "lotr-rings", "starwars-dad"];
-  const emotieSpotlight = ["fairy", "kitten", "hp-always"];
-  const dedicateSpotlight = ["halloween", "hp-keeper", "fairy"];
+  // Doar modele disponibile acum: vitrina de pe prima pagină trebuie să ducă la coș.
+  const povesteSpotlight = ["hp-keeper", "got-winter", "halloween"];
+  const emotieSpotlight = ["sunshine", "kitten", "hp-keeper"];
+  const dedicateSpotlight = ["halloween", "kitten", "sunshine"];
 
   const byIds = (ids: string[]) =>
     ids
       .map((id) => products.find((p) => p.id === id))
-      .filter((p): p is (typeof products)[number] => Boolean(p));
+      .filter((p): p is (typeof products)[number] => Boolean(p && isAvailable(p)));
 
   return (
     <div>
@@ -63,7 +67,7 @@ function Index() {
         <div className="relative h-[82vh] min-h-[560px] max-h-[820px] w-full">
           <motion.img
             src={hero?.image || heroImage}
-            alt={hero?.name || "Cutiuța Magică"}
+            alt="Cutiuță muzicală din lemn cu manivelă, în lumină caldă"
             width={1200}
             height={800}
             fetchPriority="high"
@@ -91,7 +95,7 @@ function Index() {
                 "radial-gradient(38% 55% at 72% 52%, oklch(0.85 0.16 75 / 0.18), transparent 65%)",
             }}
           />
-          {/* Vignette jos pentru continuitate cu strip-ul de transport */}
+          {/* Vignette jos, pentru continuitate cu secțiunea următoare */}
           <div
             aria-hidden
             className="absolute inset-x-0 bottom-0 h-40"
@@ -170,26 +174,11 @@ function Index() {
         </div>
       </section>
 
-      {/* Compact product and offer strip */}
+      {/* Trei repere despre produs — fără ofertă și fără promisiuni de livrare. */}
       <section className="max-w-5xl mx-auto px-4 -mt-10 md:-mt-14 relative z-10">
-        <h2 className="sr-only">Ofertă și caracteristici</h2>
+        <h2 className="sr-only">Ce primești</h2>
         <div className="rounded-2xl bg-card border border-border shadow-warm overflow-hidden grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border text-center">
           <div className="px-4 py-4 bg-[color:var(--gold)]/10">
-            <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
-            <div className="font-display italic text-base md:text-lg leading-snug text-foreground">
-              {promotion ? <>De la {promotion.minQuantity} cutiuțe</> : "Cadouri cu melodie"}
-            </div>
-            <div className="font-display text-sm md:text-base mt-0.5 text-[color:var(--wood-dark)]/85">
-              {promotion
-                ? `${promotion.unitPrice} lei / cutiuță, sau prețul individual mai mic`
-                : "Alege povestea preferată"}
-            </div>
-            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Poți combina modelele din catalog
-            </div>
-          </div>
-
-          <div className="px-4 py-4">
             <Sparkles className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
             <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Mecanism clasic
@@ -197,25 +186,40 @@ function Index() {
             <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
               Învârți manivela,
               <br />
-              asculți melodia
+              începe melodia
             </div>
             <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Fără baterii sau aplicație
+              Fără baterii, fără aplicație
             </div>
           </div>
 
           <div className="px-4 py-4">
-            <Package className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+            <BookOpen className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
             <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Produsul pe care îl vezi
+              Fiecare model, o poveste
             </div>
             <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
-              Fotografii clare,
+              Teme din filme,
               <br />
-              detalii înainte de comandă
+              cărți și amintiri
             </div>
             <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Alegi modelul și melodia din catalog
+              Alegi melodia și ilustrația de pe capac
+            </div>
+          </div>
+
+          <div className="px-4 py-4">
+            <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
+            <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Cadou gata de dăruit
+            </div>
+            <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
+              Mică în palmă,
+              <br />
+              mare la emoție
+            </div>
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
+              Lemn gravat, mecanism metalic vizibil
             </div>
           </div>
         </div>

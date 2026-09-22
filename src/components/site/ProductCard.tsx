@@ -1,11 +1,12 @@
-import { Link } from "@tanstack/react-router";
-import { ShoppingBag, Minus, Plus } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ShoppingBag, Minus, Plus, Hourglass } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
-import { PRICE, MAX_QTY } from "@/data/products";
+import { PRICE, MAX_QTY, isAvailable } from "@/data/products";
 import { useShop } from "@/store/shop";
-import { toast } from "sonner";
+import { ProductImage } from "@/components/site/ProductImage";
+import { notifyAddedToCart } from "@/lib/notify";
 
 type Variant = "solid" | "glass";
 
@@ -20,7 +21,9 @@ export function ProductCard({
 }) {
   const { addToCart, products } = useShop();
   product = products.find((p) => p.id === product.id) ?? product;
+  const navigate = useNavigate();
   const [qty, setQty] = useState(1);
+  const available = isAvailable(product);
   const displayPrice = product.price ?? PRICE;
   const isGlass = variant === "glass";
   const discounted = product.originalPrice != null && product.originalPrice > displayPrice;
@@ -45,15 +48,34 @@ export function ProductCard({
               : "relative aspect-square overflow-hidden px-2 pt-1 pb-2 bg-[radial-gradient(70%_60%_at_50%_30%,oklch(0.98_0.03_80/0.9),transparent_70%),linear-gradient(180deg,oklch(0.95_0.04_70),oklch(0.9_0.06_60))]"
           }
         >
-          <motion.img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-contain drop-shadow-[0_18px_28px_rgba(0,0,0,0.45)]"
+          {!available && (
+            <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--wood-dark)]/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--gold)] backdrop-blur">
+              <Hourglass className="h-3 w-3" aria-hidden />
+              În curând
+            </span>
+          )}
+          <motion.div
+            className="h-full w-full"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.6 }}
-            loading="lazy"
-          />
-          {discounted && (
+          >
+            <ProductImage
+              src={product.image}
+              alt={product.name}
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 320px"
+              className={`w-full h-full drop-shadow-[0_18px_28px_rgba(0,0,0,0.45)] ${
+                product.source ? "object-cover rounded-xl" : "object-contain"
+              } ${available ? "" : "saturate-[0.55] brightness-[0.82]"}`}
+            />
+          </motion.div>
+          {/* Licărire aurie la hover — doar pe cartonașele produselor disponibile. */}
+          {available && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-[radial-gradient(70%_50%_at_50%_20%,oklch(0.95_0.13_85/0.18),transparent_65%)]"
+            />
+          )}
+          {discounted && available && (
             <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-2 text-sm text-rose-900 shadow-sm">
               <span className="block text-[10px] uppercase">Un dar, un preț special</span>
               <del className="mr-2 text-xs text-neutral-500">{product.originalPrice} lei</del>
@@ -80,52 +102,77 @@ export function ProductCard({
             </p>
           )}
           <div className="mt-2 flex items-baseline justify-center gap-2">
-            {discounted && (
+            {!available && (
+              <span
+                className={`text-xs uppercase tracking-[0.2em] ${isGlass ? "text-[color:var(--cream)]/80" : "text-foreground/60"}`}
+              >
+                Disponibil în curând
+              </span>
+            )}
+            {available && discounted && (
               <del className="text-xs opacity-70" title="Preț anterior de referință documentat">
                 {product.originalPrice} lei
               </del>
             )}
-            <span className={`font-display text-xl ${isGlass ? "text-[color:var(--gold)]" : ""}`}>
-              {displayPrice}{" "}
-              <span className={`text-xs ${isGlass ? "text-[color:var(--cream)]/90" : ""}`}>
-                lei
+            {available && (
+              <span className={`font-display text-xl ${isGlass ? "text-[color:var(--gold)]" : ""}`}>
+                {displayPrice}{" "}
+                <span className={`text-xs ${isGlass ? "text-[color:var(--cream)]/90" : ""}`}>
+                  lei
+                </span>
               </span>
-            </span>
+            )}
           </div>
         </div>
       </Link>
       <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
-        <div
-          className={`flex items-center justify-center gap-3 rounded-md py-1.5 ${
-            isGlass ? "bg-black/25 backdrop-blur text-[color:var(--cream)]" : "bg-muted/50"
-          }`}
-        >
-          <button
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
-            className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
-            aria-label="Scade"
+        {available ? (
+          <>
+            <div
+              className={`flex items-center justify-center gap-3 rounded-md py-1.5 ${
+                isGlass ? "bg-black/25 backdrop-blur text-[color:var(--cream)]" : "bg-muted/50"
+              }`}
+            >
+              <button
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
+                aria-label="Scade"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span className="font-medium text-sm w-6 text-center">{qty}</span>
+              <button
+                onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
+                className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
+                aria-label="Crește"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                addToCart(product.id, qty);
+                notifyAddedToCart(product.name, qty, () => navigate({ to: "/comanda" }));
+              }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
+            >
+              <ShoppingBag className="h-4 w-4" /> Adaugă în coș
+            </button>
+          </>
+        ) : (
+          <Link
+            to="/produs/$id"
+            params={{ id: product.id }}
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-md border py-2 text-sm font-medium transition ${
+              isGlass
+                ? "border-white/25 bg-white/10 text-[color:var(--cream)] hover:bg-white/15"
+                : "border-[color:var(--gold)]/40 bg-[color:var(--cream)]/60 text-[color:var(--wood-dark)] hover:bg-[color:var(--cream)]"
+            }`}
           >
-            <Minus className="w-3.5 h-3.5" />
-          </button>
-          <span className="font-medium text-sm w-6 text-center">{qty}</span>
-          <button
-            onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
-            className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
-            aria-label="Crește"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            addToCart(product.id, qty);
-            toast.success(`${qty} × adăugat în coș`, { description: product.name });
-          }}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
-        >
-          <ShoppingBag className="h-4 w-4" /> Adaugă în coș
-        </button>
+            <Hourglass className="w-4 h-4" aria-hidden /> Vezi detalii
+          </Link>
+        )}
       </div>
     </motion.div>
   );

@@ -84,11 +84,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "google-site-verification", content: "qIm8mkNBA6rC0vDEbBupl5-0tB_p1GpgJnylo2aKYKo" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Cutiuța Magică" },
+      { property: "og:locale", content: "ro_RO" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
     scripts: [
@@ -99,9 +101,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@type": "Organization",
           name: "Cutiuța Magică",
           url: "https://cutiutamagica.eu",
-          logo: "https://cutiutamagica.eu/favicon.ico",
+          logo: "https://cutiutamagica.eu/icon-512.png",
           description: "Cutiuțe muzicale din lemn cu manivelă și mecanism manual.",
           address: { "@type": "PostalAddress", addressCountry: "RO" },
+          sameAs: [
+            "https://www.facebook.com/profile.php?id=61590919580877",
+            "https://www.instagram.com/cutiutamagicaofficial/",
+            "https://www.tiktok.com/@cutiua.magic",
+          ],
         }),
       },
       {
@@ -184,7 +191,37 @@ function RootComponent() {
         {isChrome && <Footer />}
         {isChrome && <SideScrollMagic />}
         {isChrome && <ChatWidget />}
-        <Toaster position="top-center" richColors />
+        {isChrome ? (
+          <>
+            <Toaster
+              position="top-center"
+              offset={92}
+              gap={10}
+              visibleToasts={3}
+              style={
+                {
+                  "--normal-bg": "oklch(0.21 0.035 40 / 0.94)",
+                  "--normal-border": "oklch(0.74 0.14 78 / 0.38)",
+                  "--normal-text": "oklch(0.96 0.02 80)",
+                  "--border-radius": "16px",
+                } as React.CSSProperties
+              }
+              toastOptions={{
+                classNames: {
+                  toast:
+                    "!backdrop-blur-xl !shadow-[0_18px_44px_-18px_oklch(0.2_0.05_40/0.75),inset_0_1px_0_oklch(0.95_0.05_85/0.12)] !font-body",
+                  title: "!font-display !text-[1.05rem] !tracking-tight",
+                  description: "!text-[oklch(0.96_0.02_80/0.72)]",
+                  actionButton:
+                    "!rounded-full !bg-[linear-gradient(135deg,oklch(0.92_0.09_85),oklch(0.78_0.14_62))] !text-[oklch(0.25_0.04_40)] !font-medium",
+                  icon: "!text-[oklch(0.8_0.15_78)]",
+                },
+              }}
+            />
+          </>
+        ) : (
+          <Toaster position="top-center" richColors />
+        )}
       </ShopProvider>
     </QueryClientProvider>
   );

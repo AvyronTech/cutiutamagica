@@ -1,12 +1,21 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ShoppingBag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useShop } from "@/store/shop";
 import { ScrollFuse } from "./ScrollFuse";
 import { BrandMark } from "./BrandMark";
+import { SoundToggle } from "./SoundToggle";
+import { MiniCart } from "./MiniCart";
 
 export function Header() {
   const { totalQty } = useShop();
+  const [cartOpen, setCartOpen] = useState(false);
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  // Panoul nu are ce căuta deschis după o navigare.
+  useEffect(() => {
+    setCartOpen(false);
+  }, [pathname]);
   const [compact, setCompact] = useState(false);
   const compactRef = useRef(false);
 
@@ -114,28 +123,39 @@ export function Header() {
             </Link>
           </nav>
 
-          <Link
-            to="/comanda"
-            aria-label={`Coș de cumpărături, ${totalQty} produse`}
-            className={`group relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/55 bg-white/45 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.75),0_8px_22px_-12px_rgba(88,48,20,.75)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] ${
-              compact ? "h-10 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"
-            }`}
-          >
-            <ShoppingBag
-              className={`transition-transform group-hover:scale-105 ${compact ? "h-[18px] w-[18px]" : "h-5 w-5"}`}
-            />
-            <span className="hidden text-sm sm:inline">Coș</span>
-            {totalQty > 0 ? (
-              <span
-                aria-live="polite"
-                className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--wood-dark)] px-1.5 text-[10px] font-bold text-[color:var(--cream)] shadow-sm"
-              >
-                {totalQty}
-              </span>
-            ) : null}
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <SoundToggle compact={compact} />
+
+            <button
+              type="button"
+              aria-label={`Coș de cumpărături, ${totalQty} produse`}
+              aria-expanded={cartOpen}
+              aria-haspopup="dialog"
+              onClick={() => setCartOpen((open) => !open)}
+              className={`group relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full border bg-white/45 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.75),0_8px_22px_-12px_rgba(88,48,20,.75)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] ${
+                cartOpen
+                  ? "border-[color:var(--gold)] bg-white/75"
+                  : "border-[color:var(--gold)]/55"
+              } ${compact ? "h-10 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"}`}
+            >
+              <ShoppingBag
+                className={`transition-transform group-hover:scale-105 ${compact ? "h-[18px] w-[18px]" : "h-5 w-5"}`}
+              />
+              <span className="hidden text-sm sm:inline">Coș</span>
+              {totalQty > 0 ? (
+                <span
+                  aria-live="polite"
+                  className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--wood-dark)] px-1.5 text-[10px] font-bold text-[color:var(--cream)] shadow-sm"
+                >
+                  {totalQty}
+                </span>
+              ) : null}
+            </button>
+          </div>
         </div>
       </div>
+
+      <MiniCart open={cartOpen} onClose={() => setCartOpen(false)} />
     </header>
   );
 }

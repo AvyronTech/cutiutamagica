@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { calcTotals, type Product } from "@/data/products";
+import { calcTotals, isAvailable, type Product } from "@/data/products";
 import { catalogProducts } from "@/lib/catalog-products";
 import type { getStorePricing } from "@/lib/store-pricing.functions";
 
-type CartItem = { id: string; qty: number };
+type CartItem = { id: string; qty: number; addedAt?: number };
 type ShopCtx = {
   products: Product[];
   promotion: { unitPrice: number; minQuantity: number } | null;
@@ -68,7 +68,8 @@ export function ShopProvider({
     const itemsDetailed = cart
       .map((i) => {
         const product = products.find((p) => p.id === i.id);
-        return product ? { ...i, product } : null;
+        // Un coș salvat înainte ca un model să treacă la „În curând” nu duce la checkout.
+        return product && isAvailable(product) ? { ...i, product } : null;
       })
       .filter(Boolean) as (CartItem & { product: Product })[];
     const totalQty = itemsDetailed.reduce((sum, item) => sum + item.qty, 0);
@@ -102,12 +103,17 @@ export function ShopProvider({
       cart,
       addToCart: (id, qty = 1) =>
         setCart((c) => {
-          if (!Number.isFinite(qty) || !products.some((p) => p.id === id)) return c;
+          // Doar produsele puse în vânzare intră în coș; „În curând” sunt respinse.
+          const product = products.find((p) => p.id === id);
+          if (!Number.isFinite(qty) || !product || !isAvailable(product)) return c;
           const safeQty = Math.max(1, Math.min(5, Math.floor(qty)));
+          const now = Date.now();
           const ex = c.find((i) => i.id === id);
           if (ex)
-            return c.map((i) => (i.id === id ? { ...i, qty: Math.min(5, i.qty + safeQty) } : i));
-          return [...c, { id, qty: safeQty }];
+            return c.map((i) =>
+              i.id === id ? { ...i, qty: Math.min(5, i.qty + safeQty), addedAt: now } : i,
+            );
+          return [...c, { id, qty: safeQty, addedAt: now }];
         }),
       setQty: (id, qty) =>
         setCart((c) =>
