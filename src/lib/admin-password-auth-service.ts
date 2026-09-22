@@ -1,11 +1,12 @@
 export const ADMIN_SESSION_COOKIE = "cm_admin_session";
 export const ADMIN_SESSION_SECONDS = 12 * 60 * 60;
-export const ADMIN_PASSWORD_ITERATIONS = 600_000;
+export const ADMIN_PASSWORD_ALGORITHM = "scrypt-v1";
+export const ADMIN_PASSWORD_ITERATIONS = 32_768;
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_MINUTES = 15;
 const DUMMY_SALT = "4Vk6ZnrF2ngv7LwCT+5IEQ==";
-const DUMMY_HASH = "AM/z07Huh7iEDUoVjoQ18nPUvHRnNj/DdY5+c/iUc1g=";
+const DUMMY_HASH = "55f2i47qXtnZwLTs2gs2SLhzxMK4nASl2iXsjqT1TyI=";
 
 export type AdminOnboardingStatus = "pending" | "profile_required" | "complete";
 
@@ -28,6 +29,7 @@ interface CredentialRow {
   onboarding_status: AdminOnboardingStatus;
   password_hash: string;
   password_salt: string;
+  algorithm: "pbkdf2-sha256" | "scrypt-v1";
   iterations: number;
   password_version: number;
   must_change_password: number;
@@ -80,17 +82,43 @@ async function sha256(value: string): Promise<string> {
 async function derivePasswordHash(
   password: string,
   salt: string,
+  algorithm: CredentialRow["algorithm"],
   iterations: number,
 ): Promise<string> {
-  const { pbkdf2 } = await import("node:crypto");
+  if (algorithm === "pbkdf2-sha256") {
+    if (iterations > 100_000) {
+      throw new Error("Credentialele PBKDF2 necesită migrarea la scrypt-v1.");
+    }
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"],
+    );
+    const bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", hash: "SHA-256", salt: base64ToBytes(salt), iterations },
+      key,
+      256,
+    );
+    return bytesToBase64(new Uint8Array(bits));
+  }
+
+  const { scrypt } = await import("node:crypto");
   return new Promise((resolve, reject) => {
-    pbkdf2(password, base64ToBytes(salt), iterations, 32, "sha256", (error, derivedKey) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(derivedKey.toString("base64"));
-    });
+    scrypt(
+      password,
+      base64ToBytes(salt),
+      32,
+      { N: iterations, r: 8, p: 1, maxmem: 64 * 1024 * 1024 },
+      (error, derivedKey) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(bytesToBase64(new Uint8Array(derivedKey)));
+      },
+    );
   });
 }
 
@@ -130,7 +158,7 @@ function credentialQuery(from: string, where: string, extraColumns = ""): string
   return `
     SELECT
       ${extraColumns}au.id, au.email, au.display_name, au.status, au.onboarding_status,
-      apc.password_hash, apc.password_salt, apc.iterations, apc.password_version,
+      apc.password_hash, apc.password_salt, apc.algorithm, apc.iterations, apc.password_version,
       apc.must_change_password, apc.failed_attempts, apc.locked_until,
       CASE WHEN apc.locked_until IS NOT NULL AND datetime(apc.locked_until) > datetime('now')
         THEN 1 ELSE 0 END AS is_locked,
@@ -249,6 +277,7 @@ export async function loginAdminWithPassword(
   const derived = await derivePasswordHash(
     password,
     row?.password_salt || DUMMY_SALT,
+    row?.algorithm || ADMIN_PASSWORD_ALGORITHM,
     row?.iterations || ADMIN_PASSWORD_ITERATIONS,
   );
   const valid = Boolean(row && equalHash(derived, row.password_hash));
@@ -348,7 +377,12 @@ export async function changeAdminPassword(
     );
   }
   const salt = randomBase64(16);
-  const hash = await derivePasswordHash(newPassword, salt, ADMIN_PASSWORD_ITERATIONS);
+  const hash = await derivePasswordHash(
+    newPassword,
+    salt,
+    ADMIN_PASSWORD_ALGORITHM,
+    ADMIN_PASSWORD_ITERATIONS,
+  );
   const credential = await db
     .prepare(`SELECT password_version FROM admin_password_credentials WHERE admin_user_id = ?1`)
     .bind(admin.id)
@@ -359,14 +393,21 @@ export async function changeAdminPassword(
     db
       .prepare(
         `UPDATE admin_password_credentials
-         SET password_hash = ?1, password_salt = ?2, iterations = ?3,
-             password_version = ?4, must_change_password = 0,
+         SET password_hash = ?1, password_salt = ?2, algorithm = ?3, iterations = ?4,
+             password_version = ?5, must_change_password = 0,
              failed_attempts = 0, locked_until = NULL,
              password_changed_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-         WHERE admin_user_id = ?5`,
+         WHERE admin_user_id = ?6`,
       )
-      .bind(hash, salt, ADMIN_PASSWORD_ITERATIONS, passwordVersion, admin.id),
+      .bind(
+        hash,
+        salt,
+        ADMIN_PASSWORD_ALGORITHM,
+        ADMIN_PASSWORD_ITERATIONS,
+        passwordVersion,
+        admin.id,
+      ),
     db
       .prepare(
         `UPDATE admin_sessions SET revoked_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
