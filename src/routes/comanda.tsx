@@ -12,7 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { MAX_QTY, unitPriceBani, type Product } from "@/data/products";
+import { isAvailable, MAX_QTY, unitPriceBani, type Product } from "@/data/products";
 import {
   Carousel,
   CarouselContent,
@@ -101,7 +101,10 @@ function OrderPage() {
     [itemsDetailed],
   );
   const recommendations = useMemo(
-    () => products.filter((product) => !cartProductIds.has(product.id)).slice(0, 8),
+    () =>
+      products
+        .filter((product) => isAvailable(product) && !cartProductIds.has(product.id))
+        .slice(0, 8),
     [cartProductIds, products],
   );
   const [configFailed, setConfigFailed] = useState(false);
