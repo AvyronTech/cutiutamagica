@@ -8,6 +8,7 @@ import {
   changeAdminPassword,
   loginAdminWithPassword,
 } from "../lib/admin-password-auth-service";
+import { guardAdminPage } from "./admin-page-guard";
 
 const databases: DatabaseSync[] = [];
 
@@ -178,5 +179,35 @@ describe("admin password authentication", () => {
         "Magic123",
       ),
     ).rejects.toMatchObject({ statusCode: 401 });
+  }, 20_000);
+
+  it("redirects unauthenticated admin pages before rendering the dashboard", async () => {
+    const { db } = database();
+    const anonymous = await guardAdminPage(
+      new Request("https://cutiutamagica.eu/admin/products?status=active"),
+      db,
+    );
+    expect(anonymous).toMatchObject({ status: 302 });
+    expect(anonymous?.headers.get("location")).toBe(
+      "https://cutiutamagica.eu/auth?redirect=%2Fadmin%2Fproducts%3Fstatus%3Dactive",
+    );
+
+    const login = await loginAdminWithPassword(
+      db,
+      request(undefined, "203.0.113.50"),
+      "prometheus@avyron.eu",
+      "Magic123",
+    );
+    await expect(
+      guardAdminPage(
+        new Request("https://cutiutamagica.eu/admin", {
+          headers: { cookie: `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(login.token)}` },
+        }),
+        db,
+      ),
+    ).resolves.toBeNull();
+    await expect(
+      guardAdminPage(new Request("https://cutiutamagica.eu/produse"), db),
+    ).resolves.toBeNull();
   }, 20_000);
 });

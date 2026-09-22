@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { guardAdminPage } from "./server/admin-page-guard";
 import { handleApiRequest } from "./server/api/router";
 import { API_HOSTNAME, APP_HOSTNAME, resolveHostRoute } from "./server/host-routing";
 import { handlePublicMediaRequest } from "./server/media-public";
@@ -177,6 +178,13 @@ export default {
       }
       if (hostRoute.type === "rewrite") {
         request = new Request(hostRoute.url, request);
+      }
+
+      const adminRedirect = await guardAdminPage(request, env.DB);
+      if (adminRedirect) {
+        const response = withOperationalHeaders(request, adminRedirect, requestId);
+        recordRequestMetric(env, request, response, startedAt);
+        return response;
       }
 
       const mediaResponse = await handlePublicMediaRequest(request, env);
