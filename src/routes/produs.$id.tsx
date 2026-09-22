@@ -324,8 +324,8 @@ function ProductPage() {
 
           {available ? (
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="font-display text-4xl">{PRICE} lei</span>
-              <span className="text-sm text-muted-foreground">75 lei/buc de la 2 cutiuțe</span>
+              <span className="font-display text-4xl">{product.price ?? PRICE} lei</span>
+              <span className="text-sm text-muted-foreground">preț pe cutiuță</span>
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 p-4">

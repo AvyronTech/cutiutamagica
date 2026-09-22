@@ -93,7 +93,7 @@ function Index() {
                 "radial-gradient(38% 55% at 72% 52%, oklch(0.85 0.16 75 / 0.18), transparent 65%)",
             }}
           />
-          {/* Vignette jos pentru continuitate cu strip-ul de transport */}
+          {/* Vignette jos, pentru continuitate cu secțiunea următoare */}
           <div
             aria-hidden
             className="absolute inset-x-0 bottom-0 h-40"
@@ -172,24 +172,11 @@ function Index() {
         </div>
       </section>
 
-      {/* Compact product and offer strip */}
+      {/* Trei repere despre produs — fără ofertă și fără promisiuni de livrare. */}
       <section className="max-w-5xl mx-auto px-4 -mt-10 md:-mt-14 relative z-10">
-        <h2 className="sr-only">Ofertă și caracteristici</h2>
+        <h2 className="sr-only">Ce primești</h2>
         <div className="rounded-2xl bg-card border border-border shadow-warm overflow-hidden grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border text-center">
           <div className="px-4 py-4 bg-[color:var(--gold)]/10">
-            <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
-            <div className="font-display italic text-base md:text-lg leading-snug text-foreground">
-              Două cutiuțe la <span className="gold-text not-italic font-medium">150 lei</span>
-            </div>
-            <div className="font-display text-sm md:text-base mt-0.5 text-[color:var(--wood-dark)]/85">
-              75 lei pentru fiecare cutiuță
-            </div>
-            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Poți combina modelele din catalog
-            </div>
-          </div>
-
-          <div className="px-4 py-4">
             <Sparkles className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
             <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Mecanism clasic
@@ -197,25 +184,40 @@ function Index() {
             <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
               Învârți manivela,
               <br />
-              asculți melodia
+              începe melodia
             </div>
             <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Fără baterii sau aplicație
+              Fără baterii, fără aplicație
             </div>
           </div>
 
           <div className="px-4 py-4">
-            <Package className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+            <BookOpen className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
             <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Produsul pe care îl vezi
+              Fiecare model, o poveste
             </div>
             <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
-              Fotografii clare,
+              Teme din filme,
               <br />
-              detalii înainte de comandă
+              cărți și amintiri
             </div>
             <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Alegi modelul și melodia din catalog
+              Alegi melodia și ilustrația de pe capac
+            </div>
+          </div>
+
+          <div className="px-4 py-4">
+            <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
+            <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Cadou gata de dăruit
+            </div>
+            <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
+              Mică în palmă,
+              <br />
+              mare la emoție
+            </div>
+            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
+              Lemn gravat, mecanism metalic vizibil
             </div>
           </div>
         </div>

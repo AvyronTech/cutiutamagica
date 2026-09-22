@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, CreditCard, Minus, PackageCheck, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { calcTotals, MAX_QTY } from "@/data/products";
+import { calcTotals, MAX_QTY, unitPriceBani } from "@/data/products";
 import type { CommercePublicConfig } from "@/lib/commerce-operations-contracts";
 import type { WebsiteOrderPublicResult } from "@/lib/order-contracts";
 import { useShop } from "@/store/shop";
@@ -44,7 +44,12 @@ function money(value: number, currency = "RON") {
 
 function OrderPage() {
   const { itemsDetailed, setQty, removeFromCart, totalQty, clearCart } = useShop();
-  const totals = calcTotals(totalQty);
+  const totals = calcTotals(
+    itemsDetailed.map((item) => ({
+      unitPriceBani: unitPriceBani(item.product),
+      quantity: item.qty,
+    })),
+  );
   const idempotencyKey = useRef<string | null>(null);
   const [config, setConfig] = useState<CommercePublicConfig | null>(null);
   const [confirmation, setConfirmation] = useState<WebsiteOrderPublicResult | null>(null);
@@ -420,15 +425,9 @@ function OrderPage() {
           <h3 className="font-display text-2xl">Sumar</h3>
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>Preț listă ({totalQty} buc)</span>
-              <span>{money(totals.baseSubtotal)}</span>
+              <span>Produse ({totalQty} buc)</span>
+              <span>{money(totals.subtotal)}</span>
             </div>
-            {totals.discount > 0 && (
-              <div className="flex justify-between text-[color:var(--gold)]">
-                <span>Reducere cantitate</span>
-                <span>-{money(totals.discount)}</span>
-              </div>
-            )}
             <div className="flex justify-between">
               <span>Livrare</span>
               <span>
@@ -444,11 +443,6 @@ function OrderPage() {
               <span>{money(totals.total + (shippingCost ?? 0))}</span>
             </div>
           </div>
-          {config?.shipping.freeOver != null && (
-            <p className="mt-5 rounded-md bg-[color:var(--gold)]/10 p-3 text-xs">
-              Transport gratuit pentru comenzi de minimum {money(config.shipping.freeOver)}.
-            </p>
-          )}
           {config?.shipping.requiresConfirmation && (
             <p className="mt-5 rounded-md bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
               Regulile de transport nu sunt încă validate. Comanda se salvează fără cost de livrare

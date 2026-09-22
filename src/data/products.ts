@@ -44,10 +44,15 @@ export const MAX_QTY = MAX_ITEM_QUANTITY;
 
 export const calcTotals = calculateDisplayedTotals;
 
+/** Prețul produsului în bani; produsele fără preț propriu folosesc prețul de bază. */
+export const unitPriceBani = (product: Pick<Product, "price">) =>
+  product.price != null ? Math.round(product.price * 100) : PRODUCT_BASE_PRICE_BANI;
+
 export const products: Product[] = [
   {
     id: "hp-keeper",
     sku: "CM-HP-KEEPER",
+    price: 149,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10090709545" },
     updatedAt: "2026-09-22",
@@ -90,6 +95,7 @@ export const products: Product[] = [
   {
     id: "got-winter",
     sku: "CM-GOT-WINTER",
+    price: 149,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039606794" },
     updatedAt: "2026-09-22",
@@ -133,6 +139,7 @@ export const products: Product[] = [
   {
     id: "kitten",
     sku: "CM-KITTEN",
+    price: 129,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039491875" },
     updatedAt: "2026-09-22",
@@ -178,6 +185,7 @@ export const products: Product[] = [
   {
     id: "halloween",
     sku: "CM-HALLOWEEN",
+    price: 139,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039375629" },
     updatedAt: "2026-09-22",
@@ -228,6 +236,7 @@ export const products: Product[] = [
   {
     id: "sunshine",
     sku: "CM-SUNSHINE",
+    price: 129,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039368670" },
     updatedAt: "2026-09-22",
@@ -287,8 +296,7 @@ export const products: Product[] = [
     details: [
       "Cutiuță din lemn cu decor ornamental",
       "Mecanism manual cu manivelă",
-      "119 lei / 1 buc · 150 lei / 2 buc",
-      "Preț promoțional de la 2 bucăți",
+      "Cutie din lemn cu mecanism metalic vizibil",
     ],
     searchTerms: [
       "cutiuță piesă LOTR",
@@ -320,7 +328,7 @@ export const products: Product[] = [
       "Finisaj albastru intens, accente aurii",
       "Mecanism manual cu manivelă",
       "Potrivită pentru un cadou tematic",
-      "Preț standard: 119 lei",
+      "Mecanism clasic cu manivelă",
     ],
     searchTerms: [
       "cutiuță piesă Harry Potter",
@@ -384,7 +392,7 @@ export const products: Product[] = [
       "Ilustrație marină dramatică",
       "Cutiuță din lemn cu ornament",
       "Mecanism cu manivelă laterală",
-      "2 bucăți = 150 lei",
+      "Ilustrație tematică pe capac",
     ],
     searchTerms: [
       "cutiuță muzicală Pirații din Caraibe",

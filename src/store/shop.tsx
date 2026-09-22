@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { calcTotals, getProduct, isAvailable, products, type Product } from "@/data/products";
+import {
+  calcTotals,
+  getProduct,
+  isAvailable,
+  products,
+  unitPriceBani,
+  type Product,
+} from "@/data/products";
 
 /** Doar produsele puse în vânzare pot sta în coș; modelele „În curând” sunt respinse. */
 const canBuy = (id: string) => {
@@ -54,13 +61,18 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ShopCtx>(() => {
     const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-    const totals = calcTotals(totalQty);
     const itemsDetailed = cart
       .map((i) => {
         const product = products.find((p) => p.id === i.id);
         return product ? { ...i, product } : null;
       })
       .filter(Boolean) as (CartItem & { product: Product })[];
+    const totals = calcTotals(
+      itemsDetailed.map((item) => ({
+        unitPriceBani: unitPriceBani(item.product),
+        quantity: item.qty,
+      })),
+    );
 
     return {
       cart,

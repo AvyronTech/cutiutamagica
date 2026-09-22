@@ -16,8 +16,6 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { StoryLoadingScreen } from "@/components/site/StoryLoadingScreen";
-import { CartMilestones } from "@/components/site/CartMilestones";
-import { CartProgressBar } from "@/components/site/CartProgressBar";
 
 function NotFoundComponent() {
   return (
@@ -183,8 +181,6 @@ function RootComponent() {
         {isChrome && <SideScrollMagic />}
         {isChrome ? (
           <>
-            <CartMilestones />
-            {pathname !== "/comanda" && <CartProgressBar />}
             <Toaster
               position="top-center"
               offset={92}
