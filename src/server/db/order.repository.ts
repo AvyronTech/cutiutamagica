@@ -1,3 +1,4 @@
+import { shippingFingerprint } from "../services/shipping-fingerprint";
 import { MAX_CART_QUANTITY, STORE_CURRENCY } from "@/lib/pricing";
 import type { WebsiteOrderInput, WebsiteOrderPublicResult } from "@/lib/order-contracts";
 
@@ -177,6 +178,8 @@ async function loadCatalogItems(db: D1Database, slugs: string[]): Promise<Catalo
       AND p.product_type = 'music_box'
       AND p.status = 'active'
       AND p.published_at IS NOT NULL
+      AND p.storefront_state = 'available'
+      AND (pv.inventory_policy != 'deny' OR COALESCE((SELECT SUM(MAX(0,on_hand_quantity-reserved_quantity-safety_stock_quantity)) FROM inventory_levels WHERE variant_id=pv.id),0)>0)
   `,
     )
     .bind(...slugs)
@@ -287,6 +290,7 @@ function riskAssessmentStatement(
 export async function createWebsiteOrder(
   db: D1Database,
   input: WebsiteOrderInput,
+  authorize?: () => Promise<void>,
 ): Promise<WebsiteOrderResult> {
   const itemsBySlug = new Map<string, number>();
   for (const item of input.items) {
@@ -314,6 +318,9 @@ export async function createWebsiteOrder(
       notes: input.customer.notes.trim(),
     },
     paymentMethod: input.paymentMethod,
+    paymentProvider: input.paymentProvider ?? null,
+    shippingQuoteId: input.shippingQuoteId ?? null,
+    expectedTotalBani: input.expectedTotalBani ?? null,
     shippingOption: input.shippingOption,
     checkoutConsentVersion: input.checkoutConsentVersion,
     items: normalizedItems,
@@ -321,6 +328,7 @@ export async function createWebsiteOrder(
   const requestHash = await sha256(JSON.stringify(normalizedRequest));
   const existing = await findExistingOrder(db, input.idempotencyKey, requestHash);
   if (existing) return existing;
+  await authorize?.();
 
   const catalogItems = await loadCatalogItems(
     db,
@@ -358,8 +366,31 @@ export async function createWebsiteOrder(
   const subtotalBani = pricedItems.reduce((sum, item) => sum + item.lineSubtotalBani, 0);
   const discountBani = pricedItems.reduce((sum, item) => sum + item.lineDiscountBani, 0);
   const productsTotalBani = subtotalBani - discountBani;
-  const shipping = await loadShippingPrice(db, productsTotalBani, input.shippingOption);
+  if (input.shippingOption === "easybox")
+    throw new CheckoutError("Alege livrarea prin curier la adresă.", 409);
+  let shipping = await loadShippingPrice(db, productsTotalBani, input.shippingOption);
+  if (input.shippingQuoteId) {
+    const quote = await db
+      .prepare(
+        "SELECT amount_bani,request_hash FROM shipping_quotes WHERE id=?1 AND order_id IS NULL AND expires_at>?2 AND currency='RON'",
+      )
+      .bind(input.shippingQuoteId, new Date().toISOString())
+      .first<{ amount_bani: number; request_hash: string }>();
+    if (!quote || quote.request_hash !== (await shippingFingerprint(input, productsTotalBani)))
+      throw new CheckoutError(
+        "Oferta de livrare a expirat sau datele s-au schimbat. Recalculează livrarea.",
+        409,
+      );
+    shipping = { amountBani: quote.amount_bani, pending: false };
+  }
+  if (input.paymentMethod === "card" && shipping.pending)
+    throw new CheckoutError("Costul livrării trebuie confirmat înainte de plata online.", 409);
   const totalBani = productsTotalBani + shipping.amountBani;
+  if (input.expectedTotalBani != null && input.expectedTotalBani !== totalBani)
+    throw new CheckoutError(
+      "Prețul sau livrarea s-au actualizat. Reîncarcă pagina și verifică noul total înainte de a comanda.",
+      409,
+    );
   const now = new Date();
   const nowIso = now.toISOString();
   const orderId = crypto.randomUUID();
@@ -450,14 +481,14 @@ export async function createWebsiteOrder(
         subtotal_bani, discount_bani, shipping_bani, tax_bani, total_bani,
         customer_name, customer_email, customer_phone_e164, customer_note, internal_note,
         payment_method_requested, shipping_option_requested, checkout_consent_version,
-        placed_at, created_at, updated_at
+        placed_at, created_at, updated_at, payment_provider_requested, shipping_quote_id
       ) VALUES (
         ?1, ?2, ?3, ?4, 'channel_website', ?5,
         'pending', 'unpaid', 'unfulfilled', ?6,
         ?7, ?8, ?9, 0, ?10,
         ?11, ?12, ?13, ?14, ?15,
         ?16, ?17, ?18,
-        ?19, ?19, ?19
+        ?19, ?19, ?19, ?20, ?21
       )
     `,
       )
@@ -483,6 +514,8 @@ export async function createWebsiteOrder(
         input.shippingOption,
         input.checkoutConsentVersion,
         nowIso,
+        input.paymentMethod === "card" ? (input.paymentProvider ?? "stripe") : null,
+        input.shippingQuoteId ?? null,
       ),
     db
       .prepare(
@@ -679,6 +712,14 @@ export async function createWebsiteOrder(
   } catch (error) {
     const racedOrder = await findExistingOrder(db, input.idempotencyKey, requestHash);
     if (racedOrder) return racedOrder;
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("INSUFFICIENT_STOCK") || message.includes("PRODUCT_UNAVAILABLE"))
+      throw new CheckoutError(
+        "Stocul s-a schimbat. Verifică produsele și cantitățile din coș.",
+        409,
+      );
+    if (message.includes("SHIPPING_QUOTE_EXPIRED"))
+      throw new CheckoutError("Oferta de livrare a expirat. Recalculează livrarea.", 409);
     throw error;
   }
 
@@ -696,4 +737,25 @@ export async function markOrderNotificationQueued(db: D1Database, outboxId: stri
     )
     .bind(outboxId)
     .run();
+}
+
+/** Quote pricing uses the same catalog availability and promotion rules as order placement. */
+export async function checkoutSubtotal(db: D1Database, items: WebsiteOrderInput["items"]) {
+  const merged = new Map<string, number>();
+  for (const item of items)
+    merged.set(item.productId, (merged.get(item.productId) ?? 0) + item.quantity);
+  const catalog = await loadCatalogItems(db, [...merged.keys()]);
+  if (catalog.length !== merged.size || catalog.some((p) => p.currency !== STORE_CURRENCY))
+    throw new CheckoutError("Un produs nu mai este disponibil.", 409);
+  const promotion = await loadBasketPromotion(
+    db,
+    [...merged.values()].reduce((a, b) => a + b, 0),
+  );
+  return catalog.reduce(
+    (sum, p) =>
+      sum +
+      (promotion ? Math.min(p.unitPriceBani, promotion.unitPriceBani) : p.unitPriceBani) *
+        merged.get(p.slug)!,
+    0,
+  );
 }

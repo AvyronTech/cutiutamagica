@@ -1,3 +1,4 @@
+import { localMediaPreview } from "../media-policy";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 
@@ -49,6 +50,7 @@ type MediaRow = {
   public_access: number;
   marketing_approved: number;
   rights_status: string;
+  duration_seconds: number | null;
 };
 
 class ExperienceError extends Error {
@@ -91,7 +93,7 @@ async function requireMedia(
 ): Promise<MediaRow> {
   const media = await env.DB.prepare(
     `
-    SELECT id, media_type, usage_type, status, public_access, marketing_approved, rights_status
+    SELECT id, media_type, usage_type, status, public_access, marketing_approved, rights_status, duration_seconds
     FROM product_media
     WHERE id = ?1 AND product_id = ?2 AND status != 'archived'
   `,
@@ -109,8 +111,8 @@ async function requireMedia(
     mustBePublic &&
     (media.status !== "active" ||
       media.public_access !== 1 ||
-      media.marketing_approved !== 1 ||
-      media.rights_status !== "cleared")
+      (!localMediaPreview(env) &&
+        (media.marketing_approved !== 1 || media.rights_status !== "cleared")))
   ) {
     throw new ExperienceError(
       "MEDIA_NOT_PUBLISHABLE",
@@ -180,7 +182,16 @@ async function saveAudio(
     throw new ExperienceError("INVALID_AUDIO_STATE", 409, "Audio public necesită un fișier activ.");
   }
   if (data.mediaId) {
-    await requireMedia(env, productId, data.mediaId, ["audio"], data.publicEnabled);
+    const media = await requireMedia(env, productId, data.mediaId, ["audio"], data.publicEnabled);
+    if (
+      data.publicEnabled &&
+      (media.duration_seconds == null || media.duration_seconds < 15 || media.duration_seconds > 30)
+    )
+      throw new ExperienceError(
+        "INVALID_AUDIO_DURATION",
+        409,
+        "Încarcă un fragment audio verificat de 15–30 secunde.",
+      );
   }
 
   const nextVersion = data.expectedVersion + 1;

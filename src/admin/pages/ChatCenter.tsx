@@ -368,14 +368,14 @@ export default function ChatCenter() {
               </span>
             </label>
             <label className="space-y-1.5 text-sm text-slate-300">
-              Poziție inițială
+              Latura inițială a chatului
               <select
                 name="position"
                 defaultValue={center.data.settings.position}
                 className={input}
               >
                 <option value="right">Dreapta</option>
-                <option value="left">Stânga</option>
+                <option value="left">Stânga · mijlocul ecranului</option>
               </select>
             </label>
             <label className="space-y-1.5 text-sm text-slate-300">

@@ -1,3 +1,10 @@
+import { ProductReviews } from "@/components/site/ProductReviews";
+import { getPublicReviews } from "@/lib/reviews.functions";
+import { ProductDiscovery } from "@/components/site/ProductDiscovery";
+import { safeJsonLd } from "@/lib/product-discovery";
+import { ProductWorld } from "@/components/site/ProductWorld";
+import { animateIntoCart } from "@/lib/cart-flight";
+import { ProductInterest } from "@/components/site/ProductInterest";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
@@ -12,7 +19,7 @@ import {
   Rotate3D,
   Hourglass,
 } from "lucide-react";
-import { getProduct, isAvailable, PRICE, MAX_QTY } from "@/data/products";
+import { isAvailable, PRICE, MAX_QTY } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { catalogProducts } from "@/lib/catalog-products";
 import { useShop } from "@/store/shop";
@@ -34,47 +41,62 @@ export const Route = createFileRoute("/produs/$id")({
     const pricing = await getStorePricing();
     const product = catalogProducts(pricing.catalog).find((p) => p.id === params.id);
     if (!product) throw notFound();
-    return { product };
+    return { product, reviews: await getPublicReviews({ data: { slug: params.id } }) };
   },
   head: ({ loaderData, params }) => {
     if (!loaderData) return {};
-    const url = `https://cutiutamagica.eu/produs/${params.id}`;
+    const url = `https://cutiutamagica.eu/produs/${encodeURIComponent(params.id)}`;
     const image = loaderData.product.image.startsWith("http")
       ? loaderData.product.image
       : `https://cutiutamagica.eu${loaderData.product.image}`;
-    const price = String(loaderData.product.price ?? PRICE);
+    const price =
+      !isAvailable(loaderData.product) || loaderData.product.price == null
+        ? undefined
+        : String(loaderData.product.price);
     const absolute = (src: string) =>
       src.startsWith("http") ? src : `https://cutiutamagica.eu${src}`;
-    const images = loaderData.product.source
-      ? [image, ...loaderData.product.gallery.map((entry) => absolute(entry.src))]
-      : [image];
+    const images = [
+      ...new Set([image, ...loaderData.product.gallery.map((entry) => absolute(entry.src))]),
+    ];
     const inStock = isAvailable(loaderData.product);
-    const description = `${loaderData.product.tagline} Cutiuță muzicală din lemn, cu manivelă și mecanism manual${loaderData.product.melody ? `, melodia ${loaderData.product.melody}` : ""}.`;
+    const description =
+      loaderData.product.seoDescription ||
+      `${loaderData.product.tagline} Cutiuță muzicală din lemn, cu manivelă și mecanism manual${loaderData.product.melody ? `, melodia ${loaderData.product.melody}` : ""}.`;
     return {
       meta: [
-        { title: `${loaderData.product.name} — Cutiuța Magică` },
+        { title: loaderData.product.seoTitle || `${loaderData.product.name} — Cutiuța Magică` },
         { name: "description", content: description },
+        { name: "robots", content: "index, follow, max-image-preview:large" },
+        { property: "og:image:alt", content: loaderData.product.name },
         { property: "og:title", content: loaderData.product.name },
         { property: "og:description", content: description },
         { property: "og:image", content: image },
         { name: "twitter:image", content: image },
         { property: "og:url", content: url },
         { property: "og:type", content: "product" },
-        { property: "product:price:amount", content: price },
-        { property: "product:price:currency", content: "RON" },
+        ...(price
+          ? [
+              { property: "product:price:amount", content: price },
+              { property: "product:price:currency", content: "RON" },
+            ]
+          : []),
         { property: "product:availability", content: inStock ? "in stock" : "out of stock" },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "Product",
+            "@id": `${url}#product`,
+            mainEntityOfPage: { "@type": "WebPage", "@id": url },
             name: loaderData.product.name,
             sku: loaderData.product.sku,
             image: images,
-            description,
+            description: [loaderData.product.description, loaderData.product.discovery?.intro]
+              .filter(Boolean)
+              .join(" "),
             category: loaderData.product.category,
             material: "Lemn",
             brand: { "@type": "Brand", name: "Cutiuța Magică" },
@@ -85,32 +107,34 @@ export const Route = createFileRoute("/produs/$id")({
                 : []),
             ],
             url,
-            offers: {
-              "@type": "Offer",
-              price,
-              priceCurrency: "RON",
-              availability: inStock
-                ? "https://schema.org/InStock"
-                : "https://schema.org/OutOfStock",
-              itemCondition: "https://schema.org/NewCondition",
-              url,
-              seller: { "@type": "Organization", name: "Cutiuța Magică" },
-              // Exact ce spune /retur: retragere în 14 zile, returul prin curier, cost suportat de client.
-              hasMerchantReturnPolicy: {
-                "@type": "MerchantReturnPolicy",
-                applicableCountry: "RO",
-                returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
-                merchantReturnDays: 14,
-                returnMethod: "https://schema.org/ReturnByMail",
-                returnFees: "https://schema.org/ReturnShippingFees",
-                merchantReturnLink: "https://cutiutamagica.eu/retur",
-              },
-            },
+            offers: price
+              ? {
+                  "@type": "Offer",
+                  price,
+                  priceCurrency: "RON",
+                  availability: inStock
+                    ? "https://schema.org/InStock"
+                    : "https://schema.org/OutOfStock",
+                  itemCondition: "https://schema.org/NewCondition",
+                  url,
+                  seller: { "@type": "Organization", name: "Cutiuța Magică" },
+                  // Exact ce spune /retur: retragere în 14 zile, returul prin curier, cost suportat de client.
+                  hasMerchantReturnPolicy: {
+                    "@type": "MerchantReturnPolicy",
+                    applicableCountry: "RO",
+                    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+                    merchantReturnDays: 14,
+                    returnMethod: "https://schema.org/ReturnByMail",
+                    returnFees: "https://schema.org/ReturnShippingFees",
+                    merchantReturnLink: "https://cutiutamagica.eu/retur",
+                  },
+                }
+              : undefined,
           }),
         },
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
@@ -136,8 +160,12 @@ export const Route = createFileRoute("/produs/$id")({
 });
 
 function ProductPage() {
-  const { product } = Route.useLoaderData();
-  const { addToCart, products } = useShop();
+  const { product: loadedProduct, reviews } = Route.useLoaderData();
+  const { addToCart, products, totalQty } = useShop();
+  const product = products.find((p) => p.id === loadedProduct.id) ?? {
+    ...loadedProduct,
+    availability: "out_of_stock" as const,
+  };
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
   const [qty, setQty] = useState(1);
@@ -175,18 +203,10 @@ function ProductPage() {
         .slice(0, 4),
     [product.id, product.category, products],
   );
-  const remoteGallery =
-    experienceQuery.data?.gallery.map((image) => ({
-      src: image.url,
-      label: image.alt_text || image.title || product.name,
-      position: "center",
-    })) ?? [];
-  // Produsele preluate din anunțurile Vinted își păstrează galeria de acolo;
-  // restul folosesc media din admin când există.
-  const gallery = !product.source && remoteGallery.length > 0 ? remoteGallery : product.gallery;
+  const gallery = product.gallery;
   const available = isAvailable(product);
   const [zoomOpen, setZoomOpen] = useState(false);
-  const currentImage = gallery[active] ?? gallery[0];
+  const currentImage = gallery[active] ?? gallery[0] ?? { src: product.image, label: product.name };
   const spin = experienceQuery.data?.spin360 ?? null;
   const has360 = Boolean(
     spin &&
@@ -196,7 +216,7 @@ function ProductPage() {
   const spinThumb = spin ? (spin.coverUrl ?? spin.frames[0]?.url ?? null) : null;
 
   return (
-    <div>
+    <ProductWorld product={product}>
       <div className="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
         <div className="perspective-1000">
           {show360 && spin && has360 ? (
@@ -245,9 +265,7 @@ function ProductPage() {
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[color:var(--gold)]/25"
               />
-              {experienceQuery.data?.audio ? (
-                <ProductAudioOverlay audio={experienceQuery.data.audio} />
-              ) : product.melody ? (
+              {product.melody ? (
                 <motion.div
                   style={{ transform: "translateZ(60px)" }}
                   className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
@@ -322,6 +340,12 @@ function ProductPage() {
           </p>
           <h1 className="font-display text-4xl md:text-5xl mt-2">{product.name}</h1>
           <p className="mt-3 text-lg text-muted-foreground">{product.tagline}</p>
+          {experienceQuery.data?.audio && (
+            <ProductAudioOverlay
+              key={experienceQuery.data.audio.media_id}
+              audio={experienceQuery.data.audio}
+            />
+          )}
 
           {available ? (
             <div className="mt-6 flex items-baseline gap-3">
@@ -335,12 +359,17 @@ function ProductPage() {
             <div className="mt-6 rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 p-4">
               <p className="inline-flex items-center gap-2 font-display text-2xl">
                 <Hourglass className="h-5 w-5 text-[color:var(--gold)]" aria-hidden />
-                Disponibilă în curând
+                {product.availability === "out_of_stock"
+                  ? "Revine în colecție"
+                  : "Disponibilă în curând"}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Pregătim acest model pentru magazin. Între timp poți alege una dintre cutiuțele
                 disponibile acum.
               </p>
+              <div className="mt-4">
+                <ProductInterest product={product} />
+              </div>
               <Link
                 to="/produse"
                 className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
@@ -371,9 +400,10 @@ function ProductPage() {
                   </button>
                 </div>
                 <button
-                  onClick={() => {
-                    addToCart(product.id, qty);
-                    notifyAddedToCart(product.name, qty, () => navigate({ to: "/comanda" }));
+                  onClick={(e) => {
+                    const added = addToCart(product.id, qty);
+                    animateIntoCart(e.currentTarget, product.image, added);
+                    notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
                   }}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
                 >
@@ -383,7 +413,7 @@ function ProductPage() {
             )}
           </div>
 
-          {available && (
+          {available && totalQty > 0 && (
             <Link
               to="/comanda"
               className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full border border-primary/40 px-6 py-3 text-sm font-medium hover:bg-primary/5"
@@ -422,6 +452,9 @@ function ProductPage() {
         </div>
       </div>
 
+      <ProductDiscovery product={product} />
+      <ProductReviews key={product.id} slug={product.id} name={product.name} initial={reviews} />
+
       {experienceQuery.data?.animation && (
         <ProductAnimation animation={experienceQuery.data.animation} productName={product.name} />
       )}
@@ -431,7 +464,7 @@ function ProductPage() {
           <h2 className="font-display text-3xl mb-6 text-center">Și acestea îți pot plăcea</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {related.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
+              <ProductCard key={p.id} product={p} index={i} variant="solid" />
             ))}
           </div>
         </section>
@@ -448,6 +481,6 @@ function ProductPage() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </ProductWorld>
   );
 }

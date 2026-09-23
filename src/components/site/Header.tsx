@@ -1,15 +1,33 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ShoppingBag } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useShop } from "@/store/shop";
-import { ScrollFuse } from "./ScrollFuse";
+
 import { BrandMark } from "./BrandMark";
 import { SoundToggle } from "./SoundToggle";
 import { MiniCart } from "./MiniCart";
+import { FloatingCartButton } from "./FloatingCartButton";
+import type { WidgetSide } from "@/lib/floating-widgets";
 
 export function Header() {
   const { totalQty } = useShop();
   const [cartOpen, setCartOpen] = useState(false);
+  const [cartSide, setCartSide] = useState<WidgetSide>("right");
+  const cartTrigger = useRef<HTMLButtonElement | null>(null);
+  const headerCartTrigger = useRef<HTMLButtonElement | null>(null);
+  const closeCart = useCallback(() => setCartOpen(false), []);
+  const openCart = (trigger: HTMLButtonElement, side: WidgetSide) => {
+    cartTrigger.current = trigger;
+    setCartSide(side);
+    window.dispatchEvent(new Event("cutiuta:cart-open"));
+    setCartOpen(true);
+  };
+  const restoreCartFocus = () => {
+    const trigger = cartTrigger.current?.isConnected
+      ? cartTrigger.current
+      : headerCartTrigger.current;
+    trigger?.focus({ preventScroll: true });
+  };
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   // Panoul nu are ce căuta deschis după o navigare.
@@ -42,7 +60,6 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 isolate" data-compact={compact || undefined}>
-      <ScrollFuse />
       <div
         className={`relative overflow-hidden border-b border-[color:var(--gold)]/35 bg-[color:var(--cream)]/72 shadow-[0_12px_34px_-24px_rgba(72,38,16,0.72)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,box-shadow] duration-300 supports-[backdrop-filter]:bg-[color:var(--cream)]/55 ${
           compact
@@ -116,10 +133,10 @@ export function Header() {
               Produse
             </Link>
             <Link
-              to="/poveste"
+              to="/despre-cutiuta"
               className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
             >
-              Poveste
+              Despre
             </Link>
           </nav>
 
@@ -129,9 +146,11 @@ export function Header() {
             <button
               type="button"
               aria-label={`Coș de cumpărături, ${totalQty} produse`}
+              ref={headerCartTrigger}
+              data-cart-target
               aria-expanded={cartOpen}
               aria-haspopup="dialog"
-              onClick={() => setCartOpen((open) => !open)}
+              onClick={(event) => (cartOpen ? closeCart() : openCart(event.currentTarget, "right"))}
               className={`group relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full border bg-white/45 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.75),0_8px_22px_-12px_rgba(88,48,20,.75)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] ${
                 cartOpen
                   ? "border-[color:var(--gold)] bg-white/75"
@@ -155,7 +174,13 @@ export function Header() {
         </div>
       </div>
 
-      <MiniCart open={cartOpen} onClose={() => setCartOpen(false)} />
+      <MiniCart
+        open={cartOpen}
+        onClose={closeCart}
+        side={cartSide}
+        onRestoreFocus={restoreCartFocus}
+      />
+      <FloatingCartButton pathname={pathname} open={cartOpen} onOpen={openCart} />
     </header>
   );
 }

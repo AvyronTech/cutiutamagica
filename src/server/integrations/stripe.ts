@@ -4,6 +4,7 @@ import {
   hmacHex,
   ProviderError,
   requiredSecret,
+  readProviderJson,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
 import { credential } from "@/server/services/growth-settings";
@@ -15,7 +16,6 @@ export interface StripeCheckoutInput {
   amountBani: number;
   currency: string;
   description: string;
-  publicToken: string;
 }
 
 type StripeSession = { id?: string; url?: string; payment_intent?: string };
@@ -27,19 +27,14 @@ export async function createStripeCheckoutSession(
   const key = requiredSecret((await credential(env, "stripe")) ?? undefined, "STRIPE_SECRET_KEY");
   const params = new URLSearchParams();
   params.set("mode", "payment");
-  params.set(
-    "success_url",
-    `${env.PUBLIC_SITE_URL}/comanda?payment=success&order=${input.orderNumber}`,
-  );
-  params.set(
-    "cancel_url",
-    `${env.PUBLIC_SITE_URL}/comanda?payment=cancelled&order=${input.orderNumber}`,
-  );
+  params.set("success_url", `${env.PUBLIC_SITE_URL}/comanda?payment=return`);
+  params.set("cancel_url", `${env.PUBLIC_SITE_URL}/comanda?payment=cancelled`);
   params.set("customer_email", input.customerEmail);
   params.set("client_reference_id", input.orderId);
   params.set("metadata[order_id]", input.orderId);
   params.set("metadata[order_number]", input.orderNumber);
-  params.set("metadata[public_token]", input.publicToken);
+  params.set("payment_method_types[0]", "card");
+  params.set("locale", "ro");
   params.set("line_items[0][quantity]", "1");
   params.set("line_items[0][price_data][currency]", input.currency.toLowerCase());
   params.set("line_items[0][price_data][unit_amount]", String(input.amountBani));
@@ -47,6 +42,7 @@ export async function createStripeCheckoutSession(
   params.set("payment_intent_data[metadata][order_id]", input.orderId);
   const response = await fetchWithTimeout("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
+    redirect: "error",
     headers: {
       authorization: `Bearer ${key}`,
       "content-type": "application/x-www-form-urlencoded",
@@ -54,7 +50,7 @@ export async function createStripeCheckoutSession(
     },
     body: params,
   });
-  const result = (await response.json().catch(() => null)) as StripeSession & {
+  const result = (await readProviderJson(response).catch(() => null)) as StripeSession & {
     error?: { message?: string; code?: string };
   };
   if (!response.ok || !result?.id || !result.url) {
@@ -79,15 +75,14 @@ export async function verifyStripeWebhook(
 ): Promise<boolean> {
   const webhookSecret = requiredSecret(secret, "STRIPE_WEBHOOK_SECRET");
   if (!signatureHeader) return false;
-  const values = Object.fromEntries(
-    signatureHeader.split(",").map((entry) => {
-      const [key, value] = entry.split("=", 2);
-      return [key, value];
-    }),
+  const fields = signatureHeader.split(",").map((v) => v.trim().split("=", 2));
+  const timestampText = fields.find(([k]) => k === "t")?.[1];
+  if (!timestampText || !/^\d+$/.test(timestampText)) return false;
+  const timestamp = Number(timestampText);
+  if (!Number.isSafeInteger(timestamp) || Math.abs(Date.now() / 1000 - timestamp) > 300)
+    return false;
+  const expected = await hmacHex(webhookSecret, `${timestampText}.${payload}`);
+  return fields.some(
+    ([k, v]) => k === "v1" && /^[a-f0-9]{64}$/.test(v ?? "") && constantTimeEqual(expected, v),
   );
-  if (!values.t || !values.v1) return false;
-  const timestamp = Number(values.t);
-  if (!Number.isFinite(timestamp) || Math.abs(Date.now() / 1000 - timestamp) > 300) return false;
-  const expected = await hmacHex(webhookSecret, `${values.t}.${payload}`);
-  return constantTimeEqual(expected, values.v1);
 }

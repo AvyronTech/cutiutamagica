@@ -32,7 +32,12 @@ function brandedErrorResponse(): Response {
   });
 }
 
-function withOperationalHeaders(request: Request, response: Response, requestId: string): Response {
+function withOperationalHeaders(
+  request: Request,
+  response: Response,
+  requestId: string,
+  env: Env,
+): Response {
   const headers = new Headers(response.headers);
   headers.set("x-content-type-options", "nosniff");
   headers.set("referrer-policy", "strict-origin-when-cross-origin");
@@ -42,6 +47,8 @@ function withOperationalHeaders(request: Request, response: Response, requestId:
 
   const url = new URL(request.url);
   if (
+    env.APP_ENV !== "production" ||
+    url.pathname === "/comanda" ||
     url.hostname === API_HOSTNAME ||
     url.hostname === APP_HOSTNAME ||
     url.pathname.startsWith("/api/") ||
@@ -149,6 +156,7 @@ export default {
           request,
           Response.redirect(hostRoute.location, 308),
           requestId,
+          env,
         );
         recordRequestMetric(env, request, redirect, startedAt);
         return redirect;
@@ -163,6 +171,7 @@ export default {
             health: "https://api.cutiutamagica.eu/v1/health",
           }),
           requestId,
+          env,
         );
         recordRequestMetric(env, request, response, startedAt);
         return response;
@@ -172,6 +181,7 @@ export default {
           request,
           jsonResponse({ error: "not_found", requestId }, 404),
           requestId,
+          env,
         );
         recordRequestMetric(env, request, response, startedAt);
         return response;
@@ -182,21 +192,21 @@ export default {
 
       const adminRedirect = await guardAdminPage(request, env.DB);
       if (adminRedirect) {
-        const response = withOperationalHeaders(request, adminRedirect, requestId);
+        const response = withOperationalHeaders(request, adminRedirect, requestId, env);
         recordRequestMetric(env, request, response, startedAt);
         return response;
       }
 
       const mediaResponse = await handlePublicMediaRequest(request, env);
       if (mediaResponse) {
-        const response = withOperationalHeaders(request, mediaResponse, requestId);
+        const response = withOperationalHeaders(request, mediaResponse, requestId, env);
         recordRequestMetric(env, request, response, startedAt);
         return response;
       }
 
       const apiResponse = await handleApiRequest(request, env, ctx);
       if (apiResponse) {
-        const response = withOperationalHeaders(request, apiResponse, requestId);
+        const response = withOperationalHeaders(request, apiResponse, requestId, env);
         recordRequestMetric(env, request, response, startedAt);
         return response;
       }
@@ -204,12 +214,17 @@ export default {
       const handler = await getServerEntry();
       const rendered = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(rendered);
-      const response = withOperationalHeaders(request, normalized, requestId);
+      const response = withOperationalHeaders(request, normalized, requestId, env);
       recordRequestMetric(env, request, response, startedAt);
       return response;
     } catch (error) {
       console.error("request.failed", { requestId, error });
-      const fallback = withOperationalHeaders(originalRequest, brandedErrorResponse(), requestId);
+      const fallback = withOperationalHeaders(
+        originalRequest,
+        brandedErrorResponse(),
+        requestId,
+        env,
+      );
       recordRequestMetric(env, originalRequest, fallback, startedAt);
       return fallback;
     }

@@ -1,4 +1,14 @@
 export type CommerceEnv = Env & {
+  GOOGLE_MERCHANT_ACCESS_TOKEN?: string;
+  NETOPIA_API_KEY?: string;
+  NETOPIA_PUBLIC_KEY?: string;
+  REVOLUT_MERCHANT_SECRET_KEY?: string;
+  REVOLUT_MERCHANT_WEBHOOK_SECRET?: string;
+  OBLIO_CLIENT_SECRET?: string;
+  EMAG_API_CREDENTIALS?: string;
+  TRENDYOL_API_CREDENTIALS?: string;
+  OLX_ACCESS_TOKEN?: string;
+  OKAZII_API_KEY?: string;
   INTEGRATION_ENCRYPTION_KEY?: string;
   BRAVE_SEARCH_API_KEY?: string;
   GOOGLE_ACCESS_TOKEN?: string;

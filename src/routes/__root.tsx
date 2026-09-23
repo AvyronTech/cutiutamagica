@@ -1,3 +1,5 @@
+import { ContextualMessages } from "@/components/site/ContextualMessages";
+import { MotionConfig } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -74,7 +76,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#0b1120" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Cutiuta Admin" },
+      { name: "apple-mobile-web-app-title", content: "Cutiuța Magică" },
       { title: "Cutiuța Magică — Cutiuțe muzicale din lemn" },
       {
         name: "description",
@@ -98,7 +100,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "Organization",
+          "@type": "OnlineStore",
+          "@id": "https://cutiutamagica.eu/#organization",
           name: "Cutiuța Magică",
           url: "https://cutiutamagica.eu",
           logo: "https://cutiutamagica.eu/icon-512.png",
@@ -116,6 +119,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
+          "@id": "https://cutiutamagica.eu/#website",
+          publisher: { "@id": "https://cutiutamagica.eu/#organization" },
           name: "Cutiuța Magică",
           url: "https://cutiutamagica.eu",
           inLanguage: "ro-RO",
@@ -158,71 +163,74 @@ function RootComponent() {
   const isHome = pathname === "/";
   return (
     <QueryClientProvider client={queryClient}>
-      <ShopProvider pricing={pricing}>
-        {isHome && <StoryLoadingScreen />}
-        {isChrome && <Header />}
-        {showBack && (
-          <div className="max-w-7xl mx-auto px-4 pt-4">
-            <Link
-              to={isProductPage ? "/produse" : "/"}
-              className="group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5 text-sm font-medium text-[color:var(--wood-dark)] bg-[color:var(--cream)]/55 backdrop-blur-md border border-[color:var(--gold)]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:bg-[color:var(--cream)]/85 hover:border-[color:var(--gold)] hover:-translate-y-0.5 transition-all"
-            >
-              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[color:var(--cream)] border border-[color:var(--gold)]/50 group-hover:-translate-x-0.5 transition-transform">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-3.5 h-3.5"
-                >
-                  <path d="M19 12H5" />
-                  <path d="M12 19l-7-7 7-7" />
-                </svg>
-              </span>
-              {isProductPage ? "Înapoi la cutiuțe" : "Înapoi acasă"}
-            </Link>
-          </div>
-        )}
-        <main className="min-h-[60vh]">
-          <Outlet />
-        </main>
-        {isChrome && <Footer />}
-        {isChrome && <SideScrollMagic />}
-        {isChrome && <ChatWidget />}
-        {isChrome ? (
-          <>
-            <Toaster
-              position="top-center"
-              offset={92}
-              gap={10}
-              visibleToasts={3}
-              style={
-                {
-                  "--normal-bg": "oklch(0.21 0.035 40 / 0.94)",
-                  "--normal-border": "oklch(0.74 0.14 78 / 0.38)",
-                  "--normal-text": "oklch(0.96 0.02 80)",
-                  "--border-radius": "16px",
-                } as React.CSSProperties
-              }
-              toastOptions={{
-                classNames: {
-                  toast:
-                    "!backdrop-blur-xl !shadow-[0_18px_44px_-18px_oklch(0.2_0.05_40/0.75),inset_0_1px_0_oklch(0.95_0.05_85/0.12)] !font-body",
-                  title: "!font-display !text-[1.05rem] !tracking-tight",
-                  description: "!text-[oklch(0.96_0.02_80/0.72)]",
-                  actionButton:
-                    "!rounded-full !bg-[linear-gradient(135deg,oklch(0.92_0.09_85),oklch(0.78_0.14_62))] !text-[oklch(0.25_0.04_40)] !font-medium",
-                  icon: "!text-[oklch(0.8_0.15_78)]",
-                },
-              }}
-            />
-          </>
-        ) : (
-          <Toaster position="top-center" richColors />
-        )}
-      </ShopProvider>
+      <MotionConfig reducedMotion="user">
+        <ShopProvider pricing={pricing}>
+          {isHome && <StoryLoadingScreen />}
+          {isChrome && <Header />}
+          {showBack && (
+            <div className="max-w-7xl mx-auto px-4 pt-4">
+              <Link
+                to={isProductPage ? "/produse" : "/"}
+                className="group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5 text-sm font-medium text-[color:var(--wood-dark)] bg-[color:var(--cream)]/55 backdrop-blur-md border border-[color:var(--gold)]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:bg-[color:var(--cream)]/85 hover:border-[color:var(--gold)] hover:-translate-y-0.5 transition-all"
+              >
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[color:var(--cream)] border border-[color:var(--gold)]/50 group-hover:-translate-x-0.5 transition-transform">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-3.5 h-3.5"
+                  >
+                    <path d="M19 12H5" />
+                    <path d="M12 19l-7-7 7-7" />
+                  </svg>
+                </span>
+                {isProductPage ? "Înapoi la cutiuțe" : "Înapoi acasă"}
+              </Link>
+            </div>
+          )}
+          <main className="min-h-[60vh]">
+            <Outlet />
+          </main>
+          {isChrome && <Footer />}
+          {isChrome && <ContextualMessages />}
+          {isChrome && <SideScrollMagic />}
+          {isChrome && <ChatWidget />}
+          {isChrome ? (
+            <>
+              <Toaster
+                position="top-center"
+                offset={92}
+                gap={10}
+                visibleToasts={3}
+                style={
+                  {
+                    "--normal-bg": "oklch(0.21 0.035 40 / 0.94)",
+                    "--normal-border": "oklch(0.74 0.14 78 / 0.38)",
+                    "--normal-text": "oklch(0.96 0.02 80)",
+                    "--border-radius": "16px",
+                  } as React.CSSProperties
+                }
+                toastOptions={{
+                  classNames: {
+                    toast:
+                      "!backdrop-blur-xl !shadow-[0_18px_44px_-18px_oklch(0.2_0.05_40/0.75),inset_0_1px_0_oklch(0.95_0.05_85/0.12)] !font-body",
+                    title: "!font-display !text-[1.05rem] !tracking-tight",
+                    description: "!text-[oklch(0.96_0.02_80/0.72)]",
+                    actionButton:
+                      "!rounded-full !bg-[linear-gradient(135deg,oklch(0.92_0.09_85),oklch(0.78_0.14_62))] !text-[oklch(0.25_0.04_40)] !font-medium",
+                    icon: "!text-[oklch(0.8_0.15_78)]",
+                  },
+                }}
+              />
+            </>
+          ) : (
+            <Toaster position="top-center" richColors />
+          )}
+        </ShopProvider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

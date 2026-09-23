@@ -1,3 +1,4 @@
+import type { CheckoutOption } from "./checkout-settings";
 import { z } from "zod";
 
 export const PAYMENT_METHODS = ["cash_on_delivery", "card", "bank_transfer"] as const;
@@ -36,12 +37,12 @@ export interface CommercePublicConfig {
     taxId: string;
     vatStatus: string;
     countryCode: string;
-    profileComplete: boolean;
   };
-  currencies: { active: string[]; planned: string[] };
+  currencies: { active: string[] };
   payments: {
     card: { enabled: boolean; provider: "stripe" };
-    cashOnDelivery: { enabled: boolean; reviewMayApply: boolean };
+    options: CheckoutOption[];
+    cashOnDelivery: { enabled: boolean };
     bankTransfer: { enabled: boolean };
   };
   shipping: {
@@ -50,12 +51,7 @@ export interface CommercePublicConfig {
     standardPrice: number | null;
     lockerPrice: number | null;
     freeOver: number | null;
-    defaultWeightG: number;
-    defaultLengthCm: number;
-    defaultWidthCm: number;
-    defaultHeightCm: number;
     allowedCountries: string[];
-    internationalReady: boolean;
     currency: string;
     requiresConfirmation: boolean;
   };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Film, Pause, Play, Rotate3D } from "lucide-react";
-import { playTick } from "@/lib/sound";
+import { playTick, setProductAudioPlaying } from "@/lib/sound";
 import {
   decayVelocity,
   easeInOutCubic,
@@ -25,6 +25,7 @@ export type ProductExperience = {
     display_name: string | null;
     media_id: string;
     mime_type: string | null;
+    duration_seconds: number | null;
     url: string;
   } | null;
   spin360: {
@@ -59,46 +60,112 @@ export function useProductExperience(slug: string) {
   return useQuery({
     queryKey: ["product-experience", slug],
     queryFn: () => loadProductExperience(slug),
-    staleTime: 5 * 60_000,
+    staleTime: 0,
     retry: 1,
   });
 }
 
 export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExperience["audio"]> }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-
+  const [playing, setPlaying] = useState(false),
+    [time, setTime] = useState(0),
+    [error, setError] = useState("");
+  const [duration, setDuration] = useState(audio.duration_seconds ?? 0);
+  useEffect(() => {
+    const element = audioRef.current;
+    const pauseOthers = (e: Event) => {
+      if ((e as CustomEvent).detail !== element) element?.pause();
+    };
+    const hide = () => {
+      if (document.hidden) element?.pause();
+    };
+    window.addEventListener("cm:product-audio", pauseOthers);
+    document.addEventListener("visibilitychange", hide);
+    return () => {
+      element?.pause();
+      setProductAudioPlaying(false);
+      window.removeEventListener("cm:product-audio", pauseOthers);
+      document.removeEventListener("visibilitychange", hide);
+    };
+  }, [audio.url]);
   async function togglePlayback() {
     const element = audioRef.current;
     if (!element) return;
-    if (element.paused) {
-      await element.play();
-    } else {
+    if (!element.paused) {
       element.pause();
+      return;
+    }
+    setError("");
+    window.dispatchEvent(new CustomEvent("cm:product-audio", { detail: element }));
+    try {
+      await element.play();
+    } catch {
+      setError("Melodia nu s-a putut reda. Încearcă din nou.");
     }
   }
-
+  const stop = () => {
+    setPlaying(false);
+    setProductAudioPlaying(false);
+  };
   return (
-    <div className="absolute left-4 top-4 z-10 flex max-w-[calc(100%-2rem)] items-center gap-2 rounded-full border border-white/40 bg-background/90 px-2 py-1.5 shadow-soft backdrop-blur">
+    <div className="product-melody-player">
       <audio
         ref={audioRef}
         src={audio.url}
-        preload="metadata"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
+        preload="none"
+        onPlay={() => {
+          setPlaying(true);
+          setProductAudioPlaying(true);
+        }}
+        onPause={stop}
+        onEnded={stop}
+        onError={() => {
+          stop();
+          setError("Înregistrarea este momentan indisponibilă.");
+        }}
+        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => {
+          if (Number.isFinite(e.currentTarget.duration)) setDuration(e.currentTarget.duration);
+        }}
       />
       <button
         type="button"
-        onClick={togglePlayback}
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90"
-        aria-label={playing ? "Pauză melodie" : "Redă melodia"}
+        className="melody-play"
+        aria-label={playing ? "Pauză melodie" : "Ascultă melodia cutiuței"}
+        aria-pressed={playing}
+        onClick={() => void togglePlayback()}
       >
-        {playing ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
+        {playing ? <Pause size={22} /> : <Play size={22} />}
       </button>
-      <span className="truncate pr-2 text-xs font-medium">
-        {audio.display_name || "Ascultă melodia"}
-      </span>
+      <div className="melody-content">
+        <p className="scene-eyebrow">Ascultă înainte să alegi</p>
+        <strong>{audio.display_name || "Melodia acestei cutiuțe"}</strong>
+        <div className="melody-progress">
+          <input
+            type="range"
+            min={0}
+            max={duration || 30}
+            step={0.1}
+            value={Math.min(time, duration || 30)}
+            aria-label="Poziția în melodie"
+            disabled={!duration}
+            onChange={(e) => {
+              if (audioRef.current) {
+                audioRef.current.currentTime = Number(e.target.value);
+                setTime(Number(e.target.value));
+              }
+            }}
+          />
+          <span>
+            {Math.floor(time)} / {Math.round(duration || 30)} s
+          </span>
+        </div>
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

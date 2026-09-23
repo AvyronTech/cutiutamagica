@@ -40,6 +40,21 @@ function Privacy() {
           care poate fi retras fără afectarea comenzilor.
         </p>
       </LegalSection>
+      <LegalSection title="Recenzii și contul pentru recenzii">
+        <p>
+          Poți trimite o recenzie fără cont, folosind un nume afișat și o adresă de e-mail. După
+          aprobare, afișăm numele ales, textul, evaluarea, cutiuța și sursa recenziei. E-mailul și
+          observațiile moderatorilor nu sunt publice. Nu include în text date pe care nu dorești să
+          le vadă ceilalți vizitatori.
+        </p>
+        <p>
+          Contul opțional păstrează numele și e-mailul pentru recenziile următoare. Parola este
+          stocată sub formă de hash, iar sesiunea folosește un cookie de autentificare cu durată de
+          până la șapte zile. Acest cont nu oferă acces la comenzi sau la datele altor persoane.
+          Pentru corectarea sau retragerea unei recenzii, folosește datele de contact ale
+          magazinului.
+        </p>
+      </LegalSection>
       <LegalSection title="Serviciile care pot primi date">
         <p>
           Cloudflare asigură infrastructura și protecția magazinului. În funcție de serviciul activ
@@ -78,9 +93,9 @@ function Privacy() {
           pe termen nelimitat.
         </p>
         <p>
-          Accesul administrativ este limitat prin roluri și autentificare. Cheile de integrare
-          introduse în dashboard sunt criptate. Rapoartele lunare către proprietarii autorizați
-          conțin agregate operaționale și evită datele de identificare ale clienților.
+          Accesul la date este limitat la persoanele autorizate și protejat prin autentificare.
+          Rapoartele de activitate folosesc informații agregate și evită datele de identificare ale
+          clienților.
         </p>
       </LegalSection>
       <LegalSection title="Drepturile tale">

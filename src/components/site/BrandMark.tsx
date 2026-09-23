@@ -1,211 +1,106 @@
-import { memo, useEffect, useId, useRef } from "react";
+import { memo, useId } from "react";
 
-/**
- * Logo brand: cutiuță muzicală din lemn cu capac deschis, notă magică,
- * sclipiri și halou auriu — construit în adâncime reală.
- *
- * Desenul e împărțit în cinci straturi SVG suprapuse exact (același viewBox),
- * fiecare împins pe axa Z. Rigul care le ține se înclină după cursor, deci
- * straturile se deplasează diferit unele față de altele: parallax adevărat,
- * nu o umbră falsă. Totul e transform CSS pe compozitor — fără WebGL în header,
- * fără re-randare React pe cadru. La hover capacul se ridică și nota urcă.
- *
- * Aceeași semnătură ca înainte: <BrandMark className="..." />.
- */
 function BrandMarkImpl({ className = "" }: { className?: string }) {
-  const uid = useId().replace(/[:]/g, "");
-  const id = (name: string) => `bm-${uid}-${name}`;
-  const rigRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const rig = rigRef.current;
-    if (!rig) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduce.matches) return;
-
-    // Logo-ul „privește" spre cursor oriunde în pagină, damped, cu înclinare maximă mică.
-    const target = { x: 0, y: 0 };
-    const current = { x: 0, y: 0 };
-    let raf = 0;
-
-    const tick = () => {
-      current.x += (target.x - current.x) * 0.09;
-      current.y += (target.y - current.y) * 0.09;
-      rig.style.setProperty("--bm-ry", `${(current.x * 16).toFixed(2)}deg`);
-      rig.style.setProperty("--bm-rx", `${(current.y * -12).toFixed(2)}deg`);
-      if (Math.abs(target.x - current.x) + Math.abs(target.y - current.y) > 0.001) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        raf = 0;
-      }
-    };
-
-    const onMove = (e: PointerEvent) => {
-      const r = rig.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      // Normalizat la ~jumătate de viewport, apoi limitat — nu se răsucește niciodată brusc.
-      target.x = Math.max(-1, Math.min(1, (e.clientX - cx) / (window.innerWidth * 0.5)));
-      target.y = Math.max(-1, Math.min(1, (e.clientY - cy) / (window.innerHeight * 0.5)));
-      if (!raf) raf = requestAnimationFrame(tick);
-    };
-    const onLeave = () => {
-      target.x = 0;
-      target.y = 0;
-      if (!raf) raf = requestAnimationFrame(tick);
-    };
-
-    window.addEventListener("pointermove", onMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onLeave);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("pointermove", onMove);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
-
-  const layer = "absolute inset-0 h-full w-full overflow-visible";
-
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const wood = `${uid}-wood`,
+    metal = `${uid}-metal`,
+    glow = `${uid}-glow`;
   return (
-    <span className={`bm3d ${className}`} aria-hidden="true">
-      <span ref={rigRef} className="bm3d-rig">
-        {/* ── strat 0: halou + definițiile comune ── */}
-        <svg viewBox="0 0 64 64" className={`${layer} bm3d-halo`} fill="none">
-          <defs>
-            <linearGradient id={id("wood")} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="oklch(0.58 0.08 50)" />
-              <stop offset="55%" stopColor="oklch(0.42 0.06 45)" />
-              <stop offset="100%" stopColor="oklch(0.28 0.05 40)" />
-            </linearGradient>
-            <linearGradient id={id("lid")} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="oklch(0.64 0.09 55)" />
-              <stop offset="100%" stopColor="oklch(0.4 0.07 45)" />
-            </linearGradient>
-            {/* userSpaceOnUse, nu objectBoundingBox: o linie perfect verticală sau orizontală
-                are cutia de încadrare de lățime zero, iar gradientul relativ nu se mai
-                aplică — tija notei și brațul manivelei dispăreau cu totul. */}
-            <linearGradient
-              id={id("gold")}
-              x1="10"
-              y1="6"
-              x2="54"
-              y2="58"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0%" stopColor="oklch(0.96 0.15 92)" />
-              <stop offset="38%" stopColor="oklch(0.84 0.16 82)" />
-              <stop offset="47%" stopColor="oklch(0.97 0.08 92)" />
-              <stop offset="58%" stopColor="oklch(0.8 0.15 78)" />
-              <stop offset="100%" stopColor="oklch(0.58 0.13 58)" />
-            </linearGradient>
-            <radialGradient id={id("halo")} cx="50%" cy="42%" r="50%">
-              <stop offset="0%" stopColor="oklch(0.92 0.16 85)" stopOpacity="0.6" />
-              <stop offset="60%" stopColor="oklch(0.82 0.14 75)" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="oklch(0.7 0.12 65)" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <circle cx="32" cy="30" r="30" fill={`url(#${id("halo")})`} />
-        </svg>
-
-        {/* ── strat 1: corpul cutiei ── */}
-        <svg viewBox="0 0 64 64" className={`${layer} bm3d-body`} fill="none">
-          <rect
-            x="12"
-            y="34"
-            width="40"
-            height="20"
-            rx="3"
-            fill={`url(#${id("wood")})`}
-            stroke="oklch(0.2 0.04 40)"
-            strokeWidth="0.9"
-          />
-          <rect x="12" y="42" width="40" height="1.4" fill={`url(#${id("gold")})`} opacity="0.95" />
-          <rect
-            x="14"
-            y="35.5"
-            width="36"
-            height="1"
-            rx="0.5"
-            fill="oklch(0.8 0.08 70)"
-            opacity="0.38"
-          />
-          {/* manivela */}
-          <circle
-            cx="50"
-            cy="48"
-            r="2.6"
-            fill={`url(#${id("gold")})`}
-            stroke="oklch(0.35 0.06 45)"
-            strokeWidth="0.5"
-          />
+    <span className={`music-box-mark ${className}`} aria-hidden="true">
+      <svg viewBox="0 0 100 100" fill="none" className="h-full w-full overflow-visible">
+        <defs>
+          <linearGradient id={wood} x1="10" y1="25" x2="80" y2="85" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#a27747" />
+            <stop offset=".45" stopColor="#553722" />
+            <stop offset="1" stopColor="#241b15" />
+          </linearGradient>
+          <linearGradient id={metal} x1="25" y1="45" x2="70" y2="66" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#ebebd6" />
+            <stop offset=".45" stopColor="#838981" />
+            <stop offset=".65" stopColor="#e1ce98" />
+            <stop offset="1" stopColor="#666e6b" />
+          </linearGradient>
+          <radialGradient id={glow}>
+            <stop stopColor="#e5b460" stopOpacity=".2" />
+            <stop offset="1" stopColor="#e5b460" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <ellipse cx="49" cy="57" rx="49" ry="41" fill={`url(#${glow})`} />
+        <ellipse cx="49" cy="87" rx="33" ry="5" fill="#160e09" opacity=".22" />
+        <g className="music-box-lid">
           <path
-            d="M50 48 L55 48"
-            stroke={`url(#${id("gold")})`}
+            d="M20 43 20 12 67 8 79 18 79 46 67 54Z"
+            fill={`url(#${wood})`}
+            stroke="#c89e62"
+            strokeWidth="1.2"
+          />
+          <path d="m24 40 0-23 40-4 0 27z" fill="#35291e" stroke="#b08b55" strokeWidth=".8" />
+          <path
+            d="m29 34 13-12 7 5 10-9M28 20l31-3M28 36l31-3"
+            stroke="#d0ad72"
+            strokeWidth=".8"
+            opacity=".8"
+          />
+          <path d="m69 13 6 6v23l-6-4z" fill="#271b13" />
+          <path
+            d="M42 19v12m-4 0c-3 2-1 5 2 3s2-5-2-3m4-12 7 3"
+            stroke="#e2c386"
             strokeWidth="1.6"
             strokeLinecap="round"
           />
-          <circle cx="50" cy="48" r="0.8" fill="oklch(0.3 0.05 40)" />
-        </svg>
-
-        {/* ── strat 2: capacul, se ridică pe balama ── */}
-        <svg viewBox="0 0 64 64" className={`${layer} bm3d-lid`} fill="none">
+        </g>
+        <path d="m17 49 49-8 16 12-49 11z" fill="#30221b" stroke="#ab824e" />
+        <path d="m17 49 16 15v22L17 71z" fill="#493020" stroke="#c1995b" strokeWidth=".9" />
+        <path
+          d="m33 64 49-11v23L33 87z"
+          fill={`url(#${wood})`}
+          stroke="#c1995b"
+          strokeWidth="1.1"
+        />
+        <g className="music-box-mechanism">
+          <path d="m26 50 25-4 10 7-25 5z" fill={`url(#${metal})`} />
+          {Array.from({ length: 10 }, (_, i) => (
+            <path
+              key={i}
+              d={`m${28 + i * 2.1} ${50 - i * 0.34} 8 6`}
+              stroke="#3f4540"
+              strokeWidth=".6"
+            />
+          ))}
           <path
-            d="M10 30 L32 20 L54 30 L54 33 L32 23.5 L10 33 Z"
-            fill={`url(#${id("lid")})`}
-            stroke="oklch(0.2 0.04 40)"
-            strokeWidth="0.9"
-            strokeLinejoin="round"
+            d="m55 45 8-1 10 9-8 2z"
+            fill={`url(#${metal})`}
+            stroke="#dfdab5"
+            strokeWidth=".7"
           />
-          <path
-            d="M12 31.2 L32 22 L52 31.2"
-            stroke={`url(#${id("gold")})`}
-            strokeWidth="0.7"
-            opacity="0.8"
-          />
-        </svg>
-
-        {/* ── strat 3: nota magică ── */}
-        <svg viewBox="0 0 64 64" className={`${layer} bm3d-note`} fill="none">
-          <path
-            d="M36 8 L36 22"
-            stroke={`url(#${id("gold")})`}
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <ellipse
-            cx="33.5"
-            cy="22"
-            rx="3.2"
-            ry="2.4"
-            fill={`url(#${id("gold")})`}
-            stroke="oklch(0.35 0.06 45)"
-            strokeWidth="0.4"
-          />
-          <path
-            d="M36 8 Q42 10 42.5 15"
-            stroke={`url(#${id("gold")})`}
-            strokeWidth="1.7"
-            strokeLinecap="round"
-          />
-        </svg>
-
-        {/* ── strat 4: sclipiri, cel mai aproape de privitor ── */}
-        <svg viewBox="0 0 64 64" className={`${layer} bm3d-sparks`} fill="none">
-          <g stroke={`url(#${id("gold")})`} strokeLinecap="round">
-            <path className="bm3d-spark" d="M22 10 l1.4 1.4 M23.4 10 l-1.4 1.4" strokeWidth="1.1" />
-            <path className="bm3d-spark" d="M46 6 l1 1 M47 6 l-1 1" strokeWidth="1" />
-            <path className="bm3d-spark" d="M50 18 l1.2 1.2 M51.2 18 l-1.2 1.2" strokeWidth="1" />
-          </g>
-          <g fill={`url(#${id("gold")})`}>
-            <circle className="bm3d-spark" cx="28" cy="16" r="0.9" />
-            <circle className="bm3d-spark" cx="44" cy="22" r="0.7" />
-            <circle className="bm3d-spark" cx="18" cy="22" r="0.55" />
-          </g>
-        </svg>
-      </span>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <circle key={i} cx={60 + i * 1.6} cy={47 + i * 1.4} r=".65" fill="#f8e2a8" />
+          ))}
+          <circle cx="29" cy="51" r="1.3" fill="#e1dbba" />
+          <circle cx="58" cy="56" r="1" fill="#e1dbba" />
+        </g>
+        <path
+          d="m39 71 18-4 18-4M39 81l35-8M39 75l5 2 6-5 6 3 6-5 6 2"
+          stroke="#d2ac6f"
+          strokeWidth=".7"
+          opacity=".85"
+        />
+        <path
+          d="m35 67 3-.6v4l-3 .6m0 5 3-.6v4l-3 .6m40-20 3-.6v4l-3 .6m0 5 3-.6v4l-3 .6"
+          stroke="#d0a66b"
+          strokeWidth="1"
+        />
+        <g className="music-box-crank">
+          <circle cx="80" cy="65" r="2" fill={`url(#${metal})`} />
+          <path d="M80 65h8v-9h6" stroke="#d9d9bd" strokeWidth="1.9" strokeLinejoin="round" />
+          <rect x="92" y="53" width="5" height="6" rx="1.5" fill={`url(#${metal})`} />
+        </g>
+        <g className="music-box-notes" stroke="#dfbc7d" strokeLinecap="round">
+          <path d="M83 20v9m-3 0c-3 2-1 4 1 3s2-4-1-3m3-9 5 2" strokeWidth="1.3" />
+          <path d="M13 23v5m-2.5-2.5h5M89 40v4m-2-2h4" strokeWidth="1" />
+        </g>
+      </svg>
     </span>
   );
 }
-
-/** Memoizat: header-ul se re-randează la scroll, logo-ul nu are de ce. */
 export const BrandMark = memo(BrandMarkImpl);

@@ -18,6 +18,16 @@ const input = "w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 
 const button =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50";
 const labels: Record<CredentialProvider, string> = {
+  google_merchant: "Google Merchant · token OAuth separat",
+  netopia: "NETOPIA · cheie API",
+  netopia_public_key: "NETOPIA · cheie publică verificare IPN",
+  revolut_merchant: "Revolut Merchant · cheie secretă (plăți)",
+  revolut_merchant_webhook: "Revolut Merchant · secret webhook",
+  oblio: "Oblio · secret API",
+  emag: "eMAG · credențiale API",
+  trendyol: "Trendyol · credențiale API",
+  olx: "OLX · token acces",
+  okazii: "Okazii · cheie API",
   fgo: "FGO · cheie privată API",
   smartship: "SmartShip",
   stripe: "Stripe",

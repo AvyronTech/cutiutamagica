@@ -55,6 +55,7 @@ const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
   { path: "/admin/products", label: "Produse", icon: ShoppingBag },
+  { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
   { path: "/admin/promotions", label: "Promoții", icon: Target },
   { path: "/admin/suppliers", label: "Aprovizionare", icon: Search },
   { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },

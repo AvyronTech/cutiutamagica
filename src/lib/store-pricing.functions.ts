@@ -1,8 +1,9 @@
+import { localMediaPreview } from "@/server/media-policy";
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { listPublicCatalog } from "@/server/db/catalog.repository";
 export const getStorePricing = createServerFn({ method: "GET" }).handler(async () => {
-  const catalog = await listPublicCatalog(env.DB);
+  const catalog = await listPublicCatalog(env.DB, localMediaPreview(env));
   const promotion = await env.DB.prepare(
     `SELECT p.value,CAST(pr.value_json AS INTEGER) AS min_quantity FROM promotions p
     JOIN promotion_rules pr ON pr.promotion_id=p.id AND pr.rule_type='min_quantity' AND pr.operator='gte'

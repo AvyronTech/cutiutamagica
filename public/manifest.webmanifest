@@ -1,6 +1,6 @@
 {
   "name": "Cutiuța Magică Admin",
-  "short_name": "Cutiuta Admin",
+  "short_name": "Cutiuța Admin",
   "description": "Administrarea magazinului Cutiuța Magică",
   "id": "/admin",
   "start_url": "/admin?source=pwa",
@@ -14,9 +14,21 @@
   "categories": ["business", "productivity", "shopping"],
   "prefer_related_applications": false,
   "shortcuts": [
-    { "name": "Comenzi", "short_name": "Comenzi", "url": "/admin/orders?source=pwa" },
-    { "name": "Produse", "short_name": "Produse", "url": "/admin/products?source=pwa" },
-    { "name": "Chat clienți", "short_name": "Chat", "url": "/admin/chat?source=pwa" }
+    {
+      "name": "Comenzi",
+      "short_name": "Comenzi",
+      "url": "/admin/orders?source=pwa"
+    },
+    {
+      "name": "Produse",
+      "short_name": "Produse",
+      "url": "/admin/products?source=pwa"
+    },
+    {
+      "name": "Chat clienți",
+      "short_name": "Chat",
+      "url": "/admin/chat?source=pwa"
+    }
   ],
   "icons": [
     {

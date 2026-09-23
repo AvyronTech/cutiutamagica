@@ -17,7 +17,17 @@ export type ProductGalleryImage = {
 };
 
 export type Product = {
+  discovery?: import("@/lib/product-discovery").ProductDiscovery | null;
+  scene?: import("@/lib/product-themes").ProductScene;
   id: string;
+  shortName?: string;
+  collection?: "story" | "emotion" | "dedicated";
+  sortOrder?: number;
+  featured?: boolean;
+  preorderEnabled?: boolean;
+  releaseNote?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   sku: string;
   updatedAt: string;
   name: string;
@@ -38,7 +48,7 @@ export type Product = {
   source?: { platform: "vinted"; url: string };
 };
 
-export type ProductAvailability = "available" | "coming_soon";
+export type ProductAvailability = "available" | "coming_soon" | "out_of_stock";
 
 export const PRICE = PRODUCT_BASE_PRICE_BANI / 100;
 export const MAX_QTY = MAX_ITEM_QUANTITY;
@@ -57,7 +67,7 @@ export const products: Product[] = [
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10090709545" },
     updatedAt: "2026-09-22",
-    name: "Cutiuță Muzicală Harry Potter cu Manivelă – Cadou de Colecție 14+",
+    name: "Cutiuță Muzicală Harry Potter cu Manivelă – Cadou de Colecție",
     tagline: "Un mic obiect de colecție pentru cei care vor să păstreze puțină magie aproape.",
     melody: "Hedwig's Theme",
     category: "Harry Potter",
@@ -100,7 +110,7 @@ export const products: Product[] = [
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039606794" },
     updatedAt: "2026-09-22",
-    name: "Cutiuță Muzicală Game of Thrones „Winter Is Coming” cu Manivelă – Cadou de Colecție 14+",
+    name: "Cutiuță Muzicală Game of Thrones „Winter Is Coming” cu Manivelă – Cadou de Colecție",
     tagline: "Iarna vine… dar de data aceasta aduce și muzică.",
     melody: "Game of Thrones — Main Theme",
     category: "Fantasy",
@@ -144,7 +154,7 @@ export const products: Product[] = [
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039491875" },
     updatedAt: "2026-09-22",
-    name: "Cutiuță Muzicală cu Pisicuță și Lună – Manivelă, Cadou de Colecție 14+",
+    name: "Cutiuță Muzicală cu Pisicuță și Lună – Manivelă, Cadou de Colecție",
     tagline: "O cutiuță mică, o scenă de poveste și o melodie care face momentul mai cald.",
     melody: "La Vie en Rose",
     category: "Cadouri Speciale",
@@ -241,7 +251,7 @@ export const products: Product[] = [
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039368670" },
     updatedAt: "2026-09-22",
-    name: "Cutiuță Muzicală „You Are My Sunshine” cu Manivelă – Cadou de Colecție 14+",
+    name: "Cutiuță Muzicală „You Are My Sunshine” cu Manivelă – Cadou de Colecție",
     tagline: "Uneori, cele mai frumoase amintiri încap într-o cutiuță.",
     melody: "You Are My Sunshine",
     category: "Cadouri Speciale",

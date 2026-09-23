@@ -1,43 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Gift, Search, Settings2, X } from "lucide-react";
+import { useMemo } from "react";
+import { safeJsonLd } from "@/lib/product-discovery";
+import {
+  BookOpen,
+  Heart,
+  Gift,
+  Search,
+  X,
+  ArrowDown,
+  ArrowRight,
+  Music2,
+  Sparkles,
+} from "lucide-react";
 import { isAvailable } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
+import {
+  catalogCollections,
+  filterCatalog,
+  validateCatalogSearch,
+  type CatalogSearch,
+} from "@/lib/catalog-filters";
+import { collectionFor } from "@/lib/collections";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 
 const CATALOG_URL = "https://cutiutamagica.eu/produse";
-const catalogGroups = [
-  {
-    id: "legendary-worlds",
-    label: "Lumi legendare",
-    productIds: ["hp-keeper", "got-winter", "lotr-rings", "hp-always", "pirates", "starwars-dad"],
-  },
-  {
-    id: "magic-mystery",
-    label: "Magie & mister",
-    productIds: ["halloween", "got-winter", "hp-keeper", "fairy", "hp-always", "lotr-rings"],
-  },
-  {
-    id: "heartfelt-gifts",
-    label: "Cadouri cu suflet",
-    productIds: ["kitten", "sunshine", "hp-keeper", "fairy", "starwars-dad", "lotr-rings"],
-  },
-] as const;
-
-function normalizeSearch(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLocaleLowerCase("ro-RO")
-    .trim();
-}
+const collectionIcons = { story: BookOpen, emotion: Heart, dedicated: Gift };
 
 export const Route = createFileRoute("/produse")({
-  validateSearch: (search: Record<string, unknown>): { q?: string } => {
-    const q = typeof search.q === "string" ? search.q.trim().slice(0, 100) : "";
-    return q ? { q } : {};
-  },
+  validateSearch: validateCatalogSearch,
   component: ProductsPage,
   loader: () => getStorePricing(),
   head: ({ loaderData }) => ({
@@ -56,12 +47,19 @@ export const Route = createFileRoute("/produse")({
       },
       { property: "og:url", content: CATALOG_URL },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://cutiutamagica.eu/scenes/catalog-atelier.webp" },
+      { property: "og:image:width", content: "1672" },
+      { property: "og:image:height", content: "941" },
+      {
+        property: "og:image:alt",
+        content: "Cutiuțe muzicale într-un decor de lectură, colecție și daruri",
+      },
     ],
     links: [{ rel: "canonical", href: CATALOG_URL }],
     scripts: [
       {
         type: "application/ld+json",
-        children: JSON.stringify({
+        children: safeJsonLd({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: "Cutiuțe muzicale cu manivelă",
@@ -77,7 +75,7 @@ export const Route = createFileRoute("/produse")({
               name: product.name,
             })),
           },
-        }),
+        }).replace(/</g, "\\u003c"),
       },
     ],
   }),
@@ -85,201 +83,237 @@ export const Route = createFileRoute("/produse")({
 
 function ProductsPage() {
   const { products } = useShop();
-  const { q } = Route.useSearch();
+  const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const [groupId, setGroupId] = useState<(typeof catalogGroups)[number]["id"]>(catalogGroups[0].id);
-  const [productId, setProductId] = useState<string | null>(null);
-  const activeGroup = catalogGroups.find((group) => group.id === groupId) ?? catalogGroups[0];
-  const groupProducts = useMemo(
-    () =>
-      activeGroup.productIds
-        .map((id) => products.find((product) => product.id === id))
-        .filter((product): product is (typeof products)[number] =>
-          Boolean(product && isAvailable(product)),
-        ),
-    [activeGroup, products],
-  );
-  const normalizedQuery = normalizeSearch(q ?? "");
-  const list = useMemo(
-    () =>
-      products.filter((product) => {
-        const searchable = normalizeSearch(
-          [
-            product.name,
-            product.tagline,
-            product.melody,
-            product.category,
-            product.description,
-            ...product.searchTerms,
-          ]
-            .filter(Boolean)
-            .join(" "),
-        );
-        if (normalizedQuery) return searchable.includes(normalizedQuery);
-        if (productId) return product.id === productId;
-        return activeGroup.productIds.some((id) => id === product.id);
-      }),
-    [activeGroup, normalizedQuery, productId, products],
-  );
-
-  const updateQuery = (value: string) => {
-    navigate({ search: value ? { q: value } : {}, replace: true });
+  const list = useMemo(() => filterCatalog(products, search), [products, search]);
+  const available = list.filter(isAvailable);
+  const upcoming = list.filter((product) => !isAvailable(product));
+  const filtered = Boolean(search.q || search.collection || search.available);
+  const activeCollection = catalogCollections.find((c) => c.id === search.collection);
+  const update = (next: CatalogSearch, replace = false) => {
+    void navigate({ search: next, replace, resetScroll: false });
   };
+  const showAll = () => update({});
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 text-center">
-      <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--wood)]">Catalog</div>
-      <h1 className="mt-1 font-display text-4xl md:text-6xl">Cutiuțe muzicale cu manivelă</h1>
-      <p className="mx-auto mt-3 max-w-3xl text-muted-foreground">
-        Alege o cutiuță muzicală din lemn după melodie, temă sau persoana căreia vrei să o
-        dăruiești. Fiecare model folosește un mecanism mecanic manual, acționat prin manivelă.
-      </p>
-
-      <div className="mx-auto mt-7 max-w-xl">
-        <label className="relative block text-left">
-          <span className="sr-only">Caută o cutiuță muzicală</span>
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={q ?? ""}
-            onChange={(event) => updateQuery(event.target.value)}
-            placeholder="Caută melodie, poveste sau cadou..."
-            className="w-full rounded-full border border-border bg-card py-3 pl-11 pr-11 text-sm outline-none focus:border-primary"
+    <div className="catalog-world" data-collection={search.collection ?? "all"}>
+      <section className="catalog-intro" aria-labelledby="catalog-title">
+        <picture className="catalog-scenery" aria-hidden="true">
+          <source media="(max-width: 640px)" srcSet="/scenes/catalog-atelier-mobile.webp" />
+          <img
+            src="/scenes/catalog-atelier.webp"
+            width="1672"
+            height="941"
+            alt=""
+            fetchPriority="high"
           />
-          {q && (
-            <button
-              type="button"
-              onClick={() => updateQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 hover:bg-muted"
-              aria-label="Șterge căutarea"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </label>
-      </div>
-
-      <section className="mx-auto mt-6 max-w-4xl" aria-labelledby="catalog-filter-title">
-        <h2 id="catalog-filter-title" className="sr-only">
-          Filtrează catalogul
-        </h2>
-        <div className="flex flex-wrap justify-center gap-2" aria-label="Alege categoria">
-          {catalogGroups.map((group) => (
-            <button
-              type="button"
-              key={group.id}
-              aria-pressed={groupId === group.id}
-              onClick={() => {
-                setGroupId(group.id);
-                setProductId(null);
-                if (q) updateQuery("");
-              }}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${groupId === group.id && !normalizedQuery ? "wood-grain border-transparent text-[color:var(--cream)] shadow-warm" : "border-border bg-card/70 hover:bg-muted"}`}
-            >
-              {group.label}
-            </button>
-          ))}
-        </div>
-
-        {!normalizedQuery && (
-          <div
-            className="mt-3 flex flex-wrap justify-center gap-1.5 rounded-xl border border-border/70 bg-card/50 p-2.5"
-            aria-label={`Modele din categoria ${activeGroup.label}`}
-          >
-            <button
-              type="button"
-              aria-pressed={productId === null}
-              onClick={() => setProductId(null)}
-              className={`rounded-full px-3 py-1.5 text-xs transition ${productId === null ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-            >
-              Toate modelele
-            </button>
-            {groupProducts.map((product) => (
-              <button
-                type="button"
-                key={product.id}
-                aria-pressed={productId === product.id}
-                onClick={() => setProductId(product.id)}
-                className={`max-w-full truncate rounded-full px-3 py-1.5 text-xs transition ${productId === product.id ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              >
-                {product.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {[
-        { key: "now", title: "Disponibile acum", items: list.filter(isAvailable) },
-        {
-          key: "soon",
-          title: "În curând",
-          note: "Modele pe care le pregătim pentru magazin.",
-          items: list.filter((product) => !isAvailable(product)),
-        },
-      ]
-        .filter((group) => group.items.length > 0)
-        .map((group, groupIndex) => (
-          <section key={group.key} className={groupIndex === 0 ? "mt-10" : "mt-16"}>
-            <div className="flex flex-col items-center gap-1">
-              <h2 className="font-display text-2xl md:text-3xl">
-                {group.title}{" "}
-                <span className="text-base text-muted-foreground">({group.items.length})</span>
-              </h2>
-              {group.note && <p className="text-sm text-muted-foreground">{group.note}</p>}
-            </div>
-            <div className="mt-6 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {group.items.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} variant="solid" />
-              ))}
-            </div>
-          </section>
-        ))}
-
-      {list.length === 0 && (
-        <div className="mx-auto mt-12 max-w-md rounded-lg border border-border bg-card p-8">
-          <Search className="mx-auto h-8 w-8 text-muted-foreground" />
-          <p className="mt-3 font-medium">Nu am găsit un model pentru această căutare.</p>
-          <button
-            type="button"
-            onClick={() => {
-              updateQuery("");
-              setGroupId(catalogGroups[0].id);
-              setProductId(null);
-            }}
-            className="mt-4 rounded-full border border-primary/40 px-4 py-2 text-sm hover:bg-primary/5"
-          >
-            Vezi toate cutiuțele
-          </button>
-        </div>
-      )}
-
-      <section className="mx-auto mt-20 grid max-w-5xl gap-4 text-left md:grid-cols-2">
-        <div className="rounded-lg border border-border bg-card p-6">
-          <Settings2 className="h-5 w-5 text-primary" />
-          <h2 className="mt-3 font-display text-2xl">Mecanism clasic, fără baterii</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Manivela pune în mișcare mecanismul muzical. Ritmul melodiei este controlat chiar de
-            gestul celui care rotește manivela, ceea ce transformă cutiuța într-un obiect interactiv
-            și ușor de dăruit.
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-6">
-          <Gift className="h-5 w-5 text-primary" />
-          <h2 className="mt-3 font-display text-2xl">Cutiuță cadou pentru o poveste anume</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Poți căuta o cutiuță muzicală Harry Potter, o cutiuță cu piesă inspirată de LOTR, un
-            model romantic sau o temă pentru Halloween. Verifică fotografia, melodia și detaliile
-            fiecărui produs înainte de comandă.
+        </picture>
+        <div className="catalog-intro-copy">
+          <span className="catalog-eyebrow">
+            <Music2 size={14} aria-hidden="true" /> Lemn · manivelă · melodie
+          </span>
+          <h1 id="catalog-title">
+            O cutiuță mică.
+            <br />
+            <em>O poveste doar a ta.</em>
+          </h1>
+          <p>
+            Cutiuțe muzicale cu manivelă, pentru poveștile pe care le iubești și oamenii pe care îi
+            porți în suflet.
           </p>
           <Link
-            to="/ghid-cadouri-personalizate"
-            className="mt-4 inline-flex text-sm font-medium text-primary hover:underline"
+            to="/produse"
+            search={{}}
+            hash="catalog-alegere"
+            resetScroll={false}
+            className="catalog-gold-button"
           >
-            Citește ghidul de alegere
+            Afișează toate cutiuțele <ArrowDown size={16} aria-hidden="true" />
           </Link>
+          <span className="catalog-intro-note">Învârți manivela. Amintirile prind glas.</span>
         </div>
       </section>
+
+      <div className="catalog-content" id="catalog-alegere">
+        <p className="catalog-guide-entry">
+          Alegi pentru cineva drag?{" "}
+          <Link to="/cadouri">Explorează ideile de cadouri pentru sărbători ↗</Link>
+        </p>
+        <section aria-labelledby="catalog-collections-title">
+          <div className="catalog-section-heading">
+            <div>
+              <span className="catalog-eyebrow">Trei feluri de a dărui magie</span>
+              <h2 id="catalog-collections-title">Unde începe povestea ta?</h2>
+            </div>
+            <button
+              type="button"
+              className="catalog-all-button"
+              aria-pressed={!filtered}
+              onClick={showAll}
+            >
+              Toate cutiuțele <ArrowRight size={15} aria-hidden="true" />
+            </button>
+          </div>
+          <div className="catalog-collections" role="group" aria-label="Alege o colecție">
+            {catalogCollections.map((collection, index) => {
+              const Icon = collectionIcons[collection.id];
+              const count = products.filter((p) => collectionFor(p) === collection.id).length;
+              return (
+                <button
+                  key={collection.id}
+                  type="button"
+                  className="catalog-collection"
+                  data-collection={collection.id}
+                  aria-pressed={search.collection === collection.id}
+                  onClick={() =>
+                    update({
+                      ...search,
+                      collection: search.collection === collection.id ? undefined : collection.id,
+                    })
+                  }
+                >
+                  <span className="catalog-collection-top">
+                    <Icon size={23} aria-hidden="true" />
+                    <span>
+                      0{index + 1} / {count} {count === 1 ? "model" : "modele"}
+                    </span>
+                  </span>
+                  <strong>{collection.title}</strong>
+                  <span className="catalog-collection-subtitle">{collection.subtitle}</span>
+                  <span className="catalog-collection-detail">{collection.detail}</span>
+                  <span className="catalog-collection-action">
+                    {search.collection === collection.id
+                      ? "Colecție selectată"
+                      : "Explorează colecția"}
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="catalog-browser" aria-labelledby="catalog-results-title">
+          <div className="catalog-search-bar" role="search" aria-label="Caută în colecții">
+            <label className="catalog-search-field">
+              <span className="sr-only">Caută după melodie, poveste sau cadou</span>
+              <Search size={19} aria-hidden="true" />
+              <input
+                type="search"
+                value={search.q ?? ""}
+                maxLength={100}
+                autoComplete="off"
+                onChange={(event) =>
+                  update({ ...search, q: event.target.value || undefined }, true)
+                }
+                placeholder="Harry Potter, Sunshine, un cadou…"
+              />
+              {search.q && (
+                <button
+                  type="button"
+                  aria-label="Șterge căutarea"
+                  onClick={() => update({ ...search, q: undefined }, true)}
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </label>
+            <label className="catalog-availability">
+              <input
+                type="checkbox"
+                checked={Boolean(search.available)}
+                onChange={(event) =>
+                  update({ ...search, available: event.target.checked ? true : undefined })
+                }
+              />
+              <span>Disponibile acum</span>
+            </label>
+          </div>
+          <div className="catalog-result-heading">
+            <div>
+              <h2 id="catalog-results-title">
+                {activeCollection?.title ?? "Toate cutiuțele muzicale"}
+              </h2>
+              <p role="status" aria-live="polite" aria-atomic="true">
+                {list.length} {list.length === 1 ? "model găsit" : "modele găsite"}
+                {search.q?.trim() ? ` pentru „${search.q.trim()}”` : ""} · {available.length}{" "}
+                disponibile acum
+              </p>
+            </div>
+            {filtered && (
+              <button type="button" className="catalog-reset" onClick={showAll}>
+                <X size={15} aria-hidden="true" /> Resetează filtrele
+              </button>
+            )}
+          </div>
+          {available.length > 0 && (
+            <div className="catalog-grid">
+              {available.map((product, index) => (
+                <div
+                  className="catalog-product"
+                  data-collection={collectionFor(product)}
+                  key={product.id}
+                >
+                  <span className="catalog-product-collection">
+                    {catalogCollections.find((c) => c.id === collectionFor(product))?.title}
+                  </span>
+                  <ProductCard product={product} index={index} variant="solid" />
+                </div>
+              ))}
+            </div>
+          )}
+          {upcoming.length > 0 && (
+            <section className="catalog-upcoming" aria-labelledby="catalog-upcoming-title">
+              <div className="catalog-section-heading">
+                <div>
+                  <span className="catalog-eyebrow">
+                    <Sparkles size={14} aria-hidden="true" /> Povești de așteptat
+                  </span>
+                  <h2 id="catalog-upcoming-title">Magia care urmează</h2>
+                  <p>
+                    Modele în pregătire sau care revin în colecție. Deschide cutiuța preferată
+                    pentru detalii.
+                  </p>
+                </div>
+              </div>
+              <div className="catalog-grid">
+                {upcoming.map((product, index) => (
+                  <div
+                    className="catalog-product"
+                    data-collection={collectionFor(product)}
+                    key={product.id}
+                  >
+                    <span className="catalog-product-collection">
+                      {catalogCollections.find((c) => c.id === collectionFor(product))?.title}
+                    </span>
+                    <ProductCard product={product} index={index} variant="solid" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+          {list.length === 0 && (
+            <div className="catalog-empty">
+              <Search size={30} aria-hidden="true" />
+              <h3>Încă nu am găsit această poveste.</h3>
+              <p>Încearcă numele melodiei sau explorează toate cutiuțele.</p>
+              <button type="button" className="catalog-gold-button" onClick={showAll}>
+                Afișează toate cutiuțele <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+        </section>
+        <aside className="catalog-closing">
+          <Music2 size={28} aria-hidden="true" />
+          <div>
+            <h2>Magia începe cu o simplă rotire.</h2>
+            <p>Lemn gravat, capac cu poveste și mecanism metalic. Fără baterii, fără aplicație.</p>
+          </div>
+          <Link to="/despre-cutiuta" className="catalog-all-button">
+            Descoperă cutiuța <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </aside>
+      </div>
     </div>
   );
 }

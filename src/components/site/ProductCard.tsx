@@ -1,6 +1,7 @@
+import { animateIntoCart } from "@/lib/cart-flight";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ShoppingBag, Minus, Plus, Hourglass } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
 import { PRICE, MAX_QTY, isAvailable } from "@/data/products";
@@ -14,11 +15,14 @@ export function ProductCard({
   product,
   index = 0,
   variant = "glass",
+  compact = false,
 }: {
   product: Product;
   index?: number;
   variant?: Variant;
+  compact?: boolean;
 }) {
+  const reduced = useReducedMotion();
   const { addToCart, products } = useShop();
   product = products.find((p) => p.id === product.id) ?? product;
   const navigate = useNavigate();
@@ -30,10 +34,11 @@ export function ProductCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      data-magic-card
+      initial={false}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5, delay: index * 0.05 }}
+      transition={{ duration: reduced ? 0 : 0.5, delay: Math.min(index, 4) * 0.05 }}
       className={
         isGlass
           ? "group relative rounded-2xl overflow-hidden border border-white/20 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.55)] hover:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.65)] transition-all hover:-translate-y-0.5 flex flex-col bg-white/8 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/15"
@@ -51,12 +56,12 @@ export function ProductCard({
           {!available && (
             <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--wood-dark)]/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--gold)] backdrop-blur">
               <Hourglass className="h-3 w-3" aria-hidden />
-              În curând
+              {product.availability === "out_of_stock" ? "Stoc epuizat" : "În curând"}
             </span>
           )}
           <motion.div
             className="h-full w-full"
-            whileHover={{ scale: 1.05 }}
+            whileHover={reduced ? undefined : { scale: 1.025 }}
             transition={{ duration: 0.6 }}
           >
             <ProductImage
@@ -72,7 +77,11 @@ export function ProductCard({
           {available && (
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-[radial-gradient(70%_50%_at_50%_20%,oklch(0.95_0.13_85/0.18),transparent_65%)]"
+              style={{
+                background:
+                  "radial-gradient(70% 50% at 50% 20%, rgb(var(--magic-tint, 225 189 126) / .12), transparent 65%)",
+              }}
+              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
             />
           )}
           {discounted && available && (
@@ -91,10 +100,12 @@ export function ProductCard({
               : "px-4 pt-2 pb-3 text-center"
           }
         >
-          <h3 className="font-display text-base leading-tight">{product.name}</h3>
+          <h3 className="font-display text-lg font-semibold leading-snug">
+            {product.shortName || product.name}
+          </h3>
           {product.tagline && (
             <p
-              className={`mt-1 text-[11.5px] md:text-xs leading-snug line-clamp-2 ${
+              className={`mt-1 text-sm leading-relaxed line-clamp-2 ${
                 isGlass ? "text-[color:var(--cream)]/85" : "text-foreground/70"
               }`}
             >
@@ -106,7 +117,9 @@ export function ProductCard({
               <span
                 className={`text-xs uppercase tracking-[0.2em] ${isGlass ? "text-[color:var(--cream)]/80" : "text-foreground/60"}`}
               >
-                Disponibil în curând
+                {product.availability === "out_of_stock"
+                  ? "Revine în colecție"
+                  : "Disponibil în curând"}
               </span>
             )}
             {available && discounted && (
@@ -128,32 +141,35 @@ export function ProductCard({
       <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
         {available ? (
           <>
-            <div
-              className={`flex items-center justify-center gap-3 rounded-md py-1.5 ${
-                isGlass ? "bg-black/25 backdrop-blur text-[color:var(--cream)]" : "bg-muted/50"
-              }`}
-            >
-              <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
-                aria-label="Scade"
+            {!compact && (
+              <div
+                className={`flex items-center justify-center gap-3 rounded-md py-1.5 ${
+                  isGlass ? "bg-black/25 backdrop-blur text-[color:var(--cream)]" : "bg-muted/50"
+                }`}
               >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              <span className="font-medium text-sm w-6 text-center">{qty}</span>
-              <button
-                onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
-                className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
-                aria-label="Crește"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
+                  aria-label="Scade"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="font-medium text-sm w-6 text-center">{qty}</span>
+                <button
+                  onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
+                  className={`p-1 rounded ${isGlass ? "hover:bg-white/15" : "hover:bg-background"}`}
+                  aria-label="Crește"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <button
               onClick={(e) => {
                 e.preventDefault();
-                addToCart(product.id, qty);
-                notifyAddedToCart(product.name, qty, () => navigate({ to: "/comanda" }));
+                const added = addToCart(product.id, qty);
+                animateIntoCart(e.currentTarget, product.image, added);
+                notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
             >

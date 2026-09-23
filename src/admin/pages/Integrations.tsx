@@ -1,3 +1,4 @@
+import { SalesConnections } from "./SalesConnections";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
@@ -151,6 +152,7 @@ export default function Integrations() {
         </button>
       </div>
 
+      <SalesConnections />
       {integrationsQuery.isError && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
           Starea integrărilor nu a putut fi citită din D1.

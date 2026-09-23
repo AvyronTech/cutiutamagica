@@ -46,7 +46,7 @@ function party(value: SmartShipParty) {
     address: value.address,
     email: value.email || undefined,
     city: value.cityId,
-    phone: value.phone.replace(/^\+40/, "0"),
+    phone: value.phone.replace(/[\s().-]/g, "").replace(/^\+?40/, "0"),
     country: value.country ?? "RO",
     sector: value.sector ?? 0,
   };
@@ -80,6 +80,7 @@ async function smartShipFetch(
   );
   return fetchWithTimeout(`https://api.smartship.ro${path}`, {
     ...init,
+    redirect: "error",
     headers: {
       accept: "application/json",
       "content-type": "application/json",
@@ -122,7 +123,11 @@ export async function quoteSmartShip(
     );
   }
   return result.costs.flatMap((quote) =>
-    quote.courier_id && quote.courier_name && Number.isFinite(quote.cost)
+    quote.courier_id &&
+    quote.courier_name &&
+    Number.isFinite(quote.cost) &&
+    Number(quote.cost) >= 0 &&
+    Number(quote.cost) < 10000
       ? [
           {
             courierId: quote.courier_id,
@@ -176,4 +181,49 @@ export async function createSmartShipAwb(
     trackingUrl: typeof tracking === "string" ? tracking : null,
     costRon: typeof cost === "number" ? cost : null,
   };
+}
+
+function localityKey(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[-\s]+/g, " ");
+}
+export async function resolveSmartShipCity(
+  env: CommerceEnv,
+  county: string,
+  city: string,
+): Promise<number> {
+  async function locations(path: string) {
+    const key = `smartship:locations:${path}`;
+    const cached = await env.CACHE.get(key);
+    if (cached) return JSON.parse(cached) as Record<string, unknown>;
+    const response = await smartShipFetch(env, path, { method: "GET" });
+    if (!response.ok)
+      throw new ProviderError("Localitatea nu a putut fi verificată.", "LOCATION_UNAVAILABLE", 502);
+    const value = (await readProviderJson(response)) as Record<string, unknown>;
+    await env.CACHE.put(key, JSON.stringify(value), { expirationTtl: 86400 });
+    return value;
+  }
+  const counties = (await locations("/geolocation/counties")).counties as Array<{
+    id: number;
+    county: string;
+  }>;
+  const region = counties?.find((c) => localityKey(c.county) === localityKey(county));
+  if (!region)
+    throw new ProviderError("Verifică județul pentru calculul livrării.", "LOCATION_INVALID", 400);
+  const cities = (await locations(`/geolocation/cities?county=${region.id}`)).cities as Array<{
+    id: number;
+    city: string;
+  }>;
+  const locality = cities?.find((c) => localityKey(c.city) === localityKey(city));
+  if (!locality)
+    throw new ProviderError(
+      "Verifică localitatea pentru calculul livrării.",
+      "LOCATION_INVALID",
+      400,
+    );
+  return locality.id;
 }

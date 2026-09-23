@@ -1,3 +1,8 @@
+import type { PaymentProvider } from "@/lib/checkout-settings";
+import { CheckoutDelivery, type DeliveryOffer } from "@/components/site/CheckoutDelivery";
+import { PaymentRecovery } from "@/components/site/PaymentRecovery";
+import { pendingPaymentKey, openSecureCheckout, type PendingPayment } from "@/lib/checkout-client";
+import { notifyAddedToCart } from "@/lib/notify";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AutoScroll from "embla-carousel-auto-scroll";
@@ -88,6 +93,7 @@ function OrderPage() {
     totals,
   } = useShop();
   const idempotencyKey = useRef<string | null>(null);
+  const submissionBody = useRef<string | null>(null);
   const [config, setConfig] = useState<CommercePublicConfig | null>(null);
   const [confirmation, setConfirmation] = useState<WebsiteOrderPublicResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -96,6 +102,49 @@ function OrderPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
   const [shippingOption, setShippingOption] = useState<ShippingOption>("home_delivery");
   const [consent, setConsent] = useState(false);
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>("stripe");
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
+  const [recovering, setRecovering] = useState(true);
+  const [submissionLocked, setSubmissionLocked] = useState(false);
+  const [quote, setQuote] = useState<{ offer: DeliveryOffer; context: string } | null>(null);
+  const deliveryRequest = {
+    customer: form,
+    items: itemsDetailed.map((i) => ({ productId: i.id, quantity: i.qty })),
+    paymentMethod,
+    shippingOption,
+  };
+  const deliveryContext = JSON.stringify({ ...deliveryRequest, total: totals.total });
+  const activeQuote =
+    quote?.context === deliveryContext && Date.parse(quote.offer.expiresAt) > Date.now()
+      ? quote.offer
+      : null;
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(pendingPaymentKey);
+      if (raw) {
+        const saved = JSON.parse(raw) as PendingPayment;
+        if (
+          saved.order?.orderId &&
+          saved.order?.publicToken &&
+          saved.items?.every(
+            (i) => typeof i.id === "string" && Number.isInteger(i.qty) && i.qty > 0,
+          )
+        )
+          setPendingPayment(saved);
+      }
+    } catch {
+      /* Checkout remains available when storage is disabled. */
+    }
+    setRecovering(false);
+  }, []);
+  useEffect(() => {
+    if (!quote) return;
+    const timeout = setTimeout(
+      () => setQuote(null),
+      Math.max(0, Date.parse(quote.offer.expiresAt) - Date.now()),
+    );
+    return () => clearTimeout(timeout);
+  }, [quote]);
   const cartProductIds = useMemo(
     () => new Set(itemsDetailed.map((item) => item.product.id)),
     [itemsDetailed],
@@ -131,18 +180,59 @@ function OrderPage() {
   useEffect(() => {
     if (shippingOption === "easybox" && !config?.shipping.easyboxEnabled)
       setShippingOption("home_delivery");
-    if (paymentMethod === "card" && !config?.payments.card.enabled)
+    if (paymentMethod === "card" && !config?.payments.options.length)
       setPaymentMethod("cash_on_delivery");
-  }, [config, paymentMethod, shippingOption]);
+    if (
+      config?.payments.options.length &&
+      !config.payments.options.some((o) => o.id === paymentProvider)
+    )
+      setPaymentProvider(config.payments.options[0].id);
+  }, [config, paymentMethod, shippingOption, paymentProvider]);
 
   const shippingCost = useMemo(() => {
+    if (activeQuote) return activeQuote.price;
     if (!config || config.shipping.requiresConfirmation) return null;
     if (config.shipping.freeOver != null && totals.total >= config.shipping.freeOver) return 0;
     return shippingOption === "easybox"
       ? config.shipping.lockerPrice
       : config.shipping.standardPrice;
-  }, [config, shippingOption, totals.total]);
+  }, [config, shippingOption, totals.total, activeQuote]);
 
+  if (recovering)
+    return (
+      <div role="status" className="mx-auto max-w-xl px-4 py-24 text-center text-muted-foreground">
+        Pregătim coșul tău…
+      </div>
+    );
+  if (pendingPayment)
+    return (
+      <PaymentRecovery
+        pending={pendingPayment}
+        onDismiss={() => {
+          try {
+            sessionStorage.removeItem(pendingPaymentKey);
+          } catch {
+            /* Storage can be restricted by the browser. */
+          }
+          setPendingPayment(null);
+          setSubmissionLocked(false);
+          idempotencyKey.current = null;
+          submissionBody.current = null;
+        }}
+        onPaid={() => {
+          // Consume only purchased quantities; preserve other items added after checkout began.
+          for (const purchased of pendingPayment.items) {
+            const current = itemsDetailed.find((i) => i.id === purchased.id);
+            if (current) setQty(current.id, Math.max(0, current.qty - purchased.qty));
+          }
+          try {
+            sessionStorage.removeItem(pendingPaymentKey);
+          } catch {
+            /* Storage may be restricted. */
+          }
+        }}
+      />
+    );
   if (confirmation) {
     return (
       <div className="mx-auto max-w-xl px-4 py-24 text-center">
@@ -152,7 +242,7 @@ function OrderPage() {
         <h1 className="font-display mt-6 text-4xl">Comanda a intrat în poveste</h1>
         <p className="mt-3 text-muted-foreground">
           Comanda <strong>{confirmation.orderNumber}</strong> a fost înregistrată. Vei primi
-          actualizările la adresa de e-mail completată.
+          detaliile la adresa de e-mail completată.
         </p>
         <div className="mt-5 rounded-lg border border-border bg-card p-4 text-sm">
           <div className="flex justify-between">
@@ -164,7 +254,11 @@ function OrderPage() {
             </span>
           </div>
           <div className="mt-2 flex justify-between font-medium">
-            <span>Total</span>
+            <span>
+              {confirmation.shippingPending
+                ? "Produse, fără livrare"
+                : "Total de achitat la livrare"}
+            </span>
             <span>{money(confirmation.total, confirmation.currency)}</span>
           </div>
         </div>
@@ -180,54 +274,63 @@ function OrderPage() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!config) return toast.error("Așteaptă încărcarea opțiunilor comerciale.");
+    if (!config) return toast.error("Așteaptă încărcarea opțiunilor de plată și livrare.");
     if (!consent) return toast.error("Confirmă termenii comenzii și politica de retur.");
-    if (totalQty === 0) return toast.error("Coșul este gol.");
-    if (paymentMethod === "card" && config.shipping.requiresConfirmation)
-      return toast.error("Plata online devine disponibilă după validarea regulilor de transport.");
+    if (totalQty === 0 && !submissionLocked) return toast.error("Coșul este gol.");
+    if (submitting) return;
+    if (!submissionLocked && paymentMethod === "card" && shippingCost == null)
+      return toast.error("Confirmă costul livrării înainte de plata online.");
     if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID();
     setSubmitting(true);
+    setSubmissionLocked(true);
     try {
-      const response = await fetch("/api/v1/orders", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
+      if (!submissionBody.current)
+        submissionBody.current = JSON.stringify({
           idempotencyKey: idempotencyKey.current,
           website,
           customer: form,
           paymentMethod,
           shippingOption,
+          paymentProvider: paymentMethod === "card" ? paymentProvider : undefined,
+          shippingQuoteId: activeQuote?.id,
+          expectedTotalBani: Math.round((totals.total + (shippingCost ?? 0)) * 100),
           checkoutConsentAccepted: true,
           checkoutConsentVersion: config.policies.checkoutConsentVersion,
           items: itemsDetailed.map((item) => ({ productId: item.id, quantity: item.qty })),
-        }),
+        });
+      const response = await fetch("/api/v1/orders", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: submissionBody.current,
       });
       const payload = (await response.json()) as {
         data?: WebsiteOrderPublicResult;
         error?: { message?: string };
       };
-      if (!response.ok || !payload.data)
+      if (!response.ok || !payload.data) {
+        if (response.status >= 400 && response.status < 500) {
+          setSubmissionLocked(false);
+          idempotencyKey.current = null;
+          submissionBody.current = null;
+        }
         throw new Error(payload.error?.message || "Comanda nu a putut fi înregistrată.");
+      }
       const result = payload.data;
       if (paymentMethod === "card") {
-        const paymentResponse = await fetch("/api/v1/payments/stripe/checkout", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ orderId: result.orderId, publicToken: result.publicToken }),
-        });
-        const paymentPayload = (await paymentResponse.json()) as {
-          data?: { checkoutUrl: string };
-          error?: { message?: string };
+        const pending = {
+          order: result,
+          items: itemsDetailed.map((i) => ({ id: i.id, qty: i.qty })),
         };
-        if (!paymentResponse.ok || !paymentPayload.data?.checkoutUrl)
+        setPendingPayment(pending);
+        try {
+          sessionStorage.setItem(pendingPaymentKey, JSON.stringify(pending));
+        } catch {
           throw new Error(
-            paymentPayload.error?.message ||
-              "Plata online nu a putut fi inițiată. Comanda a rămas salvată.",
+            "Browserul nu poate păstra sesiunea de plată. Permite stocarea pentru acest site înainte de a continua.",
           );
-        clearCart();
-        window.location.assign(paymentPayload.data.checkoutUrl);
+        }
+        await openSecureCheckout(result);
         return;
       }
       setConfirmation(result);
@@ -266,7 +369,7 @@ function OrderPage() {
               </Link>
             </div>
           ) : (
-            <ul className="mt-5 space-y-3">
+            <ul inert={submissionLocked} className="mt-5 space-y-3">
               {itemsDetailed.map((item) => (
                 <li
                   key={item.id}
@@ -360,12 +463,12 @@ function OrderPage() {
             </div>
           )}
 
-          {recommendations.length > 0 && (
+          {!submissionLocked && recommendations.length > 0 && (
             <CartRecommendations
               products={recommendations}
               onAdd={(product) => {
-                addToCart(product.id);
-                toast.success("Adăugată în coș", { description: product.name });
+                const added = addToCart(product.id);
+                notifyAddedToCart(product.name, added);
               }}
             />
           )}
@@ -375,172 +478,232 @@ function OrderPage() {
             onSubmit={submit}
             className="mt-8 space-y-7 sm:mt-10 sm:space-y-8"
           >
-            <section className="rounded-2xl border border-[color:var(--gold)]/25 bg-card p-4 shadow-soft sm:p-5">
-              <h2 className="font-display text-xl sm:text-2xl">
-                <span className="mr-2 text-[color:var(--gold)]">✦</span>Date de contact
-              </h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <input
-                  required
-                  autoComplete="name"
-                  aria-label="Nume complet"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Nume complet"
-                  className={`${inputClass} sm:col-span-2`}
-                />
-                <input
-                  required
-                  type="email"
-                  autoComplete="email"
-                  aria-label="E-mail"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="E-mail"
-                  className={inputClass}
-                />
-                <input
-                  required
-                  autoComplete="tel"
-                  inputMode="tel"
-                  aria-label="Telefon"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="Telefon"
-                  className={inputClass}
-                />
-                <input
-                  required
-                  autoComplete="address-level1"
-                  aria-label="Județ"
-                  value={form.county}
-                  onChange={(e) => setForm({ ...form, county: e.target.value })}
-                  placeholder="Județ"
-                  className={inputClass}
-                />
-                <input
-                  required
-                  autoComplete="address-level2"
-                  aria-label="Localitate"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  placeholder="Localitate"
-                  className={inputClass}
-                />
-                <input
-                  required
-                  autoComplete="street-address"
-                  aria-label="Adresă"
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  placeholder="Adresă (stradă, nr, bl, ap)"
-                  className={`${inputClass} sm:col-span-2`}
-                />
-                <input
-                  autoComplete="postal-code"
-                  aria-label="Cod poștal"
-                  value={form.postalCode}
-                  onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
-                  placeholder="Cod poștal (opțional)"
-                  className={inputClass}
-                />
-                <textarea
-                  aria-label="Mesaj cadou sau observații"
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Mesaj cadou sau observații (opțional)"
-                  rows={3}
-                  className={`${inputClass} sm:col-span-2`}
-                />
-              </div>
-            </section>
+            {submissionLocked && (
+              <p role="status" className="rounded-xl border border-amber-500/30 p-4 text-sm">
+                Păstrăm datele comenzii cât timp verificăm trimiterea. Reîncearcă pentru a primi
+                confirmarea aceleiași comenzi.
+              </p>
+            )}
+            <fieldset
+              disabled={submitting || submissionLocked}
+              className="space-y-7 disabled:opacity-80"
+            >
+              <section className="rounded-2xl border border-[color:var(--gold)]/25 bg-card p-4 shadow-soft sm:p-5">
+                <h2 className="font-display text-xl sm:text-2xl">
+                  <span className="mr-2 text-[color:var(--gold)]">✦</span>Date de contact
+                </h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-sm sm:col-span-2">
+                    Nume complet
+                    <input
+                      required
+                      minLength={2}
+                      maxLength={120}
+                      autoComplete="name"
+                      aria-label="Nume complet"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="Nume complet"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block text-sm ">
+                    E-mail
+                    <input
+                      required
+                      type="email"
+                      autoComplete="email"
+                      aria-label="E-mail"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      placeholder="E-mail"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block text-sm ">
+                    Telefon
+                    <input
+                      required
+                      type="tel"
+                      minLength={8}
+                      maxLength={30}
+                      autoComplete="tel"
+                      inputMode="tel"
+                      aria-label="Telefon"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="Telefon"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block text-sm ">
+                    Județ
+                    <input
+                      required
+                      autoComplete="address-level1"
+                      aria-label="Județ"
+                      value={form.county}
+                      onChange={(e) => setForm({ ...form, county: e.target.value })}
+                      placeholder="Județ"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block text-sm ">
+                    Localitate
+                    <input
+                      required
+                      autoComplete="address-level2"
+                      aria-label="Localitate"
+                      value={form.city}
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      placeholder="Localitate"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block text-sm sm:col-span-2">
+                    Adresă
+                    <input
+                      required
+                      minLength={5}
+                      maxLength={300}
+                      autoComplete="street-address"
+                      aria-label="Adresă"
+                      value={form.address}
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      placeholder="Adresă (stradă, nr, bl, ap)"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block text-sm ">
+                    {paymentMethod === "card" && paymentProvider === "revolut_pay"
+                      ? "Cod poștal"
+                      : "Cod poștal (opțional)"}
+                    <input
+                      required={paymentMethod === "card" && paymentProvider === "revolut_pay"}
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      aria-label="Cod poștal"
+                      value={form.postalCode}
+                      onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+                      placeholder="Cod poștal (opțional)"
+                      className={inputClass}
+                    />
+                  </label>
+                  <textarea
+                    aria-label="Mesaj cadou sau observații"
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    placeholder="Mesaj cadou sau observații (opțional)"
+                    rows={3}
+                    className={`${inputClass} sm:col-span-2`}
+                  />
+                </div>
+              </section>
 
-            <ChoiceSection title="Livrare">
-              <Choice
-                selected={shippingOption === "home_delivery"}
-                onChange={() => setShippingOption("home_delivery")}
-                icon={<PackageCheck className="h-5 w-5" />}
-                title="Curier la adresă"
-                note={
-                  config?.shipping.requiresConfirmation
-                    ? "Cost confirmat înainte de procesare"
-                    : money(config?.shipping.standardPrice ?? 0)
-                }
-              />
-              <Choice
-                disabled={!config?.shipping.easyboxEnabled}
-                selected={shippingOption === "easybox"}
-                onChange={() => setShippingOption("easybox")}
-                icon={<PackageCheck className="h-5 w-5" />}
-                title="Easybox"
-                note={
-                  config?.shipping.easyboxEnabled
-                    ? config.shipping.requiresConfirmation
-                      ? "Cost confirmat înainte de procesare"
-                      : money(config.shipping.lockerPrice ?? 0)
-                    : "Disponibil după validarea SmartShip"
-                }
-              />
-            </ChoiceSection>
+              <ChoiceSection title="Livrare">
+                <Choice
+                  name="shipping-method"
+                  selected={shippingOption === "home_delivery" && !activeQuote}
+                  onChange={() => {
+                    setShippingOption("home_delivery");
+                    setQuote(null);
+                  }}
+                  icon={<PackageCheck className="h-5 w-5" />}
+                  title="Curier la adresă"
+                  note={
+                    shippingCost == null
+                      ? "Îți confirmăm costul înainte de expediere"
+                      : activeQuote
+                        ? "Tarif standard"
+                        : shippingCost === 0
+                          ? "Livrare gratuită"
+                          : money(shippingCost)
+                  }
+                />
+                {config?.shipping.liveQuotesEnabled && (
+                  <CheckoutDelivery
+                    key={deliveryContext}
+                    request={deliveryRequest}
+                    selected={activeQuote?.id}
+                    onSelect={(offer) => setQuote({ offer, context: deliveryContext })}
+                  />
+                )}
+              </ChoiceSection>
 
-            <ChoiceSection title="Plată">
-              <Choice
-                selected={paymentMethod === "cash_on_delivery"}
-                onChange={() => setPaymentMethod("cash_on_delivery")}
-                icon={<PackageCheck className="h-5 w-5" />}
-                title="Ramburs"
-                note="Poate necesita confirmare antifraudă"
-              />
-              <Choice
-                disabled={
-                  !config?.payments.card.enabled || Boolean(config?.shipping.requiresConfirmation)
-                }
-                selected={paymentMethod === "card"}
-                onChange={() => setPaymentMethod("card")}
-                icon={<CreditCard className="h-5 w-5" />}
-                title="Card online"
-                note={
-                  config?.payments.card.enabled
-                    ? "Procesare securizată prin Stripe"
-                    : "Disponibil după activarea Stripe"
-                }
-              />
-            </ChoiceSection>
+              <ChoiceSection title="Cum vrei să plătești?">
+                <Choice
+                  name="payment-method"
+                  selected={paymentMethod === "cash_on_delivery"}
+                  onChange={() => setPaymentMethod("cash_on_delivery")}
+                  icon={<PackageCheck className="h-5 w-5" />}
+                  title="La livrare"
+                  note="Achită când primești cutiuța"
+                />
+                {config?.payments.options.map((option) => (
+                  <Choice
+                    key={option.id}
+                    name="payment-method"
+                    disabled={shippingCost == null && !config?.shipping.liveQuotesEnabled}
+                    selected={paymentMethod === "card" && paymentProvider === option.id}
+                    onChange={() => {
+                      setPaymentMethod("card");
+                      setPaymentProvider(option.id);
+                    }}
+                    icon={<CreditCard className="h-5 w-5" />}
+                    title={option.label}
+                    note={
+                      shippingCost == null
+                        ? config?.shipping.liveQuotesEnabled
+                          ? "Alege curierul pentru a confirma totalul"
+                          : "Disponibil după confirmarea costului de livrare"
+                        : option.description
+                    }
+                  />
+                ))}
+                <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
+                  {paymentMethod === "card"
+                    ? "Vei continua pe pagina securizată a procesatorului. Datele cardului nu sunt introduse sau stocate pe acest site."
+                    : "Nu se retrage nicio sumă online. Plata se face la primirea coletului."}
+                </p>
+              </ChoiceSection>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-4 text-sm">
+                <input
+                  required
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[color:var(--wood-dark)]"
+                />
+                <span>
+                  {config?.policies.checkoutConsentText ??
+                    "Confirm datele comenzii și accept condițiile comerciale."}{" "}
+                  <Link to="/retur" className="underline">
+                    Politica de retur și garanție
+                  </Link>{" "}
+                  și{" "}
+                  <Link to="/termeni-de-utilizare" className="underline">
+                    Termenii de utilizare
+                  </Link>{" "}
+                  fac parte din informarea precontractuală. Datele sunt prelucrate conform{" "}
+                  <Link to="/politica-de-confidentialitate" className="underline">
+                    Politicii de confidențialitate
+                  </Link>
+                  .
+                </span>
+              </label>
               <input
-                required
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-[color:var(--wood-dark)]"
+                name="website"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden
+                className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
               />
-              <span>
-                {config?.policies.checkoutConsentText ??
-                  "Confirm datele comenzii și accept condițiile comerciale."}{" "}
-                <Link to="/retur" className="underline">
-                  Politica de retur și garanție
-                </Link>{" "}
-                și{" "}
-                <Link to="/termeni-de-utilizare" className="underline">
-                  Termenii de utilizare
-                </Link>{" "}
-                fac parte din informarea precontractuală. Datele sunt prelucrate conform{" "}
-                <Link to="/politica-de-confidentialitate" className="underline">
-                  Politicii de confidențialitate
-                </Link>
-                .
-              </span>
-            </label>
-            <input
-              name="website"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden
-              className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
-            />
+            </fieldset>
             {configFailed && (
               <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
                 <p>Nu am putut încărca opțiunile de plată și livrare.</p>
@@ -554,7 +717,7 @@ function OrderPage() {
               </div>
             )}
             <button
-              disabled={submitting || totalQty === 0 || !config}
+              disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
               type="submit"
               className="wood-grain hidden w-full rounded-xl py-3.5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50 lg:block"
             >
@@ -574,10 +737,16 @@ function OrderPage() {
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Produse ({totalQty} buc)</span>
-              <span>{money(totals.subtotal)}</span>
+              <span>{money(totals.baseSubtotal)}</span>
             </div>
+            {totals.discount > 0 && (
+              <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                <span>Reducere aplicată</span>
+                <span>−{money(totals.discount)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span>Livrare</span>
+              <span>{activeQuote ? `Livrare · ${activeQuote.courier}` : "Livrare"}</span>
               <span>
                 {shippingCost == null
                   ? "La confirmare"
@@ -587,14 +756,14 @@ function OrderPage() {
               </span>
             </div>
             <div className="font-display flex justify-between border-t border-border pt-3 text-xl">
-              <span>Total</span>
+              <span>{shippingCost == null ? "Produse, fără livrare" : "Total de plată"}</span>
               <span>{money(totals.total + (shippingCost ?? 0))}</span>
             </div>
           </div>
-          {config?.shipping.requiresConfirmation && (
+          {shippingCost == null && config && (
             <p className="mt-5 rounded-md bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-              Regulile de transport nu sunt încă validate. Comanda se salvează fără cost de livrare
-              și este confirmată manual; plata online rămâne blocată.
+              Costul livrării nu este inclus încă. Îți comunicăm totalul final și îți cerem acordul
+              înainte de expediere.
             </p>
           )}
         </aside>
@@ -606,7 +775,7 @@ function OrderPage() {
           <div className="mx-auto flex max-w-6xl items-center gap-3">
             <div className="min-w-0">
               <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                Total
+                {shippingCost == null ? "Produse, fără livrare" : "Total de plată"}
               </div>
               <div className="font-display text-xl leading-tight tabular-nums">
                 {money(totals.total + (shippingCost ?? 0))}
@@ -615,14 +784,14 @@ function OrderPage() {
             <button
               form="checkout-form"
               type="submit"
-              disabled={submitting || totalQty === 0 || !config}
+              disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
               className="wood-grain ml-auto min-h-12 flex-1 rounded-full px-5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting
                 ? "Se procesează..."
                 : paymentMethod === "card"
                   ? "Continuă la plată"
-                  : "Trimite comanda"}
+                  : "Comandă cu obligație de plată"}
             </button>
           </div>
         </div>
@@ -729,13 +898,13 @@ function CartRecommendations({
 
 function ChoiceSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[color:var(--gold)]/25 bg-card p-4 shadow-soft sm:p-5">
-      <h2 className="font-display text-xl sm:text-2xl">
+    <fieldset className="rounded-2xl border border-[color:var(--gold)]/25 bg-card p-4 shadow-soft sm:p-5">
+      <legend className="font-display text-xl sm:text-2xl">
         <span className="mr-2 text-[color:var(--gold)]">✦</span>
         {title}
-      </h2>
+      </legend>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">{children}</div>
-    </section>
+    </fieldset>
   );
 }
 
@@ -746,8 +915,10 @@ function Choice({
   icon,
   title,
   note,
+  name,
 }: {
   disabled?: boolean;
+  name: string;
   selected: boolean;
   onChange: () => void;
   icon: React.ReactNode;
@@ -760,6 +931,7 @@ function Choice({
     >
       <input
         type="radio"
+        name={name}
         className="h-5 w-5 shrink-0 accent-[color:var(--wood-dark)]"
         disabled={disabled}
         checked={selected}

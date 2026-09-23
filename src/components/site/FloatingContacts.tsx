@@ -38,7 +38,7 @@ export function FloatingContacts() {
   ];
 
   return (
-    <div className="fixed right-4 bottom-4 md:right-6 md:bottom-6 z-50 flex flex-col gap-3">
+    <div className="floating-contacts fixed z-50 flex flex-col gap-3" aria-label="Contact rapid">
       {items.map(({ label, href, Icon, bg, ring, external }) => (
         <a
           key={label}

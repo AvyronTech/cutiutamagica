@@ -84,7 +84,7 @@ function mapOrder(row: DbRow): AdminOrder {
     platform: PLATFORM_LABELS[channelCode] ?? stringValue(row.channel_name),
     channelCode,
     customer: stringValue(row.customer_name) || "Client",
-    products: stringValue(row.products_summary) || "Fara produse",
+    products: stringValue(row.products_summary) || "Fără produse",
     total: baniToRon(row.total_bani),
     currency: stringValue(row.currency) || "RON",
     status: toAdminOrderStatus({

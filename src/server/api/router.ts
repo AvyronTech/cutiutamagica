@@ -1,3 +1,16 @@
+import { handleReviews } from "./reviews";
+import { handleReviewAccount } from "../review-accounts";
+import { localMediaPreview } from "@/server/media-policy";
+import { handleCheckoutAdmin } from "./checkout-admin";
+import { handleStoryScene } from "./story-scene";
+import { handleShippingCheckout } from "./shipping-checkout";
+import { handlePayments } from "./payments";
+import { checkoutReadiness } from "../services/checkout-readiness";
+import { boundedJson } from "./bounded-json";
+import { handleSalesWorkbench } from "./sales-workbench";
+import { handleStorefrontDesign } from "./storefront-design";
+import { handleAdminInventory } from "./admin-inventory";
+import { handleProductInterest } from "./product-interest";
 import { listPublicCatalog } from "@/server/db/catalog.repository";
 import { websiteOrderInputSchema } from "@/lib/order-contracts";
 import {
@@ -57,7 +70,7 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
 
   let body: unknown;
   try {
-    body = await request.json();
+    body = await boundedJson(request, 32_768);
   } catch {
     return json(
       { error: { code: "INVALID_JSON", message: "Cererea JSON nu este validă." } },
@@ -76,7 +89,18 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
   }
 
   try {
-    const result = await createWebsiteOrder(env.DB, parsed.data);
+    const result = await createWebsiteOrder(env.DB, parsed.data, async () => {
+      if (parsed.data.paymentMethod === "bank_transfer")
+        throw new CheckoutError("Alege o metodă de plată disponibilă.", 409);
+      if (parsed.data.paymentMethod === "card") {
+        const ready = await checkoutReadiness(env as CommerceEnv);
+        if (!ready.options.some((o) => o.id === (parsed.data.paymentProvider ?? "stripe")))
+          throw new CheckoutError(
+            "Metoda de plată nu mai este disponibilă. Alege o altă opțiune.",
+            409,
+          );
+      }
+    });
     if (result.outboxId) {
       try {
         await env.COMMERCE_EVENTS.send({ version: 1, outboxId: result.outboxId });
@@ -125,6 +149,25 @@ export async function handleApiRequest(
   const url = new URL(request.url);
   if (!url.pathname.startsWith(API_PREFIX)) return null;
 
+  const reviewAccountResponse = await handleReviewAccount(request, env);
+  if (reviewAccountResponse) return reviewAccountResponse;
+  const reviewsResponse = await handleReviews(request, env);
+  if (reviewsResponse) return reviewsResponse;
+
+  const storyResponse = await handleStoryScene(request, env);
+  if (storyResponse) return storyResponse;
+
+  const checkoutAdminResponse = await handleCheckoutAdmin(request, env as CommerceEnv);
+  if (checkoutAdminResponse) return checkoutAdminResponse;
+  const salesResponse = await handleSalesWorkbench(request, env);
+  if (salesResponse) return salesResponse;
+  const designResponse = await handleStorefrontDesign(request, env);
+  if (designResponse) return designResponse;
+  const inventoryResponse = await handleAdminInventory(request, env);
+  if (inventoryResponse) return inventoryResponse;
+  const interestResponse = await handleProductInterest(request, env);
+  if (interestResponse) return interestResponse;
+
   const adminMediaResponse = await handleAdminMediaApi(request, env);
   if (adminMediaResponse) return adminMediaResponse;
 
@@ -136,6 +179,11 @@ export async function handleApiRequest(
 
   const adminAvyronResponse = await handleAdminAvyronSyncApi(request, env);
   if (adminAvyronResponse) return adminAvyronResponse;
+
+  const shippingResponse = await handleShippingCheckout(request, env as CommerceEnv);
+  if (shippingResponse) return shippingResponse;
+  const paymentResponse = await handlePayments(request, env as CommerceEnv);
+  if (paymentResponse) return paymentResponse;
 
   const commerceResponse = await handleCommerceApi(request, env as CommerceEnv, ctx);
   if (commerceResponse) return commerceResponse;
@@ -167,19 +215,8 @@ export async function handleApiRequest(
   }
 
   if (url.pathname === "/api/v1/catalog/products") {
-    const cacheKey = "catalog:public:v1";
-    const cached = await env.CACHE.get(cacheKey, "json");
-    if (cached) {
-      return json(cached, {
-        headers: { "cache-control": "public, max-age=60, s-maxage=300", "x-cache": "HIT" },
-      });
-    }
-    const products = await listPublicCatalog(env.DB);
-    const payload = { data: products, meta: { count: products.length, productType: "music_box" } };
-    ctx.waitUntil(env.CACHE.put(cacheKey, JSON.stringify(payload), { expirationTtl: 300 }));
-    return json(payload, {
-      headers: { "cache-control": "public, max-age=60, s-maxage=300", "x-cache": "MISS" },
-    });
+    const products = await listPublicCatalog(env.DB, localMediaPreview(env));
+    return json({ data: products, meta: { count: products.length, productType: "music_box" } });
   }
 
   const experienceMatch = url.pathname.match(

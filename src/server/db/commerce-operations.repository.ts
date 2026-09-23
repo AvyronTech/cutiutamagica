@@ -88,12 +88,12 @@ export async function getCommercePublicConfig(
       taxId: stringValue(entity.tax_id),
       vatStatus: stringValue(entity.vat_status),
       countryCode: stringValue(entity.country_code) || "RO",
-      profileComplete: entity.status === "verified",
     },
-    currencies,
+    currencies: { active: currencies.active },
     payments: {
       card: { enabled: availability.stripe, provider: "stripe" },
-      cashOnDelivery: { enabled: true, reviewMayApply: true },
+      options: [],
+      cashOnDelivery: { enabled: true },
       bankTransfer: { enabled: false },
     },
     shipping: {
@@ -113,13 +113,7 @@ export async function getCommercePublicConfig(
         shippingVerified && shipping.free_over_bani != null
           ? numberValue(shipping.free_over_bani) / 100
           : null,
-      defaultWeightG: numberValue(shipping.default_weight_g),
-      defaultLengthCm: numberValue(shipping.default_length_cm),
-      defaultWidthCm: numberValue(shipping.default_width_cm),
-      defaultHeightCm: numberValue(shipping.default_height_cm),
       allowedCountries,
-      internationalReady:
-        Array.isArray(allowedCountries) && allowedCountries.some((country) => country !== "RO"),
       currency: stringValue(shipping.currency) || "RON",
       requiresConfirmation: !shippingVerified,
     },

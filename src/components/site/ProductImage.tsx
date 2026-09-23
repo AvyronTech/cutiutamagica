@@ -22,7 +22,9 @@ type Props = {
 };
 
 /** Doar pozele procesate de noi au variantele AVIF alături. */
-const hasOptimizedVariants = (src: string) => src.startsWith("/produse/") && src.endsWith(".webp");
+const hasOptimizedVariants = (src: string) =>
+  /^\/produse\/(hp-keeper|got-winter|sunshine|kitten|halloween)\//.test(src) &&
+  src.endsWith(".webp");
 
 export function ProductImage({
   src,

@@ -26,6 +26,11 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let enabled: boolean | null = null;
 let lastPluckAt = 0;
+let productAudioPlaying = false;
+export function setProductAudioPlaying(value: boolean) {
+  productAudioPlaying = value;
+  if (master && ctx) master.gain.setTargetAtTime(value ? 0 : 0.32, ctx.currentTime, 0.03);
+}
 const listeners = new Set<Listener>();
 
 function readStored(): boolean {
@@ -143,7 +148,7 @@ function noiseBurst(
 }
 
 async function play(render: (ac: AudioContext, out: AudioNode) => void) {
-  if (!isSoundEnabled()) return;
+  if (!isSoundEnabled() || productAudioPlaying) return;
   const ac = await ensureContext();
   if (!ac || !master) return;
   render(ac, master);

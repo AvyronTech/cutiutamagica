@@ -1,4 +1,11 @@
 import {
+  CHAT_SIDE_KEY,
+  DEFAULT_CHAT_SIDE,
+  preferredChatSide,
+  publishChatPlacement,
+} from "@/lib/floating-widgets";
+import { useLocation } from "@tanstack/react-router";
+import {
   useEffect,
   useRef,
   useState,
@@ -34,7 +41,7 @@ type ChatSession = { conversationId: string; accessToken: string };
 
 const SESSION_KEY = "cutiuta:chat-session:v1";
 const VISITOR_KEY = "cutiuta:chat-visitor:v1";
-const SIDE_KEY = "cutiuta:chat-side";
+const SIDE_KEY = CHAT_SIDE_KEY;
 
 function loadSession(): ChatSession | null {
   try {
@@ -61,9 +68,10 @@ async function responseData<T>(response: Response): Promise<T> {
 }
 
 export function ChatWidget() {
+  const pathname = useLocation().pathname;
   const [config, setConfig] = useState<PublicChatConfig | null>(null);
   const [open, setOpen] = useState(false);
-  const [side, setSide] = useState<"left" | "right">("right");
+  const [side, setSide] = useState<"left" | "right">(DEFAULT_CHAT_SIDE);
   const [session, setSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
@@ -75,6 +83,9 @@ export function ChatWidget() {
   const [dragX, setDragX] = useState(0);
   const pointer = useRef<{ id: number; startX: number; moved: boolean } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const bubbleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -83,8 +94,13 @@ export function ChatWidget() {
       .then((data) => {
         if (!active) return;
         setConfig(data);
-        const stored = localStorage.getItem(SIDE_KEY);
-        setSide(stored === "left" || stored === "right" ? stored : data.position);
+        let stored: string | null = null;
+        try {
+          stored = localStorage.getItem(SIDE_KEY);
+        } catch {
+          /* Private browsing can block persistence. */
+        }
+        setSide(preferredChatSide(stored, data.position));
         setSession(loadSession());
       })
       .catch(() => setConfig(null));
@@ -117,8 +133,60 @@ export function ChatWidget() {
   }, [open, session]);
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
   }, [messages, open]);
+
+  useEffect(() => {
+    publishChatPlacement({ side, open: Boolean(config?.enabled && open) });
+  }, [side, open, config?.enabled]);
+  useEffect(() => {
+    const close = () => setOpen(false);
+    window.addEventListener("cutiuta:cart-open", close);
+    return () => {
+      window.removeEventListener("cutiuta:cart-open", close);
+      publishChatPlacement({ side: DEFAULT_CHAT_SIDE, open: false });
+    };
+  }, []);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const viewport = window.visualViewport;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      widgetRef.current?.style.setProperty(
+        "--chat-visible-height",
+        `${viewport?.height ?? window.innerHeight}px`,
+      );
+      widgetRef.current?.style.setProperty("--chat-visible-top", `${viewport?.offsetTop ?? 0}px`);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        requestAnimationFrame(() => bubbleRef.current?.focus({ preventScroll: true }));
+      }
+    };
+    update();
+    panelRef.current?.focus({ preventScroll: true });
+    viewport?.addEventListener("resize", schedule);
+    viewport?.addEventListener("scroll", schedule);
+    window.addEventListener("resize", schedule);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      viewport?.removeEventListener("resize", schedule);
+      viewport?.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   if (!config?.enabled) return null;
   const activeConfig = config;
@@ -210,20 +278,31 @@ export function ChatWidget() {
     }
     const next = event.clientX < window.innerWidth / 2 ? "left" : "right";
     setSide(next);
-    localStorage.setItem(SIDE_KEY, next);
+    try {
+      localStorage.setItem(SIDE_KEY, next);
+    } catch {
+      /* Position still works for this visit. */
+    }
   }
 
-  const sideClass = side === "left" ? "left-3 sm:left-5" : "right-3 sm:right-5";
   const operatorOnline = activeConfig.availability !== "offline";
 
   return (
     <div
-      className={`fixed bottom-4 z-[70] ${sideClass}`}
+      ref={widgetRef}
+      className="chat-widget"
+      data-side={side}
+      data-open={open}
+      data-home={pathname === "/"}
       style={{ "--chat-accent": activeConfig.accentColor } as React.CSSProperties}
     >
       {open && (
         <section
-          className={`chat-panel mb-3 flex h-[min(580px,calc(100dvh-6.5rem))] w-[min(370px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-lg border border-white/50 bg-[#fffaf1]/95 shadow-2xl backdrop-blur-xl ${side === "left" ? "origin-bottom-left" : "origin-bottom-right"}`}
+          ref={panelRef}
+          id="cutiuta-chat-panel"
+          tabIndex={-1}
+          className="chat-panel flex flex-col rounded-2xl border border-white/50 bg-[#fffaf1] shadow-2xl"
+          role="region"
           aria-label="Chat Cutiuța Magică"
         >
           <header className="relative overflow-hidden bg-[#35251d] px-4 py-3.5 text-white">
@@ -245,7 +324,10 @@ export function ChatWidget() {
               </div>
               <button
                 className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  requestAnimationFrame(() => bubbleRef.current?.focus({ preventScroll: true }));
+                }}
                 aria-label="Închide chatul"
               >
                 <ChevronDown size={19} />
@@ -300,6 +382,8 @@ export function ChatWidget() {
             <div className="grid grid-cols-2 gap-2 border-t border-[#6d4a2b]/10 bg-white/60 px-3 pt-3">
               {activeConfig.collectName && (
                 <input
+                  aria-label="Prenume"
+                  autoComplete="given-name"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   maxLength={100}
@@ -309,6 +393,8 @@ export function ChatWidget() {
               )}
               {activeConfig.collectEmail && (
                 <input
+                  aria-label="E-mail"
+                  autoComplete="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   maxLength={254}
@@ -346,10 +432,11 @@ export function ChatWidget() {
             className="flex items-end gap-2 border-t border-[#6d4a2b]/10 bg-white/75 p-3"
           >
             <textarea
+              aria-label="Mesajul tău"
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
                   event.preventDefault();
                   submit(event);
                 }
@@ -371,8 +458,15 @@ export function ChatWidget() {
       )}
 
       <button
+        ref={bubbleRef}
+        type="button"
+        hidden={open}
+        aria-controls="cutiuta-chat-panel"
         className="chat-bubble relative grid h-14 w-14 touch-none place-items-center rounded-full border border-white/60 bg-[#3a281f] text-amber-100 shadow-[0_12px_35px_rgba(52,35,26,0.35)] transition-[transform,box-shadow] hover:shadow-[0_15px_38px_rgba(52,35,26,0.45)]"
         style={{ transform: `translateX(${dragX}px)` }}
+        onClick={(event) => {
+          if (event.detail === 0) setOpen((value) => !value);
+        }}
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}

@@ -74,6 +74,16 @@ export const financeSettingsSchema = z.object({
   avyronSummaryEnabled: z.literal(false).default(false),
 });
 export const credentialProviderSchema = z.enum([
+  "google_merchant",
+  "netopia",
+  "netopia_public_key",
+  "revolut_merchant",
+  "revolut_merchant_webhook",
+  "oblio",
+  "emag",
+  "trendyol",
+  "olx",
+  "okazii",
   "fgo",
   "smartship",
   "stripe",
