@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { giftGuides } from "@/data/gift-guides";
+import { giftGuideGroups, giftGuides } from "@/data/gift-guides";
 import { safeJsonLd } from "@/lib/product-discovery";
 export const Route = createFileRoute("/cadouri/")({
   component: GiftHub,
@@ -9,13 +9,14 @@ export const Route = createFileRoute("/cadouri/")({
       {
         name: "description",
         content:
-          "Ghiduri de cadouri pentru Crăciun, Secret Santa, Moș Nicolae și Halloween. Alege o cutiuță muzicală după persoană, melodie și ocazie.",
+          "Ghiduri de cadouri după ocazie, persoană și pasiune: aniversări, cuplu, părinți, colegi, iubitori de pisici, Harry Potter și fantasy.",
       },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Idei de cadouri cu poveste | Cutiuța Magică" },
       {
         property: "og:description",
         content:
-          "Alege o cutiuță muzicală pentru Crăciun, Secret Santa, Moș Nicolae sau Halloween, după persoană și melodie.",
+          "Alege o cutiuță muzicală după ocazie, destinatar, melodie și pasiunea care face cadoul personal.",
       },
       { property: "og:url", content: "https://cutiutamagica.eu/cadouri" },
       { property: "og:image", content: "https://cutiutamagica.eu/scenes/catalog-atelier.webp" },
@@ -26,18 +27,43 @@ export const Route = createFileRoute("/cadouri/")({
         type: "application/ld+json",
         children: safeJsonLd({
           "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          name: "Idei de cadouri cu poveste",
-          url: "https://cutiutamagica.eu/cadouri",
-          mainEntity: {
-            "@type": "ItemList",
-            itemListElement: giftGuides.map((guide, index) => ({
-              "@type": "ListItem",
-              position: index + 1,
-              name: guide.title,
-              url: `https://cutiutamagica.eu/cadouri/${guide.slug}`,
-            })),
-          },
+          "@graph": [
+            {
+              "@type": "CollectionPage",
+              "@id": "https://cutiutamagica.eu/cadouri#page",
+              name: "Idei de cadouri cu poveste",
+              url: "https://cutiutamagica.eu/cadouri",
+              inLanguage: "ro-RO",
+              isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+              mainEntity: {
+                "@type": "ItemList",
+                numberOfItems: giftGuides.length,
+                itemListElement: giftGuides.map((guide, index) => ({
+                  "@type": "ListItem",
+                  position: index + 1,
+                  name: guide.title,
+                  url: `https://cutiutamagica.eu/cadouri/${guide.slug}`,
+                })),
+              },
+            },
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Acasă",
+                  item: "https://cutiutamagica.eu/",
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: "Idei de cadouri",
+                  item: "https://cutiutamagica.eu/cadouri",
+                },
+              ],
+            },
+          ],
         }),
       },
     ],
@@ -54,16 +80,27 @@ function GiftHub() {
           devine un dar personal atunci când melodia și ilustrația au o legătură cu ea.
         </p>
       </header>
-      <div className="gift-guide-grid">
-        {giftGuides.map((guide) => (
-          <Link key={guide.slug} to="/cadouri/$ocazie" params={{ ocazie: guide.slug }}>
-            <span>{guide.eyebrow}</span>
-            <h2>{guide.label}</h2>
-            <p>{guide.description}</p>
-            <strong>Descoperă ideile ↗</strong>
-          </Link>
-        ))}
-      </div>
+      {giftGuideGroups.map((group) => {
+        const groupId = `gift-${group.label.toLowerCase().replaceAll(" ", "-")}`;
+        return (
+          <section key={group.label} className="gift-guide-group" aria-labelledby={groupId}>
+            <div className="gift-guide-group__heading">
+              <span className="catalog-eyebrow">Alege după</span>
+              <h2 id={groupId}>{group.label}</h2>
+            </div>
+            <div className="gift-guide-grid">
+              {group.guides.map((guide) => (
+                <Link key={guide.slug} to="/cadouri/$ocazie" params={{ ocazie: guide.slug }}>
+                  <span>{guide.eyebrow}</span>
+                  <h3>{guide.label}</h3>
+                  <p>{guide.description}</p>
+                  <strong>Descoperă ideile ↗</strong>
+                </Link>
+              ))}
+            </div>
+          </section>
+        );
+      })}
       <section>
         <h2>Și pentru momentele care nu au o dată în calendar</h2>
         <p>

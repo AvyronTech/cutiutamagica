@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import type { Product } from "@/data/products";
-import { giftGuide } from "@/data/gift-guides";
+import { giftGuidesForProduct } from "@/data/gift-guides";
 export function ProductDiscovery({ product }: { product: Product }) {
   const content = product.discovery;
   if (!content?.intro) return null;
+  const guides = giftGuidesForProduct(product.id).slice(0, 8);
   return (
     <section className="product-discovery" aria-labelledby="discovery-title">
       <span className="catalog-eyebrow">Un dar ales cu gândul la cineva</span>
@@ -49,11 +50,12 @@ export function ProductDiscovery({ product }: { product: Product }) {
         </details>
       </div>
       <nav aria-label="Ghiduri de cadouri potrivite acestui produs" className="discovery-links">
-        {content.guides.map((slug) => (
-          <Link key={slug} to="/cadouri/$ocazie" params={{ ocazie: slug }}>
-            {giftGuide(slug)?.label} · idei de cadouri ↗
+        {guides.map((guide) => (
+          <Link key={guide.slug} to="/cadouri/$ocazie" params={{ ocazie: guide.slug }}>
+            {guide.label} · idei de cadouri ↗
           </Link>
         ))}
+        <Link to="/cadouri">Toate ghidurile de cadouri ↗</Link>
       </nav>
     </section>
   );

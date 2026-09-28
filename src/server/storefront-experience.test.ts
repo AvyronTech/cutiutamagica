@@ -16,6 +16,7 @@ import { handleAdminMediaApi } from "./api/admin-media";
 import { handleAdminProductApi } from "./api/admin-product";
 import { getPublicProductExperience } from "./api/product-experience";
 import { encodeAudioClip } from "@/lib/audio-clip";
+import { giftGuides } from "@/data/gift-guides";
 vi.mock("@/lib/admin-auth", () => ({
   authenticateAdminRequest: vi.fn(async () => ({ id: "test-admin", email: "test@example.test" })),
 }));
@@ -250,10 +251,12 @@ describe("storefront and dashboard share one catalog", () => {
     expect(products.every((p) => p.discovery?.guides.length)).toBe(true);
     const { renderSitemap } = await import("@/lib/seo-sitemap");
     const sitemap = renderSitemap(products);
-    expect(sitemap.match(/<url>/g)).toHaveLength(25);
+    expect(sitemap.match(/<url>/g)).toHaveLength(11 + giftGuides.length + products.length);
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/despre-noi</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/personalizeaza</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/livrare</loc>");
+    for (const guide of giftGuides)
+      expect(sitemap).toContain(`<loc>https://cutiutamagica.eu/cadouri/${guide.slug}</loc>`);
     for (const p of products) expect(sitemap).toContain(`/produs/${p.slug}</loc>`);
     expect(sitemap).toContain("<image:loc>");
     expect(sitemap).not.toMatch(/\/(admin|comanda|auth|api)\b/);

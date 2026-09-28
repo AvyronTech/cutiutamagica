@@ -54,8 +54,8 @@ export function SellerIdentity({
           <br />
         </>
       )}
-      <a href={`mailto:${seller.public_email || "cutiutamagica@gmail.com"}`}>
-        {seller.public_email || "cutiutamagica@gmail.com"}
+      <a href={`mailto:${seller.public_email || "cutiutamagicaofficial@gmail.com"}`}>
+        {seller.public_email || "cutiutamagicaofficial@gmail.com"}
       </a>
       {seller.public_phone && (
         <>

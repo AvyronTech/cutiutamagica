@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { readProductDiscovery, safeJsonLd } from "./product-discovery";
-import { giftGuide } from "@/data/gift-guides";
+import { giftGuide, giftGuides } from "@/data/gift-guides";
 import { renderSitemap } from "./seo-sitemap";
 import type { CatalogProduct } from "@/server/db/catalog.repository";
 
@@ -41,6 +41,31 @@ describe("product discovery and search metadata", () => {
       }),
     ).toBeNull();
     expect(giftGuide("invented-page")).toBeUndefined();
+  });
+  it("publishes distinct, substantial search guides backed by real catalog products", () => {
+    const productIds = new Set([
+      "hp-keeper",
+      "got-winter",
+      "sunshine",
+      "kitten",
+      "halloween",
+      "lotr-rings",
+      "hp-always",
+      "fairy",
+      "pirates",
+      "starwars-dad",
+    ]);
+    expect(giftGuides.length).toBeGreaterThanOrEqual(16);
+    expect(new Set(giftGuides.map((guide) => guide.slug)).size).toBe(giftGuides.length);
+    expect(new Set(giftGuides.map((guide) => guide.title)).size).toBe(giftGuides.length);
+    for (const guide of giftGuides) {
+      expect(guide.description.length).toBeGreaterThan(90);
+      expect(guide.description.length).toBeLessThanOrEqual(180);
+      expect(guide.intro.length).toBeGreaterThan(140);
+      expect(guide.sections).toHaveLength(3);
+      expect(guide.productIds.length).toBeGreaterThan(0);
+      expect(guide.productIds.every((id) => productIds.has(id))).toBe(true);
+    }
   });
   it("keeps administrator content from closing JSON-LD script elements", () => {
     const value = { name: '</script><script>alert("x")</script>' };

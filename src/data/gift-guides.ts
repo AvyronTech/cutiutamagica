@@ -1,9 +1,29 @@
+export type GiftGuideGroup = "Ocazii" | "Pentru cine" | "Pasiuni";
+
+export interface GiftGuide {
+  readonly slug: string;
+  readonly label: string;
+  readonly group: GiftGuideGroup;
+  readonly productIds: readonly string[];
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly seoTitle?: string;
+  readonly description: string;
+  readonly intro: string;
+  readonly sections: readonly { readonly title: string; readonly text: string }[];
+  readonly question: string;
+  readonly answer: string;
+}
+
 export const giftGuides = [
   {
     slug: "halloween",
+    group: "Ocazii",
+    productIds: ["halloween", "hp-keeper", "got-winter"],
     label: "Halloween",
     eyebrow: "Toamnă · mister · colecții",
     title: "Cadouri de Halloween: cutiuțe muzicale cu atmosferă de poveste",
+    seoTitle: "Cadouri Halloween: cutiuțe muzicale cu atmosferă",
     description:
       "Idei de cadouri și decor de Halloween pentru fani și colecționari. Alege o cutiuță muzicală după ilustrație, mecanism și disponibilitate.",
     intro:
@@ -28,9 +48,12 @@ export const giftGuides = [
   },
   {
     slug: "secret-santa",
+    group: "Ocazii",
+    productIds: ["hp-keeper", "got-winter", "kitten", "halloween", "sunshine"],
     label: "Secret Santa",
     eyebrow: "Colegi · prieteni · pasiuni",
     title: "Cadouri Secret Santa: cum alegi o cutiuță muzicală personală",
+    seoTitle: "Cadouri Secret Santa: cutiuțe muzicale pentru colegi",
     description:
       "Idei de Secret Santa pentru colegi și prieteni: cutiuțe muzicale pentru fani Harry Potter, pisici, fantasy și melodii cu semnificație.",
     intro:
@@ -55,9 +78,12 @@ export const giftGuides = [
   },
   {
     slug: "mos-nicolae",
+    group: "Ocazii",
+    productIds: ["sunshine", "kitten", "hp-keeper"],
     label: "Moș Nicolae",
     eyebrow: "6 decembrie · daruri mici",
     title: "Cadouri de Moș Nicolae: mici cutiuțe muzicale pentru cei dragi",
+    seoTitle: "Cadouri de Moș Nicolae: cutiuțe muzicale mici",
     description:
       "Un dar mic de Moș Nicolae, cu melodie și poveste. Idei de cutiuțe muzicale pentru adulți, fani, familie și iubitori de pisici.",
     intro:
@@ -82,9 +108,23 @@ export const giftGuides = [
   },
   {
     slug: "craciun",
+    group: "Ocazii",
+    productIds: [
+      "sunshine",
+      "kitten",
+      "hp-keeper",
+      "got-winter",
+      "halloween",
+      "lotr-rings",
+      "hp-always",
+      "fairy",
+      "pirates",
+      "starwars-dad",
+    ],
     label: "Crăciun",
     eyebrow: "Familie · amintiri · daruri",
     title: "Cadouri de Crăciun cu poveste: cutiuțe muzicale din lemn",
+    seoTitle: "Cadouri de Crăciun: cutiuțe muzicale cu poveste",
     description:
       "Alege un cadou de Crăciun după persoană și melodie: cutiuțe muzicale pentru cuplu, familie, fani de filme, cititori și colecționari.",
     intro:
@@ -107,7 +147,436 @@ export const giftGuides = [
     answer:
       "Fiecare model are melodia și ilustrația prezentate în pagina sa. Nu presupune că poate fi schimbată melodia sau gravura; pentru o cerere specială, cere confirmare înainte de comandă.",
   },
-] as const;
+  {
+    slug: "zi-de-nastere",
+    group: "Ocazii",
+    productIds: ["sunshine", "kitten", "hp-keeper", "got-winter", "halloween"],
+    label: "Zi de naștere",
+    eyebrow: "Aniversare · surpriză · amintire",
+    title: "Cadou de zi de naștere: o cutiuță muzicală aleasă după persoană",
+    seoTitle: "Cadou de zi de naștere: cutiuțe muzicale cu poveste",
+    description:
+      "Idei de cadouri de zi de naștere pentru ea, el, prieteni și fani: cutiuțe muzicale din lemn alese după melodie și pasiune.",
+    intro:
+      "Un cadou de zi de naștere devine memorabil când trimite la ceva ce persoana iubește deja. Poate fi o melodie apropiată, un univers de film sau o ilustrație cu pisici. Cutiuța muzicală este compactă, funcționează manual și creează un mic moment de descoperire atunci când este deschisă.",
+    sections: [
+      {
+        title: "Pornește de la pasiunea sărbătoritului",
+        text: "Pentru un cititor de fantasy sau un fan de filme, alege universul pe care îl recunoaște imediat. Pentru cine iubește pisicile, caută modelul tematic. Dacă relația este apropiată, o melodie precum You Are My Sunshine poate transmite mai mult decât un obiect ales doar după aspect.",
+      },
+      {
+        title: "Transformă deschiderea într-un moment",
+        text: "Arată-i persoanei cum se rotește manivela și ascultați împreună primele note. Adaugă un bilețel care explică de ce ai ales exact acel model. Cutiuța nu are nevoie de baterii, iar mecanismul vizibil face parte din experiență.",
+      },
+      {
+        title: "Verifică stocul înainte de data aniversării",
+        text: "Modelele disponibile pot fi comandate din pagina produsului. Pentru o aniversare cu dată fixă, verifică livrarea și nu planifica în jurul unui produs marcat «În curând». Fotografiile, dimensiunile și melodia sunt prezentate individual.",
+      },
+    ],
+    question: "Este potrivită ca dar principal sau ca mică surpriză?",
+    answer:
+      "Poate avea oricare dintre roluri, în funcție de persoană. Pentru un fan sau colecționar poate fi darul central; pentru altcineva poate însoți o carte, flori sau o fotografie.",
+  },
+  {
+    slug: "aniversare-cuplu",
+    group: "Ocazii",
+    productIds: ["sunshine", "hp-keeper", "got-winter"],
+    label: "Aniversare de cuplu",
+    eyebrow: "Cuplu · melodie · poveste comună",
+    title: "Cadou pentru aniversarea de cuplu: o melodie care vă aparține",
+    seoTitle: "Cadou aniversare cuplu: cutiuță muzicală din lemn",
+    description:
+      "Idei de cadou pentru aniversarea de cuplu: cutiuțe muzicale cu manivelă, melodii apropiate și teme din poveștile voastre preferate.",
+    intro:
+      "Pentru aniversarea relației, un obiect mic poate spune mult atunci când este legat de o amintire comună. Alege cutiuța după cântecul care vă apropie sau după filmul și povestea pe care le-ați descoperit împreună, apoi completează gestul cu câteva cuvinte personale.",
+    sections: [
+      {
+        title: "Alege după semnificație, nu după mărime",
+        text: "You Are My Sunshine are un ton cald și direct. Un model inspirat de Harry Potter sau Game of Thrones poate fi mai potrivit dacă acela este universul vostru comun. Pagina fiecărui produs arată melodia, capacul și mecanismul.",
+      },
+      {
+        title: "Adaugă povestea voastră",
+        text: "Scrie pe un cartonaș locul, momentul sau replica de care vă amintește cutiuța. Pentru o imagine ori gravură aleasă de voi, folosește configuratorul de personalizare și ține cont de termenul de realizare afișat acolo.",
+      },
+      {
+        title: "Păstrați obiectul aproape",
+        text: "Cutiuța poate sta pe noptieră, într-o bibliotecă sau lângă fotografii. Lemnul trebuie ferit de umezeală și căldură, iar manivela se rotește ușor doar cât timp vreți să ascultați fragmentul muzical.",
+      },
+    ],
+    question: "Pot personaliza imaginea de pe capac pentru aniversare?",
+    answer:
+      "Da, pagina de personalizare permite alegerea culorii, încărcarea unei imagini și solicitarea unei gravuri. Atelierul confirmă detaliile înainte de realizare.",
+  },
+  {
+    slug: "valentines-day",
+    group: "Ocazii",
+    productIds: ["sunshine", "hp-keeper"],
+    label: "Valentine’s Day",
+    eyebrow: "14 februarie · cuplu · gest personal",
+    title: "Cadou de Valentine’s Day: o cutiuță muzicală pentru voi doi",
+    seoTitle: "Cadou Valentine’s Day: cutiuță muzicală pentru cuplu",
+    description:
+      "Un cadou de Valentine’s Day cu melodie și poveste: cutiuțe muzicale din lemn pentru iubită, iubit sau o amintire de cuplu.",
+    intro:
+      "De Valentine’s Day, legătura dintre dar și povestea voastră contează mai mult decât dimensiunea lui. O cutiuță muzicală pornește printr-un gest simplu, fără baterii, și poate păstra aproape un cântec ori un univers pe care îl recunoașteți amândoi.",
+    sections: [
+      {
+        title: "Pentru iubită sau iubit",
+        text: "Alege You Are My Sunshine pentru un mesaj tandru sau un model tematic atunci când pasiunea comună este mai importantă decât simbolurile romantice clasice. Verifică fotografiile produsului și ascultă fragmentul audio dacă este disponibil.",
+      },
+      {
+        title: "Un dar care poate deveni al vostru",
+        text: "Configurarea cu fotografie și gravură este potrivită când vrei un obiect construit în jurul unei amintiri precise. Imaginea se previzualizează înainte de trimiterea cererii, iar varianta finală este confirmată de atelier.",
+      },
+      {
+        title: "Comandă cu timp pentru pregătire",
+        text: "Pentru 14 februarie, verifică disponibilitatea produsului și timpul de livrare. Cutiuțele personalizate au nevoie de pregătire suplimentară, iar termenul estimat este afișat în formularul dedicat.",
+      },
+    ],
+    question: "Este obligatoriu să aleg un model cu mesaj romantic?",
+    answer:
+      "Nu. Cel mai personal cadou poate fi modelul inspirat de cartea, filmul sau melodia pe care le iubiți împreună.",
+  },
+  {
+    slug: "multumire",
+    group: "Ocazii",
+    productIds: ["sunshine", "kitten"],
+    label: "Mulțumire",
+    eyebrow: "Recunoștință · gest mic · atenție",
+    title: "Cadou de mulțumire: o cutiuță muzicală cu mesaj cald",
+    seoTitle: "Cadou de mulțumire: cutiuțe muzicale cu semnificație",
+    description:
+      "Idei de cadou de mulțumire pentru o persoană dragă, colegă, profesoară sau gazdă: o cutiuță muzicală mică, aleasă cu sens.",
+    intro:
+      "Un cadou de mulțumire nu trebuie să fie impersonal. O cutiuță muzicală poate marca ajutorul primit, o găzduire sau un gest care a contat, mai ales când imaginea și melodia se potrivesc persoanei căreia îi este oferită.",
+    sections: [
+      {
+        title: "Spune concret pentru ce mulțumești",
+        text: "Însoțește cutiuța de un mesaj scurt și precis. Un model cu melodie caldă se potrivește unei persoane apropiate, iar o ilustrație cu pisicuță poate fi aleasă pentru cineva a cărui pasiune o cunoști deja.",
+      },
+      {
+        title: "Potrivit pentru gazdă, colegă sau mentor",
+        text: "Alege un model decorativ atunci când nu cunoști toate preferințele, dar ai observat stilul persoanei. Evită un mesaj prea intim pentru o relație profesională și lasă motivul recunoștinței să dea sens darului.",
+      },
+      {
+        title: "Un obiect ușor de păstrat",
+        text: "Dimensiunile compacte permit așezarea pe un birou sau raft. Produsul este decorativ și de colecție; verifică recomandarea de vârstă și toate detaliile înainte de a-l oferi.",
+      },
+    ],
+    question: "Pot trimite cutiuța direct persoanei?",
+    answer:
+      "Completează adresa corectă în fluxul de comandă și contactează magazinul dacă ai nevoie de confirmarea unei prezentări speciale sau a unui mesaj în colet.",
+  },
+  {
+    slug: "pentru-ea",
+    group: "Pentru cine",
+    productIds: ["sunshine", "kitten", "hp-keeper", "fairy"],
+    label: "Pentru ea",
+    eyebrow: "Iubită · prietenă · soră · colegă",
+    title: "Cadou pentru ea: cutiuțe muzicale alese după pasiunea ei",
+    seoTitle: "Cadou pentru ea: cutiuțe muzicale cu poveste",
+    description:
+      "Idei de cadou pentru ea: cutiuțe muzicale pentru iubită, prietenă, soră sau colegă, alese după melodie, pisici, fantasy și amintiri.",
+    intro:
+      "Un cadou pentru ea este mai convingător când pornește de la ceea ce o reprezintă. Poate iubește pisicile, citește fantasy, păstrează obiecte mici cu poveste sau are o melodie care îi schimbă imediat starea. Compară modelele după aceste repere, nu după o formulă generică.",
+    sections: [
+      {
+        title: "Pentru iubită sau parteneră",
+        text: "O melodie apropiată poate însoți o fotografie sau o dedicație. Dacă aveți un film ori o carte preferată, un model tematic poate spune mai clar «te cunosc» decât un cadou romantic standard.",
+      },
+      {
+        title: "Pentru prietenă, soră sau colegă",
+        text: "Modelul cu pisicuță este potrivit când pasiunea este evidentă, iar cutiuțele fantasy se potrivesc unei cititoare sau colecționare. Pentru o colegă, păstrează mesajul simplu și alege după interesul pe care l-ați discutat.",
+      },
+      {
+        title: "Când vrei ceva unic",
+        text: "Configuratorul permite o imagine pe capac, culoare și gravură. Folosește o fotografie pe care ai dreptul să o trimiți și verifică previzualizarea înainte de formularul final.",
+      },
+    ],
+    question: "Cum aleg dacă nu îi cunosc melodia preferată?",
+    answer:
+      "Alege după o pasiune vizibilă — pisici, fantasy, film sau lectură — și consultă melodia fiecărui model înainte de comandă.",
+  },
+  {
+    slug: "pentru-el",
+    group: "Pentru cine",
+    productIds: ["got-winter", "hp-keeper", "lotr-rings", "pirates"],
+    label: "Pentru el",
+    eyebrow: "Iubit · prieten · frate · coleg",
+    title: "Cadou pentru el: cutiuțe muzicale pentru fani și colecționari",
+    seoTitle: "Cadou pentru el: cutiuțe muzicale pentru fani",
+    description:
+      "Idei de cadou pentru el: cutiuțe muzicale din lemn pentru iubit, prieten, frate sau coleg pasionat de filme, fantasy și colecții.",
+    intro:
+      "Când cauți un cadou pentru el, universul preferat este un reper mai bun decât o categorie generală. O cutiuță inspirată de Game of Thrones, Harry Potter, Tolkien sau aventuri pe mare poate completa o colecție și poate crea un moment surprinzător prin mecanismul ei manual.",
+    sections: [
+      {
+        title: "Pentru un fan de seriale și filme",
+        text: "Verifică exact tema capacului și melodia. Game of Thrones și Harry Potter au identități diferite, iar alegerea potrivită este cea legată de preferința lui reală, nu doar de popularitatea universului.",
+      },
+      {
+        title: "Pentru cititor și colecționar",
+        text: "O cutiuță mică poate sta lângă cărți, figurine sau alte obiecte tematice. Modelele aflate în pregătire pot fi urmărite, dar nu trebuie tratate ca disponibile pentru o dată fixă.",
+      },
+      {
+        title: "Pentru iubit, prieten sau coleg",
+        text: "Adaptează mesajul relației: personal pentru partener, legat de o amintire pentru prieten și concentrat pe pasiune pentru coleg. Ambalarea și livrarea se verifică înainte de finalizarea comenzii.",
+      },
+    ],
+    question: "Cutiuța este un gadget sau un obiect decorativ?",
+    answer:
+      "Este un obiect decorativ și de colecție cu mecanism muzical manual. Nu folosește baterii, aplicație sau difuzor electronic.",
+  },
+  {
+    slug: "pentru-mama",
+    group: "Pentru cine",
+    productIds: ["sunshine", "kitten"],
+    label: "Pentru mama",
+    eyebrow: "Mamă · familie · recunoștință",
+    title: "Cadou pentru mama: o cutiuță muzicală cu emoție",
+    seoTitle: "Cadou pentru mama: cutiuță muzicală cu mesaj",
+    description:
+      "Un cadou pentru mama cu melodie și semnificație: cutiuțe muzicale din lemn pentru zi de naștere, Crăciun sau un simplu mulțumesc.",
+    intro:
+      "Pentru mama, un dar mic devine important prin mesajul care îl însoțește. O melodie caldă și un mecanism pus în mișcare cu mâna pot transforma deschiderea cutiuței într-un moment liniștit, potrivit pentru o zi de naștere, sărbătoare sau mulțumire.",
+    sections: [
+      {
+        title: "Alege o melodie cu amintire",
+        text: "You Are My Sunshine poate exprima apropierea dintre voi, mai ales dacă îi adaugi câteva rânduri scrise de mână. Dacă mama iubește pisicile, modelul tematic poate fi o alegere mai personală.",
+      },
+      {
+        title: "Pentru zi de naștere, Crăciun sau 8 Martie",
+        text: "Ocazia oferă context, dar motivul alegerii dă valoare darului. Spune-i de ce melodia sau imaginea ți-a amintit de ea și arată-i cum funcționează manivela.",
+      },
+      {
+        title: "O fotografie pe capac",
+        text: "Pentru o amintire de familie, poți folosi pagina de personalizare. Încarcă doar o imagine potrivită și verifică termenul de pregătire înainte de data la care vrei să oferi cadoul.",
+      },
+    ],
+    question: "Pot adăuga o fotografie de familie?",
+    answer:
+      "Da, configuratorul de personalizare permite încărcarea unei imagini pentru capac și solicitarea unei gravuri, cu confirmare ulterioară din partea atelierului.",
+  },
+  {
+    slug: "pentru-tata",
+    group: "Pentru cine",
+    productIds: ["starwars-dad", "got-winter", "hp-keeper"],
+    label: "Pentru tata",
+    eyebrow: "Tată · pasiuni · colecții",
+    title: "Cadou pentru tata: o cutiuță muzicală aleasă după pasiunea lui",
+    seoTitle: "Cadou pentru tata: cutiuțe muzicale pentru fani",
+    description:
+      "Idei de cadou pentru tata: cutiuțe muzicale pentru fani Star Wars, fantasy și povești cunoscute, cu mecanism manual și capac tematic.",
+    intro:
+      "Un cadou pentru tata poate porni de la filmul pe care îl revede, cartea pe care o recomandă sau colecția pe care o păstrează. Cutiuțele tematice sunt ușor de așezat pe birou sau în bibliotecă și se descoperă printr-un mecanism simplu, fără baterii.",
+    sections: [
+      {
+        title: "Pentru tata pasionat de science-fiction sau fantasy",
+        text: "Modelul Best Dad in the Galaxy este dedicat unui fan Star Wars, iar cele inspirate de Game of Thrones sau Harry Potter pot fi alese după universul lui preferat. Verifică disponibilitatea fiecăruia înainte de a stabili cadoul.",
+      },
+      {
+        title: "Pentru ziua lui sau pentru sărbători",
+        text: "Poți oferi cutiuța de ziua tatălui, la aniversare ori de Crăciun. Un mesaj despre momentul în care ați descoperit împreună povestea face obiectul mai personal.",
+      },
+      {
+        title: "Dacă modelul dedicat nu este încă disponibil",
+        text: "Nu înlocui automat tema. Poți activa notificarea pentru produsul dorit sau poți alege un alt model numai dacă știi că universul respectiv îi place cu adevărat.",
+      },
+    ],
+    question: "Modelul Best Dad in the Galaxy poate fi comandat acum?",
+    answer:
+      "Starea actuală este afișată în pagina produsului. Dacă apare «În curând», poți solicita o notificare, dar nu îl considera disponibil până când magazinul confirmă acest lucru.",
+  },
+  {
+    slug: "pentru-colegi",
+    group: "Pentru cine",
+    productIds: ["hp-keeper", "got-winter", "kitten", "halloween"],
+    label: "Pentru colegi",
+    eyebrow: "Birou · echipă · pasiuni",
+    title: "Cadou pentru colegă sau coleg: o cutiuță muzicală cu personalitate",
+    seoTitle: "Cadou pentru colegă sau coleg: idei cu poveste",
+    description:
+      "Idei de cadouri pentru colegă sau coleg: cutiuțe muzicale compacte pentru fani, iubitori de pisici, Secret Santa și aniversări la birou.",
+    intro:
+      "Pentru un coleg, un cadou reușit arată că ai observat un interes real fără să devină prea personal. O cutiuță muzicală inspirată de un serial, o carte sau pisici poate fi o surpriză potrivită la birou, în special când tema a apărut deja în conversațiile voastre.",
+    sections: [
+      {
+        title: "Alege după un interes cunoscut",
+        text: "Un fan Harry Potter sau Game of Thrones va înțelege imediat referința, iar un iubitor de pisici va recunoaște alegerea atentă. Dacă nu îi cunoști pasiunile, întreabă discret echipa înainte de a comanda.",
+      },
+      {
+        title: "Pentru aniversare sau Secret Santa",
+        text: "Verifică bugetul stabilit și prețul actual al produsului. Cutiuța este compactă și poate sta pe birou, dar sunetul mecanic se ascultă cel mai bine într-un moment liniștit.",
+      },
+      {
+        title: "Păstrează mesajul potrivit relației",
+        text: "Un bilețel amuzant despre pasiunea colegului este suficient. Evită dedicațiile prea intime și alege ambalarea numai după ce verifici opțiunile disponibile în comandă.",
+      },
+    ],
+    question: "Este potrivită pentru un schimb de cadouri la birou?",
+    answer:
+      "Da, dacă tema se potrivește persoanei și produsul se încadrează în bugetul grupului. Verifică separat transportul și disponibilitatea.",
+  },
+  {
+    slug: "iubitori-de-pisici",
+    group: "Pasiuni",
+    productIds: ["kitten"],
+    label: "Iubitori de pisici",
+    eyebrow: "Pisici · lună · decor",
+    title: "Cadou pentru iubitorii de pisici: o cutiuță muzicală cu pisicuță",
+    seoTitle: "Cadou pentru iubitori de pisici: cutiuță muzicală",
+    description:
+      "Cadou pentru iubitori de pisici: cutiuță muzicală din lemn cu pisicuță, lună și manivelă, pentru aniversare, Crăciun sau Secret Santa.",
+    intro:
+      "Când persoana își fotografiază pisica zilnic și își alege decorațiunile după această pasiune, un model cu pisicuță este o alegere firească. Ilustrația cu lună și fluturi dă cutiuței un aer delicat, iar mecanismul manual adaugă momentul muzical.",
+    sections: [
+      {
+        title: "Pentru prietenă, colegă sau membru al familiei",
+        text: "Modelul se potrivește unui adult care colecționează obiecte cu pisici sau își amenajează un colț de lectură. Este un obiect decorativ și de colecție, nu o jucărie pentru animale ori copii mici.",
+      },
+      {
+        title: "Un cadou tematic fără să fie generic",
+        text: "Leagă alegerea de pisica persoanei, de o fotografie sau de o întâmplare pe care o știți amândoi. Un mesaj simplu transformă tema vizuală într-un dar personal.",
+      },
+      {
+        title: "Verifică detaliile reale",
+        text: "Galeria arată capacul, mecanismul și dimensiunile. Citește descrierea completă și păstrează lemnul departe de umezeală, căldură și lăbuțe curioase.",
+      },
+    ],
+    question: "Cutiuța poate fi lăsată ca jucărie pentru pisică?",
+    answer:
+      "Nu. Este un obiect decorativ cu piese mecanice și trebuie păstrat într-un loc sigur, unde animalul nu îl poate răsturna sau roade.",
+  },
+  {
+    slug: "fani-harry-potter",
+    group: "Pasiuni",
+    productIds: ["hp-keeper", "hp-always"],
+    label: "Fani Harry Potter",
+    eyebrow: "Hogwarts · lectură · colecții",
+    title: "Cadou pentru un fan Harry Potter: cutiuțe muzicale cu manivelă",
+    seoTitle: "Cadou fan Harry Potter: cutiuțe muzicale cu manivelă",
+    description:
+      "Cadouri pentru fanii Harry Potter și Potterheads: cutiuțe muzicale din lemn, cu manivelă, ilustrații tematice și melodii cunoscute.",
+    intro:
+      "Un fan Harry Potter observă repede diferența dintre o referință generică și un obiect ales cu atenție. Compară modelele după capac, culoare și melodia afișată. Unul poate deveni piesa mică de lângă seria de cărți, o hartă sau alte obiecte de colecție.",
+    sections: [
+      {
+        title: "Pentru Potterhead, cititor sau colecționar",
+        text: "Hedwig’s Theme și simbolurile Hogwarts sunt repere puternice pentru un fan. Modelul albastru I Solemnly Swear are o identitate diferită; verifică dacă este disponibil sau încă în pregătire.",
+      },
+      {
+        title: "Cadou de Crăciun, aniversare sau Secret Santa",
+        text: "Cutiuța este potrivită când știi deja că persoana iubește seria. Poți adăuga o dedicație despre cartea preferată sau despre primul film văzut împreună.",
+      },
+      {
+        title: "Alege din fotografii și melodie",
+        text: "Pagina fiecărui model conține imagini ale produsului și, când este disponibil, fragment audio. Nu presupune că ilustrația sau melodia pot fi schimbate la un produs standard.",
+      },
+    ],
+    question: "Care model Harry Potter este disponibil?",
+    answer:
+      "Disponibilitatea este actualizată în fiecare pagină de produs. Modelele în stoc pot fi adăugate în coș, iar pentru cele viitoare poți solicita notificare.",
+  },
+  {
+    slug: "fani-game-of-thrones",
+    group: "Pasiuni",
+    productIds: ["got-winter"],
+    label: "Fani Game of Thrones",
+    eyebrow: "Westeros · colecții · seriale",
+    title: "Cadou pentru un fan Game of Thrones: o cutiuță muzicală tematică",
+    seoTitle: "Cadou Game of Thrones: cutiuță muzicală cu manivelă",
+    description:
+      "Cadou pentru un fan Game of Thrones: cutiuță muzicală din lemn cu manivelă, temă Winter Is Coming și mecanism vizibil.",
+    intro:
+      "Pentru cine revine la poveștile din Westeros, o cutiuță Game of Thrones poate fi un mic obiect de colecție cu identitate clară. Capacul tematic și melodia principală sunt cele două repere după care merită aleasă.",
+    sections: [
+      {
+        title: "Winter Is Coming într-un obiect de colecție",
+        text: "Verifică detaliile capacului, culoarea lemnului și mecanismul în galerie. Cutiuța funcționează prin rotirea manivelei și nu folosește baterii sau difuzor.",
+      },
+      {
+        title: "Pentru aniversare, Crăciun sau un raft tematic",
+        text: "Este o alegere potrivită numai dacă persoana apreciază universul. Poate însoți o carte, o ediție de colecție sau un mesaj legat de serial.",
+      },
+      {
+        title: "Compară înainte de comandă",
+        text: "Citește dimensiunile și recomandările produsului, apoi verifică prețul și stocul actual. Imaginile de prezentare pot conține decoruri care nu sunt incluse.",
+      },
+    ],
+    question: "Melodia este tema principală Game of Thrones?",
+    answer:
+      "Melodia asociată modelului este afișată în pagina produsului. Consultă și fragmentul audio atunci când acesta este disponibil.",
+  },
+  {
+    slug: "fani-fantasy",
+    group: "Pasiuni",
+    productIds: ["hp-keeper", "got-winter", "lotr-rings", "hp-always", "fairy"],
+    label: "Fani fantasy",
+    eyebrow: "Cărți · filme · lumi imaginare",
+    title: "Cadouri pentru fanii fantasy: cutiuțe muzicale din lumi îndrăgite",
+    seoTitle: "Cadouri fantasy: cutiuțe muzicale pentru fani și cititori",
+    description:
+      "Idei de cadouri fantasy pentru cititori, cinefili și colecționari: cutiuțe muzicale Harry Potter, Game of Thrones, Tolkien și zâne.",
+    intro:
+      "Fantasy nu înseamnă un singur tip de poveste. Un cititor Tolkien, un Potterhead și un fan Game of Thrones vor recunoaște alte simboluri și alte melodii. Alege universul corect, apoi compară modelele după fotografii, mecanism și disponibilitate.",
+    sections: [
+      {
+        title: "Pentru cititori și iubitori de filme",
+        text: "Pornește de la seria pe care persoana o recitește sau o revede. O cutiuță tematică are sens când continuă acea pasiune și poate sta lângă cărți, ilustrații ori obiecte de colecție.",
+      },
+      {
+        title: "De la Hogwarts la Westeros și Pământul de Mijloc",
+        text: "Fiecare model are propriul capac și propria melodie. Unele produse sunt disponibile acum, iar altele apar în colecția viitoare; paginile lor indică starea reală.",
+      },
+      {
+        title: "Un dar pentru colecție, nu o jucărie",
+        text: "Cutiuțele au mecanisme și componente mici. Citește recomandarea de vârstă și oferă-le ca obiecte decorative ori de colecție, păstrate departe de umezeală și surse de căldură.",
+      },
+    ],
+    question: "Cum aleg între mai multe universuri fantasy?",
+    answer:
+      "Alege după povestea preferată a destinatarului și după melodia modelului. Dacă nu ești sigur, întreabă discret ce serie îi place cel mai mult.",
+  },
+  {
+    slug: "cadouri-mici",
+    group: "Pasiuni",
+    productIds: ["sunshine", "kitten", "hp-keeper", "got-winter", "halloween"],
+    label: "Cadouri mici",
+    eyebrow: "Compact · memorabil · ușor de dăruit",
+    title: "Cadouri mici cu semnificație: cutiuțe muzicale din lemn",
+    seoTitle: "Cadouri mici cu semnificație: cutiuțe muzicale",
+    description:
+      "Idei de cadouri mici, dar memorabile: cutiuțe muzicale din lemn cu manivelă pentru aniversări, mulțumire, colegi și oameni dragi.",
+    intro:
+      "Un cadou mic nu trebuie să fie lipsit de personalitate. Cutiuța muzicală încape ușor pe un raft sau birou, dar creează un ritual complet: deschizi capacul, vezi mecanismul și rotești manivela pentru a asculta melodia.",
+    sections: [
+      {
+        title: "Mic la dimensiuni, ales precis",
+        text: "Compară dimensiunile din pagina produsului și alege tema după persoană. O legătură cu o melodie, un film sau o pasiune este mai importantă decât volumul cadoului.",
+      },
+      {
+        title: "Pentru birou, bibliotecă sau noptieră",
+        text: "Cutiuța poate fi păstrată într-un spațiu mic și nu are nevoie de cabluri ori baterii. Lemnul și mecanismul trebuie protejate de lichide, căldură și lovituri.",
+      },
+      {
+        title: "Verifică prețul și transportul actual",
+        text: "Prețul fiecărui model este afișat în catalog, iar transportul se confirmă în comandă. Nu folosim un prag generic în acest ghid deoarece prețurile și disponibilitatea se pot schimba.",
+      },
+    ],
+    question: "Sunt toate cutiuțele la același preț?",
+    answer:
+      "Nu neapărat. Consultă prețul actual al fiecărui produs și costul de livrare înainte de confirmarea comenzii.",
+  },
+] as const satisfies readonly GiftGuide[];
 export type GiftGuideSlug = (typeof giftGuides)[number]["slug"];
-export const giftGuide = (slug: string) => giftGuides.find((guide) => guide.slug === slug);
-export const DISCOVERY_UPDATED = "2026-09-23";
+export const giftGuide = (slug: string): GiftGuide | undefined =>
+  giftGuides.find((guide) => guide.slug === slug);
+export const giftGuideIncludesProduct = (guide: GiftGuide, productId: string) =>
+  guide.productIds.includes(productId);
+export const giftGuidesForProduct = (productId: string): GiftGuide[] =>
+  giftGuides.filter((guide) => giftGuideIncludesProduct(guide, productId));
+export const giftGuideGroups = (["Ocazii", "Pentru cine", "Pasiuni"] as const).map((label) => ({
+  label,
+  guides: giftGuides.filter((guide) => guide.group === label),
+}));
+export const DISCOVERY_UPDATED = "2026-09-28";

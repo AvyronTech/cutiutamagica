@@ -39,6 +39,7 @@ export const Route = createFileRoute("/produse")({
         content:
           "Descoperă cutiuțe muzicale din lemn cu manivelă și mecanism mecanic clasic, potrivite pentru cadou, aniversări și fanii poveștilor îndrăgite.",
       },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Cutiuțe muzicale cu manivelă | Cutiuța Magică" },
       {
         property: "og:description",
@@ -61,20 +62,49 @@ export const Route = createFileRoute("/produse")({
         type: "application/ld+json",
         children: safeJsonLd({
           "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          name: "Cutiuțe muzicale cu manivelă",
-          url: CATALOG_URL,
-          inLanguage: "ro-RO",
-          mainEntity: {
-            "@type": "ItemList",
-            numberOfItems: loaderData?.catalog.length ?? 0,
-            itemListElement: (loaderData?.catalog ?? []).map((product, index) => ({
-              "@type": "ListItem",
-              position: index + 1,
-              url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.slug)}`,
-              name: product.name,
-            })),
-          },
+          "@graph": [
+            {
+              "@type": "CollectionPage",
+              "@id": `${CATALOG_URL}#page`,
+              name: "Cutiuțe muzicale cu manivelă",
+              url: CATALOG_URL,
+              inLanguage: "ro-RO",
+              isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+              primaryImageOfPage: "https://cutiutamagica.eu/scenes/catalog-atelier.webp",
+              mainEntity: {
+                "@type": "ItemList",
+                numberOfItems: loaderData?.catalog.length ?? 0,
+                itemListElement: (loaderData?.catalog ?? []).map((product, index) => ({
+                  "@type": "ListItem",
+                  position: index + 1,
+                  url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.slug)}`,
+                  name: product.name,
+                  image: product.imageUrl
+                    ? product.imageUrl.startsWith("http")
+                      ? product.imageUrl
+                      : `https://cutiutamagica.eu${product.imageUrl}`
+                    : undefined,
+                })),
+              },
+            },
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Acasă",
+                  item: "https://cutiutamagica.eu/",
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: "Cutiuțe muzicale",
+                  item: CATALOG_URL,
+                },
+              ],
+            },
+          ],
         }).replace(/</g, "\\u003c"),
       },
     ],

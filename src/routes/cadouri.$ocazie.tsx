@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { giftGuide, giftGuides } from "@/data/gift-guides";
+import { giftGuide, giftGuideIncludesProduct, giftGuides } from "@/data/gift-guides";
 import { isAvailable } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { safeJsonLd } from "@/lib/product-discovery";
@@ -11,13 +11,19 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
     const guide = giftGuide(params.ocazie);
     if (!guide) throw notFound();
     const { catalog } = await getStorePricing();
-    return { guide, products: catalog.filter((p) => p.discovery?.guides.includes(guide.slug)) };
+    return { guide, products: catalog.filter((p) => giftGuideIncludesProduct(guide, p.slug)) };
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
     const { guide, products } = loaderData;
     const url = `https://cutiutamagica.eu/cadouri/${guide.slug}`;
-    const title = `Cadouri ${guide.slug === "secret-santa" ? "pentru" : "de"} ${guide.label}: cutiuțe muzicale | Cutiuța Magică`;
+    const title = `${guide.seoTitle ?? guide.title} | Cutiuța Magică`;
+    const image = products.find((product) => product.imageUrl)?.imageUrl;
+    const primaryImage = image
+      ? image.startsWith("http")
+        ? image
+        : `https://cutiutamagica.eu${image}`
+      : "https://cutiutamagica.eu/scenes/catalog-atelier.webp";
     return {
       meta: [
         { title },
@@ -27,7 +33,8 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
         { property: "og:description", content: guide.description },
         { property: "og:url", content: url },
         { property: "og:type", content: "website" },
-        { property: "og:image", content: "https://cutiutamagica.eu/scenes/catalog-atelier.webp" },
+        { property: "og:image", content: primaryImage },
+        { property: "og:image:alt", content: `Cutiuțe muzicale recomandate pentru ${guide.label}` },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
@@ -42,6 +49,8 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
                 description: guide.description,
                 url,
                 inLanguage: "ro-RO",
+                isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+                primaryImageOfPage: primaryImage,
                 mainEntity: {
                   "@type": "ItemList",
                   numberOfItems: products.length,
@@ -50,6 +59,11 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
                     position: index + 1,
                     name: p.name,
                     url: `https://cutiutamagica.eu/produs/${encodeURIComponent(p.slug)}`,
+                    image: p.imageUrl
+                      ? p.imageUrl.startsWith("http")
+                        ? p.imageUrl
+                        : `https://cutiutamagica.eu${p.imageUrl}`
+                      : undefined,
                   })),
                 },
               },
@@ -83,7 +97,7 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
 function GiftGuidePage() {
   const { guide } = Route.useLoaderData();
   const { products } = useShop();
-  const selection = products.filter((p) => p.discovery?.guides.includes(guide.slug));
+  const selection = products.filter((p) => giftGuideIncludesProduct(guide, p.id));
   const available = selection.filter(isAvailable);
   const upcoming = selection.filter((p) => !isAvailable(p));
   return (
@@ -153,15 +167,25 @@ function GiftGuidePage() {
         <p>{guide.answer}</p>
       </section>
       <section>
+        <h2>Vrei o cutiuță făcută în jurul amintirii tale?</h2>
+        <p>
+          În configurator poți alege culoarea, fotografia de pe capac, gravura și ambalarea. Vezi
+          opțiunile și termenul estimat în pagina de{" "}
+          <Link to="/personalizeaza">personalizare a cutiuței muzicale</Link>.
+        </p>
+      </section>
+      <section>
         <h2>O altă ocazie, aceeași grijă pentru persoană</h2>
         <div className="discovery-links">
           {giftGuides
-            .filter((g) => g.slug !== guide.slug)
+            .filter((g) => g.slug !== guide.slug && g.group === guide.group)
+            .slice(0, 6)
             .map((g) => (
               <Link key={g.slug} to="/cadouri/$ocazie" params={{ ocazie: g.slug }}>
                 {g.label} ↗
               </Link>
             ))}
+          <Link to="/cadouri">Vezi toate ghidurile de cadouri ↗</Link>
         </div>
       </section>
     </article>

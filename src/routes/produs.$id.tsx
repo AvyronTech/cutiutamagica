@@ -97,9 +97,16 @@ export const Route = createFileRoute("/produs/$id")({
             description: [loaderData.product.description, loaderData.product.discovery?.intro]
               .filter(Boolean)
               .join(" "),
+            keywords: loaderData.product.searchTerms.join(", "),
             category: loaderData.product.category,
             material: "Lemn",
             brand: { "@type": "Brand", name: "Cutiuța Magică" },
+            audience: loaderData.product.discovery?.audience
+              ? {
+                  "@type": "Audience",
+                  audienceType: loaderData.product.discovery.audience,
+                }
+              : undefined,
             additionalProperty: [
               { "@type": "PropertyValue", name: "Mecanism", value: "Manual, cu manivelă" },
               ...(loaderData.product.melody
@@ -107,6 +114,28 @@ export const Route = createFileRoute("/produs/$id")({
                 : []),
             ],
             url,
+            aggregateRating:
+              loaderData.reviews.total > 0 && loaderData.reviews.average
+                ? {
+                    "@type": "AggregateRating",
+                    ratingValue: loaderData.reviews.average,
+                    reviewCount: loaderData.reviews.total,
+                    bestRating: 5,
+                    worstRating: 1,
+                  }
+                : undefined,
+            review: loaderData.reviews.reviews.slice(0, 10).map((review) => ({
+              "@type": "Review",
+              author: { "@type": "Person", name: review.displayName },
+              reviewBody: review.body,
+              inLanguage: review.language,
+              reviewRating: {
+                "@type": "Rating",
+                ratingValue: review.rating,
+                bestRating: 5,
+                worstRating: 1,
+              },
+            })),
             offers: price
               ? {
                   "@type": "Offer",

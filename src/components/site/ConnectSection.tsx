@@ -82,7 +82,7 @@ export function ConnectSection() {
     },
     {
       name: "Email",
-      href: "mailto:contact@cutiutamagica.ro",
+      href: "mailto:cutiutamagicaofficial@gmail.com",
       Icon: Mail,
       accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]",
       external: false,

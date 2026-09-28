@@ -2,7 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /auth
-Disallow: /comanda
 Disallow: /api/
 
 Sitemap: https://cutiutamagica.eu/sitemap.xml

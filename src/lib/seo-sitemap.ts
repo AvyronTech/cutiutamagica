@@ -18,18 +18,30 @@ export function renderSitemap(products: CatalogProduct[]): string {
     .filter((v): v is string => !!v)
     .sort()
     .at(-1);
-  const entries: Array<{ path: string; lastmod?: string; image?: string }> = [
-    { path: "/", lastmod: DISCOVERY_UPDATED },
+  const entries: Array<{ path: string; lastmod?: string; images?: string[] }> = [
+    { path: "/", lastmod: DISCOVERY_UPDATED, images: ["/produse/hp-keeper/1.webp"] },
     {
       path: "/produse",
       lastmod: catalogDate && catalogDate > DISCOVERY_UPDATED ? catalogDate : DISCOVERY_UPDATED,
     },
-    { path: "/despre-cutiuta", lastmod: DISCOVERY_UPDATED },
-    { path: "/despre-noi", lastmod: "2026-09-28" },
+    {
+      path: "/despre-cutiuta",
+      lastmod: DISCOVERY_UPDATED,
+      images: ["/scenes/catalog-atelier.webp"],
+    },
+    { path: "/despre-noi", lastmod: "2026-09-28", images: ["/scenes/catalog-atelier.webp"] },
     { path: "/livrare", lastmod: "2026-09-28" },
-    { path: "/personalizeaza", lastmod: "2026-09-28" },
-    { path: "/cadouri", lastmod: DISCOVERY_UPDATED },
-    ...giftGuides.map((g) => ({ path: `/cadouri/${g.slug}`, lastmod: DISCOVERY_UPDATED })),
+    {
+      path: "/personalizeaza",
+      lastmod: "2026-09-28",
+      images: ["/scenes/personalization-box-v2.webp"],
+    },
+    { path: "/cadouri", lastmod: DISCOVERY_UPDATED, images: ["/scenes/catalog-atelier.webp"] },
+    ...giftGuides.map((g) => ({
+      path: `/cadouri/${g.slug}`,
+      lastmod: DISCOVERY_UPDATED,
+      images: ["/scenes/catalog-atelier.webp"],
+    })),
     { path: "/ghid-cadouri-personalizate", lastmod: "2026-09-05" },
     { path: "/retur", lastmod: "2026-09-15" },
     { path: "/termeni-de-utilizare", lastmod: "2026-09-15" },
@@ -37,22 +49,26 @@ export function renderSitemap(products: CatalogProduct[]): string {
     ...products.map((p) => ({
       path: `/produs/${encodeURIComponent(p.slug)}`,
       lastmod: date(p.updatedAt),
-      image: p.imageUrl || undefined,
+      images: [
+        ...new Set([p.imageUrl, ...(p.gallery ?? []).map((entry) => entry.src)].filter(Boolean)),
+      ] as string[],
     })),
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${entries
     .map((entry) => {
-      let image = "";
-      if (entry.image) {
-        try {
-          const url = new URL(entry.image, base);
-          if (["https:", "http:"].includes(url.protocol))
-            image = `<image:image><image:loc>${xml(url.href)}</image:loc></image:image>`;
-        } catch {
-          /* Omit invalid media URLs. */
-        }
-      }
-      return `  <url><loc>${xml(base + entry.path)}</loc>${entry.lastmod ? `<lastmod>${entry.lastmod}</lastmod>` : ""}${image}</url>`;
+      const images = (entry.images ?? [])
+        .map((source) => {
+          try {
+            const url = new URL(source, base);
+            return ["https:", "http:"].includes(url.protocol)
+              ? `<image:image><image:loc>${xml(url.href)}</image:loc></image:image>`
+              : "";
+          } catch {
+            return "";
+          }
+        })
+        .join("");
+      return `  <url><loc>${xml(base + entry.path)}</loc>${entry.lastmod ? `<lastmod>${entry.lastmod}</lastmod>` : ""}${images}</url>`;
     })
     .join("\n")}\n</urlset>`;
 }
