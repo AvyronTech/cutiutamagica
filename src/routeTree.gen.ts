@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ComandaRouteImport } from './routes/comanda'
 import { Route as ContRouteImport } from './routes/cont'
 import { Route as DespreCutiutaRouteImport } from './routes/despre-cutiuta'
+import { Route as DespreNoiRouteImport } from './routes/despre-noi'
 import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
 import { Route as LivrareRouteImport } from './routes/livrare'
 import { Route as PersonalizeazaRouteImport } from './routes/personalizeaza'
@@ -84,6 +85,11 @@ const ContRoute = ContRouteImport.update({
 const DespreCutiutaRoute = DespreCutiutaRouteImport.update({
   id: '/despre-cutiuta',
   path: '/despre-cutiuta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DespreNoiRoute = DespreNoiRouteImport.update({
+  id: '/despre-noi',
+  path: '/despre-noi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GhidCadouriPersonalizateRoute =
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/comanda': typeof ComandaRoute
   '/cont': typeof ContRoute
   '/despre-cutiuta': typeof DespreCutiutaRoute
+  '/despre-noi': typeof DespreNoiRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/livrare': typeof LivrareRoute
   '/personalizeaza': typeof PersonalizeazaRoute
@@ -371,6 +378,7 @@ export interface FileRoutesByTo {
   '/comanda': typeof ComandaRoute
   '/cont': typeof ContRoute
   '/despre-cutiuta': typeof DespreCutiutaRoute
+  '/despre-noi': typeof DespreNoiRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/livrare': typeof LivrareRoute
   '/personalizeaza': typeof PersonalizeazaRoute
@@ -420,6 +428,7 @@ export interface FileRoutesById {
   '/comanda': typeof ComandaRoute
   '/cont': typeof ContRoute
   '/despre-cutiuta': typeof DespreCutiutaRoute
+  '/despre-noi': typeof DespreNoiRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/livrare': typeof LivrareRoute
   '/personalizeaza': typeof PersonalizeazaRoute
@@ -470,6 +479,7 @@ export interface FileRouteTypes {
     | '/comanda'
     | '/cont'
     | '/despre-cutiuta'
+    | '/despre-noi'
     | '/ghid-cadouri-personalizate'
     | '/livrare'
     | '/personalizeaza'
@@ -518,6 +528,7 @@ export interface FileRouteTypes {
     | '/comanda'
     | '/cont'
     | '/despre-cutiuta'
+    | '/despre-noi'
     | '/ghid-cadouri-personalizate'
     | '/livrare'
     | '/personalizeaza'
@@ -566,6 +577,7 @@ export interface FileRouteTypes {
     | '/comanda'
     | '/cont'
     | '/despre-cutiuta'
+    | '/despre-noi'
     | '/ghid-cadouri-personalizate'
     | '/livrare'
     | '/personalizeaza'
@@ -616,6 +628,7 @@ export interface RootRouteChildren {
   ComandaRoute: typeof ComandaRoute
   ContRoute: typeof ContRoute
   DespreCutiutaRoute: typeof DespreCutiutaRoute
+  DespreNoiRoute: typeof DespreNoiRoute
   GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
   LivrareRoute: typeof LivrareRoute
   PersonalizeazaRoute: typeof PersonalizeazaRoute
@@ -672,6 +685,13 @@ declare module '@tanstack/react-router' {
       path: '/despre-cutiuta'
       fullPath: '/despre-cutiuta'
       preLoaderRoute: typeof DespreCutiutaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/despre-noi': {
+      id: '/despre-noi'
+      path: '/despre-noi'
+      fullPath: '/despre-noi'
+      preLoaderRoute: typeof DespreNoiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ghid-cadouri-personalizate': {
@@ -1063,6 +1083,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComandaRoute: ComandaRoute,
   ContRoute: ContRoute,
   DespreCutiutaRoute: DespreCutiutaRoute,
+  DespreNoiRoute: DespreNoiRoute,
   GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
   LivrareRoute: LivrareRoute,
   PersonalizeazaRoute: PersonalizeazaRoute,

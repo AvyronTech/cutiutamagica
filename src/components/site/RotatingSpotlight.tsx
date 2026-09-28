@@ -1,9 +1,51 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { ProductCard } from "./ProductCard";
-import type { Product } from "@/data/products";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Music2 } from "lucide-react";
+import { ProductImage } from "./ProductImage";
+import { PRICE, type Product } from "@/data/products";
+
+function SpotlightCard({ product }: { product: Product }) {
+  const price = product.price ?? PRICE;
+  return (
+    <article className="spotlight-card" data-magic-card>
+      <Link
+        to="/produs/$id"
+        params={{ id: product.id }}
+        className="spotlight-card__media"
+        aria-label={`Descoperă ${product.name}`}
+      >
+        <ProductImage
+          src={product.image}
+          alt={product.name}
+          className="spotlight-card__image"
+          sizes="(max-width: 640px) 78vw, 330px"
+          width={720}
+          height={720}
+        />
+        <span className="spotlight-card__category">{product.category}</span>
+      </Link>
+      <div className="spotlight-card__copy">
+        <h3>
+          <Link to="/produs/$id" params={{ id: product.id }}>
+            {product.shortName || product.name}
+          </Link>
+        </h3>
+        <p>{product.tagline}</p>
+        <div className="spotlight-card__meta">
+          <span>
+            <Music2 aria-hidden /> {product.melody || "Melodie mecanică"}
+          </span>
+          <strong>{price} lei</strong>
+        </div>
+        <Link className="spotlight-card__link" to="/produs/$id" params={{ id: product.id }}>
+          Vezi cutiuța <ArrowUpRight aria-hidden />
+        </Link>
+      </div>
+    </article>
+  );
+}
 
 export function RotatingSpotlight({
   products,
@@ -15,7 +57,8 @@ export function RotatingSpotlight({
   const [viewport, api] = useEmblaCarousel({
     loop: products.length > 1,
     align: "center",
-    duration: 28,
+    duration: 24,
+    skipSnaps: false,
   });
   const reduced = useReducedMotion();
   const [selected, setSelected] = useState(0);
@@ -53,7 +96,7 @@ export function RotatingSpotlight({
   }, [api]);
   useEffect(() => {
     if (!api || reduced || !visible || interacting || cooldown || products.length < 2) return;
-    const timer = window.setTimeout(() => api.scrollNext(), 5200);
+    const timer = window.setTimeout(() => api.scrollNext(), 4800);
     return () => window.clearTimeout(timer);
   }, [api, cooldown, interacting, products.length, reduced, selected, visible]);
   useEffect(
@@ -98,10 +141,9 @@ export function RotatingSpotlight({
             <div
               className="spotlight-slide"
               key={product.id}
-              aria-hidden={selected !== i}
-              inert={selected !== i ? true : undefined}
+              data-selected={selected === i || undefined}
             >
-              <ProductCard product={product} variant="glass" compact />
+              <SpotlightCard product={product} />
             </div>
           ))}
         </div>

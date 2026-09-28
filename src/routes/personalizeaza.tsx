@@ -11,6 +11,7 @@ import {
   Music2,
   PackageCheck,
   Palette,
+  PenLine,
   Sparkles,
   Upload,
 } from "lucide-react";
@@ -39,12 +40,12 @@ export const Route = createFileRoute("/personalizeaza")({
       {
         name: "description",
         content:
-          "Personalizează o cutiuță muzicală: alege cutiuța neagră sau galbenă, una dintre cele trei melodii și imaginea de pe capac. 189 lei, livrare în 4–7 zile lucrătoare.",
+          "Personalizează o cutiuță muzicală: alege cutiuța neagră sau galbenă, melodia, imaginea și gravura de pe capac. 189 lei, livrare în 4–7 zile lucrătoare.",
       },
       { property: "og:title", content: "Personalizează Cutiuța Magică" },
       {
         property: "og:description",
-        content: "Culoare, melodie și imaginea ta pe capac. De la 189 lei.",
+        content: "Culoare, melodie, imagine și gravură pe capac. De la 189 lei.",
       },
       { name: "robots", content: "index, follow, max-image-preview:large" },
     ],
@@ -66,6 +67,7 @@ function Personalizeaza() {
   const [melody, setMelody] = useState<PersonalizationMelody>("melody-1");
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
+  const [engraving, setEngraving] = useState("");
   const [giftWrap, setGiftWrap] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [email, setEmail] = useState("");
@@ -137,7 +139,12 @@ function Personalizeaza() {
     data.set("boxColor", boxColor);
     data.set("melody", melody);
     data.set("giftWrap", String(giftWrap));
-    data.set("notes", notes);
+    data.set(
+      "notes",
+      [engraving.trim() ? `Gravură solicitată: ${engraving.trim()}` : "", notes.trim()]
+        .filter(Boolean)
+        .join("\n\n"),
+    );
     data.set("consent", String(consent));
     data.set("website", website);
     data.set("image", image, image.name);
@@ -202,8 +209,8 @@ function Personalizeaza() {
         </p>
         <h1>Personalizează Cutiuța Magică</h1>
         <p>
-          Patru pași simpli. Alegi cutiuța, melodia și fotografia; atelierul nostru confirmă fiecare
-          detaliu înainte de lucru.
+          Patru pași simpli. Alegi cutiuța, melodia, fotografia și gravura; atelierul nostru
+          confirmă fiecare detaliu înainte de lucru.
         </p>
         <div className="personalization-intro__facts">
           <span>
@@ -297,7 +304,7 @@ function Personalizeaza() {
             {step === 2 && (
               <fieldset className="personalization-panel">
                 <legend>
-                  <ImagePlus /> Adaugă imaginea de pe capac
+                  <ImagePlus /> Imaginea și gravura de pe capac
                 </legend>
                 <p>
                   Alege o fotografie clară, cu subiectul central. Acceptăm JPG, PNG sau WebP,
@@ -316,6 +323,18 @@ function Personalizeaza() {
                       ? image.name
                       : "Imaginea rămâne privată și este folosită pentru cererea ta."}
                   </small>
+                </label>
+                <label className="personalization-engraving-field">
+                  <span>
+                    <PenLine /> Gravură personală · opțional
+                  </span>
+                  <input
+                    value={engraving}
+                    maxLength={28}
+                    onChange={(event) => setEngraving(event.target.value)}
+                    placeholder="Exemplu: Pentru totdeauna"
+                  />
+                  <small>{engraving.length}/28 caractere</small>
                 </label>
               </fieldset>
             )}
@@ -374,7 +393,7 @@ function Personalizeaza() {
                     Mesaj pentru atelier · opțional
                     <textarea
                       rows={3}
-                      maxLength={1000}
+                      maxLength={920}
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
                       placeholder="Spune-ne dacă imaginea trebuie decupată într-un anumit fel sau dacă este un cadou pentru o dată anume."
@@ -450,12 +469,32 @@ function Personalizeaza() {
 
           <aside className="personalization-preview" aria-label="Previzualizarea cutiuței">
             <p className="catalog-eyebrow">Previzualizare orientativă</p>
-            <div className={"custom-box-preview custom-box-preview--" + boxColor}>
-              <div className="custom-box-preview__lid">
-                {preview ? <img src={preview} alt="Imaginea aleasă pentru capac" /> : <ImagePlus />}
+            <div
+              className="personalization-product-stage"
+              data-color={boxColor}
+              data-gift-wrap={giftWrap || undefined}
+            >
+              <div className="personalization-product-render">
+                <img
+                  src="/scenes/personalization-box-v2.webp"
+                  alt="Cutiuță muzicală personalizabilă din lemn"
+                  width={1000}
+                  height={833}
+                  decoding="async"
+                />
+                <div className="personalization-product-artwork" data-empty={!preview || undefined}>
+                  {preview ? (
+                    <img src={preview} alt="Imaginea aleasă pentru capac" />
+                  ) : (
+                    <ImagePlus />
+                  )}
+                  {engraving.trim() && <span>{engraving.trim()}</span>}
+                </div>
               </div>
-              <div className="custom-box-preview__body">
-                <span className="custom-box-preview__crank" aria-hidden />
+              <div className="personalization-product-wrap" aria-hidden>
+                <span />
+                <i />
+                <b>✦</b>
               </div>
             </div>
             <dl>
@@ -466,6 +505,10 @@ function Personalizeaza() {
               <div>
                 <dt>Melodie</dt>
                 <dd>{selectedMelody.label}</dd>
+              </div>
+              <div>
+                <dt>Gravură</dt>
+                <dd>{engraving.trim() || "Fără gravură"}</dd>
               </div>
               <div>
                 <dt>Ambalare</dt>

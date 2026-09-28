@@ -113,7 +113,7 @@ export function Header() {
                   compact ? "max-h-0 opacity-0" : "max-h-4 text-[9px] opacity-100"
                 }`}
               >
-                lemn · manivelă · melodie
+                Lemn · Manivelă · Melodie
               </span>
             </span>
           </Link>
@@ -130,13 +130,13 @@ export function Header() {
               to="/produse"
               className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
             >
-              Cutiuțe muzicale
+              Cutiuțe Muzicale
             </Link>
             <Link
               to="/despre-cutiuta"
               className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
             >
-              Despre cutiuță
+              Despre Cutiuță
             </Link>
             <Link
               to="/livrare"

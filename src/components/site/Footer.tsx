@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BrandMark } from "./BrandMark";
 import { FooterScene } from "./FooterScene";
 import avyronLogo from "@/assets/avyron-logo.jpg";
+import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/whatsapp";
 
 const navGroups = [
   {
@@ -26,7 +27,8 @@ const navGroups = [
     title: "Informații",
     items: [
       { to: "/termeni-de-utilizare", label: "Termeni de utilizare" },
-      { to: "/politica-de-confidentialitate", label: "Confidențialitate" },
+      { to: "/politica-de-confidentialitate", label: "Politica de Confidențialitate" },
+      { to: "/despre-noi", label: "Despre Noi" },
     ],
   },
 ] as const;
@@ -58,6 +60,10 @@ export function Footer() {
               </span>
             </Link>
             <p>O cutiuță din lemn, o manivelă și o melodie aleasă pentru cineva drag.</p>
+            <address className="magic-footer-contact">
+              <a href="mailto:cutiutamagicaofficial@gmail.com">Cutiutamagicaofficial@gmail.com</a>
+              <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
+            </address>
           </div>
 
           <nav className="magic-footer-nav" aria-label="Navigare subsol">
@@ -114,7 +120,6 @@ export function Footer() {
             aria-label="Avyron — descoperă-ne"
             className="magic-footer-avyron"
           >
-            <span>Creat cu grijă de</span>
             <img src={avyronLogo} alt="Avyron" loading="lazy" decoding="async" />
           </a>
         </div>

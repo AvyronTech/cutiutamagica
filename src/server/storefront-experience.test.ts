@@ -250,7 +250,8 @@ describe("storefront and dashboard share one catalog", () => {
     expect(products.every((p) => p.discovery?.guides.length)).toBe(true);
     const { renderSitemap } = await import("@/lib/seo-sitemap");
     const sitemap = renderSitemap(products);
-    expect(sitemap.match(/<url>/g)).toHaveLength(24);
+    expect(sitemap.match(/<url>/g)).toHaveLength(25);
+    expect(sitemap).toContain("<loc>https://cutiutamagica.eu/despre-noi</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/personalizeaza</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/livrare</loc>");
     for (const p of products) expect(sitemap).toContain(`/produs/${p.slug}</loc>`);

@@ -14,6 +14,7 @@ describe("page story loading profiles", () => {
     ["/cont", "account"],
     ["/retur", "care"],
     ["/politica-de-confidentialitate", "legal"],
+    ["/despre-noi", "workshop"],
   ])("maps %s to the %s scene", (pathname, scene) => {
     expect(pageStoryProfile(pathname).scene).toBe(scene);
   });

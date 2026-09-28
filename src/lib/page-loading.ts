@@ -139,7 +139,8 @@ export function pageStoryProfile(pathname: string): PageStoryProfile {
   if (pathname === "/comanda") return profiles.checkout;
   if (pathname === "/personalizeaza") return profiles.personalize;
   if (pathname === "/livrare") return profiles.delivery;
-  if (pathname === "/despre-cutiuta" || pathname === "/poveste") return profiles.workshop;
+  if (pathname === "/despre-cutiuta" || pathname === "/despre-noi" || pathname === "/poveste")
+    return profiles.workshop;
   if (pathname === "/cadouri" || pathname.startsWith("/cadouri/")) return profiles.gifts;
   if (pathname === "/ghid-cadouri-personalizate") return profiles.gifts;
   if (pathname === "/cont") return profiles.account;
