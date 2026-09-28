@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { BrandMark } from "@/components/site/BrandMark";
 import { toast } from "sonner";
+import { PackageCheck, ShieldCheck } from "lucide-react";
 import { playChime, playSparkle } from "@/lib/sound";
 
 /**
@@ -65,7 +66,52 @@ export function notifyAddedToCart(productName: string, qty: number, onViewCart?:
         ),
         createElement("span", { className: "magic-cart-timer", "aria-hidden": true }),
       ),
-    { duration: 5000 },
+    { duration: 3500 },
+  );
+}
+
+function checkoutHint(
+  id: "checkout-delivery" | "checkout-security",
+  icon: typeof PackageCheck,
+  title: string,
+  message: string,
+) {
+  toast.custom(
+    () =>
+      createElement(
+        "div",
+        { className: "checkout-whisper-toast", role: "status" },
+        createElement(
+          "span",
+          { className: "checkout-whisper-icon", "aria-hidden": true },
+          createElement(icon, { size: 17 }),
+        ),
+        createElement(
+          "span",
+          { className: "checkout-whisper-copy" },
+          createElement("strong", null, title),
+          createElement("small", null, message),
+        ),
+      ),
+    { id, duration: 4000 },
+  );
+}
+
+export function notifyCheckoutDelivery() {
+  checkoutHint(
+    "checkout-delivery",
+    PackageCheck,
+    "Pregătită cu grijă",
+    "Verificăm cutiuța înainte să plece spre tine.",
+  );
+}
+
+export function notifyCheckoutSecurity() {
+  checkoutHint(
+    "checkout-security",
+    ShieldCheck,
+    "Date protejate",
+    "Comanda este salvată o singură dată, chiar dacă reîncerci.",
   );
 }
 

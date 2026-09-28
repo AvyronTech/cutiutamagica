@@ -13,8 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ComandaRouteImport } from './routes/comanda'
+import { Route as ContRouteImport } from './routes/cont'
 import { Route as DespreCutiutaRouteImport } from './routes/despre-cutiuta'
 import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
+import { Route as LivrareRouteImport } from './routes/livrare'
+import { Route as PersonalizeazaRouteImport } from './routes/personalizeaza'
 import { Route as PoliticaDeConfidentialitateRouteImport } from './routes/politica-de-confidentialitate'
 import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as ProduseRouteImport } from './routes/produse'
@@ -73,6 +76,11 @@ const ComandaRoute = ComandaRouteImport.update({
   path: '/comanda',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContRoute = ContRouteImport.update({
+  id: '/cont',
+  path: '/cont',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DespreCutiutaRoute = DespreCutiutaRouteImport.update({
   id: '/despre-cutiuta',
   path: '/despre-cutiuta',
@@ -84,6 +92,16 @@ const GhidCadouriPersonalizateRoute =
     path: '/ghid-cadouri-personalizate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LivrareRoute = LivrareRouteImport.update({
+  id: '/livrare',
+  path: '/livrare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonalizeazaRoute = PersonalizeazaRouteImport.update({
+  id: '/personalizeaza',
+  path: '/personalizeaza',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PoliticaDeConfidentialitateRoute =
   PoliticaDeConfidentialitateRouteImport.update({
     id: '/politica-de-confidentialitate',
@@ -303,8 +321,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
+  '/cont': typeof ContRoute
   '/despre-cutiuta': typeof DespreCutiutaRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
+  '/livrare': typeof LivrareRoute
+  '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
@@ -348,8 +369,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
+  '/cont': typeof ContRoute
   '/despre-cutiuta': typeof DespreCutiutaRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
+  '/livrare': typeof LivrareRoute
+  '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
@@ -394,8 +418,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/comanda': typeof ComandaRoute
+  '/cont': typeof ContRoute
   '/despre-cutiuta': typeof DespreCutiutaRoute
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
+  '/livrare': typeof LivrareRoute
+  '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
   '/produse': typeof ProduseRoute
@@ -441,8 +468,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/comanda'
+    | '/cont'
     | '/despre-cutiuta'
     | '/ghid-cadouri-personalizate'
+    | '/livrare'
+    | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
     | '/produse'
@@ -486,8 +516,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/comanda'
+    | '/cont'
     | '/despre-cutiuta'
     | '/ghid-cadouri-personalizate'
+    | '/livrare'
+    | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
     | '/produse'
@@ -531,8 +564,11 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/comanda'
+    | '/cont'
     | '/despre-cutiuta'
     | '/ghid-cadouri-personalizate'
+    | '/livrare'
+    | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
     | '/produse'
@@ -578,8 +614,11 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ComandaRoute: typeof ComandaRoute
+  ContRoute: typeof ContRoute
   DespreCutiutaRoute: typeof DespreCutiutaRoute
   GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
+  LivrareRoute: typeof LivrareRoute
+  PersonalizeazaRoute: typeof PersonalizeazaRoute
   PoliticaDeConfidentialitateRoute: typeof PoliticaDeConfidentialitateRoute
   PovesteRoute: typeof PovesteRoute
   ProduseRoute: typeof ProduseRoute
@@ -621,6 +660,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComandaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cont': {
+      id: '/cont'
+      path: '/cont'
+      fullPath: '/cont'
+      preLoaderRoute: typeof ContRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/despre-cutiuta': {
       id: '/despre-cutiuta'
       path: '/despre-cutiuta'
@@ -633,6 +679,20 @@ declare module '@tanstack/react-router' {
       path: '/ghid-cadouri-personalizate'
       fullPath: '/ghid-cadouri-personalizate'
       preLoaderRoute: typeof GhidCadouriPersonalizateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/livrare': {
+      id: '/livrare'
+      path: '/livrare'
+      fullPath: '/livrare'
+      preLoaderRoute: typeof LivrareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personalizeaza': {
+      id: '/personalizeaza'
+      path: '/personalizeaza'
+      fullPath: '/personalizeaza'
+      preLoaderRoute: typeof PersonalizeazaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politica-de-confidentialitate': {
@@ -1001,8 +1061,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ComandaRoute: ComandaRoute,
+  ContRoute: ContRoute,
   DespreCutiutaRoute: DespreCutiutaRoute,
   GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
+  LivrareRoute: LivrareRoute,
+  PersonalizeazaRoute: PersonalizeazaRoute,
   PoliticaDeConfidentialitateRoute: PoliticaDeConfidentialitateRoute,
   PovesteRoute: PovesteRoute,
   ProduseRoute: ProduseRoute,

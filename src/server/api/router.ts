@@ -1,4 +1,5 @@
 import { handleReviews } from "./reviews";
+import { handlePersonalization } from "./personalization";
 import { handleReviewAccount } from "../review-accounts";
 import { localMediaPreview } from "@/server/media-policy";
 import { handleCheckoutAdmin } from "./checkout-admin";
@@ -12,7 +13,7 @@ import { handleStorefrontDesign } from "./storefront-design";
 import { handleAdminInventory } from "./admin-inventory";
 import { handleProductInterest } from "./product-interest";
 import { listPublicCatalog } from "@/server/db/catalog.repository";
-import { websiteOrderInputSchema } from "@/lib/order-contracts";
+import { websiteOrderInputSchema, type WebsiteOrderInput } from "@/lib/order-contracts";
 import {
   CheckoutError,
   createWebsiteOrder,
@@ -25,7 +26,7 @@ import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
 import { getPublicProductExperience } from "@/server/api/product-experience";
 import { handleCommerceApi } from "@/server/api/commerce";
 import { handleChatApi } from "@/server/api/chat";
-import { sendOrderConfirmation } from "@/server/integrations/resend";
+import { sendOrderConfirmation, sendOrderOwnerNotification } from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 import { credentialStatuses } from "@/server/services/growth-settings";
 
@@ -43,6 +44,29 @@ function methodNotAllowed(allow: string): Response {
     { error: { code: "METHOD_NOT_ALLOWED", message: "Metoda nu este permisa." } },
     { status: 405, headers: { allow } },
   );
+}
+
+function recordOrderMetric(
+  env: Env,
+  result: Awaited<ReturnType<typeof createWebsiteOrder>>,
+  input: WebsiteOrderInput,
+): void {
+  if (result.replayed) return;
+  try {
+    env.ANALYTICS.writeDataPoint({
+      indexes: ["commerce_order"],
+      blobs: [
+        env.APP_ENV,
+        result.orderNumber,
+        input.paymentMethod,
+        input.shippingOption,
+        result.currency,
+      ],
+      doubles: [result.total, input.items.reduce((sum, item) => sum + item.quantity, 0)],
+    });
+  } catch (error) {
+    console.warn("order.analytics_write_failed", { orderId: result.orderId, error });
+  }
 }
 
 async function createOrder(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -114,13 +138,19 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
       }
     }
     const commerceEnv = env as CommerceEnv;
+    recordOrderMetric(env, result, parsed.data);
     if (
       (await credentialStatuses(commerceEnv)).some((c) => c.provider === "resend" && c.configured)
     ) {
       ctx.waitUntil(
-        sendOrderConfirmation(commerceEnv, result.orderId).catch((error) =>
-          console.error("order.customer_email_failed", { orderId: result.orderId, error }),
-        ),
+        Promise.all([
+          sendOrderConfirmation(commerceEnv, result.orderId).catch((error) =>
+            console.error("order.customer_email_failed", { orderId: result.orderId, error }),
+          ),
+          sendOrderOwnerNotification(commerceEnv, result.orderId).catch((error) =>
+            console.error("order.owner_email_failed", { orderId: result.orderId, error }),
+          ),
+        ]).then(() => undefined),
       );
     }
 
@@ -153,6 +183,9 @@ export async function handleApiRequest(
   if (reviewAccountResponse) return reviewAccountResponse;
   const reviewsResponse = await handleReviews(request, env);
   if (reviewsResponse) return reviewsResponse;
+
+  const personalizationResponse = await handlePersonalization(request, env);
+  if (personalizationResponse) return personalizationResponse;
 
   const storyResponse = await handleStoryScene(request, env);
   if (storyResponse) return storyResponse;

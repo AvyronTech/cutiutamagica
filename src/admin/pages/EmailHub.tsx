@@ -138,6 +138,7 @@ export default function EmailHub() {
         replyToEmail: value("replyToEmail"),
         inboundAddress: value("inboundAddress"),
         forwardingTarget: value("forwardingTarget"),
+        orderNotificationEmail: value("orderNotificationEmail"),
         customerEmailsEnabled: form.get("customerEmailsEnabled") === "on",
         partnerEmailsEnabled: form.get("partnerEmailsEnabled") === "on",
       },
@@ -261,6 +262,13 @@ export default function EmailHub() {
             type="email"
             defaultValue={data.settings.forwardingTarget}
             hint="Configurarea efectivă se confirmă în Cloudflare Email Routing."
+          />
+          <Field
+            label="Notificări comenzi noi"
+            name="orderNotificationEmail"
+            type="email"
+            defaultValue={data.settings.orderNotificationEmail}
+            hint="Primește automat detaliile fiecărei comenzi înregistrate."
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

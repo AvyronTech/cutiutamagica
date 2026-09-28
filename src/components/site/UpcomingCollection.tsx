@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import AutoScroll from "embla-carousel-auto-scroll";
 import { useReducedMotion } from "framer-motion";
@@ -13,17 +13,22 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
   const plugin = useMemo(
     () =>
       AutoScroll({
-        speed: 0.55,
+        speed: 0.48,
         playOnInit: false,
-        stopOnInteraction: true,
+        stopOnInteraction: false,
         stopOnMouseEnter: true,
         stopOnFocusIn: true,
       }),
     [],
   );
-  const [ref, api] = useEmblaCarousel({ loop: products.length > 3, align: "start" }, [plugin]);
+  const [ref, api] = useEmblaCarousel(
+    { loop: products.length > 1, align: "start", dragFree: true },
+    [plugin],
+  );
   const [paused, setPaused] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const cooldownTimer = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!api) return;
     const update = () => setPlaying(plugin.isPlaying());
@@ -36,9 +41,10 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
         !document.hidden &&
         !reduced &&
         !paused &&
+        !cooldown &&
         !node.matches(":hover") &&
         !node.contains(document.activeElement) &&
-        products.length > 3
+        products.length > 1
       )
         plugin.play();
       else plugin.stop();
@@ -58,7 +64,21 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
       plugin.stop();
       api.off("autoScroll:play", update).off("autoScroll:stop", update);
     };
-  }, [api, paused, plugin, products.length, reduced]);
+  }, [api, cooldown, paused, plugin, products.length, reduced]);
+  useEffect(
+    () => () => {
+      if (cooldownTimer.current) window.clearTimeout(cooldownTimer.current);
+    },
+    [],
+  );
+
+  const moveManually = (direction: "previous" | "next") => {
+    setCooldown(true);
+    if (cooldownTimer.current) window.clearTimeout(cooldownTimer.current);
+    cooldownTimer.current = window.setTimeout(() => setCooldown(false), 6000);
+    if (direction === "previous") api?.scrollPrev();
+    else api?.scrollNext();
+  };
   if (!products.length) return null;
   return (
     <section
@@ -69,7 +89,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
     >
       <header className="scene-heading" data-reveal>
         <p className="scene-eyebrow">
-          04 <span>Următorul capitol</span>
+          05 <span>Următorul capitol</span>
         </p>
         <h2 id="upcoming-title">
           Magia care <em>urmează.</em>
@@ -116,10 +136,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
         <button
           type="button"
           aria-label="Modelele precedente"
-          onClick={() => {
-            setPaused(true);
-            api?.scrollPrev();
-          }}
+          onClick={() => moveManually("previous")}
         >
           <ArrowLeft size={18} />
         </button>
@@ -131,22 +148,16 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
               plugin.stop();
             } else {
               setPaused(false);
+              setCooldown(false);
               if (!reduced) plugin.play();
             }
           }}
           aria-label={playing ? "Oprește derularea automată" : "Pornește derularea automată"}
-          disabled={!!reduced || products.length <= 3}
+          disabled={!!reduced || products.length <= 1}
         >
           {playing ? <Pause size={16} /> : <Play size={16} />}
         </button>
-        <button
-          type="button"
-          aria-label="Modelele următoare"
-          onClick={() => {
-            setPaused(true);
-            api?.scrollNext();
-          }}
-        >
+        <button type="button" aria-label="Modelele următoare" onClick={() => moveManually("next")}>
           <ArrowRight size={18} />
         </button>
       </div>

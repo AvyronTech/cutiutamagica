@@ -27,6 +27,7 @@ export const emailSettingsSchema = z.object({
   replyToEmail: contactAddress.default("cutiutamagica@gmail.com"),
   inboundAddress: brandedAddress.default("contact@cutiutamagica.eu"),
   forwardingTarget: contactAddress.default("cutiutamagica@gmail.com"),
+  orderNotificationEmail: contactAddress.default("cutiutamagicaofficial@gmail.com"),
   customerEmailsEnabled: z.boolean().default(true),
   partnerEmailsEnabled: z.boolean().default(false),
 });

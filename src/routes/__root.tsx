@@ -17,7 +17,7 @@ import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
-import { StoryLoadingScreen } from "@/components/site/StoryLoadingScreen";
+import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { ChatWidget } from "@/components/site/ChatWidget";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 
@@ -160,20 +160,16 @@ function RootComponent() {
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
   const showBack = isChrome && pathname !== "/";
   const isProductPage = pathname.startsWith("/produs/");
-  const isHome = pathname === "/";
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
         <ShopProvider pricing={pricing}>
-          {isHome && <StoryLoadingScreen />}
+          {isChrome && <PageStoryLoader initialPath={pathname} />}
           {isChrome && <Header />}
           {showBack && (
-            <div className="max-w-7xl mx-auto px-4 pt-4">
-              <Link
-                to={isProductPage ? "/produse" : "/"}
-                className="group inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5 text-sm font-medium text-[color:var(--wood-dark)] bg-[color:var(--cream)]/55 backdrop-blur-md border border-[color:var(--gold)]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:bg-[color:var(--cream)]/85 hover:border-[color:var(--gold)] hover:-translate-y-0.5 transition-all"
-              >
-                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[color:var(--cream)] border border-[color:var(--gold)]/50 group-hover:-translate-x-0.5 transition-transform">
+            <div className="page-back-dock">
+              <Link to={isProductPage ? "/produse" : "/"} className="page-back-link group">
+                <span className="page-back-icon">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"

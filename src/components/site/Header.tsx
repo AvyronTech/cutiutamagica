@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, UserRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useShop } from "@/store/shop";
 
@@ -130,18 +130,35 @@ export function Header() {
               to="/produse"
               className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
             >
-              Produse
+              Cutiuțe muzicale
             </Link>
             <Link
               to="/despre-cutiuta"
               className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
             >
-              Despre
+              Despre cutiuță
+            </Link>
+            <Link
+              to="/livrare"
+              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
+            >
+              Livrare
             </Link>
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
             <SoundToggle compact={compact} />
+            <Link
+              to="/cont"
+              aria-label="Contul meu"
+              title="Contul meu"
+              className={
+                "group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
+                (compact ? "h-10 w-10" : "h-11 w-11 sm:h-12 sm:w-12")
+              }
+            >
+              <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
+            </Link>
 
             <button
               type="button"

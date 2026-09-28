@@ -11,8 +11,9 @@ import { ConnectSection } from "@/components/site/ConnectSection";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
 import { RotatingSpotlight } from "@/components/site/RotatingSpotlight";
 import { UpcomingCollection } from "@/components/site/UpcomingCollection";
+import { PersonalizationSpotlight } from "@/components/site/PersonalizationSpotlight";
 import { CompactReturn } from "@/components/site/CompactReturn";
-import { ProductImage } from "@/components/site/ProductImage";
+import { HeroProductRotator } from "@/components/site/HeroProductRotator";
 import { collectionProducts } from "@/lib/collections";
 import { useShop } from "@/store/shop";
 import bgEmotie from "@/assets/bg-emotie.jpg";
@@ -45,10 +46,9 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { products } = useShop();
   const reviews = Route.useLoaderData();
-  const hero =
-    products.find((p) => p.featured && isAvailable(p)) ??
-    products.find((p) => p.id === "hp-keeper" && isAvailable(p)) ??
-    products.find(isAvailable);
+  const heroProducts = products
+    .filter(isAvailable)
+    .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
   const upcoming = products.filter((p) => !isAvailable(p));
   return (
     <div className="magic-landing">
@@ -60,6 +60,18 @@ function Index() {
           aria-labelledby="hero-heading"
         >
           <SceneAtmosphere />
+          <div className="hero-magic-ambience" aria-hidden>
+            <span className="hero-magic-orbit" />
+            <span className="hero-magic-staff">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="hero-magic-glint hero-magic-glint--one">✦</span>
+            <span className="hero-magic-glint hero-magic-glint--two">✧</span>
+            <span className="hero-magic-glint hero-magic-glint--three">·</span>
+          </div>
           <div className="magic-hero-inner">
             <div className="hero-copy">
               <p className="scene-eyebrow">
@@ -87,27 +99,8 @@ function Index() {
             <div className="hero-object">
               <HeroMechanismHalo />
               <span className="hero-object-kicker">O mică lume, gata să fie descoperită</span>
-              {hero ? (
-                <Link
-                  to="/produs/$id"
-                  params={{ id: hero.id }}
-                  aria-label={`Descoperă ${hero.name}`}
-                >
-                  <div className="hero-photo" data-magic-card>
-                    <ProductImage
-                      src={hero.gallery?.[0]?.src ?? hero.image}
-                      alt={hero.name}
-                      loading="eager"
-                      fetchPriority="high"
-                      sizes="(max-width: 767px) 78vw, (max-width: 1200px) 42vw, 470px"
-                      width={800}
-                      height={800}
-                    />
-                    <span className="hero-photo-caption">
-                      O poveste în palma ta <ArrowUpRight size={16} />
-                    </span>
-                  </div>
-                </Link>
+              {heroProducts.length ? (
+                <HeroProductRotator products={heroProducts} />
               ) : (
                 <div className="hero-photo hero-photo--empty" aria-hidden="true">
                   <BrandMark className="h-2/3 w-2/3" />
@@ -164,6 +157,7 @@ function Index() {
           bgImage="/scenes/dedicated.webp"
           spotlight={<RotatingSpotlight products={collectionProducts(products, "dedicated")} />}
         />
+        <PersonalizationSpotlight />
         <section className="story-invitation" data-world="dedicated">
           <p className="scene-eyebrow">Dincolo de capac</p>
           <h2>

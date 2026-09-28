@@ -196,7 +196,7 @@ export function ProductReviews({
             {!account.data && mode === "register" && (
               <label className="review-consent">
                 <input name="accountConsent" type="checkbox" required />
-                Sunt de acord cu crearea contului pentru recenzii și am citit{" "}
+                Sunt de acord cu crearea contului de client și am citit{" "}
                 <Link to="/politica-de-confidentialitate">politica de confidențialitate</Link>.
               </label>
             )}

@@ -40,7 +40,7 @@ function Privacy() {
           care poate fi retras fără afectarea comenzilor.
         </p>
       </LegalSection>
-      <LegalSection title="Recenzii și contul pentru recenzii">
+      <LegalSection title="Contul de client și recenziile">
         <p>
           Poți trimite o recenzie fără cont, folosind un nume afișat și o adresă de e-mail. După
           aprobare, afișăm numele ales, textul, evaluarea, cutiuța și sursa recenziei. E-mailul și
@@ -48,11 +48,25 @@ function Privacy() {
           le vadă ceilalți vizitatori.
         </p>
         <p>
-          Contul opțional păstrează numele și e-mailul pentru recenziile următoare. Parola este
-          stocată sub formă de hash, iar sesiunea folosește un cookie de autentificare cu durată de
-          până la șapte zile. Acest cont nu oferă acces la comenzi sau la datele altor persoane.
-          Pentru corectarea sau retragerea unei recenzii, folosește datele de contact ale
-          magazinului.
+          Contul opțional păstrează numele și e-mailul pentru recenziile și cererile de
+          personalizare următoare. Parola este stocată sub formă de hash, iar sesiunea folosește un
+          cookie de autentificare cu durată de până la șapte zile. Contul afișează numai cererile
+          asociate sesiunii tale și nu oferă acces la datele altor persoane. Pentru corectarea sau
+          retragerea unei recenzii, folosește datele de contact ale magazinului.
+        </p>
+      </LegalSection>
+      <LegalSection title="Cereri de personalizare și imagini">
+        <p>
+          Pentru o cerere de personalizare prelucrăm numele, e-mailul, telefonul, opțiunile alese,
+          mesajul pentru atelier și imaginea încărcată pentru capac. Aceste date sunt necesare
+          evaluării cererii, confirmării detaliilor și, dacă accepți oferta, realizării produsului.
+          Trimiterea formularului nu inițiază automat o comandă sau o plată.
+        </p>
+        <p>
+          Imaginea este stocată privat în infrastructura Cloudflare R2 și nu este publicată în
+          catalog. Accesul este limitat la personalul autorizat implicat în verificare și producție.
+          Te rugăm să încarci numai imagini pe care ai dreptul să le folosești și să eviți datele
+          sensibile care nu sunt necesare personalizării.
         </p>
       </LegalSection>
       <LegalSection title="Serviciile care pot primi date">

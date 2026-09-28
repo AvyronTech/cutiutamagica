@@ -14,6 +14,7 @@ import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { shippingFingerprint } from "./services/shipping-fingerprint";
 import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
 import { verifyStripeWebhook } from "./integrations/stripe";
+import { sendOrderOwnerNotification } from "./integrations/resend";
 vi.mock("@/lib/admin-auth", () => ({
   authenticateAdminRequest: vi.fn(async () => ({ id: "test-admin", email: "test@example.test" })),
 }));
@@ -197,6 +198,29 @@ function storedPayment(id: string) {
 }
 
 describe("secure checkout", () => {
+  it("sends one idempotent internal order email to the configured owner inbox", async () => {
+    env.RESEND_API_KEY = "re_test_fixture";
+    const created = await order();
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ id: "email-order-owner" }), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetcher);
+
+    await sendOrderOwnerNotification(env, created.orderId);
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const init = (fetcher.mock.calls as unknown as Array<[string, RequestInit]>)[0][1];
+    const body = JSON.parse(String(init.body));
+    expect(body.to).toEqual(["cutiutamagicaofficial@gmail.com"]);
+    expect(body.subject).toContain(created.orderNumber);
+    expect(body.text).toContain("panoul intern Cutiuța Magică");
+    expect(new Headers(init.headers).get("idempotency-key")).toBe(
+      `order-owner-notification/${created.orderId}`,
+    );
+  });
+
   it("reuses one hosted session; sends authoritative amount and no order access token", async () => {
     const created = await order();
     const fetcher = stripeFetch();

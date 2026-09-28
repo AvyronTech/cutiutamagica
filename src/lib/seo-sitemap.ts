@@ -25,6 +25,8 @@ export function renderSitemap(products: CatalogProduct[]): string {
       lastmod: catalogDate && catalogDate > DISCOVERY_UPDATED ? catalogDate : DISCOVERY_UPDATED,
     },
     { path: "/despre-cutiuta", lastmod: DISCOVERY_UPDATED },
+    { path: "/livrare", lastmod: "2026-09-28" },
+    { path: "/personalizeaza", lastmod: "2026-09-28" },
     { path: "/cadouri", lastmod: DISCOVERY_UPDATED },
     ...giftGuides.map((g) => ({ path: `/cadouri/${g.slug}`, lastmod: DISCOVERY_UPDATED })),
     { path: "/ghid-cadouri-personalizate", lastmod: "2026-09-05" },

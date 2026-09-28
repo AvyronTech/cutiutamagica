@@ -6,6 +6,7 @@ const scenes = [
   { key: "story", source: "/scenes/library.webp", mobile: "/scenes/library-mobile.webp" },
   { key: "emotion", source: bgEmotie },
   { key: "dedicated", source: "/scenes/dedicated.webp" },
+  { key: "personalize" },
   { key: "future" },
   {
     key: "atelier",
@@ -27,7 +28,7 @@ export function LandingBackdrop() {
       index: i + 1,
       node: world.querySelector<HTMLElement>(`[data-world="${scene.key}"]`),
     }));
-    const ready = new Set([0, 3]);
+    const ready = new Set([0, 3, 4]);
     let frame = 0,
       visible = false;
     const draw = () => {
