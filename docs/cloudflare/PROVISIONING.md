@@ -23,10 +23,10 @@ npm run test
 npm run cf:types:check
 npm run cf:deploy:dry
 npx wrangler d1 migrations apply DB --env production --remote
-npx wrangler d1 execute DB --env production --remote --file=./cloudflare/d1/seed/0001_music_boxes.sql
-npm run cf:media:remote
 npm run cf:deploy
 ```
+
+Seedul si uploadul media se folosesc numai la provisionarea unei baze sau a unui bucket nou. Nu se repeta la un release normal, deoarece pot suprascrie continut operational sau pot republica materiale neverificate.
 
 `cf:deploy:dry` si `cf:deploy` construiesc obligatoriu cu `CLOUDFLARE_ENV=production` si opresc procesul daca pachetul generat nu contine ID-urile dedicate productiei.
 
@@ -34,8 +34,8 @@ npm run cf:deploy
 
 - `/api/v1/health` raspunde si indica mediul `production`.
 - Pagina principala, catalogul, produsul, sitemapul si media R2 raspund corect.
-- D1 are versiunea de schema asteptata, opt produse muzicale si zero incalcari FK.
-- `/admin` este protejat de Cloudflare Access si RBAC D1.
+- D1 are versiunea de schema asteptata, catalogul public asteptat si zero incalcari FK.
+- `/admin` este protejat prin e-mail, parola, sesiune `HttpOnly` si RBAC D1 pentru cele patru conturi aprobate.
 - Checkoutul recalculeaza server-side si creeaza outbox fara a astepta integrarile externe.
 - Intreruperea endpointului AVYRON nu afecteaza magazinul.
 

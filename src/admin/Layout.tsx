@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   Info,
   Target,
+  UserRoundPlus,
   TrendingUp,
   LogOut,
   Warehouse,
@@ -44,25 +45,42 @@ import {
   Bot,
   Volume2,
   VolumeX,
+  MessageCircle,
+  Megaphone,
+  DatabaseBackup,
+  ShieldCheck,
+  WandSparkles,
 } from "lucide-react";
+import { logoutAdminAccount } from "@/lib/admin-auth.functions";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
+  { path: "/admin/personalizations", label: "Personalizări", icon: WandSparkles },
   { path: "/admin/products", label: "Produse", icon: ShoppingBag },
+  { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
+  { path: "/admin/promotions", label: "Promoții", icon: Target },
+  { path: "/admin/referrals", label: "Referral", icon: UserRoundPlus },
+  { path: "/admin/suppliers", label: "Aprovizionare", icon: Search },
   { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
   { path: "/admin/shipping", label: "Livrare", icon: Truck },
   { path: "/admin/billing", label: "Facturare", icon: FileText },
   { path: "/admin/returns", label: "Retururi", icon: RotateCcw },
   { path: "/admin/financiar", label: "Financiar", icon: Wallet },
   { path: "/admin/platforms", label: "Platforme", icon: Store },
+  { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { path: "/admin/posts", label: "Postări", icon: Send },
   { path: "/admin/customers", label: "Clienți", icon: Users },
   { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
+  { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
+  { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
+  { path: "/admin/traffic", label: "Trafic", icon: TrendingUp },
   { path: "/admin/notifications", label: "Notificări", icon: BellRing },
   { path: "/admin/ai", label: "Agenți AI", icon: Bot },
   { path: "/admin/statistics", label: "Statistici", icon: BarChart3 },
   { path: "/admin/integrations", label: "Conectori", icon: Plug },
+  { path: "/admin/accounts", label: "Conturi și dispozitive", icon: ShieldCheck },
+  { path: "/admin/backups", label: "Backup", icon: DatabaseBackup },
   { path: "/admin/qr-generator", label: "Coduri QR", icon: QrCode },
   { path: "/admin/settings", label: "Setări", icon: Settings },
 ];
@@ -93,6 +111,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const readNotification = useServerFn(markNotificationRead);
   const readAllNotifications = useServerFn(markAllNotificationsRead);
   const removeNotification = useServerFn(dismissNotification);
+  const logout = useServerFn(logoutAdminAccount);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -109,8 +128,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   });
   const notifications = notificationsQuery.data?.notifications ?? [];
 
-  const handleLogout = () => {
-    window.location.assign("/cdn-cgi/access/logout");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      window.location.assign("/auth");
+    }
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -244,6 +267,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {isMobile && (
             <button
               onClick={() => setSidebarOpen(false)}
+              aria-label="Închide meniul"
               className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400"
             >
               <X className="w-5 h-5" />
@@ -290,7 +314,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="h-14 md:h-16 border-b border-[#1E293B] bg-[#0B1120]/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 flex-shrink-0 relative z-30">
           <div className="flex items-center gap-3">
@@ -298,6 +322,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {isMobile && (
               <button
                 onClick={() => setSidebarOpen(true)}
+                aria-label="Deschide meniul"
                 className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400 -ml-1"
               >
                 <Menu className="w-5 h-5" />
@@ -459,7 +484,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Floating Action Button - Mobile */}
-      {isMobile && (
+      {isMobile && location.pathname === "/admin" && (
         <div className="fixed bottom-6 right-6 z-50">
           {/* FAB Menu Items */}
           {fabOpen && (
@@ -491,6 +516,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* FAB Button */}
           <button
             onClick={() => setFabOpen(!fabOpen)}
+            aria-label="Acțiuni rapide"
+            aria-expanded={fabOpen}
             className={`w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl flex items-center justify-center transition-all duration-300 ${
               fabOpen ? "rotate-45" : ""
             }`}

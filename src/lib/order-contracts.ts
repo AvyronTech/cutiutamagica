@@ -1,3 +1,4 @@
+import { paymentProviders } from "./checkout-settings";
 import { z } from "zod";
 import { MAX_CART_QUANTITY, MAX_ITEM_QUANTITY } from "@/lib/pricing";
 import { PAYMENT_METHODS, SHIPPING_OPTIONS } from "@/lib/commerce-operations-contracts";
@@ -18,6 +19,16 @@ export const websiteOrderInputSchema = z
     }),
     paymentMethod: z.enum(PAYMENT_METHODS),
     shippingOption: z.enum(SHIPPING_OPTIONS),
+    paymentProvider: z.enum(paymentProviders).optional(),
+    shippingQuoteId: z.string().uuid().optional(),
+    easyboxLockerId: z.number().int().positive().max(2_147_483_647).optional(),
+    promotionCode: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z0-9-]{4,40}$/)
+      .optional(),
+    expectedTotalBani: z.number().int().nonnegative().max(100_000_000).optional(),
     checkoutConsentAccepted: z.literal(true),
     checkoutConsentVersion: z.string().trim().min(1).max(30),
     items: z
@@ -31,6 +42,28 @@ export const websiteOrderInputSchema = z
       .max(40),
   })
   .superRefine((value, context) => {
+    if (value.shippingOption === "easybox" && !value.easyboxLockerId)
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Alege un easybox înainte de finalizarea comenzii.",
+        path: ["easyboxLockerId"],
+      });
+    if (value.shippingOption !== "easybox" && value.easyboxLockerId)
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Punctul easybox nu corespunde metodei de livrare.",
+        path: ["easyboxLockerId"],
+      });
+    if (
+      value.paymentMethod === "card" &&
+      value.paymentProvider === "revolut_pay" &&
+      !/^\d{6}$/.test(value.customer.postalCode)
+    )
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Completează codul poștal pentru plata prin Revolut.",
+        path: ["customer", "postalCode"],
+      });
     const totalQuantity = value.items.reduce((sum, item) => sum + item.quantity, 0);
     if (totalQuantity > MAX_CART_QUANTITY) {
       context.addIssue({

@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { Banknote, PackageCheck, Repeat, ShoppingBag, Users } from "lucide-react";
 import { getAdminStatistics } from "@/lib/admin.functions";
+import { GROWTH_EVENT_NAMES } from "@/lib/growth-events";
 
 const COLORS = ["#7C3AED", "#F59E0B", "#10B981", "#3B82F6", "#E1306C", "#06B6D4"];
 
@@ -55,6 +56,10 @@ export default function Statistics() {
   const channels = (data?.channels ?? []).filter((channel) => channel.validOrdersCount > 0);
   const deliveries = data?.deliveries ?? [];
   const topProducts = data?.topProducts ?? [];
+  const growth = GROWTH_EVENT_NAMES.map((event) => ({
+    event,
+    count: data?.growth.find((item) => item.event === event)?.count ?? 0,
+  }));
   const kpis = [
     {
       label: "Venit net",
@@ -246,6 +251,33 @@ export default function Statistics() {
         Costul și profitul nu sunt estimate până când costurile produselor sunt completate. Venitul
         plătit este momentan {money(summary?.paidRevenue ?? 0)} RON, reducerile{" "}
         {money(summary?.discounts ?? 0)} RON, iar rambursările {money(summary?.refunds ?? 0)} RON.
+      </section>
+
+      <section className="glass-card rounded-xl p-4 md:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-300">
+              Growth brain
+            </p>
+            <h2 className="mt-1 text-base font-semibold text-white">
+              Funnel · ultimele 30 de zile
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500">Evenimente anonimizate, agregate zilnic</p>
+        </div>
+        <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {growth.map((item) => (
+            <div
+              key={item.event}
+              className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-3"
+            >
+              <p className="break-all text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                {item.event}
+              </p>
+              <p className="mt-2 text-xl font-bold tabular-nums text-white">{item.count}</p>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

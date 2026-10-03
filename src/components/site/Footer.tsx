@@ -1,114 +1,133 @@
 import { Link } from "@tanstack/react-router";
+import { BrandMark } from "./BrandMark";
+import { FooterScene } from "./FooterScene";
 import avyronLogo from "@/assets/avyron-logo.jpg";
+import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/whatsapp";
 
-const navItems = [
-  { to: "/", label: "Acasă" },
-  { to: "/produse", label: "Produse" },
-  { to: "/poveste", label: "Poveste" },
-  { to: "/comanda", label: "Comandă" },
-  { to: "/favorite", label: "Favorite" },
-  { to: "/retur", label: "Retur și garanție" },
+const navGroups = [
+  {
+    title: "Descoperă",
+    items: [
+      { to: "/produse", label: "Cutiuțe muzicale" },
+      { to: "/personalizeaza", label: "Personalizează" },
+      { to: "/cadouri", label: "Idei de cadouri" },
+      { to: "/despre-cutiuta", label: "Despre cutiuță" },
+    ],
+  },
+  {
+    title: "Ajutor",
+    items: [
+      { to: "/livrare", label: "Livrare" },
+      { to: "/comanda", label: "Comandă" },
+      { to: "/retur", label: "Retur și garanție" },
+      { to: "/cont", label: "Contul meu" },
+    ],
+  },
+  {
+    title: "Informații",
+    items: [
+      { to: "/termeni-de-utilizare", label: "Termeni de utilizare" },
+      { to: "/politica-de-confidentialitate", label: "Politica de Confidențialitate" },
+      { to: "/despre-noi", label: "Despre Noi" },
+    ],
+  },
 ] as const;
-
-// Sugestiv: o cutiuță cu o notă muzicală ce se înalță deasupra ei
-function MusicBoxMark({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      {/* cutiuță */}
-      <rect x="3.5" y="11" width="17" height="9" rx="1.8" />
-      <path d="M3.5 13.5h17" />
-      {/* cheița */}
-      <circle cx="12" cy="17" r="1.1" fill="currentColor" stroke="none" />
-      <path d="M12 17v1.6" />
-      {/* nota magică deasupra */}
-      <path d="M14 4.2v5.4" />
-      <circle cx="12.6" cy="9.6" r="1.3" />
-      <path d="M14 4.2c.9.4 1.6 1.1 1.8 2" />
-      {/* sclipiri */}
-      <path d="M7 7.5l.6.6M7.6 7.5L7 8.1" />
-      <path d="M18 8l.5.5M18.5 8l-.5.5" />
-    </svg>
-  );
-}
 
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="mt-12 wood-grain text-[color:var(--cream)]">
-      <div className="max-w-6xl mx-auto px-4 pt-6 pb-4 flex flex-col items-center gap-4 text-center">
-        {/* Brand — deschide subsolul */}
-        <Link to="/" className="flex flex-col items-center gap-1.5 group">
-          <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-[color:var(--cream)]/15 to-[color:var(--cream)]/[0.03] border border-[color:var(--gold)]/30 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] group-hover:border-[color:var(--gold)]/70 transition-colors">
-              <MusicBoxMark className="w-5 h-5 text-[color:var(--gold)]" />
-            </span>
-            <span className="font-display text-2xl md:text-[1.6rem] leading-none">
-              Cutiuța <span className="gold-text italic">Magică</span>
-            </span>
-          </div>
-          <p className="max-w-md text-xs md:text-sm italic text-[color:var(--cream)]/70 font-serif">
-            Lemn ales cu grijă, mâini răbdătoare și o melodie șoptită de poveste — fiecare cutiuță,
-            o promisiune făcută cu suflet.
-          </p>
+    <footer className="magic-footer text-[color:var(--cream)]">
+      <FooterScene />
+      <div className="magic-footer-invitation">
+        <BrandMark className="magic-footer-box" />
+        <span>O melodie poate spune atât de mult.</span>
+        <h2>
+          Alege amintirea pe care
+          <br />
+          <em>o vei dărui.</em>
+        </h2>
+        <Link to="/produse" className="magic-footer-cta">
+          Găsește cutiuța potrivită <span aria-hidden>↗</span>
         </Link>
-
-        {/* Navigare — butoane soft, de poveste */}
-        <nav
-          aria-label="Navigare subsol"
-          className="flex flex-wrap items-center justify-center gap-2"
-        >
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium tracking-wide
-                         text-[color:var(--cream)]/90
-                         bg-[color:var(--cream)]/[0.04]
-                         border border-[color:var(--cream)]/15
-                         backdrop-blur-sm
-                         transition-all duration-300 ease-out
-                         hover:text-[color:var(--gold)]
-                         hover:border-[color:var(--gold)]/60
-                         hover:bg-[color:var(--gold)]/10
-                         hover:shadow-[0_0_24px_-6px_var(--gold)]
-                         hover:-translate-y-0.5"
-            >
-              <span className="w-1 h-1 rounded-full bg-[color:var(--gold)]/60 group-hover:bg-[color:var(--gold)] transition-colors" />
-              {item.label}
+      </div>
+      <div className="magic-footer-details">
+        <div className="magic-footer-grid">
+          <div className="magic-footer-brand">
+            <Link to="/" aria-label="Cutiuța Magică — Acasă">
+              <BrandMark className="magic-footer-brandmark" />
+              <span>
+                Cutiuța <em>Magică</em>
+              </span>
             </Link>
-          ))}
-        </nav>
+            <p>O cutiuță din lemn, o manivelă și o melodie aleasă pentru cineva drag.</p>
+            <address className="magic-footer-contact">
+              <a href="mailto:contact@cutiutamagica.eu">Contact: contact@cutiutamagica.eu</a>
+              <a href="mailto:comenzi@cutiutamagica.eu">Comenzi: comenzi@cutiutamagica.eu</a>
+              <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
+            </address>
+          </div>
 
-        {/* Logo Avyron */}
-        <a
-          href="https://avyron.ro"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Avyron — descoperă-ne"
-          className="block opacity-90 hover:opacity-100 transition-opacity"
-        >
-          <img
-            src={avyronLogo}
-            alt="Avyron"
-            loading="lazy"
-            className="h-[58px] md:h-[72px] w-auto block"
-          />
-        </a>
+          <nav className="magic-footer-nav" aria-label="Navigare subsol">
+            {navGroups.map((group) => (
+              <div key={group.title}>
+                <strong>{group.title}</strong>
+                {group.items.map((item) => (
+                  <Link key={item.to} to={item.to}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </div>
 
-        <div className="w-24 h-px bg-gradient-to-r from-transparent via-[color:var(--gold)]/40 to-transparent" />
+        <div className="magic-footer-trust">
+          <section aria-label="Protecția consumatorului" className="magic-footer-consumer">
+            <a
+              href="https://reclamatiisal.anpc.ro"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="ANPC: Soluționarea alternativă a litigiilor"
+              className="magic-anpc-badge"
+            >
+              <img
+                src="/anpc-sal.webp"
+                alt="ANPC: Soluționarea alternativă a litigiilor"
+                width={234}
+                height={58}
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
+            <a
+              href="https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/resolve-your-consumer-complaint/alternative-dispute-resolution-consumers_ro"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Comisia Europeană: soluționarea alternativă a litigiilor pentru consumatori"
+              className="magic-adr-badge"
+            >
+              <span aria-hidden>EU</span>
+              <span>
+                <strong>Soluționarea litigiilor</strong>
+                <small>ADR și ECC-Net</small>
+              </span>
+            </a>
+          </section>
 
-        <div className="text-[11px] leading-5 text-[color:var(--cream)]/60">
-          <p>© {year} Cutiuța Magică · DIGITAL ECO TECH SOLUTION SRL</p>
-          <p>CUI 55055976 · neplătitor de TVA</p>
+          <a
+            href="https://avyron.ro"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Avyron — descoperă-ne"
+            className="magic-footer-avyron"
+          >
+            <img src={avyronLogo} alt="Avyron" loading="lazy" decoding="async" />
+          </a>
+        </div>
+
+        <div className="magic-footer-bottom">
+          <p>© {year} Cutiuța Magică</p>
+          <p>Lemn · manivelă · melodie</p>
         </div>
       </div>
     </footer>

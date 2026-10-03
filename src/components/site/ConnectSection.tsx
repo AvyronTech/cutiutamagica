@@ -82,7 +82,7 @@ export function ConnectSection() {
     },
     {
       name: "Email",
-      href: "mailto:contact@cutiutamagica.ro",
+      href: "mailto:contact@cutiutamagica.eu",
       Icon: Mail,
       accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]",
       external: false,
@@ -97,7 +97,11 @@ export function ConnectSection() {
   ];
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="connect-heading">
+    <section
+      data-world="atelier"
+      className="max-w-6xl mx-auto px-4 py-10 md:py-14"
+      aria-labelledby="connect-heading"
+    >
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-3">
           <span

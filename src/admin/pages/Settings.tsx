@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Bell, Building2, Save, Share2, Truck } from "lucide-react";
 import { toast } from "sonner";
+import { AboutSceneSettings } from "./AboutSceneSettings";
 import type { AdminSettingsData } from "@/lib/admin-contracts";
 import { getAdminIntegrations, getAdminSettings, saveAdminSettings } from "@/lib/admin.functions";
 
@@ -131,6 +132,8 @@ export default function Settings() {
           trebuie făcută numai după confirmarea proprietarului.
         </p>
       </div>
+
+      <AboutSceneSettings />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="glass-card rounded-xl p-4 lg:col-span-2 md:p-5">

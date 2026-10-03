@@ -3,13 +3,22 @@ import {
   processAvyronSync,
   type AvyronQueueMessage,
 } from "@/server/queue/avyron-sync-consumer";
+import { sendOrderConfirmation, sendOrderOwnerNotification } from "@/server/integrations/resend";
+import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
 interface CommerceNotificationQueueMessage {
   version: 1;
   outboxId: string;
 }
 
-type CommerceQueueMessage = CommerceNotificationQueueMessage | AvyronQueueMessage;
+interface OrderEmailQueueMessage {
+  version: 2;
+  type: "order.email";
+  orderId: string;
+}
+
+type CommerceQueueMessage =
+  CommerceNotificationQueueMessage | OrderEmailQueueMessage | AvyronQueueMessage;
 
 type OutboxRow = Record<string, string | number | null>;
 
@@ -17,6 +26,16 @@ function isCommerceQueueMessage(value: unknown): value is CommerceNotificationQu
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   return candidate.version === 1 && typeof candidate.outboxId === "string";
+}
+
+function isOrderEmailQueueMessage(value: unknown): value is OrderEmailQueueMessage {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    candidate.version === 2 &&
+    candidate.type === "order.email" &&
+    typeof candidate.orderId === "string"
+  );
 }
 
 function parseNotificationPayload(payload: string): {
@@ -137,12 +156,28 @@ export async function consumeCommerceEvents(batch: MessageBatch<unknown>, env: E
   for (const message of batch.messages) {
     if (isAvyronQueueMessage(message.body)) {
       try {
-        const result = await processAvyronSync(env, message.body.jobId);
+        const result = await processAvyronSync(env, message.body);
         if (result.action === "ack") message.ack();
         else message.retry({ delaySeconds: result.delaySeconds ?? 30 });
       } catch (error) {
-        console.error("avyron.sync_queue_failed", { jobId: message.body.jobId, error });
+        console.error("avyron.sync_queue_failed", { message: message.body, error });
         message.retry({ delaySeconds: 30 });
+      }
+      continue;
+    }
+    if (isOrderEmailQueueMessage(message.body)) {
+      try {
+        await Promise.all([
+          sendOrderConfirmation(env as CommerceEnv, message.body.orderId),
+          sendOrderOwnerNotification(env as CommerceEnv, message.body.orderId),
+        ]);
+        message.ack();
+      } catch (error) {
+        console.error("order.email_queue_failed", {
+          orderId: message.body.orderId,
+          error,
+        });
+        message.retry({ delaySeconds: 60 });
       }
       continue;
     }
