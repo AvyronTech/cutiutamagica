@@ -23,6 +23,7 @@ import {
 import { collectionFor } from "@/lib/collections";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
+import { ProductCardCarousel } from "@/components/site/ProductCardCarousel";
 
 const CATALOG_URL = "https://cutiutamagica.eu/produse";
 const collectionIcons = { story: BookOpen, emotion: Heart, dedicated: Gift };
@@ -306,20 +307,15 @@ function ProductsPage() {
                   </p>
                 </div>
               </div>
-              <div className="catalog-grid">
-                {upcoming.map((product, index) => (
-                  <div
-                    className="catalog-product"
-                    data-collection={collectionFor(product)}
-                    key={product.id}
-                  >
-                    <span className="catalog-product-collection">
-                      {catalogCollections.find((c) => c.id === collectionFor(product))?.title}
-                    </span>
-                    <ProductCard product={product} index={index} variant="solid" />
-                  </div>
-                ))}
-              </div>
+              <ProductCardCarousel
+                products={upcoming}
+                ariaLabel="Produsele din Magia care urmează"
+                renderMeta={(product) => (
+                  <span className="catalog-product-collection">
+                    {catalogCollections.find((c) => c.id === collectionFor(product))?.title}
+                  </span>
+                )}
+              />
             </section>
           )}
           {list.length === 0 && (

@@ -37,6 +37,15 @@
       "preview_bucket_name": "cutiuta-magica-media-local",
     },
   ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": [
+        "contact@cutiutamagica.eu",
+        "comenzi@cutiutamagica.eu"
+      ]
+    }
+  ],
   "queues": {
     "producers": [
       {
@@ -112,6 +121,15 @@
           "binding": "MEDIA",
           "bucket_name": "cutiutamagica",
         },
+      ],
+      "send_email": [
+        {
+          "name": "EMAIL",
+          "allowed_sender_addresses": [
+            "contact@cutiutamagica.eu",
+            "comenzi@cutiutamagica.eu"
+          ]
+        }
       ],
       "queues": {
         "producers": [

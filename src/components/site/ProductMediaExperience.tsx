@@ -9,6 +9,7 @@ import {
   positionFromDrag,
   wrapFrame,
 } from "@/lib/spin";
+import { trackGrowthEvent } from "@/lib/growth-events";
 
 export type ProductExperience = {
   product: { id: string; slug: string; name: string };
@@ -65,8 +66,15 @@ export function useProductExperience(slug: string) {
   });
 }
 
-export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExperience["audio"]> }) {
+export function ProductAudioOverlay({
+  audio,
+  productSlug,
+}: {
+  audio: NonNullable<ProductExperience["audio"]>;
+  productSlug: string;
+}) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const tracked75 = useRef(false);
   const [playing, setPlaying] = useState(false),
     [time, setTime] = useState(0),
     [error, setError] = useState("");
@@ -80,11 +88,14 @@ export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExper
       if (document.hidden) element?.pause();
     };
     window.addEventListener("cm:product-audio", pauseOthers);
+    const playPrimary = () => void togglePlayback();
+    window.addEventListener("cm:primary-audio-request", playPrimary);
     document.addEventListener("visibilitychange", hide);
     return () => {
       element?.pause();
       setProductAudioPlaying(false);
       window.removeEventListener("cm:product-audio", pauseOthers);
+      window.removeEventListener("cm:primary-audio-request", playPrimary);
       document.removeEventListener("visibilitychange", hide);
     };
   }, [audio.url]);
@@ -108,7 +119,7 @@ export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExper
     setProductAudioPlaying(false);
   };
   return (
-    <div className="product-melody-player">
+    <div className="product-melody-player" id="product-primary-audio">
       <audio
         ref={audioRef}
         src={audio.url}
@@ -116,6 +127,7 @@ export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExper
         onPlay={() => {
           setPlaying(true);
           setProductAudioPlaying(true);
+          trackGrowthEvent("audio_play", { productSlug });
         }}
         onPause={stop}
         onEnded={stop}
@@ -123,9 +135,19 @@ export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExper
           stop();
           setError("Înregistrarea este momentan indisponibilă.");
         }}
-        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) => {
+          const previewDuration = Math.min(duration || 12, 12);
+          const current = Math.min(e.currentTarget.currentTime, previewDuration);
+          setTime(current);
+          if (!tracked75.current && current >= previewDuration * 0.75) {
+            tracked75.current = true;
+            trackGrowthEvent("audio_75", { productSlug });
+          }
+          if (e.currentTarget.currentTime >= previewDuration) e.currentTarget.pause();
+        }}
         onLoadedMetadata={(e) => {
-          if (Number.isFinite(e.currentTarget.duration)) setDuration(e.currentTarget.duration);
+          if (Number.isFinite(e.currentTarget.duration))
+            setDuration(Math.min(e.currentTarget.duration, 12));
         }}
       />
       <button
@@ -138,15 +160,16 @@ export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExper
         {playing ? <Pause size={22} /> : <Play size={22} />}
       </button>
       <div className="melody-content">
-        <p className="scene-eyebrow">Ascultă înainte să alegi</p>
+        <p className="scene-eyebrow">Test drive-ul cutiuței</p>
+        <span className="melody-content__cta">▶ Ascultă cutiuța · 12 sec.</span>
         <strong>{audio.display_name || "Melodia acestei cutiuțe"}</strong>
         <div className="melody-progress">
           <input
             type="range"
             min={0}
-            max={duration || 30}
+            max={Math.min(duration || 12, 12)}
             step={0.1}
-            value={Math.min(time, duration || 30)}
+            value={Math.min(time, duration || 12, 12)}
             aria-label="Poziția în melodie"
             disabled={!duration}
             onChange={(e) => {
@@ -157,7 +180,7 @@ export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExper
             }}
           />
           <span>
-            {Math.floor(time)} / {Math.round(duration || 30)} s
+            {Math.floor(time)} / {Math.round(Math.min(duration || 12, 12))} s
           </span>
         </div>
         {error && (
@@ -165,6 +188,22 @@ export function ProductAudioOverlay({ audio }: { audio: NonNullable<ProductExper
             {error}
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+export function ProductAudioUnavailable({ melody }: { melody?: string }) {
+  return (
+    <div className="product-melody-player product-melody-player--unavailable">
+      <span className="melody-play" aria-hidden>
+        <Play size={22} />
+      </span>
+      <div className="melody-content">
+        <p className="scene-eyebrow">Test drive-ul cutiuței</p>
+        <span className="melody-content__cta">Fragmentul de 12 sec. este în pregătire</span>
+        <strong>{melody || "Melodia acestei cutiuțe"}</strong>
+        <small>Playerul se activează după publicarea înregistrării aprobate.</small>
       </div>
     </div>
   );

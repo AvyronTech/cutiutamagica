@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ArrowRight,
+  Box,
   Check,
   Clock3,
   Gift,
@@ -23,12 +24,16 @@ import {
   PERSONALIZATION_GIFT_WRAP_BANI,
   PERSONALIZATION_MAX_IMAGE_BYTES,
   formatPersonalizationPrice,
+  personalizationBoxModels,
   personalizationMelodies,
   personalizationTotalBani,
   type PersonalizationBoxColor,
+  type PersonalizationBoxModel,
   type PersonalizationMelody,
 } from "@/lib/personalization";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
+import { PersonalizationSpaceStage } from "@/components/site/PersonalizationSpaceStage";
+import { trackGrowthEvent } from "@/lib/growth-events";
 
 type CreatedRequest = { id: string; reference: string; totalBani: number; status: string };
 
@@ -40,7 +45,7 @@ export const Route = createFileRoute("/personalizeaza")({
       {
         name: "description",
         content:
-          "Personalizează o cutiuță muzicală: alege cutiuța neagră sau galbenă, melodia, imaginea și gravura de pe capac. 189 lei, livrare în 4–7 zile lucrătoare.",
+          "Configurează o cutiuță muzicală într-un atelier vizual 3D: alege modelul, culoarea, melodia, imaginea, gravura și ambalarea.",
       },
       { property: "og:title", content: "Personalizează Cutiuța Magică" },
       {
@@ -53,7 +58,7 @@ export const Route = createFileRoute("/personalizeaza")({
   }),
 });
 
-const steps = ["Cutiuța", "Melodia", "Imaginea", "Detaliile"];
+const steps = ["Modelul", "Melodia", "Imaginea", "Detaliile"];
 
 function Personalizeaza() {
   const account = useQuery({
@@ -63,6 +68,7 @@ function Personalizeaza() {
     staleTime: 30_000,
   });
   const [step, setStep] = useState(0);
+  const [boxModel, setBoxModel] = useState<PersonalizationBoxModel>("classic");
   const [boxColor, setBoxColor] = useState<PersonalizationBoxColor>("black");
   const [melody, setMelody] = useState<PersonalizationMelody>("melody-1");
   const [image, setImage] = useState<File | null>(null);
@@ -83,6 +89,14 @@ function Personalizeaza() {
     () => personalizationMelodies.find((option) => option.id === melody)!,
     [melody],
   );
+  const selectedBoxModel = useMemo(
+    () => personalizationBoxModels.find((option) => option.id === boxModel)!,
+    [boxModel],
+  );
+
+  useEffect(() => {
+    trackGrowthEvent("personalization_start", { once: "personalization_start" });
+  }, []);
 
   useEffect(() => {
     if (!account.data) return;
@@ -136,15 +150,12 @@ function Personalizeaza() {
     data.set("customerName", customerName);
     data.set("email", email);
     data.set("phone", phone);
+    data.set("boxModel", boxModel);
     data.set("boxColor", boxColor);
     data.set("melody", melody);
+    data.set("engraving", engraving.trim());
     data.set("giftWrap", String(giftWrap));
-    data.set(
-      "notes",
-      [engraving.trim() ? `Gravură solicitată: ${engraving.trim()}` : "", notes.trim()]
-        .filter(Boolean)
-        .join("\n\n"),
-    );
+    data.set("notes", notes.trim());
     data.set("consent", String(consent));
     data.set("website", website);
     data.set("image", image, image.name);
@@ -205,12 +216,12 @@ function Personalizeaza() {
     <div className="personalization-page">
       <section className="personalization-intro">
         <p className="catalog-eyebrow">
-          <Sparkles size={14} /> Un obiect mic. O poveste numai a ta.
+          <Sparkles size={14} /> Atelier orbital · configurație în timp real
         </p>
         <h1>Personalizează Cutiuța Magică</h1>
         <p>
-          Patru pași simpli. Alegi cutiuța, melodia, fotografia și gravura; atelierul nostru
-          confirmă fiecare detaliu înainte de lucru.
+          Patru pași simpli într-o scenă vizuală fluidă. Alegi forma, finisajul, melodia și
+          detaliile personale; atelierul confirmă sursa, prețul și proporțiile înainte de lucru.
         </p>
         <div className="personalization-intro__facts">
           <span>
@@ -247,11 +258,32 @@ function Personalizeaza() {
             {step === 0 && (
               <fieldset className="personalization-panel">
                 <legend>
-                  <Palette /> Alege culoarea cutiuței
+                  <Box /> Alege forma cutiuței
                 </legend>
                 <p>
-                  Mecanismul și dimensiunea rămân aceleași; alegi atmosfera care ți se potrivește.
+                  Fiecare model este corelat cu o sursă aprobată de administrator. Variantele la
+                  cerere sunt confirmate înainte de orice achiziție sau plată.
                 </p>
+                <div className="box-model-options">
+                  {personalizationBoxModels.map((option, index) => (
+                    <label key={option.id} data-selected={boxModel === option.id || undefined}>
+                      <input
+                        type="radio"
+                        name="box-model"
+                        value={option.id}
+                        checked={boxModel === option.id}
+                        onChange={() => setBoxModel(option.id)}
+                      />
+                      <span aria-hidden>0{index + 1}</span>
+                      <small>{option.eyebrow}</small>
+                      <strong>{option.label}</strong>
+                      <p>{option.description}</p>
+                    </label>
+                  ))}
+                </div>
+                <h3 className="personalization-subheading">
+                  <Palette /> Finisajul lemnului
+                </h3>
                 <div className="box-color-options">
                   {(
                     [
@@ -404,7 +436,16 @@ function Personalizeaza() {
                   <input
                     type="checkbox"
                     checked={giftWrap}
-                    onChange={(event) => setGiftWrap(event.target.checked)}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setGiftWrap(checked);
+                      if (checked)
+                        trackGrowthEvent("gift_wrap_added", {
+                          value: PERSONALIZATION_GIFT_WRAP_BANI / 100,
+                          quantity: 1,
+                          properties: { source: "personalization" },
+                        });
+                    }}
                   />
                   <Gift />
                   <span>
@@ -468,36 +509,19 @@ function Personalizeaza() {
           </div>
 
           <aside className="personalization-preview" aria-label="Previzualizarea cutiuței">
-            <p className="catalog-eyebrow">Previzualizare orientativă</p>
-            <div
-              className="personalization-product-stage"
-              data-color={boxColor}
-              data-gift-wrap={giftWrap || undefined}
-            >
-              <div className="personalization-product-render">
-                <img
-                  src="/scenes/personalization-box-v2.webp"
-                  alt="Cutiuță muzicală personalizabilă din lemn"
-                  width={1000}
-                  height={833}
-                  decoding="async"
-                />
-                <div className="personalization-product-artwork" data-empty={!preview || undefined}>
-                  {preview ? (
-                    <img src={preview} alt="Imaginea aleasă pentru capac" />
-                  ) : (
-                    <ImagePlus />
-                  )}
-                  {engraving.trim() && <span>{engraving.trim()}</span>}
-                </div>
-              </div>
-              <div className="personalization-product-wrap" aria-hidden>
-                <span />
-                <i />
-                <b>✦</b>
-              </div>
-            </div>
+            <p className="catalog-eyebrow">Atelier 3D · previzualizare orientativă</p>
+            <PersonalizationSpaceStage
+              boxColor={boxColor}
+              boxModel={boxModel}
+              preview={preview}
+              engraving={engraving}
+              giftWrap={giftWrap}
+            />
             <dl>
+              <div>
+                <dt>Model</dt>
+                <dd>{selectedBoxModel.label}</dd>
+              </div>
               <div>
                 <dt>Cutiuță</dt>
                 <dd>{boxColor === "black" ? "Neagră" : "Galbenă"}</dd>
@@ -521,6 +545,10 @@ function Personalizeaza() {
             </dl>
             <p className="personalization-preview__privacy">
               <LockKeyhole size={15} /> Imaginea este stocată privat și nu apare în catalog.
+            </p>
+            <p className="personalization-preview__source">
+              Sursa comercială este vizibilă numai administratorului și este verificată înainte de
+              comandă.
             </p>
           </aside>
         </div>

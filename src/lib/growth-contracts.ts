@@ -93,6 +93,7 @@ export const credentialProviderSchema = z.enum([
   "brave",
   "google",
   "meta",
+  "esteto",
 ]);
 export type CredentialProvider = z.infer<typeof credentialProviderSchema>;
 

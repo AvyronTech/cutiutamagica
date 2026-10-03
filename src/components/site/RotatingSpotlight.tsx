@@ -4,10 +4,11 @@ import { useReducedMotion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Music2 } from "lucide-react";
 import { ProductImage } from "./ProductImage";
-import { PRICE, type Product } from "@/data/products";
+import type { Product } from "@/data/products";
+import { LimitedEditionBadge } from "./LimitedEditionBadge";
+import { ProductPrice } from "./ProductPrice";
 
 function SpotlightCard({ product }: { product: Product }) {
-  const price = product.price ?? PRICE;
   return (
     <article className="spotlight-card" data-magic-card>
       <Link
@@ -24,6 +25,7 @@ function SpotlightCard({ product }: { product: Product }) {
           width={720}
           height={720}
         />
+        <LimitedEditionBadge edition={product.limitedEdition} surface="card" />
         <span className="spotlight-card__category">{product.category}</span>
       </Link>
       <div className="spotlight-card__copy">
@@ -37,7 +39,7 @@ function SpotlightCard({ product }: { product: Product }) {
           <span>
             <Music2 aria-hidden /> {product.melody || "Melodie mecanică"}
           </span>
-          <strong>{price} lei</strong>
+          <ProductPrice product={product} size="compact" showSavings={false} />
         </div>
         <Link className="spotlight-card__link" to="/produs/$id" params={{ id: product.id }}>
           Vezi cutiuța <ArrowUpRight aria-hidden />

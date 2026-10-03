@@ -21,6 +21,13 @@ export const websiteOrderInputSchema = z
     shippingOption: z.enum(SHIPPING_OPTIONS),
     paymentProvider: z.enum(paymentProviders).optional(),
     shippingQuoteId: z.string().uuid().optional(),
+    easyboxLockerId: z.number().int().positive().max(2_147_483_647).optional(),
+    promotionCode: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z0-9-]{4,40}$/)
+      .optional(),
     expectedTotalBani: z.number().int().nonnegative().max(100_000_000).optional(),
     checkoutConsentAccepted: z.literal(true),
     checkoutConsentVersion: z.string().trim().min(1).max(30),
@@ -35,6 +42,18 @@ export const websiteOrderInputSchema = z
       .max(40),
   })
   .superRefine((value, context) => {
+    if (value.shippingOption === "easybox" && !value.easyboxLockerId)
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Alege un easybox înainte de finalizarea comenzii.",
+        path: ["easyboxLockerId"],
+      });
+    if (value.shippingOption !== "easybox" && value.easyboxLockerId)
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Punctul easybox nu corespunde metodei de livrare.",
+        path: ["easyboxLockerId"],
+      });
     if (
       value.paymentMethod === "card" &&
       value.paymentProvider === "revolut_pay" &&

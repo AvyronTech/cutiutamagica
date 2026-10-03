@@ -67,6 +67,27 @@ describe("product discovery and search metadata", () => {
       expect(guide.productIds.every((id) => productIds.has(id))).toBe(true);
     }
   });
+  it("keeps every requested recipient page distinct and practically useful", () => {
+    const recipientSlugs = [
+      "pentru-iubita",
+      "pentru-iubit",
+      "pentru-sora",
+      "pentru-mama",
+      "pentru-colega",
+      "secret-santa",
+    ];
+    const recipientGuides = recipientSlugs.map((slug) => giftGuide(slug));
+    expect(recipientGuides.every(Boolean)).toBe(true);
+    expect(new Set(recipientGuides.map((guide) => guide?.intro)).size).toBe(recipientSlugs.length);
+    expect(new Set(recipientGuides.map((guide) => guide?.description)).size).toBe(
+      recipientSlugs.length,
+    );
+    for (const guide of recipientGuides) {
+      expect(guide?.decisionGuide?.checkpoints).toHaveLength(3);
+      expect(guide?.decisionGuide?.messagePrompts).toHaveLength(3);
+      expect(guide?.decisionGuide?.avoid.length).toBeGreaterThan(80);
+    }
+  });
   it("keeps administrator content from closing JSON-LD script elements", () => {
     const value = { name: '</script><script>alert("x")</script>' };
     const serialized = safeJsonLd(value);

@@ -4,10 +4,14 @@ import { ShoppingBag, Minus, Plus, Hourglass } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import type { Product } from "@/data/products";
-import { PRICE, MAX_QTY, isAvailable } from "@/data/products";
+import { MAX_QTY, isAvailable } from "@/data/products";
 import { useShop } from "@/store/shop";
 import { ProductImage } from "@/components/site/ProductImage";
+import { ProductPrice } from "@/components/site/ProductPrice";
+import { LimitedEditionBadge } from "@/components/site/LimitedEditionBadge";
 import { notifyAddedToCart } from "@/lib/notify";
+import { productScene } from "@/lib/product-themes";
+import type { CSSProperties } from "react";
 
 type Variant = "solid" | "glass";
 
@@ -28,31 +32,43 @@ export function ProductCard({
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
   const available = isAvailable(product);
-  const displayPrice = product.price ?? PRICE;
   const isGlass = variant === "glass";
-  const discounted = product.originalPrice != null && product.originalPrice > displayPrice;
+  const theme = productScene(product.id, product.scene);
 
   return (
     <motion.div
       data-magic-card
+      data-product-scene={theme.scene}
       initial={false}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: reduced ? 0 : 0.5, delay: Math.min(index, 4) * 0.05 }}
-      className={
+      style={{ "--card-accent": theme.accent } as CSSProperties}
+      className={`product-card-themed group relative rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 flex flex-col ${
         isGlass
-          ? "group relative rounded-2xl overflow-hidden border border-white/20 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.55)] hover:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.65)] transition-all hover:-translate-y-0.5 flex flex-col bg-white/8 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/15"
-          : "group relative rounded-2xl overflow-hidden border border-[color:var(--gold)]/25 shadow-soft hover:shadow-warm transition-all hover:-translate-y-0.5 flex flex-col bg-[linear-gradient(160deg,oklch(0.97_0.025_75)_0%,oklch(0.93_0.05_65)_55%,oklch(0.88_0.07_55)_100%)]"
-      }
+          ? "product-card-themed--glass border border-white/20 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.55)] hover:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.65)] bg-white/8 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/15"
+          : "product-card-themed--solid border border-[color:var(--gold)]/25 shadow-soft hover:shadow-warm"
+      }`}
     >
+      <div className="product-card-scene" aria-hidden>
+        <ProductImage
+          src={product.image}
+          alt=""
+          sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 320px"
+          className="product-card-scene__image"
+        />
+        <span className="product-card-scene__plane" />
+        <span className="product-card-scene__orbit" />
+      </div>
       <Link to="/produs/$id" params={{ id: product.id }} className="block">
         <div
           className={
             isGlass
-              ? "relative aspect-square overflow-hidden px-2 pt-2 pb-2 bg-[radial-gradient(70%_60%_at_50%_30%,rgba(255,255,255,0.22),transparent_70%)]"
-              : "relative aspect-square overflow-hidden px-2 pt-1 pb-2 bg-[radial-gradient(70%_60%_at_50%_30%,oklch(0.98_0.03_80/0.9),transparent_70%),linear-gradient(180deg,oklch(0.95_0.04_70),oklch(0.9_0.06_60))]"
+              ? "relative aspect-square overflow-hidden bg-[radial-gradient(70%_60%_at_50%_30%,rgba(255,255,255,0.22),transparent_70%)]"
+              : "relative aspect-square overflow-hidden bg-[radial-gradient(70%_60%_at_50%_30%,oklch(0.98_0.03_80/0.9),transparent_70%),linear-gradient(180deg,oklch(0.95_0.04_70),oklch(0.9_0.06_60))]"
           }
         >
+          <LimitedEditionBadge edition={product.limitedEdition} surface="card" />
           {!available && (
             <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--wood-dark)]/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--gold)] backdrop-blur">
               <Hourglass className="h-3 w-3" aria-hidden />
@@ -84,13 +100,6 @@ export function ProductCard({
               className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
             />
           )}
-          {discounted && available && (
-            <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-2 text-sm text-rose-900 shadow-sm">
-              <span className="block text-[10px] uppercase">Un dar, un preț special</span>
-              <del className="mr-2 text-xs text-neutral-500">{product.originalPrice} lei</del>
-              <strong>{displayPrice} lei</strong>
-            </span>
-          )}
         </div>
 
         <div
@@ -112,7 +121,7 @@ export function ProductCard({
               {product.tagline}
             </p>
           )}
-          <div className="mt-2 flex items-baseline justify-center gap-2">
+          <div className="mt-2 flex items-center justify-center">
             {!available && (
               <span
                 className={`text-xs uppercase tracking-[0.2em] ${isGlass ? "text-[color:var(--cream)]/80" : "text-foreground/60"}`}
@@ -122,18 +131,8 @@ export function ProductCard({
                   : "Disponibil în curând"}
               </span>
             )}
-            {available && discounted && (
-              <del className="text-xs opacity-70" title="Preț anterior de referință documentat">
-                {product.originalPrice} lei
-              </del>
-            )}
             {available && (
-              <span className={`font-display text-xl ${isGlass ? "text-[color:var(--gold)]" : ""}`}>
-                {displayPrice}{" "}
-                <span className={`text-xs ${isGlass ? "text-[color:var(--cream)]/90" : ""}`}>
-                  lei
-                </span>
-              </span>
+              <ProductPrice product={product} tone={isGlass ? "light" : "dark"} size="card" />
             )}
           </div>
         </div>

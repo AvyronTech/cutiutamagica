@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { ProductImage } from "@/components/site/ProductImage";
 import { playTick, playWood } from "@/lib/sound";
 import type { ProductGalleryImage } from "@/data/products";
@@ -24,6 +25,7 @@ export function ProductLightbox({
   onIndexChange: (next: number) => void;
 }) {
   const count = images.length;
+  const swipe = useRef<{ x: number; y: number; at: number } | null>(null);
   const go = useCallback(
     (delta: number) => {
       if (count < 2) return;
@@ -44,16 +46,18 @@ export function ProductLightbox({
     // Cât timp galeria e deschisă, pagina din spate nu se mai mișcă.
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    document.body.classList.add("product-lightbox-open");
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
+      document.body.classList.remove("product-lightbox-open");
     };
   }, [go, onClose]);
 
   const image = images[index] ?? images[0];
-  if (!image) return null;
+  if (!image || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <motion.div
       role="dialog"
       aria-modal="true"
@@ -63,27 +67,47 @@ export function ProductLightbox({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       onClick={onClose}
-      className="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-[oklch(0.16_0.03_45/0.92)] p-4 backdrop-blur-md"
+      className="product-lightbox fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[oklch(0.16_0.03_45/0.92)] p-3 backdrop-blur-md sm:p-4"
     >
       <button
         type="button"
         onClick={onClose}
         aria-label="Închide fotografiile"
-        className="absolute right-4 top-4 rounded-full border border-[color:var(--gold)]/40 bg-black/30 p-2 text-[color:var(--cream)] transition hover:bg-black/50"
+        className="absolute right-3 top-3 z-30 rounded-full border border-[color:var(--gold)]/40 bg-black/55 p-2 text-[color:var(--cream)] transition hover:bg-black/70 sm:right-4 sm:top-4"
       >
         <X className="h-5 w-5" />
       </button>
 
       <div
-        className="relative flex max-h-[82vh] w-full max-w-4xl items-center justify-center"
+        className="product-lightbox__stage relative flex max-h-[82vh] w-full max-w-4xl items-center justify-center"
         onClick={(event) => event.stopPropagation()}
+        onPointerDown={(event) => {
+          if (event.pointerType === "mouse") return;
+          swipe.current = { x: event.clientX, y: event.clientY, at: performance.now() };
+        }}
+        onPointerUp={(event) => {
+          const start = swipe.current;
+          swipe.current = null;
+          if (!start || event.pointerType === "mouse") return;
+          const dx = event.clientX - start.x;
+          const dy = event.clientY - start.y;
+          if (
+            performance.now() - start.at < 700 &&
+            Math.abs(dx) > 46 &&
+            Math.abs(dx) > Math.abs(dy) * 1.2
+          )
+            go(dx < 0 ? 1 : -1);
+        }}
+        onPointerCancel={() => {
+          swipe.current = null;
+        }}
       >
         {count > 1 && (
           <button
             type="button"
             onClick={() => go(-1)}
             aria-label="Fotografia anterioară"
-            className="absolute left-0 z-10 rounded-full border border-[color:var(--gold)]/40 bg-black/35 p-2 text-[color:var(--cream)] transition hover:bg-black/60 md:-left-14"
+            className="product-lightbox__nav product-lightbox__nav--previous absolute left-2 z-20 rounded-full border border-[color:var(--gold)]/55 bg-black/60 p-2.5 text-[color:var(--cream)] shadow-lg backdrop-blur transition hover:bg-black/75 sm:left-4 md:-left-14"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -96,7 +120,7 @@ export function ProductLightbox({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.01 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/35 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)]"
+            className="product-lightbox__media relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/35 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)]"
           >
             <ProductImage
               src={image.src}
@@ -117,7 +141,7 @@ export function ProductLightbox({
             type="button"
             onClick={() => go(1)}
             aria-label="Fotografia următoare"
-            className="absolute right-0 z-10 rounded-full border border-[color:var(--gold)]/40 bg-black/35 p-2 text-[color:var(--cream)] transition hover:bg-black/60 md:-right-14"
+            className="product-lightbox__nav product-lightbox__nav--next absolute right-2 z-20 rounded-full border border-[color:var(--gold)]/55 bg-black/60 p-2.5 text-[color:var(--cream)] shadow-lg backdrop-blur transition hover:bg-black/75 sm:right-4 md:-right-14"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
@@ -132,6 +156,12 @@ export function ProductLightbox({
           </span>
         )}
       </p>
-    </motion.div>
+      {count > 1 && (
+        <p className="mt-1 text-center text-[11px] uppercase tracking-[0.16em] text-[color:var(--cream)]/50 sm:hidden">
+          Glisează stânga sau dreapta
+        </p>
+      )}
+    </motion.div>,
+    document.body,
   );
 }

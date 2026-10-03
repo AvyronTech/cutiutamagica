@@ -19,6 +19,7 @@ import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { ChatWidget } from "@/components/site/ChatWidget";
+import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 
 function NotFoundComponent() {
@@ -84,6 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Cutiuțe muzicale din lemn cu manivelă, mecanism manual și melodii tematice, prezentate prin fotografiile produselor.",
       },
       { name: "google-site-verification", content: "qIm8mkNBA6rC0vDEbBupl5-0tB_p1GpgJnylo2aKYKo" },
+      { name: "google-site-verification", content: "I2EUSXQN6RyLVGECPjtdXrhfF7-IMJ2unBAIrmfwxfw" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Cutiuța Magică" },
       { property: "og:locale", content: "ro_RO" },
@@ -103,10 +105,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@type": "OnlineStore",
           "@id": "https://cutiutamagica.eu/#organization",
           name: "Cutiuța Magică",
+          alternateName: "Cutiuta Magica",
+          legalName: "DIGITAL ECO TECH SOLUTION SRL",
+          taxID: "55055976",
           url: "https://cutiutamagica.eu",
           logo: "https://cutiutamagica.eu/icon-512.png",
+          brand: {
+            "@type": "Brand",
+            "@id": "https://cutiutamagica.eu/#brand",
+            name: "Cutiuța Magică",
+            alternateName: "Cutiuta Magica",
+            logo: "https://cutiutamagica.eu/icon-512.png",
+          },
           description: "Cutiuțe muzicale din lemn cu manivelă și mecanism manual.",
-          email: "mailto:cutiutamagicaofficial@gmail.com",
+          email: "mailto:contact@cutiutamagica.eu",
           telephone: "+40734605742",
           address: { "@type": "PostalAddress", addressCountry: "RO" },
           areaServed: { "@type": "Country", name: "România" },
@@ -114,7 +126,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             "@type": "ContactPoint",
             contactType: "customer service",
             telephone: "+40734605742",
-            email: "cutiutamagicaofficial@gmail.com",
+            email: "contact@cutiutamagica.eu",
             availableLanguage: ["ro"],
             areaServed: "RO",
           },
@@ -186,6 +198,7 @@ function RootComponent() {
         <ShopProvider pricing={pricing}>
           {isChrome && <PageStoryLoader initialPath={pathname} />}
           {isChrome && <Header />}
+          {isChrome && <CartRecoveryPrompt pathname={pathname} />}
           {showBack && (
             <div className="page-back-dock">
               <Link to={isProductPage ? "/produse" : "/"} className="page-back-link group">

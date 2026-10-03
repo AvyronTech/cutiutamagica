@@ -1,4 +1,8 @@
-import { reviewSources, type PublicReview } from "@/lib/reviews";
+import { reviewCountries, reviewSources, type PublicReview } from "@/lib/reviews";
+
+function countryFlag(code: string) {
+  return String.fromCodePoint(...[...code].map((letter) => 127397 + letter.charCodeAt(0)));
+}
 export function ReviewStars({ rating }: { rating: number }) {
   return (
     <span className="review-stars" role="img" aria-label={`${rating} din 5 stele`}>
@@ -29,16 +33,25 @@ export function ReviewCard({
       <p className="review-product-name">{review.productName}</p>
       <blockquote>{review.body}</blockquote>
       <footer>
-        {review.sourceUrl && !compact ? (
-          <a href={review.sourceUrl} target="_blank" rel="noopener noreferrer">
-            Preluată din {reviewSources[review.source]} ↗
-          </a>
-        ) : (
-          <span>
-            {review.sourceUrl ? "Preluată din" : "Publicată pe"} {reviewSources[review.source]}
-          </span>
-        )}
-        <span>{review.language.toUpperCase()}</span>
+        <div>
+          {review.sourceUrl && !compact ? (
+            <a href={review.sourceUrl} target="_blank" rel="noopener noreferrer">
+              Preluată din {reviewSources[review.source]} ↗
+            </a>
+          ) : (
+            <span>
+              {review.sourceUrl ? "Preluată din" : "Publicată pe"} {reviewSources[review.source]}
+            </span>
+          )}
+        </div>
+        <div className="review-origin">
+          {review.countryCode && (
+            <span title={reviewCountries[review.countryCode]}>
+              {countryFlag(review.countryCode)} {review.countryCode}
+            </span>
+          )}
+          <span>{review.language.toUpperCase()}</span>
+        </div>
       </footer>
     </article>
   );

@@ -6,6 +6,7 @@ import {
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
 import { credential } from "@/server/services/growth-settings";
+import type { EasyboxLocker } from "@/lib/easybox";
 
 export interface SmartShipParty {
   name: string;
@@ -88,6 +89,133 @@ async function smartShipFetch(
       ...init.headers,
     },
   });
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value && !Array.isArray(value) && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function firstValue(source: Record<string, unknown>, keys: string[]): unknown {
+  for (const key of keys) if (source[key] != null) return source[key];
+  return undefined;
+}
+
+function textValue(source: Record<string, unknown>, keys: string[]): string {
+  const value = firstValue(source, keys);
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number") return String(value);
+  const nested = record(value);
+  return nested ? textValue(nested, ["name", "label", "value"]) : "";
+}
+
+function numberValue(source: Record<string, unknown>, keys: string[]): number | null {
+  const value = Number(firstValue(source, keys));
+  return Number.isFinite(value) ? value : null;
+}
+
+function paymentSupport(source: Record<string, unknown>): boolean | null {
+  const value = firstValue(source, [
+    "supportsCashOnDelivery",
+    "supports_cash_on_delivery",
+    "supportedPayment",
+    "supported_payment",
+    "cardPayment",
+    "card_payment",
+  ]);
+  if (value == null) return null;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value > 0;
+  if (Array.isArray(value))
+    return value.some((entry) => /card|pos|cod|ramburs/i.test(String(entry)));
+  const normalized = String(value).trim().toLowerCase();
+  if (["0", "false", "none", "no", "nu"].includes(normalized)) return false;
+  return /1|true|card|pos|cod|ramburs/.test(normalized) ? true : null;
+}
+
+function lockerArray(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) return payload;
+  const source = record(payload);
+  if (!source) return [];
+  for (const key of ["easybox", "easyboxes", "lockers", "points", "data", "results"]) {
+    const candidate = source[key];
+    if (Array.isArray(candidate)) return candidate;
+    const nested = record(candidate);
+    if (nested) {
+      const found = lockerArray(nested);
+      if (found.length) return found;
+    }
+  }
+  return [];
+}
+
+function normalizeEasybox(value: unknown): EasyboxLocker | null {
+  const source = record(value);
+  if (!source) return null;
+  const id = numberValue(source, ["locker_id", "lockerId", "id", "sameday_id"]);
+  const latitude = numberValue(source, ["latitude", "lat", "gps_lat"]);
+  const longitude = numberValue(source, ["longitude", "lng", "lon", "long", "gps_lng"]);
+  const address = textValue(source, ["address", "address_line", "street"]);
+  const city = textValue(source, ["city", "locality", "town"]);
+  if (
+    !id ||
+    !address ||
+    !city ||
+    latitude == null ||
+    longitude == null ||
+    latitude < 40 ||
+    latitude > 50 ||
+    longitude < 18 ||
+    longitude > 31
+  )
+    return null;
+  return {
+    id,
+    name: textValue(source, ["name", "locker_name", "title"]) || `easybox ${id}`,
+    address,
+    city,
+    county: textValue(source, ["county", "region", "administrative_area"]),
+    postalCode: textValue(source, ["postal_code", "postalCode", "zip_code"]) || null,
+    latitude,
+    longitude,
+    supportsCashOnDelivery: paymentSupport(source),
+  };
+}
+
+export async function listSmartShipEasyboxes(env: CommerceEnv): Promise<EasyboxLocker[]> {
+  const cacheKey = "smartship:easyboxes:v2";
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached) as EasyboxLocker[];
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    } catch {
+      await env.CACHE.delete(cacheKey);
+    }
+  }
+  const response = await smartShipFetch(env, "/geolocation/easybox", { method: "GET" });
+  const payload = await readProviderJson(response, 8_000_000).catch(() => null);
+  if (!response.ok)
+    throw new ProviderError(
+      "Lista easybox nu este disponibilă momentan.",
+      "EASYBOX_LIST_FAILED",
+      response.status >= 500 ? 502 : 409,
+      response.status >= 500,
+    );
+  const lockers = lockerArray(payload).flatMap((item) => {
+    const locker = normalizeEasybox(item);
+    return locker ? [locker] : [];
+  });
+  if (!lockers.length)
+    throw new ProviderError(
+      "Lista easybox primită de la furnizor nu este validă.",
+      "EASYBOX_LIST_INVALID",
+      502,
+    );
+  const unique = [...new Map(lockers.map((locker) => [locker.id, locker])).values()];
+  await env.CACHE.put(cacheKey, JSON.stringify(unique), { expirationTtl: 21_600 });
+  return unique;
 }
 
 export async function quoteSmartShip(

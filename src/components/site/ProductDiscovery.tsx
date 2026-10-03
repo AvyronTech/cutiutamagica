@@ -7,24 +7,35 @@ export function ProductDiscovery({ product }: { product: Product }) {
   const guides = giftGuidesForProduct(product.id).slice(0, 8);
   return (
     <section className="product-discovery" aria-labelledby="discovery-title">
-      <span className="catalog-eyebrow">Un dar ales cu gândul la cineva</span>
-      <h2 id="discovery-title">Cui i se potrivește această cutiuță?</h2>
-      <p>{content.intro}</p>
-      <p>{content.audience}</p>
-      <h3>Ocazii în care o poți dărui</h3>
-      <ul className="discovery-occasions">
-        {content.occasions.map((text) => (
-          <li key={text}>{text}</li>
-        ))}
-      </ul>
-      <h3>Un loc în viața de zi cu zi</h3>
-      <ul>
-        {content.moments.map((text) => (
-          <li key={text}>{text}</li>
-        ))}
-      </ul>
+      <header className="product-discovery__heading">
+        <span className="catalog-eyebrow">Un dar ales cu gândul la cineva</span>
+        <h2 id="discovery-title">Idei de cadou, pe scurt</h2>
+      </header>
+      <div className="product-discovery__grid">
+        <article>
+          <h3>Cui i se potrivește</h3>
+          <p>{content.intro}</p>
+          <p>{content.audience}</p>
+        </article>
+        <article>
+          <h3>Ocazii potrivite</h3>
+          <ul className="discovery-occasions">
+            {content.occasions.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </article>
+        <article>
+          <h3>În viața de zi cu zi</h3>
+          <ul className="discovery-moments">
+            {content.moments.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </article>
+      </div>
       <div className="discovery-questions">
-        <h3>Înainte să alegi</h3>
+        <h3>Răspunsuri înainte să alegi</h3>
         <details>
           <summary>Ce melodie redă acest model?</summary>
           <p>
@@ -49,14 +60,17 @@ export function ProductDiscovery({ product }: { product: Product }) {
           </p>
         </details>
       </div>
-      <nav aria-label="Ghiduri de cadouri potrivite acestui produs" className="discovery-links">
-        {guides.map((guide) => (
-          <Link key={guide.slug} to="/cadouri/$ocazie" params={{ ocazie: guide.slug }}>
-            {guide.label} · idei de cadouri ↗
-          </Link>
-        ))}
-        <Link to="/cadouri">Toate ghidurile de cadouri ↗</Link>
-      </nav>
+      <details className="discovery-guides">
+        <summary>Explorează ghidurile de cadouri</summary>
+        <nav aria-label="Ghiduri de cadouri potrivite acestui produs" className="discovery-links">
+          {guides.map((guide) => (
+            <Link key={guide.slug} to="/cadouri/$ocazie" params={{ ocazie: guide.slug }}>
+              {guide.label} ↗
+            </Link>
+          ))}
+          <Link to="/cadouri">Toate ghidurile ↗</Link>
+        </nav>
+      </details>
     </section>
   );
 }

@@ -12,7 +12,10 @@ export function CheckoutDelivery({
   onSelect,
   selected,
 }: {
-  request: Pick<WebsiteOrderInput, "customer" | "items" | "paymentMethod" | "shippingOption">;
+  request: Pick<
+    WebsiteOrderInput,
+    "customer" | "items" | "paymentMethod" | "shippingOption" | "promotionCode" | "easyboxLockerId"
+  >;
   onSelect: (offer: DeliveryOffer) => void;
   selected: string | undefined;
 }) {
@@ -43,8 +46,9 @@ export function CheckoutDelivery({
   return (
     <div className="sm:col-span-2">
       <p className="text-sm text-muted-foreground">
-        Completează adresa pentru a vedea curierii și costurile disponibile. La calcul, datele de
-        livrare sunt transmise serviciului de curierat.
+        {request.shippingOption === "easybox"
+          ? "Confirmăm disponibilitatea punctului ales și tariful final înainte de comandă."
+          : "Completează adresa pentru a vedea curierii și costurile disponibile. La calcul, datele de livrare sunt transmise serviciului de curierat."}
       </p>
       <button
         type="button"
@@ -52,7 +56,11 @@ export function CheckoutDelivery({
         onClick={() => void calculate()}
         className="mt-3 min-h-11 rounded-full border border-[color:var(--gold)]/50 px-5 text-sm disabled:opacity-60"
       >
-        {busy ? "Căutăm livrarea potrivită…" : "Vezi opțiunile de curierat"}
+        {busy
+          ? "Căutăm livrarea potrivită…"
+          : request.shippingOption === "easybox"
+            ? "Confirmă tariful Easybox"
+            : "Vezi opțiunile de curierat"}
       </button>
       {error && (
         <p role="alert" className="mt-3 text-sm text-amber-700 dark:text-amber-200">
@@ -74,7 +82,9 @@ export function CheckoutDelivery({
               className="h-5 w-5"
             />
             <span className="flex-1">
-              <strong className="block text-sm">{offer.courier}</strong>
+              <strong className="block text-sm">
+                {request.shippingOption === "easybox" ? "SAMEDAY Easybox" : offer.courier}
+              </strong>
               {offer.estimate && (
                 <span className="text-xs text-muted-foreground">Estimare: {offer.estimate}</span>
               )}

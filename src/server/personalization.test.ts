@@ -6,8 +6,10 @@ function validForm(image: File): FormData {
   form.set("customerName", "Ana Pop");
   form.set("email", "ana@example.ro");
   form.set("phone", "+40 712 345 678");
+  form.set("boxModel", "panorama");
   form.set("boxColor", "yellow");
   form.set("melody", "melody-2");
+  form.set("engraving", "Povestea noastră");
   form.set("giftWrap", "true");
   form.set("notes", "Cadou pentru aniversare.");
   form.set("consent", "true");
@@ -35,6 +37,7 @@ function mockEnv() {
           return {
             async first() {
               if (sql.includes("review_rate_limits")) return { count: 1 };
+              if (sql.includes("personalization_supplier_sources")) return null;
               return null;
             },
             async all() {
@@ -75,12 +78,14 @@ describe("personalization API", () => {
     expect(put).toHaveBeenCalledOnce();
     expect(String(put.mock.calls[0][0])).toMatch(/^private\/personalizations\//);
     expect(inserted).toHaveLength(1);
-    expect(inserted[0][5]).toBe("yellow");
-    expect(inserted[0][6]).toBe("melody-2");
-    expect(inserted[0][10]).toBe(1);
-    expect(inserted[0][11]).toBe(18_900);
-    expect(inserted[0][12]).toBe(3_500);
-    expect(inserted[0][13]).toBe(22_400);
+    expect(inserted[0][5]).toBe("panorama");
+    expect(inserted[0][6]).toBe("yellow");
+    expect(inserted[0][7]).toBe("melody-2");
+    expect(inserted[0][8]).toBe("Povestea noastră");
+    expect(inserted[0][12]).toBe(1);
+    expect(inserted[0][13]).toBe(18_900);
+    expect(inserted[0][14]).toBe(3_500);
+    expect(inserted[0][15]).toBe(22_400);
   });
 
   it("rejects a file whose bytes do not match its declared image type", async () => {

@@ -74,8 +74,9 @@ function Privacy() {
           Cloudflare asigură infrastructura și protecția magazinului. În funcție de serviciul activ
           și ales pentru comandă, datele necesare pot fi transmise procesatorului de plăți Stripe,
           serviciului de curierat prin SmartShip, furnizorului de facturare FGO și serviciului de
-          e-mail Resend. Contabilitatea și autoritățile pot primi documentele impuse de lege.
-          Furnizorii au acces în limita rolului lor.
+          e-mail Cloudflare Email Service, cu Resend disponibil numai ca soluție de rezervă.
+          Contabilitatea și autoritățile pot primi documentele impuse de lege. Furnizorii au acces
+          în limita rolului lor.
         </p>
         <p>
           Introducerea unui conector în dashboard nu activează automat transferul. Integrarea

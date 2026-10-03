@@ -2,12 +2,11 @@ import { Link } from "@tanstack/react-router";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { MAX_QTY, unitPriceBani } from "@/data/products";
+import { MAX_QTY } from "@/data/products";
 import { ProductImage } from "@/components/site/ProductImage";
+import { ProductPrice } from "@/components/site/ProductPrice";
 import { useShop } from "@/store/shop";
 import { playTick, playWood } from "@/lib/sound";
-
-const lei = (bani: number) => `${(bani / 100).toLocaleString("ro-RO")} lei`;
 
 /** One accessible cart panel shared by header and floating access. */
 export function MiniCart({
@@ -93,7 +92,6 @@ export function MiniCart({
             <>
               <ul className="max-h-[46vh] space-y-2 overflow-y-auto overscroll-contain px-3 pb-2 sm:max-h-[320px]">
                 {items.map((item) => {
-                  const linePrice = unitPriceBani(item.product) * item.qty;
                   return (
                     <li
                       key={item.id}
@@ -148,9 +146,7 @@ export function MiniCart({
                               <Plus className="h-3.5 w-3.5" />
                             </button>
                           </div>
-                          <span className="font-display text-base tabular-nums">
-                            {lei(linePrice)}
-                          </span>
+                          <ProductPrice product={item.product} quantity={item.qty} size="compact" />
                         </div>
                       </div>
                       <button
@@ -167,9 +163,15 @@ export function MiniCart({
               </ul>
 
               <div className="border-t border-[color:var(--gold)]/25 bg-[color:var(--cream)] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+                {totals.productDiscount > 0 && (
+                  <div className="mb-1.5 flex items-center justify-between text-sm text-emerald-800">
+                    <span>Reduceri produse</span>
+                    <span>−{totals.productDiscount.toLocaleString("ro-RO")} lei</span>
+                  </div>
+                )}
                 {totals.discount > 0 && (
                   <div className="mb-2 flex items-center justify-between text-sm text-emerald-800">
-                    <span>Reducerea ta</span>
+                    <span>Ofertă de cantitate</span>
                     <span>−{totals.discount.toLocaleString("ro-RO")} lei</span>
                   </div>
                 )}
@@ -180,7 +182,7 @@ export function MiniCart({
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Livrarea se calculează la finalizarea comenzii.
+                  TVA inclus. Costul livrării este afișat înainte să trimiți comanda.
                 </p>
                 <Link
                   to="/comanda"

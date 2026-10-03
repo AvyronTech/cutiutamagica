@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   Info,
   Target,
+  UserRoundPlus,
   TrendingUp,
   LogOut,
   Warehouse,
@@ -48,15 +49,18 @@ import {
   Megaphone,
   DatabaseBackup,
   ShieldCheck,
+  WandSparkles,
 } from "lucide-react";
 import { logoutAdminAccount } from "@/lib/admin-auth.functions";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
+  { path: "/admin/personalizations", label: "Personalizări", icon: WandSparkles },
   { path: "/admin/products", label: "Produse", icon: ShoppingBag },
   { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
   { path: "/admin/promotions", label: "Promoții", icon: Target },
+  { path: "/admin/referrals", label: "Referral", icon: UserRoundPlus },
   { path: "/admin/suppliers", label: "Aprovizionare", icon: Search },
   { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
   { path: "/admin/shipping", label: "Livrare", icon: Truck },

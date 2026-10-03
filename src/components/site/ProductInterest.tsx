@@ -8,6 +8,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { trackGrowthEvent } from "@/lib/growth-events";
 
 export function ProductInterest({ product }: { product: Product }) {
   const [open, setOpen] = useState(false);
@@ -36,6 +37,11 @@ export function ProductInterest({ product }: { product: Product }) {
         throw new Error(
           payload.error?.message || "Nu am putut înregistra solicitarea. Încearcă din nou.",
         );
+      trackGrowthEvent("waitlist_joined", {
+        productSlug: product.id,
+        quantity: 1,
+        properties: { kind: preorder ? "preorder" : "notify" },
+      });
       setState("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Încearcă din nou.");

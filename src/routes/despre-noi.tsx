@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, Heart, Music2, PackageCheck } from "lucide-react";
 import workshopBg from "@/assets/poveste-workshop.webp";
 import workshopBgSm from "@/assets/poveste-workshop-sm.webp";
+import { EcosystemMarquees } from "@/components/site/EcosystemMarquees";
 import { safeJsonLd } from "@/lib/product-discovery";
 
 export const Route = createFileRoute("/despre-noi")({
@@ -112,6 +113,8 @@ function AboutUs() {
           <p>Verificăm detaliile și pregătim fiecare comandă pentru drumul spre tine.</p>
         </article>
       </section>
+
+      <EcosystemMarquees />
 
       <section className="about-us-closing">
         <p className="scene-eyebrow">Alege Povestea</p>

@@ -23,12 +23,18 @@ import { handleAdminMediaApi } from "@/server/api/admin-media";
 import { handleAdminProductExperienceApi } from "@/server/api/admin-product-experience";
 import { handleAdminProductApi } from "@/server/api/admin-product";
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
+import { handleAdminMarketingAgentApi } from "@/server/api/admin-marketing-agent";
+import { handlePromotionCodes } from "@/server/api/promotions";
 import { getPublicProductExperience } from "@/server/api/product-experience";
 import { handleCommerceApi } from "@/server/api/commerce";
 import { handleChatApi } from "@/server/api/chat";
-import { sendOrderConfirmation, sendOrderOwnerNotification } from "@/server/integrations/resend";
+import {
+  hasEmailTransport,
+  sendOrderConfirmation,
+  sendOrderOwnerNotification,
+} from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
-import { credentialStatuses } from "@/server/services/growth-settings";
+import { handleGrowthEvents, recordPurchaseGrowthEvent } from "./growth-events";
 
 const API_PREFIX = "/api/v1/";
 
@@ -139,19 +145,30 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
     }
     const commerceEnv = env as CommerceEnv;
     recordOrderMetric(env, result, parsed.data);
-    if (
-      (await credentialStatuses(commerceEnv)).some((c) => c.provider === "resend" && c.configured)
-    ) {
-      ctx.waitUntil(
-        Promise.all([
-          sendOrderConfirmation(commerceEnv, result.orderId).catch((error) =>
-            console.error("order.customer_email_failed", { orderId: result.orderId, error }),
-          ),
-          sendOrderOwnerNotification(commerceEnv, result.orderId).catch((error) =>
-            console.error("order.owner_email_failed", { orderId: result.orderId, error }),
-          ),
-        ]).then(() => undefined),
-      );
+    if (!result.replayed) {
+      recordPurchaseGrowthEvent(env, ctx, {
+        orderId: result.orderId,
+        total: result.total,
+        quantity: parsed.data.items.reduce((sum, item) => sum + item.quantity, 0),
+        shippingOption: parsed.data.shippingOption,
+      });
+    }
+    if (await hasEmailTransport(commerceEnv)) {
+      try {
+        await env.COMMERCE_EVENTS.send({
+          version: 2,
+          type: "order.email",
+          orderId: result.orderId,
+        });
+      } catch (error) {
+        console.warn("order.email_queue_failed", { orderId: result.orderId, error });
+        ctx.waitUntil(
+          Promise.all([
+            sendOrderConfirmation(commerceEnv, result.orderId),
+            sendOrderOwnerNotification(commerceEnv, result.orderId),
+          ]).then(() => undefined),
+        );
+      }
     }
 
     const { outboxId: _outboxId, replayed: _replayed, ...publicResult } = result;
@@ -187,6 +204,9 @@ export async function handleApiRequest(
   const personalizationResponse = await handlePersonalization(request, env);
   if (personalizationResponse) return personalizationResponse;
 
+  const growthResponse = await handleGrowthEvents(request, env, ctx);
+  if (growthResponse) return growthResponse;
+
   const storyResponse = await handleStoryScene(request, env);
   if (storyResponse) return storyResponse;
 
@@ -213,10 +233,16 @@ export async function handleApiRequest(
   const adminAvyronResponse = await handleAdminAvyronSyncApi(request, env);
   if (adminAvyronResponse) return adminAvyronResponse;
 
+  const adminMarketingAgentResponse = await handleAdminMarketingAgentApi(request, env);
+  if (adminMarketingAgentResponse) return adminMarketingAgentResponse;
+
   const shippingResponse = await handleShippingCheckout(request, env as CommerceEnv);
   if (shippingResponse) return shippingResponse;
   const paymentResponse = await handlePayments(request, env as CommerceEnv);
   if (paymentResponse) return paymentResponse;
+
+  const promotionResponse = await handlePromotionCodes(request, env as CommerceEnv);
+  if (promotionResponse) return promotionResponse;
 
   const commerceResponse = await handleCommerceApi(request, env as CommerceEnv, ctx);
   if (commerceResponse) return commerceResponse;

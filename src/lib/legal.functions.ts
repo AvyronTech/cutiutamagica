@@ -17,7 +17,7 @@ export const getPublicSeller = createServerFn({ method: "GET" }).handler(async (
       tax_id: "55055976",
       registered_address: null,
       registration_number: null,
-      public_email: "cutiutamagicaofficial@gmail.com",
+      public_email: "contact@cutiutamagica.eu",
       public_phone: null,
     }
   );

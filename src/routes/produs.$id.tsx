@@ -19,21 +19,28 @@ import {
   Rotate3D,
   Hourglass,
 } from "lucide-react";
-import { isAvailable, PRICE, MAX_QTY } from "@/data/products";
+import { isAvailable, MAX_QTY } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { catalogProducts } from "@/lib/catalog-products";
 import { useShop } from "@/store/shop";
 import { ProductImage } from "@/components/site/ProductImage";
+import { ProductPrice } from "@/components/site/ProductPrice";
 import { ProductLightbox } from "@/components/site/ProductLightbox";
 import { playTick } from "@/lib/sound";
 import { notifyAddedToCart } from "@/lib/notify";
-import { ProductCard } from "@/components/site/ProductCard";
+import { ProductCardCarousel } from "@/components/site/ProductCardCarousel";
+import { ProductShare } from "@/components/site/ProductShare";
+import { LimitedEditionBadge } from "@/components/site/LimitedEditionBadge";
 import {
   ProductAnimation,
   ProductAudioOverlay,
+  ProductAudioUnavailable,
   ProductSpinViewer,
   useProductExperience,
 } from "@/components/site/ProductMediaExperience";
+import { ProductDeliveryEstimate } from "@/components/site/ProductDeliveryEstimate";
+import { ProductMobileBuyBar } from "@/components/site/ProductMobileBuyBar";
+import { trackGrowthEvent } from "@/lib/growth-events";
 
 export const Route = createFileRoute("/produs/$id")({
   component: ProductPage,
@@ -93,6 +100,8 @@ export const Route = createFileRoute("/produs/$id")({
             mainEntityOfPage: { "@type": "WebPage", "@id": url },
             name: loaderData.product.name,
             sku: loaderData.product.sku,
+            gtin: loaderData.product.gtin,
+            mpn: loaderData.product.mpn,
             image: images,
             description: [loaderData.product.description, loaderData.product.discovery?.intro]
               .filter(Boolean)
@@ -100,7 +109,7 @@ export const Route = createFileRoute("/produs/$id")({
             keywords: loaderData.product.searchTerms.join(", "),
             category: loaderData.product.category,
             material: "Lemn",
-            brand: { "@type": "Brand", name: "Cutiuța Magică" },
+            brand: { "@type": "Brand", name: loaderData.product.brand || "Cutiuța Magică" },
             audience: loaderData.product.discovery?.audience
               ? {
                   "@type": "Audience",
@@ -111,6 +120,15 @@ export const Route = createFileRoute("/produs/$id")({
               { "@type": "PropertyValue", name: "Mecanism", value: "Manual, cu manivelă" },
               ...(loaderData.product.melody
                 ? [{ "@type": "PropertyValue", name: "Melodie", value: loaderData.product.melody }]
+                : []),
+              ...(loaderData.product.limitedEdition
+                ? [
+                    {
+                      "@type": "PropertyValue",
+                      name: "Ediție",
+                      value: `Limited Edition — serie de ${loaderData.product.limitedEdition.totalUnits} bucăți`,
+                    },
+                  ]
                 : []),
             ],
             url,
@@ -200,7 +218,15 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
   const [show360, setShow360] = useState(false);
+  const gallerySwipe = useRef<{ x: number; y: number; at: number } | null>(null);
+  const suppressGalleryClick = useRef(false);
   const experienceQuery = useProductExperience(product.id);
+
+  const addProductToCart = (event: React.MouseEvent<HTMLButtonElement>, quantity = qty) => {
+    const added = addToCart(product.id, quantity);
+    animateIntoCart(event.currentTarget, product.image, added);
+    notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
+  };
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -243,14 +269,21 @@ function ProductPage() {
       (spin.spin_type === "turntable_video" && spin.primaryMediaUrl)),
   );
   const spinThumb = spin ? (spin.coverUrl ?? spin.frames[0]?.url ?? null) : null;
+  const moveGallery = (delta: number) => {
+    if (gallery.length < 2) return;
+    setActive((current) => (current + delta + gallery.length) % gallery.length);
+    setShow360(false);
+    playTick();
+  };
 
   return (
     <ProductWorld product={product}>
-      <div className="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
-        <div className="perspective-1000">
+      <div className="product-detail-shell max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
+        <div className="product-detail-gallery perspective-1000">
           {show360 && spin && has360 ? (
             <div className="relative overflow-hidden rounded-2xl shadow-warm">
               <ProductSpinViewer spin={spin} productName={product.name} />
+              <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
             </div>
           ) : (
             <motion.div
@@ -258,19 +291,49 @@ function ProductPage() {
               onMouseMove={handleMove}
               onMouseLeave={handleLeave}
               style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-              className="relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card p-4"
+              className="product-main-visual relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.button
                   type="button"
                   key={currentImage.src}
-                  onClick={() => setZoomOpen(true)}
+                  onPointerDown={(event) => {
+                    if (event.pointerType === "mouse") return;
+                    gallerySwipe.current = {
+                      x: event.clientX,
+                      y: event.clientY,
+                      at: performance.now(),
+                    };
+                  }}
+                  onPointerUp={(event) => {
+                    const start = gallerySwipe.current;
+                    gallerySwipe.current = null;
+                    if (!start || event.pointerType === "mouse") return;
+                    const dx = event.clientX - start.x;
+                    const dy = event.clientY - start.y;
+                    const quick = performance.now() - start.at < 650;
+                    if (quick && Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+                      suppressGalleryClick.current = true;
+                      moveGallery(dx < 0 ? 1 : -1);
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    gallerySwipe.current = null;
+                  }}
+                  onClick={() => {
+                    if (suppressGalleryClick.current) {
+                      suppressGalleryClick.current = false;
+                      return;
+                    }
+                    setZoomOpen(true);
+                    trackGrowthEvent("gallery_open", { productSlug: product.id });
+                  }}
                   aria-label="Vezi fotografia mărită"
                   initial={{ opacity: 0, scale: 0.985 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.01 }}
                   transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute inset-4 cursor-zoom-in"
+                  className="product-main-visual__trigger absolute inset-0 cursor-zoom-in"
                   style={{ transform: "translateZ(36px)" }}
                 >
                   <ProductImage
@@ -294,6 +357,7 @@ function ProductPage() {
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[color:var(--gold)]/25"
               />
+              <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
               {product.melody ? (
                 <motion.div
                   style={{ transform: "translateZ(60px)" }}
@@ -312,7 +376,7 @@ function ProductPage() {
               </>
             ) : (
               <>
-                <Sparkles className="w-3 h-3" /> Atinge fotografia pentru vedere mărită
+                <Sparkles className="w-3 h-3" /> Atinge pentru mărire · glisează pentru altă imagine
               </>
             )}
           </p>
@@ -323,7 +387,7 @@ function ProductPage() {
                 onClick={() => setShow360(true)}
                 aria-pressed={show360}
                 aria-label="Vedere 360 de grade"
-                className={`group relative rounded-xl border p-2 bg-card transition ${show360 ? "border-[color:var(--gold)] shadow-soft" : "border-border hover:bg-muted"}`}
+                className={`group relative overflow-hidden rounded-xl border p-0 bg-card transition ${show360 ? "border-[color:var(--gold)] shadow-soft" : "border-border hover:bg-muted"}`}
               >
                 {spinThumb ? (
                   <img
@@ -349,7 +413,7 @@ function ProductPage() {
                   setShow360(false);
                   playTick();
                 }}
-                className={`rounded-xl border p-2 bg-card transition ${!show360 && active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}
+                className={`overflow-hidden rounded-xl border p-0 bg-card transition ${!show360 && active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}
               >
                 <ProductImage
                   src={image.src}
@@ -363,26 +427,27 @@ function ProductPage() {
           </div>
         </div>
 
-        <div>
+        <div className="product-detail-copy">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             {product.category}
           </p>
           <h1 className="font-display text-4xl md:text-5xl mt-2">{product.name}</h1>
           <p className="mt-3 text-lg text-muted-foreground">{product.tagline}</p>
-          {experienceQuery.data?.audio && (
-            <ProductAudioOverlay
-              key={experienceQuery.data.audio.media_id}
-              audio={experienceQuery.data.audio}
-            />
-          )}
-
           {available ? (
-            <div className="mt-6 flex items-baseline gap-3">
-              {product.originalPrice != null && product.originalPrice > (product.price ?? 0) && (
-                <del className="text-muted-foreground">{product.originalPrice} lei</del>
+            <div className="mt-6">
+              <ProductPrice product={product} size="detail" tone="light" />
+              <span className="mt-1 block text-xs text-muted-foreground">preț pe cutiuță</span>
+              {experienceQuery.data?.audio && (
+                <ProductAudioOverlay
+                  key={experienceQuery.data.audio.media_id}
+                  audio={experienceQuery.data.audio}
+                  productSlug={product.id}
+                />
               )}
-              <span className="font-display text-4xl">{product.price ?? PRICE} lei</span>
-              <span className="text-sm text-muted-foreground">preț pe cutiuță</span>
+              {!experienceQuery.isLoading && !experienceQuery.data?.audio && (
+                <ProductAudioUnavailable melody={product.melody} />
+              )}
+              <ProductDeliveryEstimate />
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 p-4">
@@ -429,11 +494,7 @@ function ProductPage() {
                   </button>
                 </div>
                 <button
-                  onClick={(e) => {
-                    const added = addToCart(product.id, qty);
-                    animateIntoCart(e.currentTarget, product.image, added);
-                    notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
-                  }}
+                  onClick={(event) => addProductToCart(event)}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
                 >
                   <ShoppingBag className="w-4 h-4" /> Adaugă în coș
@@ -451,7 +512,14 @@ function ProductPage() {
             </Link>
           )}
 
-          <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+          <ProductShare
+            id={product.id}
+            name={product.name}
+            tagline={product.tagline}
+            image={product.image}
+          />
+
+          <div className="product-detail-assurances mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2 rounded-xl border p-3">
               <Music className="w-4 h-4" /> Mecanism manual
             </div>
@@ -491,11 +559,10 @@ function ProductPage() {
       {related.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="font-display text-3xl mb-6 text-center">Și acestea îți pot plăcea</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {related.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} variant="solid" />
-            ))}
-          </div>
+          <ProductCardCarousel
+            products={related}
+            ariaLabel="Alte cutiuțe care ți-ar putea plăcea"
+          />
         </section>
       )}
 
@@ -510,6 +577,13 @@ function ProductPage() {
           />
         )}
       </AnimatePresence>
+      {available && (
+        <ProductMobileBuyBar
+          product={product}
+          audioAvailable={Boolean(experienceQuery.data?.audio)}
+          onAdd={(event) => addProductToCart(event, 1)}
+        />
+      )}
     </ProductWorld>
   );
 }

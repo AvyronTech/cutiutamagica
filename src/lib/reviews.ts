@@ -10,6 +10,26 @@ export const reviewSources = {
   okazii: "Okazii",
 } as const;
 export type ReviewSource = keyof typeof reviewSources;
+export const reviewCountries = {
+  RO: "România",
+  GB: "Regatul Unit",
+  DE: "Germania",
+  FR: "Franța",
+  IT: "Italia",
+  ES: "Spania",
+  NL: "Țările de Jos",
+  BE: "Belgia",
+  AT: "Austria",
+  IE: "Irlanda",
+  PT: "Portugalia",
+  PL: "Polonia",
+  US: "Statele Unite",
+  CA: "Canada",
+} as const;
+export type ReviewCountry = keyof typeof reviewCountries;
+const reviewCountrySchema = z.enum(
+  Object.keys(reviewCountries) as [ReviewCountry, ...ReviewCountry[]],
+);
 export const reviewInput = z.object({
   productSlug: z.string().regex(/^[a-z0-9-]{1,128}$/),
   displayName: z.string().trim().min(2).max(60).optional(),
@@ -23,6 +43,7 @@ export const reviewInput = z.object({
   rating: z.number().int().min(1).max(5),
   body: z.string().trim().min(10).max(1200),
   language: z.enum(["ro", "en"]),
+  countryCode: reviewCountrySchema.nullish(),
   consent: z.literal(true),
   website: z.string().max(0).default(""),
 });
@@ -34,6 +55,7 @@ export type PublicReview = {
   rating: number;
   body: string;
   language: "ro" | "en";
+  countryCode: ReviewCountry | null;
   source: ReviewSource;
   sourceUrl: string | null;
 };

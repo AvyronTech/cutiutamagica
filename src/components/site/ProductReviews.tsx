@@ -1,8 +1,13 @@
-import { useId, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { reviewApi, type Reviewer, type ReviewList } from "@/lib/reviews";
+import { reviewApi, reviewCountries, type Reviewer, type ReviewList } from "@/lib/reviews";
 import { ReviewCard, ReviewStars } from "./ReviewCard";
+import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
+import { trackGrowthEvent } from "@/lib/growth-events";
+
+const REVIEWS_PER_PAGE = 4;
 export function ProductReviews({
   slug,
   name,
@@ -13,13 +18,17 @@ export function ProductReviews({
   initial: ReviewList;
 }) {
   const id = useId(),
+    carousel = useRef<HTMLDivElement>(null),
     [open, setOpen] = useState(false),
     [page, setPage] = useState(0),
+    [slide, setSlide] = useState(0),
+    [paused, setPaused] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [rating, setRating] = useState(0),
-    [mode, setMode] = useState<"guest" | "login" | "register">("guest");
+    [mode, setMode] = useState<"guest" | "login" | "register">("guest"),
+    reduced = useReducedMotion();
   const account = useQuery({
     queryKey: ["reviewer"],
     queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
@@ -29,11 +38,44 @@ export function ProductReviews({
   });
   const query = useQuery({
     queryKey: ["reviews", slug, page],
-    queryFn: () => reviewApi<ReviewList>(`/api/v1/reviews?product=${slug}&offset=${page * 20}`),
+    queryFn: () =>
+      reviewApi<ReviewList>(
+        `/api/v1/reviews?product=${slug}&offset=${page * REVIEWS_PER_PAGE}&limit=${REVIEWS_PER_PAGE}`,
+      ),
     initialData: page === 0 ? initial : undefined,
     staleTime: 30000,
   });
   const data = query.data;
+  const displayedReviews = data?.reviews.slice(0, REVIEWS_PER_PAGE) ?? [];
+
+  const goToSlide = useCallback(
+    (next: number) => {
+      const count = displayedReviews.length;
+      if (!count) return;
+      const index = (next + count) % count;
+      setSlide(index);
+      const track = carousel.current;
+      const card = track?.querySelector<HTMLElement>(`[data-review-slide="${index}"]`);
+      if (track && card)
+        track.scrollTo({
+          left: card.offsetLeft - track.offsetLeft,
+          behavior: reduced ? "auto" : "smooth",
+        });
+    },
+    [displayedReviews.length, reduced],
+  );
+
+  useEffect(() => {
+    setSlide(0);
+    const frame = window.requestAnimationFrame(() => goToSlide(0));
+    return () => window.cancelAnimationFrame(frame);
+  }, [goToSlide, page, slug]);
+
+  useEffect(() => {
+    if (reduced || paused || displayedReviews.length < 2) return;
+    const timer = window.setInterval(() => goToSlide(slide + 1), 6200);
+    return () => window.clearInterval(timer);
+  }, [displayedReviews.length, goToSlide, paused, reduced, slide]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -66,9 +108,15 @@ export function ProductReviews({
             rating,
             body: form.get("body"),
             language: form.get("language"),
+            countryCode: form.get("countryCode"),
             consent: form.get("consent") === "on",
             website: form.get("website"),
           }),
+        });
+        trackGrowthEvent("review_submitted", {
+          productSlug: slug,
+          quantity: 1,
+          properties: { rating, mode: account.data ? "account" : "guest" },
         });
         setMessage("Mulțumim! Recenzia ta va apărea după verificare.");
         setOpen(false);
@@ -237,6 +285,16 @@ export function ProductReviews({
                     <option value="en">English</option>
                   </select>
                 </label>
+                <label>
+                  Țara
+                  <select name="countryCode" defaultValue="RO" required>
+                    {Object.entries(reviewCountries).map(([code, label]) => (
+                      <option key={code} value={code}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <label className="review-consent">
                   <input type="checkbox" name="consent" required />
                   Accept publicarea numelui afișat și a părerii mele după verificare.{" "}
@@ -270,22 +328,78 @@ export function ProductReviews({
           Recenziile nu pot fi încărcate.{" "}
           <button onClick={() => void query.refetch()}>Reîncearcă</button>
         </p>
-      ) : data?.reviews.length ? (
-        <div className="product-review-grid">
-          {data.reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))}
+      ) : displayedReviews.length ? (
+        <div
+          className="product-review-carousel"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onFocusCapture={() => setPaused(true)}
+          onBlurCapture={() => setPaused(false)}
+        >
+          <div className="product-review-carousel__meta">
+            <span>
+              <ShieldCheck size={15} aria-hidden /> Numai recenzii aprobate
+            </span>
+            {displayedReviews.length > 1 && (
+              <div className="product-review-carousel__controls">
+                <button
+                  type="button"
+                  onClick={() => goToSlide(slide - 1)}
+                  aria-label="Recenzia anterioară"
+                >
+                  <ArrowLeft size={17} />
+                </button>
+                <span aria-live="polite">
+                  {slide + 1} / {displayedReviews.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => goToSlide(slide + 1)}
+                  aria-label="Recenzia următoare"
+                >
+                  <ArrowRight size={17} />
+                </button>
+              </div>
+            )}
+          </div>
+          <div
+            ref={carousel}
+            className="product-review-carousel__track"
+            aria-label={`Recenzii aprobate pentru ${name}`}
+          >
+            {displayedReviews.map((review, index) => (
+              <div key={review.id} data-review-slide={index}>
+                <ReviewCard review={review} />
+              </div>
+            ))}
+          </div>
+          {displayedReviews.length > 1 && (
+            <div className="product-review-carousel__dots" aria-hidden>
+              {displayedReviews.map((review, index) => (
+                <i key={review.id} className={slide === index ? "is-active" : ""} />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
-        <p>Prima părere poate fi a ta. Povestește-ne despre această cutiuță.</p>
+        <div className="product-reviews-empty">
+          <ShieldCheck size={19} aria-hidden />
+          <p>
+            Prima părere verificată poate fi a ta. Nu afișăm texte demonstrative sau recenzii
+            inventate.
+          </p>
+        </div>
       )}
-      {(page > 0 || data?.hasMore) && (
+      {(page > 0 || (data?.total ?? 0) > (page + 1) * REVIEWS_PER_PAGE) && (
         <nav className="review-pagination" aria-label="Paginile recenziilor">
           <button disabled={!page || query.isFetching} onClick={() => setPage(page - 1)}>
             ← Înapoi
           </button>
           <span>Pagina {page + 1}</span>
-          <button disabled={!data?.hasMore || query.isFetching} onClick={() => setPage(page + 1)}>
+          <button
+            disabled={(data?.total ?? 0) <= (page + 1) * REVIEWS_PER_PAGE || query.isFetching}
+            onClick={() => setPage(page + 1)}
+          >
             Mai multe păreri →
           </button>
         </nav>

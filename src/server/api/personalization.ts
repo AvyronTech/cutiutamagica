@@ -5,6 +5,7 @@ import {
   personalizationFieldsSchema,
   personalizationReference,
   personalizationTotalBani,
+  type PersonalizationBoxModel,
   type PersonalizationRequestSummary,
 } from "@/lib/personalization";
 import {
@@ -21,6 +22,7 @@ const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 type PersonalizationRow = {
   id: string;
+  box_model: PersonalizationBoxModel;
   box_color: "black" | "yellow";
   melody: "melody-1" | "melody-2" | "melody-3";
   gift_wrap: number;
@@ -32,6 +34,7 @@ type PersonalizationRow = {
 function mapSummary(row: PersonalizationRow): PersonalizationRequestSummary {
   return {
     id: row.id,
+    boxModel: row.box_model,
     boxColor: row.box_color,
     melody: row.melody,
     giftWrap: row.gift_wrap === 1,
@@ -88,7 +91,7 @@ async function listRequests(request: Request, env: Env): Promise<Response> {
   const account = await currentReviewer(request, env);
   if (!account) throw reviewFailure("Autentifică-te pentru a vedea cererile tale.", 401);
   const rows = await env.DB.prepare(
-    `SELECT id, box_color, melody, gift_wrap, total_bani, status, created_at
+    `SELECT id, box_model, box_color, melody, gift_wrap, total_bani, status, created_at
      FROM personalization_requests
      WHERE account_id = ?1
      ORDER BY created_at DESC
@@ -115,8 +118,10 @@ async function createRequest(request: Request, env: Env): Promise<Response> {
     customerName: form.get("customerName"),
     email: form.get("email"),
     phone: form.get("phone"),
+    boxModel: form.get("boxModel"),
     boxColor: form.get("boxColor"),
     melody: form.get("melody"),
+    engraving: form.get("engraving"),
     giftWrap: form.get("giftWrap"),
     notes: form.get("notes"),
     consent: form.get("consent"),
@@ -144,6 +149,13 @@ async function createRequest(request: Request, env: Env): Promise<Response> {
   const imageBytes = await image.arrayBuffer();
   const checksum = await crypto.subtle.digest("SHA-256", imageBytes);
   const totalBani = personalizationTotalBani(parsed.data.giftWrap);
+  const source = await env.DB.prepare(
+    `SELECT id FROM personalization_supplier_sources
+     WHERE box_model_id=?1 AND status='verified'
+     ORDER BY last_verified_at DESC, updated_at DESC LIMIT 1`,
+  )
+    .bind(parsed.data.boxModel)
+    .first<{ id: string }>();
 
   await env.MEDIA.put(r2Key, imageBytes, {
     sha256: checksum,
@@ -161,10 +173,14 @@ async function createRequest(request: Request, env: Env): Promise<Response> {
   try {
     await env.DB.prepare(
       `INSERT INTO personalization_requests (
-        id, account_id, customer_name, email, phone, box_color, melody,
+        id, account_id, customer_name, email, phone, box_model, box_color, melody, engraving,
         lid_image_r2_key, lid_image_mime, lid_image_original_name,
-        gift_wrap, base_price_bani, gift_wrap_bani, total_bani, notes, consent_processing
-      ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, 1)`,
+        gift_wrap, base_price_bani, gift_wrap_bani, total_bani, notes, consent_processing,
+        supplier_source_id, procurement_status
+      ) VALUES (
+        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, 1,
+        ?18, CASE WHEN ?18 IS NULL THEN 'awaiting_source' ELSE 'ready_to_order' END
+      )`,
     )
       .bind(
         id,
@@ -172,8 +188,10 @@ async function createRequest(request: Request, env: Env): Promise<Response> {
         parsed.data.customerName,
         parsed.data.email,
         parsed.data.phone,
+        parsed.data.boxModel,
         parsed.data.boxColor,
         parsed.data.melody,
+        parsed.data.engraving,
         r2Key,
         image.type,
         safeFileName(image.name),
@@ -182,6 +200,7 @@ async function createRequest(request: Request, env: Env): Promise<Response> {
         parsed.data.giftWrap ? PERSONALIZATION_GIFT_WRAP_BANI : 0,
         totalBani,
         parsed.data.notes,
+        source?.id ?? null,
       )
       .run();
   } catch (error) {

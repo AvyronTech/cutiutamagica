@@ -5,6 +5,8 @@ import { getStorePricing } from "@/lib/store-pricing.functions";
 import { safeJsonLd } from "@/lib/product-discovery";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
+import { useEffect } from "react";
+import { trackGrowthEvent } from "@/lib/growth-events";
 
 export const Route = createFileRoute("/cadouri/$ocazie")({
   loader: async ({ params }) => {
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
         { property: "og:url", content: url },
         { property: "og:type", content: "website" },
         { property: "og:image", content: primaryImage },
-        { property: "og:image:alt", content: `Cutiuțe muzicale recomandate pentru ${guide.label}` },
+        { property: "og:image:alt", content: `Selecție de cutiuțe muzicale — ${guide.label}` },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
@@ -85,6 +87,16 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
                   { "@type": "ListItem", position: 3, name: guide.label, item: url },
                 ],
               },
+              {
+                "@type": "FAQPage",
+                mainEntity: [
+                  {
+                    "@type": "Question",
+                    name: guide.question,
+                    acceptedAnswer: { "@type": "Answer", text: guide.answer },
+                  },
+                ],
+              },
             ],
           }),
         },
@@ -100,8 +112,14 @@ function GiftGuidePage() {
   const selection = products.filter((p) => giftGuideIncludesProduct(guide, p.id));
   const available = selection.filter(isAvailable);
   const upcoming = selection.filter((p) => !isAvailable(p));
+  useEffect(() => {
+    trackGrowthEvent("gift_finder_completed", {
+      properties: { guide: guide.slug },
+      once: `gift_finder_completed:${guide.slug}`,
+    });
+  }, [guide.slug]);
   return (
-    <article className="gift-guide-page">
+    <article className="gift-guide-page" data-guide-slug={guide.slug}>
       <nav aria-label="Navigare ierarhică">
         <Link to="/">Acasă</Link> / <Link to="/cadouri">Idei de cadouri</Link> /{" "}
         <span aria-current="page">{guide.label}</span>
@@ -122,8 +140,45 @@ function GiftGuidePage() {
           </section>
         ))}
       </div>
+      {guide.decisionGuide && (
+        <section className="gift-guide-decision" aria-labelledby="gift-decision-heading">
+          <div className="gift-guide-decision__heading">
+            <span className="catalog-eyebrow">Filtru practic, nu listă generică</span>
+            <h2 id="gift-decision-heading">{guide.decisionGuide.title}</h2>
+            <p>
+              Parcurge cele trei întrebări înainte să alegi modelul. Dacă răspunsurile nu indică
+              aceeași direcție, mai caută un detaliu real despre persoană.
+            </p>
+          </div>
+          <ol className="gift-guide-checkpoints">
+            {guide.decisionGuide.checkpoints.map((checkpoint, index) => (
+              <li key={checkpoint.label}>
+                <span aria-hidden>{index + 1}</span>
+                <div>
+                  <h3>{checkpoint.label}</h3>
+                  <p>{checkpoint.guidance}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <div className="gift-guide-decision__notes">
+            <aside>
+              <strong>Ce să eviți</strong>
+              <p>{guide.decisionGuide.avoid}</p>
+            </aside>
+            <div>
+              <strong>Trei începuturi pentru bilețel</strong>
+              <ul>
+                {guide.decisionGuide.messagePrompts.map((prompt) => (
+                  <li key={prompt}>„{prompt}”</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
       <section id="cutiute-pentru-ocazie" aria-labelledby="gift-models-heading">
-        <h2 id="gift-models-heading">Cutiuțe pentru {guide.label}</h2>
+        <h2 id="gift-models-heading">Cutiuțe potrivite — {guide.label}</h2>
         {available.length ? (
           <>
             <p>

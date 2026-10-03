@@ -1,6 +1,7 @@
 import type { CatalogProduct } from "@/server/db/catalog.repository";
 import { DISCOVERY_UPDATED, giftGuides } from "@/data/gift-guides";
 const base = "https://cutiutamagica.eu";
+const PRODUCT_EXPERIENCE_UPDATED = "2026-10-03";
 const xml = (value: string) =>
   value
     .replace(/&/g, "&amp;")
@@ -22,14 +23,17 @@ export function renderSitemap(products: CatalogProduct[]): string {
     { path: "/", lastmod: DISCOVERY_UPDATED, images: ["/produse/hp-keeper/1.webp"] },
     {
       path: "/produse",
-      lastmod: catalogDate && catalogDate > DISCOVERY_UPDATED ? catalogDate : DISCOVERY_UPDATED,
+      lastmod:
+        catalogDate && catalogDate > PRODUCT_EXPERIENCE_UPDATED
+          ? catalogDate
+          : PRODUCT_EXPERIENCE_UPDATED,
     },
     {
       path: "/despre-cutiuta",
-      lastmod: DISCOVERY_UPDATED,
+      lastmod: "2026-10-03",
       images: ["/scenes/catalog-atelier.webp"],
     },
-    { path: "/despre-noi", lastmod: "2026-09-28", images: ["/scenes/catalog-atelier.webp"] },
+    { path: "/despre-noi", lastmod: "2026-10-03", images: ["/scenes/catalog-atelier.webp"] },
     { path: "/livrare", lastmod: "2026-09-28" },
     {
       path: "/personalizeaza",
@@ -46,13 +50,21 @@ export function renderSitemap(products: CatalogProduct[]): string {
     { path: "/retur", lastmod: "2026-09-15" },
     { path: "/termeni-de-utilizare", lastmod: "2026-09-15" },
     { path: "/politica-de-confidentialitate", lastmod: "2026-09-15" },
-    ...products.map((p) => ({
-      path: `/produs/${encodeURIComponent(p.slug)}`,
-      lastmod: date(p.updatedAt),
-      images: [
-        ...new Set([p.imageUrl, ...(p.gallery ?? []).map((entry) => entry.src)].filter(Boolean)),
-      ] as string[],
-    })),
+    ...products.map((p) => {
+      const productDate = date(p.updatedAt);
+      return {
+        path: `/produs/${encodeURIComponent(p.slug)}`,
+        lastmod:
+          productDate && productDate > PRODUCT_EXPERIENCE_UPDATED
+            ? productDate
+            : productDate
+              ? PRODUCT_EXPERIENCE_UPDATED
+              : undefined,
+        images: [
+          ...new Set([p.imageUrl, ...(p.gallery ?? []).map((entry) => entry.src)].filter(Boolean)),
+        ] as string[],
+      };
+    }),
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${entries
     .map((entry) => {

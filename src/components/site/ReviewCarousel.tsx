@@ -14,7 +14,36 @@ export function ReviewCarousel({ data }: { data: ReviewList }) {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  if (!data.reviews.length) return null;
+  if (!data.reviews.length)
+    return (
+      <section
+        ref={section}
+        className="review-carousel review-carousel--empty"
+        data-world="atelier"
+        aria-labelledby="review-carousel-title"
+      >
+        <div className="review-carousel-heading">
+          <div>
+            <p className="scene-eyebrow">Ecouri din povești mici</p>
+            <h2 id="review-carousel-title">
+              Recenzii autentice.
+              <br />
+              <em>Fără povești inventate.</em>
+            </h2>
+          </div>
+          <p>
+            Primele păreri vor apărea aici după verificarea sursei și aprobarea publicării.
+            <Link to="/produse">Descoperă cutiuțele ↗</Link>
+          </p>
+        </div>
+        <div className="review-empty-ribbon" aria-hidden="true">
+          <span>Produs identificat</span>
+          <span>Sursă verificabilă</span>
+          <span>Română &amp; English</span>
+          <span>Țară și platformă</span>
+        </div>
+      </section>
+    );
   const moving = data.reviews.length > 2;
   return (
     <section

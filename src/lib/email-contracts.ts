@@ -18,13 +18,13 @@ const contactAddress = z
   .transform((value) => value.toLowerCase());
 
 export const emailSettingsSchema = z.object({
-  provider: z.literal("resend").default("resend"),
+  provider: z.enum(["cloudflare_email", "resend"]).default("cloudflare_email"),
   senderName: z.string().trim().min(2).max(80).default("Cutiuța Magică"),
   defaultFromEmail: brandedAddress.default("contact@cutiutamagica.eu"),
   ordersFromEmail: brandedAddress.default("comenzi@cutiutamagica.eu"),
-  returnsFromEmail: brandedAddress.default("retururi@cutiutamagica.eu"),
-  partnersFromEmail: brandedAddress.default("parteneri@cutiutamagica.eu"),
-  replyToEmail: contactAddress.default("cutiutamagicaofficial@gmail.com"),
+  returnsFromEmail: brandedAddress.default("contact@cutiutamagica.eu"),
+  partnersFromEmail: brandedAddress.default("contact@cutiutamagica.eu"),
+  replyToEmail: contactAddress.default("contact@cutiutamagica.eu"),
   inboundAddress: brandedAddress.default("contact@cutiutamagica.eu"),
   forwardingTarget: contactAddress.default("cutiutamagicaofficial@gmail.com"),
   orderNotificationEmail: contactAddress.default("cutiutamagicaofficial@gmail.com"),

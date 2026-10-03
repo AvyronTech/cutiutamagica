@@ -52,8 +52,8 @@ Schema si Product Studio suporta sloturile `01_hero`, `02_decor`, `03_closed`, `
 - Parolele sunt stocate numai ca hash PBKDF2 cu salt unic; sesiunile folosesc tokenuri aleatoare, iar D1 pastreaza numai digestul lor.
 - Nu exista Cloudflare Access, autentificare prin cod, inregistrare, invitatie sau solicitare publica de acces pentru administratori.
 - Parola initiala trebuie schimbata la prima autentificare; incercarile esuate sunt limitate si auditate.
-- Conturile clientilor nu sunt inca activate; checkoutul este guest-first pana la alegerea furnizorului de identitate si e-mail tranzactional.
+- Conturile separate pentru recenzii si cereri de personalizare sunt optionale. Checkoutul ramane guest-first si nu conditioneaza comanda de existenta unui cont.
 
 ## Integrari
 
-Structura de date si adaptoarele sunt pregatite pentru plati, SmartShip, facturare, eMAG, OLX, Trendyol, Meta si canale sociale. O integrare este considerata activa numai dupa configurarea secretelor, validarea contractului API, test sandbox si reconciliere. Nicio stare din dashboard nu trebuie prezentata drept conectare reala fara aceste conditii.
+Structura de date si adaptoarele sunt pregatite pentru plati, SmartShip, Sameday/Easybox, facturare, Esteto, eMAG, OLX, Trendyol, Meta si canale sociale. E-mailurile tranzactionale folosesc Cloudflare Email Service numai cand bindingul si rutele domeniului sunt active. O integrare este considerata activa numai dupa configurarea secretelor, validarea contractului API, test sandbox si reconciliere. Nicio stare din dashboard nu trebuie prezentata drept conectare reala fara aceste conditii.

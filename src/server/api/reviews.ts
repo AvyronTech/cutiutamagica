@@ -39,7 +39,7 @@ const moderationInput = z.object({
 });
 const visible = "p.status='active' AND p.published_at IS NOT NULL AND p.product_type='music_box'";
 const publicSelect =
-  "r.id,p.slug AS productSlug,p.name AS productName,r.display_name AS displayName,r.rating,r.body,r.language,r.source,r.source_url AS sourceUrl";
+  "r.id,p.slug AS productSlug,p.name AS productName,r.display_name AS displayName,r.rating,r.body,r.language,r.country_code AS countryCode,r.source,r.source_url AS sourceUrl";
 async function product(env: Env, slug: string) {
   const p = await env.DB.prepare(
     `SELECT p.id,p.name FROM products p WHERE p.slug=?1 AND ${visible}`,
@@ -49,14 +49,14 @@ async function product(env: Env, slug: string) {
   if (!p) throw reviewFailure("Cutiuța nu este disponibilă.", 404);
   return p;
 }
-export async function listReviews(env: Env, slug: string | null, offset = 0) {
+export async function listReviews(env: Env, slug: string | null, offset = 0, limit = 20) {
   if (slug) await product(env, slug);
   const where = `${visible} AND r.status='approved' AND (?1 IS NULL OR p.slug=?1)`;
   const [rows, summary] = await Promise.all([
     env.DB.prepare(
-      `SELECT ${publicSelect} FROM product_reviews r JOIN products p ON p.id=r.product_id WHERE ${where} ORDER BY r.featured DESC,r.created_at DESC,r.id LIMIT 20 OFFSET ?2`,
+      `SELECT ${publicSelect} FROM product_reviews r JOIN products p ON p.id=r.product_id WHERE ${where} ORDER BY r.featured DESC,r.created_at DESC,r.id LIMIT ?3 OFFSET ?2`,
     )
-      .bind(slug, offset)
+      .bind(slug, offset, limit)
       .all<PublicReview>(),
     env.DB.prepare(
       `SELECT COUNT(*) AS total,AVG(r.rating) AS average FROM product_reviews r JOIN products p ON p.id=r.product_id WHERE ${where}`,
@@ -68,7 +68,7 @@ export async function listReviews(env: Env, slug: string | null, offset = 0) {
     reviews: rows.results,
     total: summary?.total || 0,
     average: summary?.average || null,
-    hasMore: (summary?.total || 0) > offset + 20,
+    hasMore: (summary?.total || 0) > offset + limit,
   };
 }
 export async function handleReviews(request: Request, env: Env): Promise<Response | null> {
@@ -120,8 +120,18 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
           id = crypto.randomUUID();
         const result = await env.DB.batch([
           env.DB.prepare(
-            "INSERT OR IGNORE INTO product_reviews(id,product_id,display_name,rating,body,language,source,source_url,origin) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,'import')",
-          ).bind(id, p.id, v.displayName, v.rating, v.body, v.language, v.source, v.sourceUrl),
+            "INSERT OR IGNORE INTO product_reviews(id,product_id,display_name,rating,body,language,country_code,source,source_url,origin) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,'import')",
+          ).bind(
+            id,
+            p.id,
+            v.displayName,
+            v.rating,
+            v.body,
+            v.language,
+            v.countryCode || null,
+            v.source,
+            v.sourceUrl,
+          ),
           env.DB.prepare(
             "INSERT INTO business_activity(id,actor_id,action,entity_id,created_at) SELECT ?1,?2,'review.imported',?3,strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE changes()=1",
           ).bind(crypto.randomUUID(), identity.id, id),
@@ -161,9 +171,15 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
           .int()
           .min(0)
           .max(100000)
-          .parse(url.searchParams.get("offset") || 0);
+          .parse(url.searchParams.get("offset") || 0),
+        limit = z.coerce
+          .number()
+          .int()
+          .min(1)
+          .max(20)
+          .parse(url.searchParams.get("limit") || 20);
       if (slug && !/^[a-z0-9-]{1,128}$/.test(slug)) throw reviewFailure("Produs invalid.");
-      return reviewJson({ data: await listReviews(env, slug, offset) });
+      return reviewJson({ data: await listReviews(env, slug, offset, limit) });
     }
     if (request.method !== "POST") throw reviewFailure("Metodă nepermisă.", 405);
     sameOrigin(request);
@@ -181,7 +197,7 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
     const p = await product(env, v.productSlug),
       id = crypto.randomUUID();
     const result = await env.DB.prepare(
-      "INSERT OR IGNORE INTO product_reviews(id,product_id,account_id,display_name,email,rating,body,language,origin) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9)",
+      "INSERT OR IGNORE INTO product_reviews(id,product_id,account_id,display_name,email,rating,body,language,country_code,origin) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
     )
       .bind(
         id,
@@ -192,6 +208,7 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
         v.rating,
         v.body,
         v.language,
+        v.countryCode || null,
         account ? "account" : "guest",
       )
       .run();

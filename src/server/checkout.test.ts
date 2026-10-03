@@ -14,7 +14,8 @@ import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { shippingFingerprint } from "./services/shipping-fingerprint";
 import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
 import { verifyStripeWebhook } from "./integrations/stripe";
-import { sendOrderOwnerNotification } from "./integrations/resend";
+import { sendOrderConfirmation, sendOrderOwnerNotification } from "./integrations/resend";
+import { evaluateCheckoutCode, issuePostDeliveryReferral } from "./services/referrals";
 vi.mock("@/lib/admin-auth", () => ({
   authenticateAdminRequest: vi.fn(async () => ({ id: "test-admin", email: "test@example.test" })),
 }));
@@ -198,6 +199,60 @@ function storedPayment(id: string) {
 }
 
 describe("secure checkout", () => {
+  it("issues referral codes only after delivery and rewards the advocate after referred delivery", async () => {
+    const source = await order();
+    expect(await issuePostDeliveryReferral(env.DB, source.orderId)).toEqual({
+      invitation: null,
+      advocateReward: null,
+    });
+
+    sqlite
+      .prepare(
+        "UPDATE orders SET order_status='completed',fulfillment_status='delivered' WHERE id=?",
+      )
+      .run(source.orderId);
+    const issued = await issuePostDeliveryReferral(env.DB, source.orderId);
+    expect(issued.invitation?.code).toMatch(/^MAGIC-[A-F0-9]{8}$/);
+    expect(issued.advocateReward).toBeNull();
+
+    const subtotal = await checkoutSubtotal(env.DB, input().items);
+    await expect(
+      evaluateCheckoutCode(env.DB, issued.invitation!.code, subtotal, {
+        email: "test@example.test",
+        phone: "0712345678",
+      }),
+    ).rejects.toThrow("nu poate fi folosit");
+
+    const friendInput = websiteOrderInputSchema.parse({
+      ...input(),
+      idempotencyKey: crypto.randomUUID(),
+      promotionCode: issued.invitation!.code,
+      customer: {
+        ...input().customer,
+        name: "Prieten Test",
+        email: "friend@example.test",
+        phone: "0722222222",
+      },
+    });
+    const referred = await createWebsiteOrder(env.DB, friendInput);
+    expect(referred.discount).toBeGreaterThanOrEqual(15);
+    expect(
+      sqlite
+        .prepare("SELECT status FROM referral_redemptions WHERE referred_order_id=?")
+        .get(referred.orderId)!.status,
+    ).toBe("reserved");
+
+    sqlite
+      .prepare(
+        "UPDATE orders SET order_status='completed',fulfillment_status='delivered' WHERE id=?",
+      )
+      .run(referred.orderId);
+    const rewarded = await issuePostDeliveryReferral(env.DB, referred.orderId);
+    expect(rewarded.advocateReward?.code).toMatch(/^POVESTE-[A-F0-9]{8}$/);
+    expect(rewarded.advocateReward?.valueBani).toBe(1500);
+    expect((await issuePostDeliveryReferral(env.DB, referred.orderId)).advocateReward).toBeNull();
+  });
+
   it("sends one idempotent internal order email to the configured owner inbox", async () => {
     env.RESEND_API_KEY = "re_test_fixture";
     const created = await order();
@@ -219,6 +274,31 @@ describe("secure checkout", () => {
     expect(new Headers(init.headers).get("idempotency-key")).toBe(
       `order-owner-notification/${created.orderId}`,
     );
+  });
+
+  it("uses Cloudflare Email Sending first and does not duplicate an order confirmation", async () => {
+    const send = vi.fn(async (_message: EmailMessageBuilder) => ({
+      messageId: "cf-message-order",
+    }));
+    env.EMAIL = { send } as unknown as SendEmail;
+    const created = await order();
+
+    await sendOrderConfirmation(env, created.orderId);
+    await sendOrderConfirmation(env, created.orderId);
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toMatchObject({
+      from: { email: "comenzi@cutiutamagica.eu", name: "Cutiuța Magică" },
+      to: "test@example.test",
+      replyTo: "contact@cutiutamagica.eu",
+    });
+    expect(
+      sqlite
+        .prepare(
+          "SELECT status FROM provider_operations WHERE provider='cloudflare_email' AND idempotency_key=?",
+        )
+        .get(`order-confirmation/${created.orderId}`)!.status,
+    ).toBe("succeeded");
   });
 
   it("reuses one hosted session; sends authoritative amount and no order access token", async () => {
@@ -396,6 +476,89 @@ describe("delivery quote integrity", () => {
     expect(data).toHaveLength(1);
     expect(data[0].price).toBe(17.55);
     expect(data[0]).not.toHaveProperty("ownContract");
+  });
+  it("selects an official Easybox, quotes it and stores the canonical pickup address", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET easybox_enabled=1,sender_name='Atelier Magic',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        Response.json(
+          url.includes("/geolocation/easybox")
+            ? {
+                lockers: [
+                  {
+                    locker_id: 7123,
+                    name: "easybox Piața Unirii",
+                    address: "Piața Unirii 1",
+                    city: "Cluj-Napoca",
+                    county: "Cluj",
+                    postal_code: "400015",
+                    lat: 46.77,
+                    long: 23.59,
+                    supportedPayment: true,
+                  },
+                ],
+              }
+            : url.includes("/counties")
+              ? { counties: [{ id: 13, county: "Cluj" }] }
+              : url.includes("/cities")
+                ? { cities: [{ id: 256212, city: "Cluj-Napoca" }] }
+                : {
+                    costs: [
+                      {
+                        courier_id: 12,
+                        courier_name: "SameDay EasyBox",
+                        cost: 13.49,
+                        own_contract: false,
+                      },
+                    ],
+                  },
+        ),
+      ),
+    );
+
+    const listResponse = await handleShippingCheckout(
+      new Request("https://shop.test/api/v1/shipping/easyboxes?q=Cluj", {
+        headers: { origin: "https://shop.test" },
+      }),
+      env,
+    );
+    expect(listResponse!.status).toBe(200);
+    const locker = ((await listResponse!.json()) as { data: Array<{ id: number }> }).data[0];
+    expect(locker.id).toBe(7123);
+
+    const easyboxInput = websiteOrderInputSchema.parse({
+      ...input(),
+      shippingOption: "easybox",
+      easyboxLockerId: 7123,
+    });
+    const quoteResponse = await handleShippingCheckout(
+      request("/api/v1/shipping/quotes", easyboxInput),
+      env,
+    );
+    expect(quoteResponse!.status).toBe(200);
+    const quote = ((await quoteResponse!.json()) as { data: Array<{ id: string; price: number }> })
+      .data[0];
+    expect(quote.price).toBe(13.49);
+
+    const created = await createWebsiteOrder(env.DB, {
+      ...easyboxInput,
+      shippingQuoteId: quote.id,
+    });
+    const address = sqlite
+      .prepare(
+        "SELECT line1,city,pickup_point_provider,pickup_point_id FROM order_addresses WHERE order_id=?",
+      )
+      .get(created.orderId)!;
+    expect(address).toMatchObject({
+      line1: "Piața Unirii 1",
+      city: "Cluj-Napoca",
+      pickup_point_provider: "sameday",
+      pickup_point_id: "7123",
+    });
   });
 });
 describe("internal checkout configuration", () => {

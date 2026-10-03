@@ -1,5 +1,6 @@
 import { SalesConnections } from "./SalesConnections";
-import { useQuery } from "@tanstack/react-query";
+import { CredentialPanel } from "./GrowthSettings";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import {
@@ -10,9 +11,15 @@ import {
   RefreshCw,
   ShoppingBag,
   Truck,
+  Save,
 } from "lucide-react";
-import type { AdminChannelMetric } from "@/lib/admin-contracts";
-import { getAdminIntegrations, getCommerceOperations } from "@/lib/admin.functions";
+import { toast } from "sonner";
+import type { AdminChannelMetric, AdminIntegrationAccount } from "@/lib/admin-contracts";
+import {
+  getAdminIntegrations,
+  getCommerceOperations,
+  saveEstetoAccount,
+} from "@/lib/admin.functions";
 
 const PORTALS: Record<string, string> = {
   website: "https://cutiutamagica.eu",
@@ -23,6 +30,7 @@ const PORTALS: Record<string, string> = {
   tiktok: "https://business.tiktok.com",
   pinterest: "https://business.pinterest.com",
   whatsapp: "https://business.whatsapp.com",
+  esteto: "https://marketplace.esteto.ro",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -39,13 +47,19 @@ const OPERATIONAL_PROVIDERS: Record<
   string,
   {
     label: string;
-    route: "/admin/billing" | "/admin/shipping" | "/admin/financiar" | "/admin/email";
+    route:
+      | "/admin/billing"
+      | "/admin/shipping"
+      | "/admin/financiar"
+      | "/admin/email"
+      | "/admin/integrations";
   }
 > = {
   fgo: { label: "FGO", route: "/admin/billing" },
   smartship: { label: "SmartShip", route: "/admin/shipping" },
   stripe: { label: "Stripe", route: "/admin/financiar" },
   resend: { label: "Resend", route: "/admin/email" },
+  esteto: { label: "Esteto Marketplace", route: "/admin/integrations" },
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -112,6 +126,91 @@ function ChannelCard({ channel }: { channel: AdminChannelMetric }) {
   );
 }
 
+function EstetoConnector({
+  account,
+  onSaved,
+}: {
+  account: AdminIntegrationAccount | undefined;
+  onSaved: () => Promise<unknown>;
+}) {
+  const saveAccount = useServerFn(saveEstetoAccount);
+  const mutation = useMutation({
+    mutationFn: saveAccount,
+    onSuccess: async () => {
+      await onSaved();
+      toast.success("Contul Esteto a fost salvat. Cheia API se configurează separat, criptat.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  return (
+    <section className="glass-card rounded-xl p-4 md:p-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
+            Conector marketplace
+          </p>
+          <h2 className="mt-1 text-base font-semibold text-white">Esteto Marketplace</h2>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-400">
+            Pregătit pentru produse, prețuri, stoc, comenzi și statusuri. Activarea rămâne blocată
+            până la primirea contractului API și verificarea credențialelor furnizate de Esteto.
+          </p>
+        </div>
+        <StatusPill status={account?.status ?? "setup_required"} />
+      </div>
+      <form
+        className="mt-4 grid items-end gap-3 md:grid-cols-[1fr_1fr_auto]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const form = new FormData(event.currentTarget);
+          mutation.mutate({
+            data: {
+              accountId: String(form.get("accountId") || ""),
+              accountLabel: String(form.get("accountLabel") || "Esteto Marketplace"),
+            },
+          });
+        }}
+      >
+        <label className="space-y-2 text-sm text-slate-300">
+          <span>Cont / identificator comerciant</span>
+          <input
+            name="accountId"
+            required
+            minLength={2}
+            maxLength={120}
+            defaultValue={account?.externalAccountId ?? ""}
+            placeholder="Primit de la Esteto"
+            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white"
+          />
+        </label>
+        <label className="space-y-2 text-sm text-slate-300">
+          <span>Denumire conexiune</span>
+          <input
+            name="accountLabel"
+            required
+            minLength={2}
+            maxLength={120}
+            defaultValue={account?.label ?? "Esteto Marketplace"}
+            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white"
+          />
+        </label>
+        <button
+          disabled={mutation.isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" /> Salvează contul
+        </button>
+      </form>
+      <div className="mt-4">
+        <CredentialPanel providers={["esteto"]} />
+      </div>
+      <p className="mt-3 text-xs text-slate-500">
+        Cheia nu este afișată după salvare și nu este păstrată în clar. „Verifică” va confirma doar
+        stocarea până când Esteto furnizează endpointul oficial asociat contului.
+      </p>
+    </section>
+  );
+}
+
 export default function Integrations() {
   const fetchIntegrations = useServerFn(getAdminIntegrations);
   const fetchOperations = useServerFn(getCommerceOperations);
@@ -158,6 +257,11 @@ export default function Integrations() {
           Starea integrărilor nu a putut fi citită din D1.
         </div>
       )}
+
+      <EstetoConnector
+        account={data?.accounts.find((account) => account.provider === "esteto")}
+        onSaved={() => integrationsQuery.refetch()}
+      />
 
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">

@@ -61,7 +61,8 @@ export function Footer() {
             </Link>
             <p>O cutiuță din lemn, o manivelă și o melodie aleasă pentru cineva drag.</p>
             <address className="magic-footer-contact">
-              <a href="mailto:cutiutamagicaofficial@gmail.com">Cutiutamagicaofficial@gmail.com</a>
+              <a href="mailto:contact@cutiutamagica.eu">Contact: contact@cutiutamagica.eu</a>
+              <a href="mailto:comenzi@cutiutamagica.eu">Comenzi: comenzi@cutiutamagica.eu</a>
               <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
             </address>
           </div>

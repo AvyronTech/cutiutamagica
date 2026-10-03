@@ -172,6 +172,7 @@ function Index() {
           </Link>
         </section>
         <UpcomingCollection products={upcoming} />
+        <ReviewCarousel data={reviews} />
         <section className="landing-faq" data-world="atelier" aria-labelledby="faq-heading">
           <p className="scene-eyebrow">Lucrurile simple, explicate</p>
           <h2 id="faq-heading">
@@ -210,7 +211,6 @@ function Index() {
         </section>
         <CompactReturn />
         <ConnectSection />
-        <ReviewCarousel data={reviews} />
       </HeroWorld>
       <FloatingContacts />
     </div>

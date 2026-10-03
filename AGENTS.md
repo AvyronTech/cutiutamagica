@@ -22,3 +22,11 @@ Acest repository este produsul comercial independent Cutiuța Magică. Lovable, 
 - Nu forța istoricul Git și nu elimina modificări existente. Lucrează cu schimbările Lovable/Claude deja prezente.
 - Înainte de predare rulează `npm run typecheck`, `npm test`, `npm run lint`, `npm run build` și `npm run cf:deploy:dry` când mediul permite.
 - Verifică desktop și mobil pentru autentificare, dashboard, catalog, coș și fluxurile modificate.
+
+## Colaborare Codex, Lovable și Claude
+
+- Ramura de referință pentru aplicația Cloudflare este `codex/cutiuta-cloudflare-final`. Orice agent pornește o ramură scurtă din această ramură și deschide un pull request înapoi către ea.
+- Nu înlocui infrastructura Cloudflare cu Supabase, Firebase sau un alt backend fără o decizie arhitecturală explicită și aprobată. Integrarea unui serviciu extern trebuie să fie izolată și opțională.
+- Înainte de lucru, citește `AGENTS.md` și `docs/AGENT_HANDOFF.md`, apoi verifică ramura, starea Git și diferențele față de ramura de referință.
+- Lovable și Claude livrează prin pull request. Nu editează direct producția, nu fac force-push și nu rescriu migrațiile D1 existente.
+- Un handoff include: scopul, fișierele modificate, migrațiile adăugate, verificările rulate, capturi desktop/mobil pentru schimbări vizuale și orice configurare externă rămasă.

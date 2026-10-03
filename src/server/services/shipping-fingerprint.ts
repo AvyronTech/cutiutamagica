@@ -1,7 +1,10 @@
 import type { WebsiteOrderInput } from "@/lib/order-contracts";
 import { digestHex } from "../integrations/provider-runtime";
 export async function shippingFingerprint(
-  input: Pick<WebsiteOrderInput, "customer" | "items" | "paymentMethod" | "shippingOption">,
+  input: Pick<
+    WebsiteOrderInput,
+    "customer" | "items" | "paymentMethod" | "shippingOption" | "promotionCode" | "easyboxLockerId"
+  >,
   totalBani: number,
 ) {
   const items = new Map<string, number>();
@@ -18,6 +21,8 @@ export async function shippingFingerprint(
       ),
       payment: input.paymentMethod,
       shipping: input.shippingOption,
+      easyboxLockerId: input.easyboxLockerId ?? null,
+      promotionCode: input.promotionCode ?? null,
     }),
   );
 }

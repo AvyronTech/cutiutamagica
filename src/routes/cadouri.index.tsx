@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { giftGuideGroups, giftGuides } from "@/data/gift-guides";
 import { safeJsonLd } from "@/lib/product-discovery";
+import { trackGrowthEvent } from "@/lib/growth-events";
 export const Route = createFileRoute("/cadouri/")({
   component: GiftHub,
   head: () => ({
@@ -70,6 +72,9 @@ export const Route = createFileRoute("/cadouri/")({
   }),
 });
 function GiftHub() {
+  useEffect(() => {
+    trackGrowthEvent("gift_finder_started", { once: "gift_finder_started" });
+  }, []);
   return (
     <article className="gift-guide-page">
       <header>
@@ -90,7 +95,17 @@ function GiftHub() {
             </div>
             <div className="gift-guide-grid">
               {group.guides.map((guide) => (
-                <Link key={guide.slug} to="/cadouri/$ocazie" params={{ ocazie: guide.slug }}>
+                <Link
+                  key={guide.slug}
+                  to="/cadouri/$ocazie"
+                  params={{ ocazie: guide.slug }}
+                  onClick={() =>
+                    trackGrowthEvent("gift_finder_completed", {
+                      properties: { guide: guide.slug },
+                      once: `gift_finder_completed:${guide.slug}`,
+                    })
+                  }
+                >
                   <span>{guide.eyebrow}</span>
                   <h3>{guide.label}</h3>
                   <p>{guide.description}</p>

@@ -5,7 +5,7 @@ import {
   createReturnRequest,
   getCommercePublicConfig,
 } from "@/server/db/commerce-operations.repository";
-import { sendReturnAcknowledgement } from "@/server/integrations/resend";
+import { hasEmailTransport, sendReturnAcknowledgement } from "@/server/integrations/resend";
 import { digestHex, ProviderError, type CommerceEnv } from "@/server/integrations/provider-runtime";
 import { credentialStatuses } from "@/server/services/growth-settings";
 
@@ -55,7 +55,7 @@ async function handleCreateReturn(
     );
   }
   const result = await createReturnRequest(env.DB, parsed.data);
-  if ((await credentialStatuses(env)).some((c) => c.provider === "resend" && c.configured)) {
+  if (await hasEmailTransport(env)) {
     ctx.waitUntil(
       sendReturnAcknowledgement(env, {
         returnId: result.returnId,
@@ -92,8 +92,6 @@ export async function handleCommerceApi(
       const ready = await checkoutReadiness(env);
       config.payments.options = ready.options;
       config.payments.card.enabled = ready.options.some((o) => o.id === "stripe");
-      // Locker checkout remains hidden until an actual locker can be selected.
-      config.shipping.easyboxEnabled = false;
       return json({ data: config });
     }
     if (path === "/api/v1/returns") {

@@ -14,9 +14,12 @@ export interface CatalogProduct {
   story: string;
   shortDescription: string;
   category: string;
+  brand: string;
   mechanismType: string;
   material: string | null;
   sku: string;
+  gtin: string | null;
+  mpn: string | null;
   melody: string | null;
   price: number | null;
   originalPrice: number | null;
@@ -50,7 +53,7 @@ export async function listPublicCatalog(
 ): Promise<CatalogProduct[]> {
   const result = await db
     .prepare(
-      `SELECT p.*,(SELECT json_object('scene',scene,'accent',accent,'occasion',occasion) FROM product_scenes WHERE product_id=p.id) AS scene_json,pv.sku,pv.inventory_policy,COALESCE(NULLIF((SELECT display_name FROM product_audio_config WHERE product_id=p.id),''),m.title) AS melody,
+      `SELECT p.*,(SELECT json_object('scene',scene,'accent',accent,'occasion',occasion) FROM product_scenes WHERE product_id=p.id) AS scene_json,pv.sku,pv.ean_gtin,pv.mpn,pv.inventory_policy,COALESCE(NULLIF((SELECT display_name FROM product_audio_config WHERE product_id=p.id),''),m.title) AS melody,
  pli.price_bani,CASE WHEN pre.reference_bani=pli.compare_at_bani THEN pli.compare_at_bani END AS compare_at_bani,
  (SELECT status FROM channel_listings cl WHERE cl.product_id=p.id AND cl.variant_id=pv.id AND cl.channel_id='channel_website' LIMIT 1) AS listing_status,
  (SELECT SUM(MAX(0,on_hand_quantity-reserved_quantity-safety_stock_quantity)) FROM inventory_levels il JOIN stock_locations sl ON sl.id=il.location_id AND sl.active=1 WHERE il.variant_id=pv.id) AS stock,
@@ -86,9 +89,12 @@ export async function listPublicCatalog(
       story: str(r.story),
       shortDescription: str(r.short_description),
       category: str(r.category),
+      brand: str(r.brand) || "Cutiuța Magică",
       mechanismType: str(r.mechanism_type),
       material: r.material == null ? null : str(r.material),
       sku: str(r.sku),
+      gtin: r.ean_gtin == null ? null : str(r.ean_gtin),
+      mpn: r.mpn == null ? null : str(r.mpn),
       melody: r.melody == null ? null : str(r.melody),
       price: r.price_bani == null ? null : Number(r.price_bani) / 100,
       originalPrice: r.compare_at_bani == null ? null : Number(r.compare_at_bani) / 100,

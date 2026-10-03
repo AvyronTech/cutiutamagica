@@ -3,7 +3,7 @@
 ## Livrat in cod
 
 - [x] Stack Cloudflare dedicat si independent: Worker, D1, R2, KV, Queue, Analytics.
-- [x] Opt migrari D1 versionate si seed numai cu opt cutiute muzicale.
+- [x] 42 de migrari D1 append-only, cu catalogul si configurarile comerciale versionate.
 - [x] Catalog, pret, stoc, checkout guest-first, comanda snapshot si outbox.
 - [x] Admin RBAC cu dashboard, comenzi, produse si hub operational.
 - [x] Modele pentru facturare, livrare, financiar, clienti, notificari, newsletter, platforme si agenti AI.
@@ -19,16 +19,16 @@
 - [x] Autentificare admin exclusiv prin e-mail si parola pentru cele patru conturi aprobate, cu sesiuni D1 si fara Cloudflare Access/coduri.
 - [ ] Chei sandbox/live si contracte pentru Stripe, Revolut Business, SmartShip si facturare.
 - [ ] Acreditari si aprobari API pentru eMAG, OLX, Trendyol, Meta, Instagram si TikTok.
-- [ ] Furnizor de e-mail tranzactional/newsletter si politici SPF, DKIM, DMARC.
-- [ ] Furnizor de identitate pentru conturile clientilor; pana atunci checkout guest-first.
+- [ ] Confirmarea live a rutelor Cloudflare Email Routing, a bindingului de trimitere si a politicilor SPF, DKIM, DMARC; checkoutul functioneaza independent de e-mail.
+- [x] Checkout guest-first, fara obligativitatea unui cont; conturile separate raman optionale.
 - [ ] Endpoint si secret AVYRON, doar cand sincronizarea optionala este gata.
 
 ## Release
 
 1. Validare build productie si bindinguri.
-2. Aplicare migrari si seed in D1 productie.
-3. Incarcare imagini HERO in R2.
-4. Deploy initial pe `workers.dev` si smoke tests.
+2. Aplicare exclusiva a migrarilor D1 in asteptare; seedul nu se ruleaza din nou pe o baza existenta.
+3. Incarcare controlata a imaginilor aprobate in R2, numai cand lipsesc.
+4. Deploy pe Worker si smoke tests pe domeniile de productie.
 5. Smoke test pentru autentificarea admin prin e-mail si parola si blocarea accesului neautorizat.
 6. Mutare controlata a domeniilor dupa inventarierea DNS si verificarea releaseului.
 7. Monitorizare loguri, Queue/DLQ si checkout.

@@ -20,6 +20,8 @@ describe("personalization contract", () => {
       customerName: "Ana Pop",
       email: "ANA@EXAMPLE.RO",
       phone: "+40 712 345 678",
+      boxModel: "classic",
+      engraving: "",
       giftWrap: "false",
       notes: "",
       consent: "true",

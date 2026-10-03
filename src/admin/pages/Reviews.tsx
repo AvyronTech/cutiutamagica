@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { reviewApi, reviewSources, type PublicReview } from "@/lib/reviews";
+import { reviewApi, reviewCountries, reviewSources, type PublicReview } from "@/lib/reviews";
 type AdminReview = PublicReview & {
   email: string | null;
   origin: string;
@@ -80,6 +80,7 @@ export default function Reviews({ productSlug }: { productSlug?: string }) {
           rating: Number(form.get("rating")),
           body: form.get("body"),
           language: form.get("language"),
+          countryCode: form.get("countryCode"),
           source: form.get("source"),
           sourceUrl: form.get("sourceUrl"),
           authentic: form.get("authentic") === "on",
@@ -215,6 +216,16 @@ export default function Reviews({ productSlug }: { productSlug?: string }) {
               <option value="en">English</option>
             </select>
           </label>
+          <label>
+            Țara declarată în recenzia originală
+            <select name="countryCode" className={field} defaultValue="RO" required>
+              {Object.entries(reviewCountries).map(([code, label]) => (
+                <option key={code} value={code}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="md:col-span-2">
             Textul original
             <textarea
@@ -261,6 +272,7 @@ export default function Reviews({ productSlug }: { productSlug?: string }) {
               </strong>
               <span className="text-xs text-slate-400">
                 {reviewSources[review.source]} · {review.language.toUpperCase()} ·{" "}
+                {review.countryCode ? `${reviewCountries[review.countryCode]} · ` : ""}
                 {new Date(review.createdAt).toLocaleDateString("ro-RO")}
               </span>
             </div>

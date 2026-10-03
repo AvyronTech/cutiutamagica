@@ -42,7 +42,7 @@ export function FloatingCartButton({
       </span>
       <span>
         <strong>Coșul tău</strong>
-        <small>{totals.total.toLocaleString("ro-RO")} lei</small>
+        <small>{totals.total.toLocaleString("ro-RO")} lei · TVA incl.</small>
       </span>
       <ArrowUpRight size={16} aria-hidden="true" />
     </button>,

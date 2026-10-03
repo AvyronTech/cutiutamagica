@@ -16,6 +16,20 @@ export type ProductGalleryImage = {
   position?: string;
 };
 
+export type ProductLimitedEdition = {
+  /** Numărul total al pieselor din serie; nu reprezintă stocul rămas. */
+  totalUnits: number;
+};
+
+const limitedEditions: Readonly<Record<string, ProductLimitedEdition>> = {
+  "hp-keeper": { totalUnits: 120 },
+  "got-winter": { totalUnits: 120 },
+};
+
+export function productLimitedEdition(productId: string) {
+  return limitedEditions[productId];
+}
+
 export type Product = {
   discovery?: import("@/lib/product-discovery").ProductDiscovery | null;
   scene?: import("@/lib/product-themes").ProductScene;
@@ -26,6 +40,7 @@ export type Product = {
   featured?: boolean;
   preorderEnabled?: boolean;
   releaseNote?: string;
+  limitedEdition?: ProductLimitedEdition;
   seoTitle?: string;
   seoDescription?: string;
   sku: string;
@@ -34,6 +49,7 @@ export type Product = {
   tagline: string;
   melody?: string;
   category: string;
+  brand?: string;
   image: string;
   gallery: ProductGalleryImage[];
   description: string;
@@ -41,6 +57,8 @@ export type Product = {
   details: string[];
   searchTerms: string[];
   price?: number;
+  gtin?: string;
+  mpn?: string;
   originalPrice?: number | null;
   /** „available” se poate comanda; „coming_soon” apare în catalog, dar nu intră în coș. */
   availability: ProductAvailability;
@@ -62,8 +80,10 @@ export const unitPriceBani = (product: Pick<Product, "price">) =>
 export const products: Product[] = [
   {
     id: "hp-keeper",
+    limitedEdition: productLimitedEdition("hp-keeper"),
     sku: "CM-HP-KEEPER",
-    price: 149,
+    price: 119,
+    originalPrice: 149,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10090709545" },
     updatedAt: "2026-09-22",
@@ -105,8 +125,10 @@ export const products: Product[] = [
   },
   {
     id: "got-winter",
+    limitedEdition: productLimitedEdition("got-winter"),
     sku: "CM-GOT-WINTER",
-    price: 149,
+    price: 109,
+    originalPrice: 149,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039606794" },
     updatedAt: "2026-09-22",
@@ -150,7 +172,8 @@ export const products: Product[] = [
   {
     id: "kitten",
     sku: "CM-KITTEN",
-    price: 129,
+    price: 99,
+    originalPrice: 129,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039491875" },
     updatedAt: "2026-09-22",
@@ -196,7 +219,8 @@ export const products: Product[] = [
   {
     id: "halloween",
     sku: "CM-HALLOWEEN",
-    price: 139,
+    price: 119,
+    originalPrice: 139,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039375629" },
     updatedAt: "2026-09-22",
@@ -247,7 +271,8 @@ export const products: Product[] = [
   {
     id: "sunshine",
     sku: "CM-SUNSHINE",
-    price: 129,
+    price: 99,
+    originalPrice: 129,
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039368670" },
     updatedAt: "2026-09-22",

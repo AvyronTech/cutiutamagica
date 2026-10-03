@@ -14,22 +14,113 @@ import {
 } from "@/server/services/email-center";
 import type { EmailChannel } from "@/lib/email-contracts";
 
-export async function sendEmail(
-  env: CommerceEnv,
-  input: {
-    to: string;
-    subject: string;
-    html: string;
-    text: string;
-    channel?: EmailChannel;
-    idempotencyKey: string;
-    entityType: string;
-    entityId: string;
-  },
-): Promise<void> {
-  const apiKey = requiredSecret((await credential(env, "resend")) ?? undefined, "RESEND_API_KEY");
+type SendEmailInput = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  channel?: EmailChannel;
+  idempotencyKey: string;
+  entityType: string;
+  entityId: string;
+};
+
+function emailError(error: unknown): { code: string; message: string } {
+  if (error && typeof error === "object") {
+    const value = error as { code?: unknown; message?: unknown };
+    return {
+      code: typeof value.code === "string" ? value.code : "CLOUDFLARE_EMAIL_SEND_FAILED",
+      message: typeof value.message === "string" ? value.message : "Trimiterea e-mailului a eșuat.",
+    };
+  }
+  return { code: "CLOUDFLARE_EMAIL_SEND_FAILED", message: String(error) };
+}
+
+async function wasAlreadySent(env: CommerceEnv, idempotencyKey: string): Promise<boolean> {
+  const row = await env.DB.prepare(
+    `SELECT 1 AS sent FROM provider_operations
+     WHERE provider IN ('cloudflare_email', 'resend')
+       AND operation_type = 'email.send'
+       AND idempotency_key = ?1
+       AND status = 'succeeded'
+     LIMIT 1`,
+  )
+    .bind(idempotencyKey)
+    .first<{ sent: number }>();
+  return row?.sent === 1;
+}
+
+export async function hasEmailTransport(env: CommerceEnv): Promise<boolean> {
+  if (env.EMAIL) return true;
+  return Boolean(await credential(env, "resend"));
+}
+
+export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promise<void> {
   const settings = await getEmailSettings(env.DB);
   const environment = env.APP_ENV === "production" ? "production" : "sandbox";
+  if (await wasAlreadySent(env, input.idempotencyKey)) return;
+
+  let cloudflareFailure: Error | null = null;
+  if (env.EMAIL) {
+    try {
+      const configuredSender = fromAddress(settings, input.channel ?? "default");
+      const sender = ["contact@cutiutamagica.eu", "comenzi@cutiutamagica.eu"].includes(
+        configuredSender,
+      )
+        ? configuredSender
+        : "contact@cutiutamagica.eu";
+      const result = await env.EMAIL.send({
+        from: {
+          name: settings.senderName,
+          email: sender,
+        },
+        to: input.to,
+        replyTo: settings.replyToEmail,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        headers: {
+          "X-Cutiuta-Entity": input.entityType,
+          "X-Cutiuta-Idempotency-Key": input.idempotencyKey,
+        },
+      });
+      await logProviderOperation(env.DB, {
+        provider: "cloudflare_email",
+        operationType: "email.send",
+        entityType: input.entityType,
+        entityId: input.entityId,
+        idempotencyKey: input.idempotencyKey,
+        environment,
+        status: "succeeded",
+        externalId: result.messageId,
+        responseCode: 202,
+        responseSummary: { messageId: result.messageId },
+      });
+      return;
+    } catch (error) {
+      const detail = emailError(error);
+      cloudflareFailure = error instanceof Error ? error : new Error(detail.message);
+      await logProviderOperation(env.DB, {
+        provider: "cloudflare_email",
+        operationType: "email.send",
+        entityType: input.entityType,
+        entityId: input.entityId,
+        idempotencyKey: input.idempotencyKey,
+        environment,
+        status: "failed",
+        responseSummary: {},
+        errorCode: detail.code,
+        errorMessage: detail.message,
+      });
+    }
+  }
+
+  const fallbackKey = await credential(env, "resend");
+  if (!fallbackKey) {
+    if (cloudflareFailure) throw cloudflareFailure;
+    requiredSecret(undefined, "Cloudflare Email Sending sau RESEND_API_KEY");
+  }
+  const apiKey = fallbackKey as string;
   const response = await fetchWithTimeout("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -192,6 +283,80 @@ export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: stri
     idempotencyKey: `order-owner-notification/${orderId}`,
     entityType: "order_internal_notification",
     entityId: orderId,
+    text,
+    html: emailTextToHtml(text),
+  });
+}
+
+export async function sendReferralInvitation(
+  env: CommerceEnv,
+  input: {
+    orderId: string;
+    email: string;
+    code: string;
+    expiresAt: string;
+    friendRewardBani: number;
+    advocateRewardBani: number;
+  },
+): Promise<void> {
+  const settings = await getEmailSettings(env.DB);
+  if (!settings.customerEmailsEnabled) return;
+  const friendReward = (input.friendRewardBani / 100).toLocaleString("ro-RO", {
+    style: "currency",
+    currency: "RON",
+  });
+  const advocateReward = (input.advocateRewardBani / 100).toLocaleString("ro-RO", {
+    style: "currency",
+    currency: "RON",
+  });
+  const text = [
+    "Ai făcut pe cineva fericit? ✨",
+    "",
+    `Oferă unui prieten ${friendReward} și primești și tu ${advocateReward} pentru următoarea poveste.`,
+    "",
+    `Codul tău de recomandare: ${input.code}`,
+    `Valabil până la ${new Date(input.expiresAt).toLocaleDateString("ro-RO")}.`,
+    "",
+    "Recompensa ta se activează după ce comanda prietenului este livrată.",
+    `${env.PUBLIC_SITE_URL}/produse`,
+  ].join("\n");
+  await sendEmail(env, {
+    to: input.email,
+    channel: "orders",
+    subject: "Ai făcut pe cineva fericit? ✨",
+    idempotencyKey: `referral-invitation/${input.orderId}`,
+    entityType: "referral_invitation",
+    entityId: input.orderId,
+    text,
+    html: emailTextToHtml(text),
+  });
+}
+
+export async function sendReferralReward(
+  env: CommerceEnv,
+  input: { orderId: string; email: string; code: string; valueBani: number },
+): Promise<void> {
+  const settings = await getEmailSettings(env.DB);
+  if (!settings.customerEmailsEnabled) return;
+  const value = (input.valueBani / 100).toLocaleString("ro-RO", {
+    style: "currency",
+    currency: "RON",
+  });
+  const text = [
+    "Povestea recomandată de tine a ajuns cu bine ✨",
+    "",
+    `Ai primit ${value} pentru următoarea ta cutiuță.`,
+    `Codul tău personal: ${input.code}`,
+    "",
+    `${env.PUBLIC_SITE_URL}/produse`,
+  ].join("\n");
+  await sendEmail(env, {
+    to: input.email,
+    channel: "orders",
+    subject: `Cadoul tău de recomandare: ${value}`,
+    idempotencyKey: `referral-reward/${input.orderId}`,
+    entityType: "referral_reward",
+    entityId: input.orderId,
     text,
     html: emailTextToHtml(text),
   });

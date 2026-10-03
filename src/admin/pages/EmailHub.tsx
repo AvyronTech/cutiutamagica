@@ -129,7 +129,7 @@ export default function EmailHub() {
     const value = (name: string) => String(form.get(name) || "");
     settingsMutation.mutate({
       data: {
-        provider: "resend",
+        provider: "cloudflare_email",
         senderName: value("senderName"),
         defaultFromEmail: value("defaultFromEmail"),
         ordersFromEmail: value("ordersFromEmail"),
@@ -168,7 +168,7 @@ export default function EmailHub() {
           <h1 className="mt-1 text-2xl font-semibold text-white">Centru e-mail</h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
             Identitatea Cutiuța Magică, mesaje tranzacționale pentru clienți, contacte de parteneri,
-            teste de livrare și istoric Resend.
+            teste de livrare și istoric pentru Cloudflare Email Service.
           </p>
         </div>
         <button className={secondaryButton} onClick={() => query.refetch()}>
@@ -191,8 +191,10 @@ export default function EmailHub() {
           <div>
             <h2 className="font-semibold text-white">Starea serviciului</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Resend: {data.resend?.configured ? data.resend.status : "neconfigurat"}. Domeniul
-              expeditor trebuie verificat cu SPF și DKIM înainte de activarea în producție.
+              Cloudflare Email Sending: {data.emailService ? "binding activ" : "neconfigurat"}.
+              {data.resend?.configured
+                ? ` Resend rămâne fallback (${data.resend.status}).`
+                : " Resend nu este configurat ca fallback."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -200,7 +202,7 @@ export default function EmailHub() {
               <button
                 key={channel}
                 className={secondaryButton}
-                disabled={!data.resend?.configured || testChannel !== null}
+                disabled={(!data.emailService && !data.resend?.configured) || testChannel !== null}
                 onClick={() => runTest(channel)}
               >
                 <Send size={14} /> Test {channel}

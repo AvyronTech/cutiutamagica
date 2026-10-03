@@ -54,7 +54,7 @@ export const getEmailHub = createServerFn({ method: "GET" })
         `SELECT entity_type AS entityType,status,response_code AS responseCode,
                   error_message AS errorMessage,created_at AS createdAt
            FROM provider_operations
-           WHERE provider='resend' AND operation_type='email.send'
+           WHERE provider IN ('cloudflare_email','resend') AND operation_type='email.send'
            ORDER BY created_at DESC LIMIT 30`,
       ).all<Record<string, string | number | null>>(),
       env.DB.prepare(
@@ -62,8 +62,8 @@ export const getEmailHub = createServerFn({ method: "GET" })
              (SELECT COUNT(*) FROM customers WHERE email_normalized IS NOT NULL AND status!='anonymized') AS customers,
              (SELECT COUNT(*) FROM email_contacts WHERE audience='partner' AND status='active') AS partners,
              (SELECT COUNT(*) FROM newsletter_subscribers WHERE status='active') AS subscribers,
-             (SELECT COUNT(*) FROM provider_operations WHERE provider='resend' AND operation_type='email.send' AND status='succeeded' AND created_at>=datetime('now','-30 days')) AS sent30d,
-             (SELECT COUNT(*) FROM provider_operations WHERE provider='resend' AND operation_type='email.send' AND status='failed' AND created_at>=datetime('now','-30 days')) AS failed30d`,
+             (SELECT COUNT(*) FROM provider_operations WHERE provider IN ('cloudflare_email','resend') AND operation_type='email.send' AND status='succeeded' AND created_at>=datetime('now','-30 days')) AS sent30d,
+             (SELECT COUNT(*) FROM provider_operations WHERE provider IN ('cloudflare_email','resend') AND operation_type='email.send' AND status='failed' AND created_at>=datetime('now','-30 days')) AS failed30d`,
       ).first<Record<string, number>>(),
       credentialStatuses(env as CommerceEnv),
     ]);
@@ -73,6 +73,7 @@ export const getEmailHub = createServerFn({ method: "GET" })
       contacts: contacts.results,
       operations: operations.results,
       counts: counts ?? { customers: 0, partners: 0, subscribers: 0, sent30d: 0, failed30d: 0 },
+      emailService: Boolean((env as CommerceEnv).EMAIL),
       resend: credentials.find((item) => item.provider === "resend") ?? null,
       secureStorageReady: Boolean((env as CommerceEnv).INTEGRATION_ENCRYPTION_KEY),
     };
@@ -176,9 +177,9 @@ export const sendEmailTest = createServerFn({ method: "POST" })
       to: context.admin.email,
       channel: data.channel,
       subject: `Test ${data.channel} · Cutiuța Magică`,
-      text: `Acesta este un test al canalului ${data.channel}. Dacă mesajul a ajuns, expeditorul și integrarea Resend funcționează.`,
+      text: `Acesta este un test al canalului ${data.channel}. Dacă mesajul a ajuns, expeditorul și serviciul tranzacțional funcționează.`,
       html: emailTextToHtml(
-        `Acesta este un test al canalului ${data.channel}.\n\nDacă mesajul a ajuns, expeditorul și integrarea Resend funcționează.`,
+        `Acesta este un test al canalului ${data.channel}.\n\nDacă mesajul a ajuns, expeditorul și serviciul tranzacțional funcționează.`,
       ),
       idempotencyKey: `email-test/${context.admin.id}/${id}`,
       entityType: "email_test",

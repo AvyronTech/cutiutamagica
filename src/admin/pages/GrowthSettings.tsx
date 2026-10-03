@@ -37,6 +37,7 @@ const labels: Record<CredentialProvider, string> = {
   brave: "Brave Search",
   google: "Google (token OAuth readonly)",
   meta: "Meta (token de acces)",
+  esteto: "Esteto Marketplace · cod API",
 };
 function useSettings() {
   const load = useServerFn(getGrowthSettings);

@@ -3,6 +3,7 @@ import type {
   AdminDashboardData,
   AdminDashboardStats,
   AdminDeliveryMetric,
+  AdminGrowthMetric,
   AdminIntegrationAccount,
   AdminIntegrationsData,
   AdminNotification,
@@ -378,9 +379,15 @@ export async function dismissAdminNotification(
 }
 
 export async function getAdminStatisticsData(db: D1Database): Promise<AdminStatisticsData> {
-  const [summaryResult, monthlyResult, channelsResult, productsResult, deliveriesResult] =
-    await db.batch<DbRow>([
-      db.prepare(`
+  const [
+    summaryResult,
+    monthlyResult,
+    channelsResult,
+    productsResult,
+    deliveriesResult,
+    growthResult,
+  ] = await db.batch<DbRow>([
+    db.prepare(`
         SELECT
           COUNT(*) AS orders_total,
           COALESCE(SUM(CASE WHEN order_status != 'cancelled' THEN total_bani - refunded_bani ELSE 0 END), 0) AS net_revenue_bani,
@@ -398,7 +405,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
           COUNT(estimated_cost_bani) AS orders_with_cost
         FROM orders
       `),
-      db.prepare(`
+    db.prepare(`
         SELECT
           month,
           SUM(revenue_bani) AS revenue_bani,
@@ -410,10 +417,8 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         GROUP BY month
         ORDER BY month ASC
       `),
-      db.prepare(
-        "SELECT * FROM v_admin_channel_metrics ORDER BY valid_orders_count DESC, name ASC",
-      ),
-      db.prepare(`
+    db.prepare("SELECT * FROM v_admin_channel_metrics ORDER BY valid_orders_count DESC, name ASC"),
+    db.prepare(`
         SELECT
           COALESCE(p.id, oi.product_id, oi.sku) AS id,
           COALESCE(p.name, oi.product_name) AS name,
@@ -428,7 +433,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         ORDER BY units_count DESC, revenue_bani DESC
         LIMIT 10
       `),
-      db.prepare(`
+    db.prepare(`
         SELECT delivery_method, COUNT(*) AS orders_count
         FROM (
           SELECT
@@ -447,7 +452,15 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         GROUP BY delivery_method
         ORDER BY orders_count DESC
       `),
-    ]);
+    db.prepare(`
+        SELECT event_name,SUM(event_count) AS event_count,
+          SUM(value_total) AS value_total,SUM(quantity_total) AS quantity_total
+        FROM growth_event_daily
+        WHERE event_day >= date('now','-29 days')
+        GROUP BY event_name
+        ORDER BY event_count DESC,event_name ASC
+      `),
+  ]);
 
   const summary = summaryResult.results[0] ?? {};
   const ordersTotal = numberValue(summary.orders_total);
@@ -462,6 +475,12 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
   const deliveries: AdminDeliveryMetric[] = deliveriesResult.results.map((row) => ({
     name: stringValue(row.delivery_method),
     orders: numberValue(row.orders_count),
+  }));
+  const growth: AdminGrowthMetric[] = growthResult.results.map((row) => ({
+    event: stringValue(row.event_name),
+    count: numberValue(row.event_count),
+    value: numberValue(row.value_total),
+    quantity: numberValue(row.quantity_total),
   }));
 
   return {
@@ -491,6 +510,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
     channels: channelsResult.results.map(mapChannel),
     topProducts: products,
     deliveries,
+    growth,
   };
 }
 
@@ -514,6 +534,8 @@ export async function getAdminIntegrationsData(db: D1Database): Promise<AdminInt
     provider: stringValue(row.provider),
     environment: stringValue(row.environment),
     label: stringValue(row.account_label),
+    externalAccountId: nullableString(row.external_account_id),
+    secretReference: nullableString(row.secret_reference),
     status: stringValue(row.status),
     lastHealthcheckAt: nullableString(row.last_healthcheck_at),
     lastSuccessAt: nullableString(row.last_success_at),

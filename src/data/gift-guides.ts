@@ -11,6 +11,15 @@ export interface GiftGuide {
   readonly description: string;
   readonly intro: string;
   readonly sections: readonly { readonly title: string; readonly text: string }[];
+  readonly decisionGuide?: {
+    readonly title: string;
+    readonly checkpoints: readonly {
+      readonly label: string;
+      readonly guidance: string;
+    }[];
+    readonly avoid: string;
+    readonly messagePrompts: readonly string[];
+  };
   readonly question: string;
   readonly answer: string;
 }
@@ -72,6 +81,33 @@ export const giftGuides = [
         text: "Verifică prețul actual din pagina produsului și bugetul stabilit de grup. Costul transportului se confirmă în checkout. Pentru un schimb de cadouri cu dată fixă, alege dintre modelele disponibile și verifică estimarea de livrare. Nu presupune că un model din «Magia care urmează» poate ajunge la timp.",
       },
     ],
+    decisionGuide: {
+      title: "Alege cadoul Secret Santa în 60 de secunde",
+      checkpoints: [
+        {
+          label: "Ce știi sigur?",
+          guidance:
+            "Alege numai o pasiune confirmată din conversații: Harry Potter, fantasy, pisici sau o melodie cunoscută.",
+        },
+        {
+          label: "Care este limita?",
+          guidance:
+            "Compară prețul produsului și transportul cu bugetul grupului înainte să te hotărăști.",
+        },
+        {
+          label: "Când se oferă?",
+          guidance:
+            "Pentru schimburile cu dată fixă, rămâi la modelele marcate disponibile și lasă timp pentru livrare.",
+        },
+      ],
+      avoid:
+        "Nu alege un univers doar pentru că este popular și nu transforma un cadou între colegi într-un mesaj prea personal.",
+      messagePrompts: [
+        "Am ales tema după discuțiile noastre despre…",
+        "Pentru pauzele în care biroul are nevoie de puțină magie.",
+        "Un indiciu mic despre cine ți-a fost Secret Santa.",
+      ],
+    },
     question: "Pot alege doar după un plafon de buget?",
     answer:
       "Poți compara prețurile afișate în catalog, dar ia în calcul și transportul. Nu presupunem un preț fix pentru toate modelele sau o reducere care nu este afișată în magazin.",
@@ -298,6 +334,120 @@ export const giftGuides = [
       "Alege după o pasiune vizibilă — pisici, fantasy, film sau lectură — și consultă melodia fiecărui model înainte de comandă.",
   },
   {
+    slug: "pentru-iubita",
+    group: "Pentru cine",
+    productIds: ["sunshine", "kitten", "hp-keeper", "fairy"],
+    label: "Pentru iubită",
+    eyebrow: "Relație · amintire · melodie",
+    title: "Cadou pentru iubită: o cutiuță muzicală aleasă din povestea voastră",
+    seoTitle: "Cadou pentru iubită: cutiuță muzicală cu poveste",
+    description:
+      "Idei de cadou pentru iubită, alese după melodia, amintirea sau universul vostru comun. Compară cutiuțe muzicale și opțiuni de personalizare.",
+    intro:
+      "Un cadou pentru iubită nu trebuie să repete aceleași simboluri romantice. Poate porni de la cântecul pe care îl fredonați, de la filmul pe care îl revedeți sau de la pisica despre care vorbiți în fiecare zi. Cutiuța potrivită este cea pe care o poți lega de o amintire concretă dintre voi.",
+    sections: [
+      {
+        title: "Când melodia spune povestea",
+        text: "You Are My Sunshine are un mesaj cald și direct, potrivit dacă melodia seamănă cu felul în care vorbiți unul despre celălalt. Ascultă fragmentul disponibil și nu alege doar după titlu: timbrul mecanic este parte din farmecul cutiuței.",
+      },
+      {
+        title: "Când pasiunea ei este reperul",
+        text: "Pentru o iubitoare de pisici, modelul cu lună și pisicuță poate fi mai personal decât un simbol romantic generic. Pentru o cititoare sau o fană Harry Potter, universul preferat poate deveni punctul central al cadoului.",
+      },
+      {
+        title: "Când vrei o amintire numai a voastră",
+        text: "O fotografie pe capac și o gravură scurtă pot transforma cutiuța într-un obiect legat de un loc sau o zi precisă. Folosește configuratorul, verifică previzualizarea și lasă timp pentru confirmarea atelierului.",
+      },
+    ],
+    decisionGuide: {
+      title: "Alege pentru iubită în 60 de secunde",
+      checkpoints: [
+        {
+          label: "Aveți o melodie?",
+          guidance:
+            "Dacă răspunsul este da, începe de acolo; dacă nu, caută o pasiune sau un univers comun pe care îl recunoaște imediat.",
+        },
+        {
+          label: "Vrei emoție sau colecție?",
+          guidance:
+            "Alege un model cald pentru mesajul dintre voi ori unul tematic dacă ea colecționează obiecte dintr-un univers anume.",
+        },
+        {
+          label: "Data este fixă?",
+          guidance:
+            "Pentru aniversări apropiate, verifică stocul și livrarea; personalizarea are nevoie de timp suplimentar.",
+        },
+      ],
+      avoid:
+        "Nu presupune că roz, inimile sau un mesaj generic sunt automat romantice pentru ea; legătura reală cu povestea voastră este mai valoroasă.",
+      messagePrompts: [
+        "Am ales-o pentru că îmi amintește de ziua în care…",
+        "O melodie mică pentru povestea pe care o construim împreună.",
+        "Pentru serile noastre cu…",
+      ],
+    },
+    question: "Este mai potrivit un model standard sau unul personalizat?",
+    answer:
+      "Alege modelul standard când melodia ori tema vă reprezintă deja. Alege personalizarea când o fotografie sau o gravură precisă este esențială pentru mesaj.",
+  },
+  {
+    slug: "pentru-sora",
+    group: "Pentru cine",
+    productIds: ["kitten", "sunshine", "hp-keeper", "fairy"],
+    label: "Pentru soră",
+    eyebrow: "Soră · complicitate · amintiri",
+    title: "Cadou pentru soră: o cutiuță muzicală aleasă după ce vă apropie",
+    seoTitle: "Cadou pentru soră: cutiuțe muzicale cu semnificație",
+    description:
+      "Idei de cadou pentru soră: cutiuțe muzicale pentru iubitoare de pisici, cititoare, fane fantasy sau amintiri împărtășite în familie.",
+    intro:
+      "Între surori există adesea repere pe care nimeni altcineva nu le înțelege la fel: o carte împrumutată, un film revăzut, o poreclă sau o melodie din copilărie. Folosește unul dintre aceste repere pentru a alege cutiuța, apoi explică-l într-un bilețel scurt.",
+    sections: [
+      {
+        title: "Pentru sora care citește și colecționează",
+        text: "Un model Harry Potter sau fantasy are sens dacă seria face parte din biblioteca și conversațiile ei. Compară capacul, melodia și disponibilitatea; nu înlocui universul preferat cu unul doar asemănător.",
+      },
+      {
+        title: "Pentru sora care iubește pisicile",
+        text: "Modelul cu pisicuță și lună poate fi legat de animalul ei, de o fotografie amuzantă sau de un obicei pe care îl împărtășiți. Este un obiect decorativ, nu o jucărie pentru animal.",
+      },
+      {
+        title: "Pentru o amintire din familie",
+        text: "You Are My Sunshine poate însoți un mesaj cald, iar personalizarea poate folosi o fotografie pe care amândouă o prețuiți. Alege o imagine clară, verifică dreptul de folosire și termenul de pregătire.",
+      },
+    ],
+    decisionGuide: {
+      title: "Alege pentru soră în 60 de secunde",
+      checkpoints: [
+        {
+          label: "Ce aveți în comun?",
+          guidance:
+            "Notează primul film, animal sau cântec la care vă gândiți amândouă; acesta este filtrul principal.",
+        },
+        {
+          label: "Ce păstrează pe raft?",
+          guidance:
+            "Culoarea și ilustrația trebuie să se potrivească bibliotecii, biroului sau colecției ei reale.",
+        },
+        {
+          label: "Ce vrei să-i spui?",
+          guidance:
+            "Alege un mesaj complice, recunoscător sau nostalgic și potrivește modelul cu acel ton.",
+        },
+      ],
+      avoid:
+        "Nu te baza numai pe faptul că este sora ta; un cadou reușit vorbește despre persoana care este acum, nu doar despre copilăria voastră.",
+      messagePrompts: [
+        "Pentru povestea pe care doar noi două o știm.",
+        "Mi-a amintit de serile în care…",
+        "Un obiect mic pentru toate momentele în care ai fost de partea mea.",
+      ],
+    },
+    question: "Pot transforma cutiuța într-un cadou comun din partea familiei?",
+    answer:
+      "Da. Adăugați un cartonaș semnat sau alegeți o fotografie de familie prin configurator, ținând cont de termenul suplimentar pentru personalizare.",
+  },
+  {
     slug: "pentru-el",
     group: "Pentru cine",
     productIds: ["got-winter", "hp-keeper", "lotr-rings", "pirates"],
@@ -328,6 +478,63 @@ export const giftGuides = [
       "Este un obiect decorativ și de colecție cu mecanism muzical manual. Nu folosește baterii, aplicație sau difuzor electronic.",
   },
   {
+    slug: "pentru-iubit",
+    group: "Pentru cine",
+    productIds: ["got-winter", "hp-keeper", "sunshine", "lotr-rings", "pirates"],
+    label: "Pentru iubit",
+    eyebrow: "Cuplu · pasiuni · poveste comună",
+    title: "Cadou pentru iubit: o cutiuță muzicală care pornește de la pasiunea lui",
+    seoTitle: "Cadou pentru iubit: cutiuțe muzicale pentru fani",
+    description:
+      "Idei de cadou pentru iubit: cutiuțe muzicale alese după serialul, cartea, melodia sau amintirea voastră, cu stoc verificat înainte de comandă.",
+    intro:
+      "Un cadou pentru iubit devine personal când arată că îi cunoști universul, nu doar că ai găsit un obiect romantic. Poate fi tema serialului pe care îl urmărește, o poveste pe care a citit-o de mai multe ori sau o melodie care are deja un loc în relația voastră.",
+    sections: [
+      {
+        title: "Pentru fanul de fantasy și seriale",
+        text: "Game of Thrones și Harry Potter au melodii și simboluri distincte. Alege numai universul pe care îl apreciază cu adevărat și verifică galeria produsului; modelele Tolkien sau Pirates pot fi urmărite separat dacă încă nu sunt disponibile.",
+      },
+      {
+        title: "Pentru o poveste care nu depinde de fandom",
+        text: "You Are My Sunshine poate fi alegerea mai potrivită dacă relația voastră are un cântec sau un mesaj simplu, iar colecțiile tematice nu îl reprezintă. Un bilețel precis face legătura dintre melodie și voi.",
+      },
+      {
+        title: "Pentru birou, bibliotecă sau colțul lui de colecție",
+        text: "Privește culoarea lemnului și capacul în fotografiile reale. Dimensiunea compactă permite păstrarea lângă cărți ori figurine, dar obiectul trebuie ferit de umezeală, lovituri și surse de căldură.",
+      },
+    ],
+    decisionGuide: {
+      title: "Alege pentru iubit în 60 de secunde",
+      checkpoints: [
+        {
+          label: "Ce univers numește primul?",
+          guidance:
+            "Alege seria pe care o recitește sau o revede, nu tema care pare cea mai spectaculoasă în catalog.",
+        },
+        {
+          label: "Colecție sau mesaj?",
+          guidance:
+            "Pentru colecție, prioritizează capacul și fidelitatea temei; pentru relație, prioritizează melodia și dedicația.",
+        },
+        {
+          label: "Este disponibil acum?",
+          guidance:
+            "Dacă data contează, alege un produs în stoc și nu construi surpriza în jurul unui model marcat În curând.",
+        },
+      ],
+      avoid:
+        "Nu presupune că orice produs fantasy sau science-fiction i se potrivește; fanii fac diferența între universuri, simboluri și melodii.",
+      messagePrompts: [
+        "Pentru următoarea noastră aventură, chiar dacă începe de acasă.",
+        "Am ales tema după seara în care am văzut împreună…",
+        "O melodie mică pentru unul dintre lucrurile mari pe care le iubim împreună.",
+      ],
+    },
+    question: "Cum aleg între o cutiuță tematică și una romantică?",
+    answer:
+      "Alege tema dacă pasiunea lui este clară și prezentă în viața de zi cu zi. Alege melodia romantică dacă mesajul relației este mai important decât apartenența la un fandom.",
+  },
+  {
     slug: "pentru-mama",
     group: "Pentru cine",
     productIds: ["sunshine", "kitten"],
@@ -353,6 +560,33 @@ export const giftGuides = [
         text: "Pentru o amintire de familie, poți folosi pagina de personalizare. Încarcă doar o imagine potrivită și verifică termenul de pregătire înainte de data la care vrei să oferi cadoul.",
       },
     ],
+    decisionGuide: {
+      title: "Alege pentru mama în 60 de secunde",
+      checkpoints: [
+        {
+          label: "Melodie sau pasiune?",
+          guidance:
+            "Alege You Are My Sunshine dacă mesajul dintre voi este central; alege pisicuța dacă aceasta este pasiunea ei reală.",
+        },
+        {
+          label: "Cadou standard sau amintire?",
+          guidance:
+            "Pentru o fotografie de familie ori o gravură, verifică separat personalizarea și timpul ei de pregătire.",
+        },
+        {
+          label: "Cum îl oferi?",
+          guidance:
+            "Adaugă două rânduri scrise de tine și pornește chiar tu manivela la deschiderea cadoului.",
+        },
+      ],
+      avoid:
+        "Nu lăsa ocazia să înlocuiască mesajul personal: explică de ce tocmai melodia sau imaginea ți-a amintit de ea.",
+      messagePrompts: [
+        "Pentru toate momentele în care ai făcut lumea mea mai luminoasă.",
+        "Melodia aceasta mi-a amintit de…",
+        "Un mulțumesc mic pentru o grijă pe care nu o uit.",
+      ],
+    },
     question: "Pot adăuga o fotografie de familie?",
     answer:
       "Da, configuratorul de personalizare permite încărcarea unei imagini pentru capac și solicitarea unei gravuri, cu confirmare ulterioară din partea atelierului.",
@@ -416,6 +650,63 @@ export const giftGuides = [
     question: "Este potrivită pentru un schimb de cadouri la birou?",
     answer:
       "Da, dacă tema se potrivește persoanei și produsul se încadrează în bugetul grupului. Verifică separat transportul și disponibilitatea.",
+  },
+  {
+    slug: "pentru-colega",
+    group: "Pentru cine",
+    productIds: ["kitten", "hp-keeper", "got-winter", "sunshine"],
+    label: "Pentru colegă",
+    eyebrow: "Birou · apreciere · limite potrivite",
+    title: "Cadou pentru colegă: atent, personal și potrivit relației profesionale",
+    seoTitle: "Cadou pentru colegă: cutiuțe muzicale cu poveste",
+    description:
+      "Idei de cadou pentru colegă, de la Secret Santa la aniversare sau mulțumire: cutiuțe muzicale alese după pasiuni și bugetul echipei.",
+    intro:
+      "Pentru o colegă, cadoul reușit arată că ai observat un interes real, dar păstrează limitele unei relații profesionale. O cutiuță cu pisicuță, Harry Potter ori Game of Thrones este potrivită numai când tema a apărut deja în conversații; altfel, întreabă discret echipa.",
+    sections: [
+      {
+        title: "Pentru aniversarea de la birou",
+        text: "Alege un model compact care poate fi păstrat pe birou sau acasă. Dacă darul este din partea echipei, un cartonaș semnat de colegi este mai potrivit decât o dedicație foarte personală.",
+      },
+      {
+        title: "Pentru Secret Santa",
+        text: "Respectă plafonul stabilit și verifică transportul înainte de alegere. O pasiune confirmată, precum pisicile sau o serie fantasy, este un indiciu mai sigur decât vârsta, rolul ori stilul vestimentar.",
+      },
+      {
+        title: "Pentru un mulțumesc profesional",
+        text: "Leagă mesajul de ajutorul concret, colaborarea sau proiectul pentru care îi mulțumești. You Are My Sunshine poate avea un ton prea intim în unele echipe; citește contextul înainte să o alegi.",
+      },
+    ],
+    decisionGuide: {
+      title: "Alege pentru colegă în 60 de secunde",
+      checkpoints: [
+        {
+          label: "Pasiunea este confirmată?",
+          guidance:
+            "Folosește numai informații împărtășite firesc la birou, nu presupuneri despre gusturi sau viața personală.",
+        },
+        {
+          label: "Cadoul este individual sau de echipă?",
+          guidance:
+            "Pentru echipă, alege un mesaj comun; pentru un dar individual, păstrează tonul cald, dar profesional.",
+        },
+        {
+          label: "Bugetul include livrarea?",
+          guidance:
+            "Verifică prețul actual și costul de transport înainte să confirmi alegerea cu ceilalți colegi.",
+        },
+      ],
+      avoid:
+        "Evită mesajele romantice, glumele despre vârstă și temele alese după stereotipuri; cadoul trebuie să fie confortabil și în contextul biroului.",
+      messagePrompts: [
+        "Mulțumim pentru felul în care ai ajutat echipa cu…",
+        "Pentru biroul tău și pentru pauzele cu puțină magie.",
+        "Am ales tema după discuția noastră despre…",
+      ],
+    },
+    question: "Este potrivită cutiuța dacă nu îi cunosc bine preferințele?",
+    answer:
+      "Mai bine întrebi discret o persoană apropiată din echipă sau alegi un cadou colectiv. O temă foarte specifică nu trebuie ghicită doar pentru a părea personală.",
   },
   {
     slug: "iubitori-de-pisici",
@@ -579,4 +870,4 @@ export const giftGuideGroups = (["Ocazii", "Pentru cine", "Pasiuni"] as const).m
   label,
   guides: giftGuides.filter((guide) => guide.group === label),
 }));
-export const DISCOVERY_UPDATED = "2026-09-28";
+export const DISCOVERY_UPDATED = "2026-10-03";

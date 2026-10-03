@@ -59,7 +59,7 @@ export function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 isolate" data-compact={compact || undefined}>
+    <header className="site-header sticky top-0 z-50 isolate" data-compact={compact || undefined}>
       <div
         className={`relative overflow-hidden border-b border-[color:var(--gold)]/35 bg-[color:var(--cream)]/72 shadow-[0_12px_34px_-24px_rgba(72,38,16,0.72)] backdrop-blur-xl backdrop-saturate-150 transition-[background-color,box-shadow] duration-300 supports-[backdrop-filter]:bg-[color:var(--cream)]/55 ${
           compact
@@ -109,8 +109,10 @@ export function Header() {
                 Cutiuța <span className="gold-text italic">Magică</span>
               </span>
               <span
-                className={`block overflow-hidden uppercase tracking-[0.18em] text-[color:var(--wood-dark)]/60 transition-[max-height,opacity] duration-300 ${
-                  compact ? "max-h-0 opacity-0" : "max-h-4 text-[9px] opacity-100"
+                className={`block whitespace-nowrap uppercase text-[color:var(--wood-dark)]/60 transition-[max-height,opacity] duration-300 ${
+                  compact
+                    ? "max-h-0 overflow-hidden opacity-0"
+                    : "max-h-4 overflow-visible text-[7px] tracking-[0.1em] opacity-100 sm:text-[9px] sm:tracking-[0.18em]"
                 }`}
               >
                 Lemn · Manivelă · Melodie

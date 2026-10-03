@@ -156,16 +156,16 @@ function DeliveryPage() {
               <Clock3 aria-hidden />
               <span>
                 <strong>Termen</strong>
-                Estimarea curierului este afișată când poate fi calculată. Produsele personalizate
-                au termenul comunicat de 4–7 zile lucrătoare.
+                Pentru produsele disponibile, livrarea în România este estimată la 1–3 zile
+                lucrătoare. Produsele personalizate au termenul comunicat de 4–7 zile lucrătoare.
               </span>
             </li>
             <li>
               <ShieldCheck aria-hidden />
               <span>
-                <strong>Cost verificabil</strong>
-                Transportul se afișează separat și se calculează sau se confirmă înainte de
-                expediere. Nu adăugăm un tarif ascuns după plasarea comenzii.
+                <strong>Cost transparent</strong>
+                Livrarea la adresă în România costă 25 lei pentru comenzile sub 300 lei și este
+                gratuită pentru comenzile de minimum 300 lei.
               </span>
             </li>
             <li>
@@ -197,6 +197,9 @@ function DeliveryPage() {
           <Link to="/termeni-de-utilizare" className="scene-link">
             Condițiile complete <ArrowUpRight size={15} />
           </Link>
+          <a href="mailto:comenzi@cutiutamagica.eu" className="scene-link">
+            Întrebări despre comandă <ArrowUpRight size={15} />
+          </a>
         </div>
         <span className="delivery-help__seal">
           <CheckCircle2 aria-hidden /> informații clare

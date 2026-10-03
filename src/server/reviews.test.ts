@@ -111,6 +111,7 @@ const input = {
   rating: 4,
   body: "O cutiuță cu detalii frumoase și mecanism interesant.",
   language: "ro",
+  countryCode: "RO",
   consent: true,
 };
 async function submit(body: unknown = input, cookie?: string) {
@@ -145,6 +146,7 @@ describe("reviews and moderation using real SQLite", () => {
       productSlug: "hp-keeper",
       displayName: "Andreea M.",
       source: "store",
+      countryCode: "RO",
     });
     expect(visible.reviews[0].productName).not.toContain("14+");
     expect(JSON.stringify(visible)).not.toMatch(/private@example|Notă privată|password|account_id/);
@@ -176,6 +178,7 @@ describe("reviews and moderation using real SQLite", () => {
       { email: "invalid" },
       { displayName: "A" },
       { consent: false },
+      { countryCode: "ZZ" },
       { website: "spam" },
     ])
       expect((await submit({ ...input, ...extra })).status).toBe(400);
