@@ -71,4 +71,10 @@ describe("Google Merchant feed", () => {
     expect(feed).toContain("<g:mpn>MPN-1</g:mpn>");
     expect(feed).not.toContain("<g:identifier_exists>no</g:identifier_exists>");
   });
+
+  it("exports a documented reference price and the current sale price", () => {
+    const feed = renderGoogleMerchantFeed([product({ price: 119, originalPrice: 149 })]);
+    expect(feed).toContain("<g:price>149.00 RON</g:price>");
+    expect(feed).toContain("<g:sale_price>119.00 RON</g:sale_price>");
+  });
 });

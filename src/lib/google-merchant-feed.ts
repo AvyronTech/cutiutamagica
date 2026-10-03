@@ -56,6 +56,11 @@ export function renderGoogleMerchantFeed(products: CatalogProduct[]): string {
           product.tagline,
       ).slice(0, 5_000);
       const hasManufacturerIdentifier = Boolean(product.gtin || product.mpn);
+      const hasSalePrice =
+        product.originalPrice != null &&
+        Number.isFinite(product.originalPrice) &&
+        product.originalPrice > product.price!;
+      const currency = product.currency || "RON";
 
       return [
         "<item>",
@@ -70,7 +75,11 @@ export function renderGoogleMerchantFeed(products: CatalogProduct[]): string {
         ...additionalImages.map((image) => tag("additional_image_link", image)),
         tag("condition", "new"),
         tag("availability", "in_stock"),
-        tag("price", `${product.price!.toFixed(2)} ${product.currency || "RON"}`),
+        tag(
+          "price",
+          `${(hasSalePrice ? product.originalPrice! : product.price!).toFixed(2)} ${currency}`,
+        ),
+        hasSalePrice ? tag("sale_price", `${product.price!.toFixed(2)} ${currency}`) : "",
         tag("brand", product.brand || STORE_NAME),
         tag("gtin", product.gtin),
         tag("mpn", product.mpn),
