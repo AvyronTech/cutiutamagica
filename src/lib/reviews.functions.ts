@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { z } from "zod";
 import { listReviews } from "@/server/api/reviews";
 export const getPublicReviews = createServerFn({ method: "GET" })
-  .inputValidator(
+  .validator(
     z.object({
       slug: z
         .string()

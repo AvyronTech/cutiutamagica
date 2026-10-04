@@ -408,6 +408,9 @@ function ProductPage() {
             {gallery.map((image, index) => (
               <button
                 key={`${product.id}-${image.label}`}
+                type="button"
+                aria-label={`Afișează imaginea: ${image.label}`}
+                aria-pressed={!show360 && active === index}
                 onClick={() => {
                   setActive(index);
                   setShow360(false);
