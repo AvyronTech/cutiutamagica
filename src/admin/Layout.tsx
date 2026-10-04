@@ -85,11 +85,67 @@ const navItems = [
   { path: "/admin/settings", label: "Setări", icon: Settings },
 ];
 
+const navPermissions: Record<string, string> = {
+  "/admin": "dashboard.read",
+  "/admin/orders": "orders.read",
+  "/admin/personalizations": "orders.read",
+  "/admin/products": "catalog.read",
+  "/admin/reviews": "catalog.write",
+  "/admin/promotions": "promotions.read",
+  "/admin/referrals": "promotions.read",
+  "/admin/suppliers": "integrations.write",
+  "/admin/inventory": "inventory.read",
+  "/admin/shipping": "integrations.write",
+  "/admin/billing": "orders.write",
+  "/admin/returns": "orders.write",
+  "/admin/financiar": "orders.write",
+  "/admin/platforms": "integrations.write",
+  "/admin/marketing": "marketing.read",
+  "/admin/posts": "marketing.read",
+  "/admin/customers": "orders.write",
+  "/admin/newsletter": "marketing.write",
+  "/admin/email": "integrations.write",
+  "/admin/chat": "chat.read",
+  "/admin/traffic": "reports.read",
+  "/admin/notifications": "dashboard.read",
+  "/admin/ai": "marketing.agent.read",
+  "/admin/statistics": "reports.read",
+  "/admin/integrations": "integrations.read",
+  "/admin/accounts": "accounts.read",
+  "/admin/backups": "backup.read",
+  "/admin/qr-generator": "catalog.write",
+  "/admin/settings": "team.write",
+};
+
 const quickActions = [
-  { label: "Comenzi", icon: Plus, path: "/admin/orders", color: "bg-purple-600" },
-  { label: "Generează QR", icon: QrCode, path: "/admin/qr-generator", color: "bg-amber-600" },
-  { label: "Verifică AWB", icon: Truck, path: "/admin/integrations", color: "bg-emerald-600" },
-  { label: "Acces rapid", icon: Zap, path: "/admin/integrations", color: "bg-blue-600" },
+  {
+    label: "Comenzi",
+    icon: Plus,
+    path: "/admin/orders",
+    color: "bg-purple-600",
+    permission: "orders.read",
+  },
+  {
+    label: "Generează QR",
+    icon: QrCode,
+    path: "/admin/qr-generator",
+    color: "bg-amber-600",
+    permission: "catalog.write",
+  },
+  {
+    label: "Verifică AWB",
+    icon: Truck,
+    path: "/admin/integrations",
+    color: "bg-emerald-600",
+    permission: "integrations.write",
+  },
+  {
+    label: "Acces rapid",
+    icon: Zap,
+    path: "/admin/integrations",
+    color: "bg-blue-600",
+    permission: "integrations.read",
+  },
 ];
 
 function NotificationIcon({ type }: { type: string }) {
@@ -105,7 +161,13 @@ function NotificationIcon({ type }: { type: string }) {
   }
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({
+  children,
+  permissions,
+}: {
+  children: React.ReactNode;
+  permissions: string[];
+}) {
   const queryClient = useQueryClient();
   const fetchNotifications = useServerFn(getAdminNotifications);
   const readNotification = useServerFn(markNotificationRead);
@@ -277,26 +339,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
-                  isActive
-                    ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
-                    : "text-slate-400 hover:text-white hover:bg-[#1E293B]"
-                }`}
-              >
-                <Icon
-                  className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-purple-400" : "group-hover:text-white"}`}
-                />
-                <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
-              </Link>
-            );
-          })}
+          {navItems
+            .filter((item) => permissions.includes(navPermissions[item.path]))
+            .map((item) => {
+              const isActive = location.pathname === item.path;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
+                    isActive
+                      ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                      : "text-slate-400 hover:text-white hover:bg-[#1E293B]"
+                  }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-purple-400" : "group-hover:text-white"}`}
+                  />
+                  <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Bottom: Avyron Logo + Version */}
@@ -489,27 +553,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* FAB Menu Items */}
           {fabOpen && (
             <div className="absolute bottom-16 right-0 flex flex-col gap-3 items-end mb-3">
-              {quickActions.map((action, idx) => {
-                const Icon = action.icon;
-                return (
-                  <Link
-                    key={idx}
-                    to={action.path}
-                    className="flex items-center gap-3 animate-fade-in"
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                    onClick={() => setFabOpen(false)}
-                  >
-                    <span className="bg-[#1E293B] text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap border border-[#334155]">
-                      {action.label}
-                    </span>
-                    <div
-                      className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center shadow-lg`}
+              {quickActions
+                .filter((action) => permissions.includes(action.permission))
+                .map((action, idx) => {
+                  const Icon = action.icon;
+                  return (
+                    <Link
+                      key={idx}
+                      to={action.path}
+                      className="flex items-center gap-3 animate-fade-in"
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                      onClick={() => setFabOpen(false)}
                     >
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                  </Link>
-                );
-              })}
+                      <span className="bg-[#1E293B] text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap border border-[#334155]">
+                        {action.label}
+                      </span>
+                      <div
+                        className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center shadow-lg`}
+                      >
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                    </Link>
+                  );
+                })}
             </div>
           )}
 

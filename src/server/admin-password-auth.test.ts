@@ -71,7 +71,7 @@ afterEach(() => {
 });
 
 describe("admin password authentication", () => {
-  it("allows exactly the four seeded owners with the temporary password", async () => {
+  it("keeps exactly four seeded owners and provisions the separate social manager", async () => {
     const { db, sql } = database();
     const emails = [
       "cutiutamagica@gmail.com",
@@ -97,8 +97,13 @@ describe("admin password authentication", () => {
       ),
     ).rejects.toMatchObject({ statusCode: 401 });
     expect(
-      sql.prepare("SELECT COUNT(*) AS count FROM admin_password_credentials").get(),
+      sql
+        .prepare(`SELECT COUNT(*) AS count FROM admin_user_roles WHERE role_id = 'role_owner'`)
+        .get(),
     ).toMatchObject({ count: 4 });
+    expect(
+      sql.prepare("SELECT COUNT(*) AS count FROM admin_password_credentials").get(),
+    ).toMatchObject({ count: 5 });
     expect(
       new Set(
         sql
@@ -106,7 +111,7 @@ describe("admin password authentication", () => {
           .all()
           .map((row) => row.password_salt),
       ).size,
-    ).toBe(4);
+    ).toBe(5);
     expect(
       sql
         .prepare(
@@ -115,6 +120,50 @@ describe("admin password authentication", () => {
         .all(),
     ).toEqual([]);
   }, 20_000);
+
+  it("limits Manager Codex Social to read access and draft creation", () => {
+    const { sql } = database();
+    const account = sql
+      .prepare(
+        `SELECT email, display_name, status, onboarding_status
+         FROM admin_users WHERE id = 'admin_manager_codex_social'`,
+      )
+      .get();
+    expect(account).toMatchObject({
+      email: "manager.codex.social@cutiutamagica.eu",
+      display_name: "Manager Codex Social",
+      status: "invited",
+      onboarding_status: "profile_required",
+    });
+
+    const permissions = sql
+      .prepare(
+        `SELECT p.code
+         FROM admin_user_roles aur
+         JOIN role_permissions rp ON rp.role_id = aur.role_id
+         JOIN permissions p ON p.id = rp.permission_id
+         WHERE aur.admin_user_id = 'admin_manager_codex_social'
+         ORDER BY p.code`,
+      )
+      .all()
+      .map((row) => row.code);
+    expect(permissions).toEqual([
+      "catalog.read",
+      "chat.read",
+      "dashboard.read",
+      "integrations.read",
+      "inventory.read",
+      "marketing.agent.read",
+      "marketing.draft",
+      "marketing.read",
+      "orders.read",
+      "reports.read",
+    ]);
+    expect(permissions).not.toContain("marketing.write");
+    expect(permissions).not.toContain("chat.write");
+    expect(permissions).not.toContain("team.write");
+    expect(permissions).not.toContain("refunds.write");
+  });
 
   it("stores only a session digest and rotates sessions after password change", async () => {
     const { db, sql } = database();

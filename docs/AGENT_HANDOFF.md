@@ -47,3 +47,13 @@ Descrierea pull requestului trebuie să includă:
 - Integrările sunt afișate drept active numai după configurare și verificare live.
 - Sitemapul, canonicalele, robots.txt, datele structurate și feedul Merchant rămân coerente.
 - Paginile admin, API-urile și datele personale nu sunt cache-uite de PWA.
+
+## Handoff 2026-10-04 — cont Manager Codex Social
+
+- Ramură izolată: `codex/manager-codex-social`, pornită din `codex/cutiuta-cloudflare-final`.
+- Migrare append-only: `0052_manager_codex_social_account.sql`; numărul `0051` rămâne rezervat lucrului paralel de monitorizare al agentului social.
+- Cont: `Manager Codex Social`, cu rolul separat `social_manager_agent` și credential temporar unic stocat local numai în Keychain; în D1 există exclusiv hashul scrypt și schimbarea parolei este obligatorie la primul acces.
+- Permisiuni: dashboard, catalog, stoc, comenzi, rapoarte, marketing, conversații și integrări numai pentru citire, plus `marketing.draft` pentru campanii, ciorne și propuneri.
+- Interdicții: fără aprobarea/publicarea propriilor materiale, răspunsuri directe către clienți, rambursări, modificări de catalog/stoc, promoții, secrete, conturi, echipă, audit sau controlul agentului.
+- Separare de atribuții: crearea ciornelor acceptă `marketing.draft`; aprobarea socială și deciziile de unfollow continuă să ceară `marketing.write`.
+- Dashboardul filtrează navigația și acțiunile rapide după permisiunile sesiunii; formularea de prim acces nu mai pretinde acces total pentru rolurile limitate.
