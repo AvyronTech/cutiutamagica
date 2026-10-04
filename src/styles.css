@@ -2362,9 +2362,12 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 
 .product-price del {
-  color: color-mix(in oklab, currentColor 56%, transparent);
-  font-size: 0.73rem;
-  text-decoration-thickness: 1px;
+  color: color-mix(in oklab, currentColor 84%, transparent);
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: color-mix(in oklab, currentColor 78%, transparent);
 }
 
 .product-price__current {
@@ -2377,10 +2380,18 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 
 .product-price small {
-  color: color-mix(in oklab, currentColor 68%, transparent);
-  font-size: 0.58rem;
-  font-weight: 650;
-  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  border: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, currentColor 8%, transparent);
+  padding: 0.12rem 0.4rem;
+  color: color-mix(in oklab, currentColor 92%, transparent);
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -2405,6 +2416,17 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 
 .product-price--light .product-price__current {
   color: var(--gold);
+}
+
+.product-price--light del {
+  color: rgb(255 249 237 / 0.9);
+  text-decoration-color: rgb(255 249 237 / 0.72);
+}
+
+.product-price--light small {
+  border-color: rgb(255 255 255 / 0.24);
+  background: rgb(0 0 0 / 0.28);
+  color: #fff9ed;
 }
 
 .product-price--light .product-price__saving {
@@ -12931,58 +12953,41 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   border-radius: 50%;
   box-shadow: 0 0 0 12px rgb(var(--ecosystem-accent) / 0.025);
 }
-.ecosystem-card[data-tone="emag"] {
+.ecosystem-card[data-tone="ocean"] {
   --ecosystem-accent: 70 150 225;
 }
-.ecosystem-card[data-tone="trendyol"] {
+.ecosystem-card[data-tone="amber"] {
   --ecosystem-accent: 246 112 49;
 }
-.ecosystem-card[data-tone="google-pay"],
-.ecosystem-card[data-tone="business"],
-.ecosystem-card[data-tone="gsc"] {
+.ecosystem-card[data-tone="blue"] {
   --ecosystem-accent: 95 151 226;
 }
-.ecosystem-card[data-tone="olx"] {
+.ecosystem-card[data-tone="green"] {
   --ecosystem-accent: 53 214 176;
 }
-.ecosystem-card[data-tone="revolut"] {
+.ecosystem-card[data-tone="silver"] {
   --ecosystem-accent: 208 214 235;
 }
-.ecosystem-card[data-tone="vinted"] {
+.ecosystem-card[data-tone="teal"] {
   --ecosystem-accent: 41 181 185;
 }
-.ecosystem-card[data-tone="stripe"] {
+.ecosystem-card[data-tone="violet"] {
   --ecosystem-accent: 133 108 255;
 }
-.ecosystem-card[data-tone="lovable"] {
-  --ecosystem-accent: 237 115 149;
-}
-.ecosystem-card[data-tone="gsap"] {
+.ecosystem-card[data-tone="lime"] {
   --ecosystem-accent: 187 240 89;
 }
-.ecosystem-card[data-tone="codex"] {
+.ecosystem-card[data-tone="steel"] {
   --ecosystem-accent: 198 212 207;
 }
-.ecosystem-card[data-tone="three"] {
+.ecosystem-card[data-tone="neutral"] {
   --ecosystem-accent: 235 235 235;
 }
-.ecosystem-card[data-tone="claude"] {
+.ecosystem-card[data-tone="warm"] {
   --ecosystem-accent: 220 154 102;
 }
-.ecosystem-card[data-tone="css"] {
-  --ecosystem-accent: 78 145 222;
-}
-.ecosystem-card[data-tone="cloudflare"] {
+.ecosystem-card[data-tone="orange"] {
   --ecosystem-accent: 244 130 32;
-}
-.ecosystem-card[data-tone="post"] {
-  --ecosystem-accent: 164 136 232;
-}
-.ecosystem-card[data-tone="hostico"] {
-  --ecosystem-accent: 61 184 207;
-}
-.ecosystem-card[data-tone="magic-ui"] {
-  --ecosystem-accent: 229 192 127;
 }
 @keyframes ecosystem-scroll {
   to {

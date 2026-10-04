@@ -14,6 +14,7 @@ export const Route = createFileRoute("/retur")({
         content:
           "Politica de retur, garanția legală și formularul electronic pentru comenzile Cutiuța Magică.",
       },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Retur și garanție — Cutiuța Magică" },
       { property: "og:url", content: "https://cutiutamagica.eu/retur" },
     ],
@@ -115,8 +116,9 @@ function ReturnsPage() {
             15 zile calendaristice de la informare, stabilit în scris.
           </Policy>
           <div className="rounded-lg border border-border bg-card p-4 text-xs leading-5 text-muted-foreground">
-            DIGITAL ECO TECH SOLUTION SRL · CUI 55055976 · neplătitor de TVA. Drepturile legale ale
-            consumatorului prevalează asupra oricărei formulări operaționale de pe această pagină.
+            DIGITAL ECOTECH SOLUTIONS S.R.L. · CUI 55055976 · neplătitor de TVA. Drepturile legale
+            ale consumatorului prevalează asupra oricărei formulări operaționale de pe această
+            pagină.
           </div>
         </section>
 

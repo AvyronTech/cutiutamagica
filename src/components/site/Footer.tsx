@@ -113,19 +113,6 @@ export function Footer() {
                 <small>ADR și ECC-Net</small>
               </span>
             </a>
-            <a
-              href="https://stripe.com/payments"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Stripe Payments — infrastructură pentru plăți online securizate"
-              className="magic-stripe-badge"
-            >
-              <span aria-hidden>stripe</span>
-              <span>
-                <strong>Stripe Payments</strong>
-                <small>Infrastructură pregătită</small>
-              </span>
-            </a>
           </section>
 
           <a

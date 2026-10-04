@@ -4,8 +4,8 @@ import { isPublicStoryPath, pageStoryProfile } from "@/lib/page-loading";
 import { BrandMark } from "./BrandMark";
 
 const MIN_ROUTE_VISIBLE_MS = 520;
-const INITIAL_VISIBLE_MS = 1100;
-const MAX_ACTIVE_MS = 1900;
+const INITIAL_VISIBLE_MS = 850;
+const MAX_ACTIVE_MS = 1600;
 const EXIT_MS = 280;
 
 type ActiveStory = {

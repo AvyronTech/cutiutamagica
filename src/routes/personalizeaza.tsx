@@ -261,8 +261,8 @@ function Personalizeaza() {
                   <Box /> Alege forma cutiuței
                 </legend>
                 <p>
-                  Fiecare model este corelat cu o sursă aprobată de administrator. Variantele la
-                  cerere sunt confirmate înainte de orice achiziție sau plată.
+                  Disponibilitatea fiecărui model este verificată înainte de confirmare. Variantele
+                  la cerere nu inițiază automat o achiziție sau o plată.
                 </p>
                 <div className="box-model-options">
                   {personalizationBoxModels.map((option, index) => (
@@ -547,8 +547,7 @@ function Personalizeaza() {
               <LockKeyhole size={15} /> Imaginea este stocată privat și nu apare în catalog.
             </p>
             <p className="personalization-preview__source">
-              Sursa comercială este vizibilă numai administratorului și este verificată înainte de
-              comandă.
+              Îți confirmăm varianta, termenul și prețul înainte ca produsul să intre în lucru.
             </p>
           </aside>
         </div>

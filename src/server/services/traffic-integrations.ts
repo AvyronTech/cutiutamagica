@@ -78,6 +78,7 @@ export async function checkConnection(env: CommerceEnv, provider: CredentialProv
     revolut: "https://b2b.revolut.com/api/1.0/accounts",
     resend: "https://api.resend.com/domains",
     google: "https://www.googleapis.com/webmasters/v3/sites",
+    google_merchant: "https://merchantapi.googleapis.com/accounts/v1/accounts?pageSize=1",
   };
   const endpoint = endpoints[provider];
   if (!endpoint) {

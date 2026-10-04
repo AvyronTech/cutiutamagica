@@ -13,7 +13,7 @@ export const getPublicSeller = createServerFn({ method: "GET" }).handler(async (
   }>();
   return (
     row ?? {
-      legal_name: "DIGITAL ECO TECH SOLUTION SRL",
+      legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
       tax_id: "55055976",
       registered_address: null,
       registration_number: null,
@@ -28,6 +28,7 @@ export function legalHead(title: string, description: string, path: string) {
     meta: [
       { title: `${title} | Cutiuța Magică` },
       { name: "description", content: description },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: `${title} | Cutiuța Magică` },
       { property: "og:description", content: description },
       { property: "og:url", content: `https://cutiutamagica.eu${path}` },

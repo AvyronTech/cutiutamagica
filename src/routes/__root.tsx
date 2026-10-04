@@ -138,7 +138,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@id": "https://cutiutamagica.eu/#organization",
           name: "Cutiuța Magică",
           alternateName: "Cutiuta Magica",
-          legalName: "DIGITAL ECO TECH SOLUTION SRL",
+          legalName: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
           taxID: "55055976",
           url: "https://cutiutamagica.eu",
           logo: "https://cutiutamagica.eu/icon-512.png",

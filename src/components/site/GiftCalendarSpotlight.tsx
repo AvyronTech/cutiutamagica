@@ -35,7 +35,7 @@ export function GiftCalendarSpotlight() {
         <div className="gift-calendar-copy">
           <p className="gift-calendar-kicker">
             <Sparkles size={14} aria-hidden="true" />
-            În pregătire în contul tău
+            Momentele tale, păstrate cu grijă
           </p>
           <h2 id="gift-calendar-title">
             Calendarul
@@ -58,16 +58,9 @@ export function GiftCalendarSpotlight() {
 
           <div className="gift-calendar-actions">
             <Link className="magic-button gift-calendar-cta" to="/cont" search={{ mod: "creare" }}>
-              Creează contul <ArrowRight size={16} />
+              Deschide calendarul <ArrowRight size={16} />
             </Link>
-            <div className="gift-calendar-welcome" aria-label="Beneficiu de bun venit planificat">
-              <strong>−10%</strong>
-              <span>la prima comandă*</span>
-            </div>
           </div>
-          <small className="gift-calendar-note">
-            *Beneficiul va deveni disponibil odată cu activarea Calendarului cadourilor.
-          </small>
         </div>
 
         <div className="gift-calendar-preview" aria-label="Exemple de notificări din calendar">

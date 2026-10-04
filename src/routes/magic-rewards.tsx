@@ -238,8 +238,8 @@ function MagicRewards() {
           <h2 id="magic-rewards-promise-title">Beneficii clare înainte să alegi.</h2>
           <p>
             Magic Stars nu sunt bani și nu devin automat o reducere. La cinci stele poți genera din
-            cont un cod de 15 lei, utilizabil o singură dată în 180 de zile. Configurația și fiecare
-            ajustare rămân auditate în dashboard.
+            cont un cod de 15 lei, utilizabil o singură dată în 180 de zile. Istoricul fiecărei
+            stele și al beneficiilor rămâne vizibil în contul tău.
           </p>
         </div>
         <ul>
