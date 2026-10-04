@@ -75,9 +75,11 @@ function Privacy() {
           Cloudflare asigură infrastructura, stocarea și protecția magazinului. În funcție de
           opțiunea pe care o alegi, datele strict necesare pot fi transmise serviciului de curierat
           și operatorului Easybox, furnizorului de autentificare, serviciului de e-mail
-          tranzacțional sau procesatorului de plăți disponibil la momentul comenzii. Contabilitatea
-          și autoritățile pot primi documentele impuse de lege. Fiecare furnizor primește numai
-          informațiile necesare rolului său.
+          tranzacțional, furnizorului de facturare sau procesatorului de plăți disponibil la
+          momentul comenzii. Metricool poate primi date tehnice și de utilizare numai după acordul
+          pentru analiză, pentru măsurarea agregată a traficului și eficienței campaniilor.
+          Contabilitatea și autoritățile pot primi documentele impuse de lege. Fiecare furnizor
+          primește numai informațiile necesare rolului său.
         </p>
         <p>
           Un serviciu opțional primește date numai când este activ și necesar pentru funcția aleasă
@@ -94,9 +96,10 @@ function Privacy() {
         </p>
         <p>
           Statisticile tehnice strict necesare ne ajută să protejăm magazinul și să diagnosticăm
-          erori. Orice instrument opțional de analiză sau publicitate care folosește identificatori
-          în browser este activat numai după informare și, când legea o cere, după alegerea ta; poți
-          retrage ulterior consimțământul.
+          erori. Setările de import Google Analytics și Search Console din administrare citesc
+          rapoarte ale proprietăților autorizate și nu instalează singure urmărire în browser.
+          Scriptul Metricool este încărcat numai după opțiunea „Accept analiza”; alegerea este
+          păstrată local în browser și poate fi schimbată oricând din butonul „Preferințe cookie”.
         </p>
       </LegalSection>
       <LegalSection title="Păstrare și acces">

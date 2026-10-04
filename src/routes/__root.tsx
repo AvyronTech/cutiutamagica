@@ -21,6 +21,7 @@ import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { ChatWidget } from "@/components/site/ChatWidget";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
+import { MetricoolAnalyticsConsent } from "@/components/site/MetricoolAnalyticsConsent";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { trackGrowthEvent } from "@/lib/growth-events";
 
@@ -260,6 +261,7 @@ function RootComponent() {
           {isChrome && <ContextualMessages />}
           {isChrome && <SideScrollMagic />}
           {isChrome && <ChatWidget />}
+          {isChrome && <MetricoolAnalyticsConsent pathname={pathname} />}
           {isChrome ? (
             <>
               <Toaster
