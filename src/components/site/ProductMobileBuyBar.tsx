@@ -43,7 +43,7 @@ export function ProductMobileBuyBar({
     >
       <div>
         <strong>{Number(product.price ?? 0).toLocaleString("ro-RO")} lei</strong>
-        <span>În stoc · TVA inclus</span>
+        <span>În stoc · Preț final</span>
       </div>
       {audioAvailable && (
         <button

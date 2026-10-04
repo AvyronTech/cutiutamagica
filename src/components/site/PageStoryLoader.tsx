@@ -3,10 +3,10 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { isPublicStoryPath, pageStoryProfile } from "@/lib/page-loading";
 import { BrandMark } from "./BrandMark";
 
-const MIN_ROUTE_VISIBLE_MS = 720;
-const INITIAL_VISIBLE_MS = 1450;
-const MAX_ACTIVE_MS = 2560;
-const EXIT_MS = 360;
+const MIN_ROUTE_VISIBLE_MS = 520;
+const INITIAL_VISIBLE_MS = 850;
+const MAX_ACTIVE_MS = 1600;
+const EXIT_MS = 280;
 
 type ActiveStory = {
   id: number;
@@ -138,9 +138,10 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
     const current = activeRef.current;
     if (!current || current.id !== activeId || current.phase === "exit" || !host.current) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const compact = window.matchMedia("(max-width: 720px)").matches;
     const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection;
     const constrained = connection?.saveData || connection?.effectiveType?.includes("2g");
-    if (reduced || constrained || document.hidden) return;
+    if (reduced || compact || constrained || document.hidden) return;
     let disposed = false;
     let scene: { dispose(): void } | undefined;
     void import("./PageStoryScene")

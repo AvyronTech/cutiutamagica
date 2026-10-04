@@ -9,7 +9,7 @@ import { listPublicCatalog } from "./db/catalog.repository";
 import { previousMonth, reportSettingsSchema, marketplaceForUrl } from "@/lib/growth-contracts";
 import type { CommerceEnv } from "./integrations/provider-runtime";
 import { readProviderJson } from "./integrations/provider-runtime";
-import { syncTraffic } from "./services/traffic-integrations";
+import { checkConnection, syncTraffic } from "./services/traffic-integrations";
 
 const databases: DatabaseSync[] = [];
 function database() {
@@ -119,6 +119,34 @@ describe("growth and commerce integration", () => {
         .all(),
     ).toEqual([{ event_name: "page_view" }, { event_name: "product_view" }]);
     expect(sql.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    expect(
+      sql
+        .prepare(
+          "SELECT legal_name,registration_number,registered_address,vat_status FROM legal_entities WHERE id='legal_entity_main'",
+        )
+        .get(),
+    ).toMatchObject({
+      legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
+      registration_number: "J2026041938009",
+      registered_address: "JUD. IAŞI, SAT DUMBRĂVIŢA COM. RUGINOASA, STR. RĂZEŞILOR, NR.14",
+      vat_status: "non_vat_payer",
+    });
+  });
+  it("verifies Merchant Center tokens against the current Merchant API", async () => {
+    const { db } = database();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ accounts: [] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const env = { DB: db, GOOGLE_MERCHANT_ACCESS_TOKEN: "merchant-test-token" } as CommerceEnv;
+    await expect(checkConnection(env, "google_merchant")).resolves.toMatchObject({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://merchantapi.googleapis.com/accounts/v1/accounts?pageSize=1",
+      expect.objectContaining({
+        headers: { authorization: "Bearer merchant-test-token" },
+        redirect: "manual",
+      }),
+    );
   });
   it("encrypts credentials and binds ciphertext to its provider", async () => {
     const { db, sql, actor } = database();

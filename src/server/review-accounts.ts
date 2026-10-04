@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Reviewer } from "@/lib/reviews";
 import { readProviderJson } from "./integrations/provider-runtime";
+import { credential } from "./services/growth-settings";
+import type { CommerceEnv } from "./integrations/provider-runtime";
 
 type CustomerOAuthEnv = Env & {
   CUSTOMER_GOOGLE_CLIENT_ID?: string;
@@ -61,8 +63,13 @@ function oauthCookie(request: Request, value: string, seconds = 600) {
   return `${oauthStateCookie}=${value}; Path=/api/v1/reviewer/oauth/google/callback; HttpOnly; SameSite=Lax; Max-Age=${seconds}${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`;
 }
 
-function oauthReady(env: CustomerOAuthEnv) {
-  return Boolean(env.CUSTOMER_GOOGLE_CLIENT_ID && env.CUSTOMER_GOOGLE_CLIENT_SECRET);
+async function googleOAuthCredentials(env: CustomerOAuthEnv) {
+  const runtime = env as CommerceEnv;
+  const [clientId, clientSecret] = await Promise.all([
+    credential(runtime, "customer_google_client_id"),
+    credential(runtime, "customer_google_client_secret"),
+  ]);
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
 }
 
 function randomHex(bytesLength = 32) {
@@ -110,13 +117,14 @@ async function createReviewerSession(request: Request, env: Env, account: Review
 }
 
 async function startGoogleOAuth(request: Request, env: CustomerOAuthEnv) {
-  if (!oauthReady(env)) return customerRedirect(request, "neconfigurat");
+  const credentials = await googleOAuthCredentials(env);
+  if (!credentials) return customerRedirect(request, "neconfigurat");
   await reviewRate(env, ["oauth-start:" + requestIP(request)], 20);
   const state = randomHex();
   const redirectUri = new URL("/api/v1/reviewer/oauth/google/callback", request.url).toString();
   const authorization = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   authorization.search = new URLSearchParams({
-    client_id: env.CUSTOMER_GOOGLE_CLIENT_ID!,
+    client_id: credentials.clientId,
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "openid email profile",
@@ -134,8 +142,9 @@ async function finishGoogleOAuth(request: Request, env: CustomerOAuthEnv) {
   const state = url.searchParams.get("state") ?? "";
   const expectedState = requestCookie(request, oauthStateCookie) ?? "";
   const code = url.searchParams.get("code") ?? "";
+  const credentials = await googleOAuthCredentials(env);
   if (
-    !oauthReady(env) ||
+    !credentials ||
     !state ||
     !expectedState ||
     !sameToken(state, expectedState) ||
@@ -150,12 +159,12 @@ async function finishGoogleOAuth(request: Request, env: CustomerOAuthEnv) {
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       code,
-      client_id: env.CUSTOMER_GOOGLE_CLIENT_ID!,
-      client_secret: env.CUSTOMER_GOOGLE_CLIENT_SECRET!,
+      client_id: credentials.clientId,
+      client_secret: credentials.clientSecret,
       redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
-    redirect: "error",
+    redirect: "manual",
   });
   const tokenPayload = await readProviderJson(tokenResponse, 32_768);
   const tokenData = z
@@ -165,7 +174,7 @@ async function finishGoogleOAuth(request: Request, env: CustomerOAuthEnv) {
 
   const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
     headers: { authorization: `Bearer ${tokenData.data.access_token}` },
-    redirect: "error",
+    redirect: "manual",
   });
   const profilePayload = await readProviderJson(profileResponse, 32_768);
   const profile = z
@@ -247,7 +256,9 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
   try {
     const customerEnv = env as CustomerOAuthEnv;
     if (path === "/api/v1/reviewer/providers" && request.method === "GET")
-      return reviewJson({ data: { google: { enabled: oauthReady(customerEnv) } } });
+      return reviewJson({
+        data: { google: { enabled: Boolean(await googleOAuthCredentials(customerEnv)) } },
+      });
     if (path === "/api/v1/reviewer/oauth/google" && request.method === "GET")
       return startGoogleOAuth(request, customerEnv);
     if (path === "/api/v1/reviewer/oauth/google/callback" && request.method === "GET")

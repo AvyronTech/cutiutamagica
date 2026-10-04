@@ -15,6 +15,7 @@ import {
   sendReferralInvitation,
   sendReferralReward,
 } from "@/server/integrations/resend";
+import { awardMagicStarsForDeliveredOrder } from "@/server/services/magic-rewards";
 import {
   getAdminDashboardData,
   getAdminIntegrationsData,
@@ -591,6 +592,7 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
     });
     if (data.status === "Livrată") {
       const referral = await issuePostDeliveryReferral(env.DB, data.orderId);
+      await awardMagicStarsForDeliveredOrder(env.DB, data.orderId);
       if (await hasEmailTransport(env as CommerceEnv)) {
         if (referral.invitation) {
           await sendReferralInvitation(env as CommerceEnv, {

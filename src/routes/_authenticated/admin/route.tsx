@@ -64,9 +64,9 @@ function PasswordSetup({ email, onComplete }: { email: string; onComplete: () =>
             Personalizează cheia de acces.
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-6 text-slate-400">
-            Contul <span className="font-medium text-slate-200">{email}</span> are acces total.
-            Înainte de deschiderea dashboardului, înlocuiește parola inițială cu una cunoscută doar
-            de tine.
+            Contul <span className="font-medium text-slate-200">{email}</span> are acces conform
+            rolului atribuit. Înainte de deschiderea dashboardului, înlocuiește parola inițială cu
+            una cunoscută doar de tine.
           </p>
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-4">
@@ -171,6 +171,7 @@ function PasswordSetup({ email, onComplete }: { email: string; onComplete: () =>
 function AdminGate() {
   const [state, setState] = useState<GateState>("loading");
   const [email, setEmail] = useState("");
+  const [permissions, setPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -178,6 +179,7 @@ function AdminGate() {
       .then((result) => {
         if (!alive) return;
         setEmail(result.email);
+        setPermissions(result.permissions);
         setState(
           result.isAdmin ? (result.mustChangePassword ? "change_password" : "ok") : "forbidden",
         );
@@ -225,7 +227,7 @@ function AdminGate() {
   }
 
   return (
-    <Layout>
+    <Layout permissions={permissions}>
       <Outlet />
     </Layout>
   );

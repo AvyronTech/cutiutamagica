@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { assertPermission, requireAdminAuth } from "@/lib/admin-auth";
+import { assertAnyPermission, assertPermission, requireAdminAuth } from "@/lib/admin-auth";
 import {
   accountConnectionInputSchema,
   backupPolicySchema,
@@ -82,7 +82,7 @@ export const createMarketingCampaign = createServerFn({ method: "POST" })
   .validator(marketingCampaignInputSchema)
   .handler(async ({ context, data }) => {
     sameOrigin();
-    assertPermission(context.admin, "marketing.write");
+    assertAnyPermission(context.admin, ["marketing.write", "marketing.draft"]);
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     await env.DB.batch([
@@ -167,7 +167,7 @@ export const createSocialDraft = createServerFn({ method: "POST" })
   .validator(socialDraftInputSchema)
   .handler(async ({ context, data }) => {
     sameOrigin();
-    assertPermission(context.admin, "marketing.write");
+    assertAnyPermission(context.admin, ["marketing.write", "marketing.draft"]);
     const catalog = await listPublicCatalog(env.DB);
     const product = catalog.find((item) => item.id === data.productId);
     const id = crypto.randomUUID();
@@ -272,7 +272,7 @@ export const analyzeSocialRelationships = createServerFn({ method: "POST" })
   .validator(socialRelationshipImportSchema)
   .handler(async ({ context, data }) => {
     sameOrigin();
-    assertPermission(context.admin, "marketing.write");
+    assertAnyPermission(context.admin, ["marketing.write", "marketing.draft"]);
     const id = crypto.randomUUID();
     const agentRunId = crypto.randomUUID();
     const now = new Date().toISOString();

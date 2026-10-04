@@ -182,7 +182,7 @@ export function MiniCart({
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  TVA inclus. Costul livrării este afișat înainte să trimiți comanda.
+                  Preț final pentru produse. Livrarea este afișată înainte să trimiți comanda.
                 </p>
                 <Link
                   to="/comanda"

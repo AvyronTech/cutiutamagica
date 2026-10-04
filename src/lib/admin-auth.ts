@@ -33,3 +33,12 @@ export function assertPermission(admin: AdminIdentity, permission: string): void
     throw new AdminAuthError(`Lipsește permisiunea ${permission}.`, 403);
   }
 }
+
+export function assertAnyPermission(admin: AdminIdentity, permissions: string[]): void {
+  if (admin.mustChangePassword) {
+    throw new AdminAuthError("Schimbă parola inițială înainte de a continua.", 403);
+  }
+  if (!permissions.some((permission) => admin.permissions.includes(permission))) {
+    throw new AdminAuthError(`Lipsește una dintre permisiunile ${permissions.join(", ")}.`, 403);
+  }
+}

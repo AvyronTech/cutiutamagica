@@ -778,14 +778,14 @@ describe("product worlds, public messages and sales workbench", () => {
     });
     expect((await handleSalesWorkbench(crossOrigin, env))!.status).toBe(403);
   });
-  it("exports real public prices and availability, escapes XML and never fabricates identifiers", async () => {
+  it("exports only orderable products, escapes XML and declares absent identifiers", async () => {
     const products = await catalog();
     products[0] = { ...products[0], name: 'A <B> & "C"', description: "A & B" };
     const xml = googleCatalogFeed(products);
     expect(xml).toContain("A &lt;B&gt; &amp; &quot;C&quot;");
     expect(xml).toContain("<g:availability>in_stock</g:availability>");
-    expect(xml).toContain("<g:availability>out_of_stock</g:availability>");
-    expect(xml).not.toContain("identifier_exists");
+    expect(xml).not.toContain("<g:availability>out_of_stock</g:availability>");
+    expect(xml).toContain("<g:identifier_exists>no</g:identifier_exists>");
     expect(xml).not.toContain("admin");
     expect(googleCatalogFeed([{ ...products[0], price: null }])).not.toContain("<item>");
   });

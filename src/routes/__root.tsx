@@ -21,6 +21,7 @@ import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { ChatWidget } from "@/components/site/ChatWidget";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
+import { MetricoolAnalyticsConsent } from "@/components/site/MetricoolAnalyticsConsent";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { trackGrowthEvent } from "@/lib/growth-events";
 
@@ -138,7 +139,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@id": "https://cutiutamagica.eu/#organization",
           name: "Cutiuța Magică",
           alternateName: "Cutiuta Magica",
-          legalName: "DIGITAL ECO TECH SOLUTION SRL",
+          legalName: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
           taxID: "55055976",
           url: "https://cutiutamagica.eu",
           logo: "https://cutiutamagica.eu/icon-512.png",
@@ -260,6 +261,7 @@ function RootComponent() {
           {isChrome && <ContextualMessages />}
           {isChrome && <SideScrollMagic />}
           {isChrome && <ChatWidget />}
+          {isChrome && <MetricoolAnalyticsConsent pathname={pathname} />}
           {isChrome ? (
             <>
               <Toaster

@@ -75,6 +75,8 @@ export const financeSettingsSchema = z.object({
 });
 export const credentialProviderSchema = z.enum([
   "google_merchant",
+  "customer_google_client_id",
+  "customer_google_client_secret",
   "netopia",
   "netopia_public_key",
   "revolut_merchant",

@@ -22,6 +22,7 @@ import {
 } from "@/lib/personalization";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
 import { loginAdminAccount } from "@/lib/admin-auth.functions";
+import { CustomerMagicCenter } from "@/components/site/CustomerMagicCenter";
 
 export const Route = createFileRoute("/cont")({
   validateSearch: (
@@ -122,7 +123,7 @@ function CustomerAccount() {
     const googleReady = providers.data?.google.enabled === true;
     const customerAuthMessage =
       auth === "neconfigurat"
-        ? "Autentificarea Google nu este încă activată. Te rugăm să revii după configurare."
+        ? "Conectarea nu este disponibilă momentan. Poți continua cumpărăturile fără cont."
         : auth === "eroare"
           ? "Autentificarea Google nu a putut fi finalizată. Încearcă din nou."
           : "";
@@ -215,43 +216,56 @@ function CustomerAccount() {
                 <UserRound />
               </div>
               <p className="customer-auth-kicker">Logare și înregistrare</p>
-              <h2 id="customer-auth-title">Un singur pas, cu Google</h2>
-              <p>
-                Dacă e prima vizită, contul se creează automat. Dacă ai revenit, intri direct în
-                poveștile tale.
-              </p>
-              <a
-                className="customer-google-button"
-                href={googleReady ? "/api/v1/reviewer/oauth/google" : undefined}
-                aria-disabled={!googleReady}
-                onClick={(event) => {
-                  if (!googleReady) event.preventDefault();
-                }}
-              >
-                <span aria-hidden>G</span>
+              <h2 id="customer-auth-title">
                 {providers.isLoading
-                  ? "Verificăm conexiunea…"
+                  ? "Verificăm accesul securizat…"
                   : googleReady
-                    ? "Continuă cu Google"
-                    : "Conectare Google în curs de activare"}
-                <ArrowRight size={16} />
-              </a>
+                    ? "Un singur pas, cu Google"
+                    : "Conturile Magic se deschid în curând"}
+              </h2>
+              <p>
+                {googleReady
+                  ? "Dacă e prima vizită, contul se creează automat. Dacă ai revenit, intri direct în poveștile tale."
+                  : "Până atunci poți descoperi colecția și poți finaliza orice comandă rapid, fără cont."}
+              </p>
+              {providers.isLoading ? (
+                <span className="customer-google-button" aria-busy="true">
+                  <span aria-hidden>✦</span>
+                  Se verifică accesul…
+                </span>
+              ) : googleReady ? (
+                <a className="customer-google-button" href="/api/v1/reviewer/oauth/google">
+                  <span aria-hidden>G</span>
+                  Continuă cu Google
+                  <ArrowRight size={16} />
+                </a>
+              ) : (
+                <Link className="customer-google-button" to="/produse">
+                  <span aria-hidden>✦</span>
+                  Descoperă cutiuțele
+                  <ArrowRight size={16} />
+                </Link>
+              )}
               {customerAuthMessage && (
                 <p className="personalization-error" role="alert">
                   {customerAuthMessage}
                 </p>
               )}
-              <div className="customer-auth-assurance">
-                <ShieldCheck aria-hidden />
-                <span>
-                  Nu îți cerem o parolă nouă. Folosim doar identitatea, numele și adresa confirmată
-                  de Google.
-                </span>
-              </div>
-              <p className="customer-auth-legal">
-                Continuând, accepți crearea contului și confirmi că ai citit{" "}
-                <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
-              </p>
+              {googleReady && (
+                <>
+                  <div className="customer-auth-assurance">
+                    <ShieldCheck aria-hidden />
+                    <span>
+                      Nu îți cerem o parolă nouă. Folosim doar identitatea, numele și adresa
+                      confirmată de Google.
+                    </span>
+                  </div>
+                  <p className="customer-auth-legal">
+                    Continuând, accepți crearea contului și confirmi că ai citit{" "}
+                    <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="customer-admin-panel">
@@ -319,22 +333,7 @@ function CustomerAccount() {
         </button>
       </header>
 
-      <section className="customer-rewards-card" aria-labelledby="customer-rewards-title">
-        <div className="customer-rewards-card__star" aria-hidden>
-          <Star />
-        </div>
-        <div>
-          <p className="catalog-eyebrow">Magic Rewards · în pregătire</p>
-          <h2 id="customer-rewards-title">Magic Stars ✦</h2>
-          <p>
-            O comandă, un review cu fotografie sau o recomandare pot deveni câte o stea — simplu,
-            după confirmarea momentului.
-          </p>
-        </div>
-        <Link className="magic-button magic-button--outline" to="/magic-rewards">
-          Descoperă programul <ArrowRight size={16} />
-        </Link>
-      </section>
+      <CustomerMagicCenter />
 
       <section className="customer-requests" aria-labelledby="customer-requests-title">
         <div className="customer-requests-heading">

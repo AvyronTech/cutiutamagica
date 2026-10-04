@@ -33,12 +33,12 @@ export function renderSitemap(products: CatalogProduct[]): string {
       lastmod: "2026-10-03",
       images: ["/scenes/catalog-atelier.webp"],
     },
-    { path: "/despre-noi", lastmod: "2026-10-03", images: ["/scenes/catalog-atelier.webp"] },
+    { path: "/despre-noi", lastmod: "2026-10-04", images: ["/scenes/catalog-atelier.webp"] },
     { path: "/magic-rewards", lastmod: "2026-10-04", images: ["/icon-512.png"] },
     { path: "/livrare", lastmod: "2026-09-28" },
     {
       path: "/personalizeaza",
-      lastmod: "2026-09-28",
+      lastmod: "2026-10-04",
       images: ["/scenes/personalization-box-v2.webp"],
     },
     { path: "/cadouri", lastmod: DISCOVERY_UPDATED, images: ["/scenes/catalog-atelier.webp"] },
@@ -47,10 +47,10 @@ export function renderSitemap(products: CatalogProduct[]): string {
       lastmod: DISCOVERY_UPDATED,
       images: ["/scenes/catalog-atelier.webp"],
     })),
-    { path: "/ghid-cadouri-personalizate", lastmod: "2026-09-05" },
-    { path: "/retur", lastmod: "2026-09-15" },
-    { path: "/termeni-de-utilizare", lastmod: "2026-09-15" },
-    { path: "/politica-de-confidentialitate", lastmod: "2026-09-15" },
+    { path: "/ghid-cadouri-personalizate", lastmod: "2026-10-04" },
+    { path: "/retur", lastmod: "2026-10-04" },
+    { path: "/termeni-de-utilizare", lastmod: "2026-10-04" },
+    { path: "/politica-de-confidentialitate", lastmod: "2026-10-04" },
     ...products.map((p) => {
       const productDate = date(p.updatedAt);
       return {

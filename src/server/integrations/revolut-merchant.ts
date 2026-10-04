@@ -17,7 +17,7 @@ async function merchant(env: CommerceEnv, path: string, init: RequestInit = {}) 
       : "https://sandbox-merchant.revolut.com";
   const response = await fetchWithTimeout(`${base}/api${path}`, {
     ...init,
-    redirect: "error",
+    redirect: "manual",
     headers: {
       authorization: `Bearer ${requiredSecret((await credential(env, "revolut_merchant")) ?? undefined, "REVOLUT_MERCHANT_SECRET_KEY")}`,
       "Revolut-Api-Version": "2026-08-17",

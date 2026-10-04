@@ -35,6 +35,7 @@ export const Route = createFileRoute("/ghid-cadouri-personalizate")({
     meta: [
       { title: `${TITLE} | Cutiuța Magică` },
       { name: "description", content: DESC },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:url", content: URL },
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/ghid-cadouri-personalizate")({
           },
           mainEntityOfPage: URL,
           inLanguage: "ro-RO",
-          dateModified: "2026-09-05",
+          dateModified: "2026-10-04",
         }),
       },
       {
