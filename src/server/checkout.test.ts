@@ -16,6 +16,7 @@ import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
 import { verifyStripeWebhook } from "./integrations/stripe";
 import { sendOrderConfirmation, sendOrderOwnerNotification } from "./integrations/resend";
 import { evaluateCheckoutCode, issuePostDeliveryReferral } from "./services/referrals";
+import { magicRewardsDashboard, redeemMagicStars, saveGiftProfile } from "./services/magic-rewards";
 vi.mock("@/lib/admin-auth", () => ({
   authenticateAdminRequest: vi.fn(async () => ({ id: "test-admin", email: "test@example.test" })),
 }));
@@ -477,7 +478,7 @@ describe("delivery quote integrity", () => {
     expect(data[0].price).toBe(17.55);
     expect(data[0]).not.toHaveProperty("ownContract");
   });
-  it("selects an official Easybox, quotes it and stores the canonical pickup address", async () => {
+  it("selects an official Easybox, applies the fixed tariff and stores the canonical pickup address", async () => {
     env.SMARTSHIP_API_KEY = "private";
     sqlite.exec(
       "UPDATE shipping_policy_configs SET easybox_enabled=1,sender_name='Atelier Magic',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
@@ -542,7 +543,7 @@ describe("delivery quote integrity", () => {
     expect(quoteResponse!.status).toBe(200);
     const quote = ((await quoteResponse!.json()) as { data: Array<{ id: string; price: number }> })
       .data[0];
-    expect(quote.price).toBe(13.49);
+    expect(quote.price).toBe(15);
 
     const created = await createWebsiteOrder(env.DB, {
       ...easyboxInput,
@@ -561,6 +562,60 @@ describe("delivery quote integrity", () => {
     });
   });
 });
+
+describe("Magic Stars loyalty", () => {
+  it("keeps an append-only balance and issues a fixed one-use reward", async () => {
+    sqlite.exec(
+      `INSERT INTO review_accounts(id,email,display_name,password_hash,password_salt,status,auth_mode)
+       VALUES('reviewer-magic','magic@example.test','Client Magic','unused','unused','active','oauth')`,
+    );
+    await saveGiftProfile(env.DB, "reviewer-magic", {
+      recipients: ["mama"],
+      occasions: ["aniversare"],
+      themes: ["muzică"],
+    });
+    for (let index = 0; index < 4; index += 1) {
+      sqlite
+        .prepare(
+          `INSERT INTO magic_star_ledger(
+             id,review_account_id,delta,reason,source_type,source_id,note
+           ) VALUES(?, 'reviewer-magic', 1, 'admin_adjustment', 'test', ?, 'Test verificabil')`,
+        )
+        .run(`star-${index}`, `source-${index}`);
+    }
+
+    const before = await magicRewardsDashboard(env.DB, {
+      id: "reviewer-magic",
+      email: "magic@example.test",
+    });
+    expect(before.account.availableStars).toBe(5);
+
+    const reward = await redeemMagicStars(env.DB, "reviewer-magic");
+    expect(reward.valueBani).toBe(1500);
+    expect(reward.code).toMatch(/^STEA-[A-Z0-9]{10}$/);
+    const promotion = sqlite
+      .prepare(
+        `SELECT p.value,p.ends_at,pc.status,pc.usage_limit
+         FROM promotion_codes pc JOIN promotions p ON p.id=pc.promotion_id
+         WHERE pc.code=?`,
+      )
+      .get(reward.code)!;
+    expect(promotion).toMatchObject({ value: 1500, status: "active", usage_limit: 1 });
+
+    const after = await magicRewardsDashboard(env.DB, {
+      id: "reviewer-magic",
+      email: "magic@example.test",
+    });
+    expect(after.account.availableStars).toBe(0);
+    expect(after.account.redeemedStars).toBe(5);
+
+    sqlite.prepare("UPDATE promotion_codes SET status='consumed' WHERE code=?").run(reward.code);
+    expect(
+      sqlite.prepare("SELECT status FROM magic_star_rewards WHERE code=?").get(reward.code),
+    ).toMatchObject({ status: "used" });
+  });
+});
+
 describe("internal checkout configuration", () => {
   it("saves configuration with a version guard and cannot activate unfinished NETOPIA", async () => {
     const current = await handleCheckoutAdmin(

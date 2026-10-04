@@ -50,6 +50,7 @@ import {
   DatabaseBackup,
   ShieldCheck,
   WandSparkles,
+  Stars,
 } from "lucide-react";
 import { logoutAdminAccount } from "@/lib/admin-auth.functions";
 
@@ -61,6 +62,7 @@ const navItems = [
   { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
   { path: "/admin/promotions", label: "Promoții", icon: Target },
   { path: "/admin/referrals", label: "Referral", icon: UserRoundPlus },
+  { path: "/admin/rewards", label: "Magic Rewards", icon: Stars },
   { path: "/admin/suppliers", label: "Aprovizionare", icon: Search },
   { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
   { path: "/admin/shipping", label: "Livrare", icon: Truck },

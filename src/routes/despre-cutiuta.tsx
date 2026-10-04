@@ -14,6 +14,7 @@ export const Route = createFileRoute("/despre-cutiuta")({
         content:
           "Descoperă cutiuța muzicală din lemn, de la capacul gravat la mecanismul cu manivelă. O poveste despre gesturi mici și emoții care rămân.",
       },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Despre cutiuță — mecanism, manivelă și melodie" },
       {
         property: "og:description",

@@ -15,6 +15,7 @@ export const Route = createFileRoute("/despre-noi")({
         content:
           "Descoperă povestea Cutiuței Magice și felul în care alegem cutiuțe muzicale din lemn, cu manivelă, pentru daruri care păstrează emoții.",
       },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Despre Noi — Cutiuța Magică" },
       {
         property: "og:description",

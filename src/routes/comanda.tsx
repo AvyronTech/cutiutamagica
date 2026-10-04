@@ -139,8 +139,6 @@ function OrderPage() {
   const [promotionError, setPromotionError] = useState("");
   const [promotionExpanded, setPromotionExpanded] = useState(false);
   const [activeCheckoutStep, setActiveCheckoutStep] = useState(1);
-  const stripePaymentReady =
-    config?.payments.options.some((option) => option.id === "stripe") ?? false;
   const cartSignature = JSON.stringify(itemsDetailed.map((item) => [item.id, item.qty]));
   const activePromotion =
     appliedPromotion?.cartSignature === cartSignature ? appliedPromotion : null;
@@ -639,7 +637,7 @@ function OrderPage() {
                   <div className="checkout-mobile-savings">
                     <span>Economisești la produse</span>
                     <strong>−{money(totals.productDiscount)}</strong>
-                    <small>TVA inclus</small>
+                    <small>Preț final</small>
                   </div>
                 )}
               </details>
@@ -735,7 +733,7 @@ function OrderPage() {
                           />
                           {item.qty > 1 && (
                             <div className="text-[11px] text-muted-foreground">
-                              {money(item.product.price ?? 0)} / buc · TVA inclus
+                              {money(item.product.price ?? 0)} / buc · preț final
                             </div>
                           )}
                         </div>
@@ -925,7 +923,7 @@ function OrderPage() {
               )}
               <fieldset
                 disabled={submitting || submissionLocked}
-                className="space-y-5 disabled:opacity-80"
+                className="min-w-0 space-y-5 disabled:opacity-80"
               >
                 <section
                   id="checkout-step-1"
@@ -1099,7 +1097,7 @@ function OrderPage() {
                     title="SAMEDAY Easybox"
                     note={
                       !config?.shipping.easyboxEnabled
-                        ? "Disponibil după conectarea contului SAMEDAY"
+                        ? "Momentan indisponibil"
                         : activeQuote && shippingOption === "easybox"
                           ? activeQuote.price === 0
                             ? "Livrare gratuită"
@@ -1160,17 +1158,6 @@ function OrderPage() {
                       }
                     />
                   ))}
-                  {!stripePaymentReady && (
-                    <Choice
-                      name="payment-method"
-                      disabled
-                      selected={false}
-                      onChange={() => undefined}
-                      icon={<CreditCard className="h-5 w-5" />}
-                      title="Card online"
-                      note="Stripe · disponibil după activarea securizată"
-                    />
-                  )}
                   {paymentMethod === "card" && (
                     <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
                       Continui pe pagina securizată a procesatorului; datele cardului nu sunt
@@ -1288,7 +1275,7 @@ function OrderPage() {
                 <span>{money(productsAfterCode + (shippingCost ?? 0))}</span>
               </div>
               <p className="text-right text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                TVA inclus
+                Preț final
               </p>
             </div>
             {shippingCost == null && config && (
@@ -1500,7 +1487,7 @@ function ChoiceSection({
   return (
     <fieldset
       id={`checkout-step-${step}`}
-      className="rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
+      className="min-w-0 rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
     >
       <legend className="checkout-step-heading font-display text-xl sm:text-2xl">
         <span aria-hidden>{step}</span>
@@ -1509,7 +1496,7 @@ function ChoiceSection({
           <small>{subtitle}</small>
         </span>
       </legend>
-      <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">{children}</div>
+      <div className="mt-2.5 grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2">{children}</div>
     </fieldset>
   );
 }

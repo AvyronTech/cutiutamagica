@@ -44,7 +44,7 @@ export function CheckoutDelivery({
     }
   }
   return (
-    <div className="sm:col-span-2">
+    <div className="min-w-0 sm:col-span-2">
       <p className="text-sm text-muted-foreground">
         {request.shippingOption === "easybox"
           ? "Confirmăm disponibilitatea punctului ales și tariful final înainte de comandă."
@@ -71,7 +71,7 @@ export function CheckoutDelivery({
         {offers.map((offer) => (
           <label
             key={offer.id}
-            className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 ${selected === offer.id ? "border-primary bg-primary/5" : "border-border"}`}
+            className={`flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-xl border p-3.5 sm:p-4 ${selected === offer.id ? "border-primary bg-primary/5" : "border-border"}`}
           >
             <input
               type="radio"
@@ -81,7 +81,7 @@ export function CheckoutDelivery({
               disabled={Date.parse(offer.expiresAt) <= Date.now()}
               className="h-5 w-5"
             />
-            <span className="flex-1">
+            <span className="min-w-0 flex-1">
               <strong className="block text-sm">
                 {request.shippingOption === "easybox" ? "SAMEDAY Easybox" : offer.courier}
               </strong>
@@ -89,7 +89,7 @@ export function CheckoutDelivery({
                 <span className="text-xs text-muted-foreground">Estimare: {offer.estimate}</span>
               )}
             </span>
-            <span className="text-sm font-medium">
+            <span className="shrink-0 whitespace-nowrap text-sm font-medium">
               {offer.price === 0
                 ? "Gratuit"
                 : new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON" }).format(

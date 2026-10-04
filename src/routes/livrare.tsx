@@ -25,13 +25,13 @@ export const Route = createFileRoute("/livrare")({
       {
         name: "description",
         content:
-          "Livrare în 2–3 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate. Curier, SAMEDAY easybox ori livrare programată.",
+          "Livrare în 1–2 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate. Curier 25 lei, SAMEDAY easybox 15 lei ori livrare programată.",
       },
       { property: "og:title", content: "Livrare — Cutiuța Magică" },
       {
         property: "og:description",
         content:
-          "De la atelier la tine: 2–3 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate.",
+          "De la atelier la tine: 1–2 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate.",
       },
       { property: "og:url", content: "https://cutiutamagica.eu/livrare" },
       { name: "robots", content: "index, follow, max-image-preview:large" },
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/livrare")({
           url: "https://cutiutamagica.eu/livrare",
           name: "Livrare — Cutiuța Magică",
           description:
-            "Informații despre livrarea cutiuțelor standard în 2–3 zile lucrătoare și a modelelor speciale sau personalizate în 4–7 zile.",
+            "Informații despre livrarea cutiuțelor standard în 1–2 zile lucrătoare și a modelelor speciale sau personalizate în 4–7 zile.",
           inLanguage: "ro-RO",
           isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
         }),
@@ -73,7 +73,7 @@ const journey = [
     icon: Truck,
     number: "03",
     title: "Expediem și te anunțăm",
-    text: "După predare primești detaliile de urmărire disponibile. Pentru cutiuțele standard, termenul estimat în România este de 2–3 zile lucrătoare.",
+    text: "După predare primești detaliile de urmărire disponibile. Pentru cutiuțele standard, termenul estimat în România este de 1–2 zile lucrătoare.",
   },
 ] as const;
 
@@ -82,7 +82,7 @@ const deliveryOptions = [
     icon: Home,
     eyebrow: "La ușa ta",
     title: "Curier la adresă",
-    badge: "2–3 zile",
+    badge: "25 lei · 1–2 zile",
     text: "Alegi livrarea la adresa completată în comandă. Curierul folosește numărul de telefon pentru notificare și predare.",
     details: ["adresă din România", "urmărire după expediere", "cost vizibil în checkout"],
   },
@@ -90,9 +90,9 @@ const deliveryOptions = [
     icon: MapPinned,
     eyebrow: "Ridici când îți este comod",
     title: "SAMEDAY easybox",
-    badge: "selectare pe hartă",
-    text: "Dacă opțiunea este activă pentru comandă, alegi easybox-ul înainte de finalizare și confirmi tariful afișat.",
-    details: ["punct ales de tine", "disponibilitate verificată", "limitele lockerului se aplică"],
+    badge: "15 lei · hartă",
+    text: "Alegi easybox-ul pe hartă înainte de finalizare, iar tariful fix este afișat în sumarul comenzii.",
+    details: ["punct ales de tine", "disponibilitate verificată", "tarif fix în checkout"],
   },
   {
     icon: CalendarClock,
@@ -127,7 +127,7 @@ function DeliveryPage() {
           <em>Magia rămâne întreagă.</em>
         </h1>
         <p>
-          Cutiuțele standard ajung, de regulă, în 2–3 zile lucrătoare. Modelele speciale și
+          Cutiuțele standard ajung, de regulă, în 1–2 zile lucrătoare. Modelele speciale și
           personalizate au un termen estimat de 4–7 zile lucrătoare. Alegi traseul potrivit, iar
           costul și disponibilitatea se confirmă transparent înainte de comandă.
         </p>
@@ -135,7 +135,7 @@ function DeliveryPage() {
           <Clock3 aria-hidden />
           <span>
             <small>Cutiuțe standard în România</small>
-            <strong>2–3 zile lucrătoare</strong>
+            <strong>1–2 zile lucrătoare</strong>
           </span>
           <i>speciale și personalizate: 4–7 zile</i>
         </div>
@@ -251,7 +251,7 @@ function DeliveryPage() {
               <Clock3 aria-hidden />
               <span>
                 <strong>Termen</strong>
-                Cutiuțele standard ajung, de regulă, în 2–3 zile lucrătoare. Pentru modelele
+                Cutiuțele standard ajung, de regulă, în 1–2 zile lucrătoare. Pentru modelele
                 speciale și personalizate, termenul estimat este de 4–7 zile lucrătoare.
               </span>
             </li>

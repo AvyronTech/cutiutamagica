@@ -117,13 +117,12 @@ export function Footer() {
               href="https://stripe.com/payments"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Stripe Payments — infrastructură pentru plăți online securizate"
+              aria-label="Stripe Payments"
               className="magic-stripe-badge"
             >
               <span aria-hidden>stripe</span>
               <span>
                 <strong>Stripe Payments</strong>
-                <small>Infrastructură pregătită</small>
               </span>
             </a>
           </section>

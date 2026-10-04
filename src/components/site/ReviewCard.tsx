@@ -39,6 +39,15 @@ export function ReviewCard({
         <ReviewStars rating={review.rating} />
       </div>
       <p className="review-product-name">{review.productName}</p>
+      {review.photoUrl && (
+        <img
+          src={review.photoUrl}
+          alt={`Fotografie trimisă pentru ${review.productName}`}
+          loading="lazy"
+          decoding="async"
+          className="review-card-photo"
+        />
+      )}
       <blockquote>
         <Quote aria-hidden />
         {review.body}

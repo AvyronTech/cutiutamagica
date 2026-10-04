@@ -34,13 +34,13 @@ export function ProductPrice({
       className={`product-price product-price--${size} product-price--${tone} ${className}`.trim()}
       aria-label={
         discounted
-          ? `Preț redus ${money(current)}, de la ${money(reference)}, TVA inclus`
-          : `Preț ${money(current)}, TVA inclus`
+          ? `Preț final redus ${money(current)}, de la ${money(reference)}`
+          : `Preț final ${money(current)}`
       }
     >
       {discounted && <del title="Preț anterior documentat">{money(reference)}</del>}
       <span className="product-price__current">{money(current)}</span>
-      <small>TVA inclus</small>
+      <small>Preț final</small>
       {discounted && showSavings && (
         <span className="product-price__saving">Economisești {money(savings)}</span>
       )}

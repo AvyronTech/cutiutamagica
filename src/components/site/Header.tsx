@@ -134,11 +134,19 @@ export function Header() {
             </span>
             <span className="site-header__wordmark min-w-0 leading-tight">
               <span
-                className={`site-header__wordmark-title block truncate font-display tracking-normal text-[color:var(--wood-dark)] transition-[font-size] duration-300 ${
+                className={`site-header__wordmark-title block whitespace-nowrap font-display tracking-normal transition-[font-size] duration-300 ${
                   compact ? "text-xl" : "text-[1.35rem] sm:text-2xl"
                 }`}
               >
-                Cutiuța <span className="gold-text italic">Magică</span>
+                <span className="site-header__wordmark-depth" aria-hidden>
+                  Cutiuța <span className="italic">Magică</span>
+                </span>
+                <span className="site-header__wordmark-face">
+                  Cutiuța <span className="site-header__wordmark-magic italic">Magică</span>
+                </span>
+                <span className="site-header__wordmark-reflection" aria-hidden>
+                  Cutiuța <span className="italic">Magică</span>
+                </span>
               </span>
               <span className="site-header__spark site-header__spark--one" aria-hidden />
               <span className="site-header__spark site-header__spark--two" aria-hidden />

@@ -22,7 +22,7 @@ export function PersonalizationSpotlight() {
             Alege forma, culoarea, melodia, fotografia și gravura într-un atelier vizual creat
             pentru povestea ta.
           </p>
-          <div className="personalization-compact-features" aria-label="Opțiuni planificate">
+          <div className="personalization-compact-features" aria-label="Opțiuni de personalizare">
             <span>
               <Palette aria-hidden /> Două culori
             </span>

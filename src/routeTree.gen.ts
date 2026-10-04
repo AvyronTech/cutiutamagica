@@ -55,6 +55,7 @@ import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin/referrals'
 import { Route as AuthenticatedAdminReturnsRouteImport } from './routes/_authenticated/admin/returns'
 import { Route as AuthenticatedAdminReviewsRouteImport } from './routes/_authenticated/admin/reviews'
+import { Route as AuthenticatedAdminRewardsRouteImport } from './routes/_authenticated/admin/rewards'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminShippingRouteImport } from './routes/_authenticated/admin/shipping'
 import { Route as AuthenticatedAdminStatisticsRouteImport } from './routes/_authenticated/admin/statistics'
@@ -312,6 +313,12 @@ const AuthenticatedAdminReviewsRoute =
     path: '/reviews',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminRewardsRoute =
+  AuthenticatedAdminRewardsRouteImport.update({
+    id: '/rewards',
+    path: '/rewards',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -394,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/reviews': typeof AuthenticatedAdminReviewsRoute
+  '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -446,6 +454,7 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/reviews': typeof AuthenticatedAdminReviewsRoute
+  '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -501,6 +510,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/_authenticated/admin/reviews': typeof AuthenticatedAdminReviewsRoute
+  '/_authenticated/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/_authenticated/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/returns'
     | '/admin/reviews'
+    | '/admin/rewards'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/returns'
     | '/admin/reviews'
+    | '/admin/rewards'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
@@ -662,6 +674,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/returns'
     | '/_authenticated/admin/reviews'
+    | '/_authenticated/admin/rewards'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/shipping'
     | '/_authenticated/admin/statistics'
@@ -1019,6 +1032,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReviewsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/rewards': {
+      id: '/_authenticated/admin/rewards'
+      path: '/rewards'
+      fullPath: '/admin/rewards'
+      preLoaderRoute: typeof AuthenticatedAdminRewardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -1102,6 +1122,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminReturnsRoute: typeof AuthenticatedAdminReturnsRoute
   AuthenticatedAdminReviewsRoute: typeof AuthenticatedAdminReviewsRoute
+  AuthenticatedAdminRewardsRoute: typeof AuthenticatedAdminRewardsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminShippingRoute: typeof AuthenticatedAdminShippingRoute
   AuthenticatedAdminStatisticsRoute: typeof AuthenticatedAdminStatisticsRoute
@@ -1137,6 +1158,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
     AuthenticatedAdminReturnsRoute: AuthenticatedAdminReturnsRoute,
     AuthenticatedAdminReviewsRoute: AuthenticatedAdminReviewsRoute,
+    AuthenticatedAdminRewardsRoute: AuthenticatedAdminRewardsRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminShippingRoute: AuthenticatedAdminShippingRoute,
     AuthenticatedAdminStatisticsRoute: AuthenticatedAdminStatisticsRoute,

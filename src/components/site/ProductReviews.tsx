@@ -27,7 +27,6 @@ export function ProductReviews({
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [rating, setRating] = useState(0),
-    [mode, setMode] = useState<"guest" | "login" | "register">("guest"),
     reduced = useReducedMotion();
   const account = useQuery({
     queryKey: ["reviewer"],
@@ -83,45 +82,48 @@ export function ProductReviews({
     setError("");
     setMessage("");
     try {
-      if (!account.data && mode !== "guest") {
-        await reviewApi(`/api/v1/reviewer/${mode}`, {
-          method: "POST",
-          body: JSON.stringify({
-            email: form.get("email"),
-            password: form.get("password"),
-            displayName: mode === "register" ? form.get("displayName") : undefined,
-            consent: form.get("accountConsent") === "on",
-            website: form.get("website"),
-          }),
-        });
-        await account.refetch();
-        setMode("guest");
-        setMessage("Ești conectat. Acum poți scrie părerea ta.");
-      } else {
-        if (!rating) throw new Error("Alege între 1 și 5 stele.");
-        await reviewApi("/api/v1/reviews", {
-          method: "POST",
-          body: JSON.stringify({
-            productSlug: slug,
-            displayName: account.data ? undefined : form.get("displayName"),
-            email: account.data ? undefined : form.get("email"),
-            rating,
-            body: form.get("body"),
-            language: form.get("language"),
-            countryCode: form.get("countryCode"),
-            consent: form.get("consent") === "on",
-            website: form.get("website"),
-          }),
-        });
-        trackGrowthEvent("review_submitted", {
+      if (!rating) throw new Error("Alege între 1 și 5 stele.");
+      const created = await reviewApi<{ id: string }>("/api/v1/reviews", {
+        method: "POST",
+        body: JSON.stringify({
           productSlug: slug,
-          quantity: 1,
-          properties: { rating, mode: account.data ? "account" : "guest" },
+          displayName: account.data ? undefined : form.get("displayName"),
+          email: account.data ? undefined : form.get("email"),
+          rating,
+          body: form.get("body"),
+          language: form.get("language"),
+          countryCode: form.get("countryCode"),
+          consent: form.get("consent") === "on",
+          website: form.get("website"),
+        }),
+      });
+      const photo = form.get("photo");
+      if (account.data && photo instanceof File && photo.size > 0) {
+        const upload = new FormData();
+        upload.set("photo", photo);
+        const response = await fetch(`/api/v1/reviews/${created.id}/photo`, {
+          method: "POST",
+          credentials: "same-origin",
+          body: upload,
         });
-        setMessage("Mulțumim! Recenzia ta va apărea după verificare.");
-        setOpen(false);
-        setRating(0);
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as {
+            error?: { message?: string };
+          } | null;
+          throw new Error(
+            payload?.error?.message ||
+              "Recenzia a fost salvată, dar fotografia nu a putut fi încărcată.",
+          );
+        }
       }
+      trackGrowthEvent("review_submitted", {
+        productSlug: slug,
+        quantity: 1,
+        properties: { rating, mode: account.data ? "account" : "guest" },
+      });
+      setMessage("Mulțumim! Recenzia ta va apărea după verificare.");
+      setOpen(false);
+      setRating(0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Reîncearcă.");
     } finally {
@@ -184,21 +186,10 @@ export function ProductReviews({
               </button>
             </p>
           ) : (
-            <div className="review-mode" aria-label="Cum trimiți recenzia">
-              {(["guest", "login", "register"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={mode === value}
-                  onClick={() => {
-                    setMode(value);
-                    setError("");
-                  }}
-                >
-                  {value === "guest" ? "Fără cont" : value === "login" ? "Am cont" : "Creează cont"}
-                </button>
-              ))}
-            </div>
+            <p className="review-feedback">
+              Poți publica fără cont. Pentru o fotografie și Magic Stars, intră în cont cu Google.{" "}
+              <Link to="/cont">Deschide contul</Link>
+            </p>
           )}
           <form onSubmit={submit} className="review-form">
             <div className="review-trap" aria-hidden="true">
@@ -209,46 +200,24 @@ export function ProductReviews({
             </div>
             {!account.data && (
               <div className="review-fields">
-                {mode !== "login" && (
-                  <label>
-                    Numele afișat
-                    <input
-                      name="displayName"
-                      required
-                      minLength={2}
-                      maxLength={60}
-                      autoComplete="nickname"
-                      placeholder="Prenume și inițială"
-                    />
-                  </label>
-                )}
+                <label>
+                  Numele afișat
+                  <input
+                    name="displayName"
+                    required
+                    minLength={2}
+                    maxLength={60}
+                    autoComplete="nickname"
+                    placeholder="Prenume și inițială"
+                  />
+                </label>
                 <label>
                   E-mail · nu apare public
                   <input name="email" required type="email" maxLength={254} autoComplete="email" />
                 </label>
-                {mode !== "guest" && (
-                  <label>
-                    Parolă · minimum 12 caractere
-                    <input
-                      name="password"
-                      type="password"
-                      required
-                      minLength={12}
-                      maxLength={128}
-                      autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    />
-                  </label>
-                )}
               </div>
             )}
-            {!account.data && mode === "register" && (
-              <label className="review-consent">
-                <input name="accountConsent" type="checkbox" required />
-                Sunt de acord cu crearea contului de client și am citit{" "}
-                <Link to="/politica-de-confidentialitate">politica de confidențialitate</Link>.
-              </label>
-            )}
-            {(account.data || mode === "guest") && (
+            {
               <>
                 <fieldset className="review-rating">
                   <legend>Câte stele îi oferi?</legend>
@@ -295,6 +264,12 @@ export function ProductReviews({
                     ))}
                   </select>
                 </label>
+                {account.data && (
+                  <label>
+                    Fotografie proprie · opțional, maximum 5 MB
+                    <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+                  </label>
+                )}
                 <label className="review-consent">
                   <input type="checkbox" name="consent" required />
                   Accept publicarea numelui afișat și a părerii mele după verificare.{" "}
@@ -305,20 +280,14 @@ export function ProductReviews({
                   sunt moderate înainte de publicare.
                 </p>
               </>
-            )}
+            }
             {error && (
               <p role="alert" className="review-error">
                 {error}
               </p>
             )}
             <button className="review-button" disabled={busy || account.isFetching}>
-              {busy
-                ? "Se salvează…"
-                : !account.data && mode !== "guest"
-                  ? mode === "login"
-                    ? "Intră în cont"
-                    : "Creează contul"
-                  : "Trimite părerea ta"}
+              {busy ? "Se salvează…" : "Trimite părerea ta"}
             </button>
           </form>
         </div>
