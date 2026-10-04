@@ -35,6 +35,7 @@ import {
 } from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 import { handleGrowthEvents, recordPurchaseGrowthEvent } from "./growth-events";
+import { handleCustomerLoyalty } from "./customer-loyalty";
 
 const API_PREFIX = "/api/v1/";
 
@@ -198,6 +199,8 @@ export async function handleApiRequest(
 
   const reviewAccountResponse = await handleReviewAccount(request, env);
   if (reviewAccountResponse) return reviewAccountResponse;
+  const loyaltyResponse = await handleCustomerLoyalty(request, env);
+  if (loyaltyResponse) return loyaltyResponse;
   const reviewsResponse = await handleReviews(request, env);
   if (reviewsResponse) return reviewsResponse;
 

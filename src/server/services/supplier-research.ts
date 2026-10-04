@@ -114,7 +114,7 @@ export async function researchProduct(env: CommerceEnv, productId: string) {
     url.searchParams.set("count", "20");
     const response = await fetchWithTimeout(url, {
       headers: { "X-Subscription-Token": key, accept: "application/json" },
-      redirect: "error",
+      redirect: "manual",
     });
     if (!response.ok) throw new Error(`SEARCH_HTTP_${response.status}`);
     const data = searchResult.parse(await readProviderJson(response));

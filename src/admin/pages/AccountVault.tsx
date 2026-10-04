@@ -227,6 +227,22 @@ export default function AccountVault() {
         </section>
       </div>
 
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="flex items-center gap-2 font-semibold text-white">
+          <ShieldCheck size={17} /> Autentificare clienți cu Google
+        </h2>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Introdu Client ID și Client secret din proiectul Google OAuth. Valorile sunt criptate, nu
+          se afișează după salvare și activează automat butonul „Continuă cu Google”. URI-ul de
+          redirect este https://cutiutamagica.eu/api/v1/reviewer/oauth/google/callback.
+        </p>
+        <div className="mt-4">
+          <CredentialPanel
+            providers={["customer_google_client_id", "customer_google_client_secret"]}
+          />
+        </div>
+      </section>
+
       <CredentialPanel providers={["meta"]} />
 
       <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">

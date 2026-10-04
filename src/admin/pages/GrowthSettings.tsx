@@ -19,6 +19,8 @@ const button =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50";
 const labels: Record<CredentialProvider, string> = {
   google_merchant: "Google Merchant · token OAuth separat",
+  customer_google_client_id: "Cont client Google · Client ID OAuth",
+  customer_google_client_secret: "Cont client Google · Client secret OAuth",
   netopia: "NETOPIA · cheie API",
   netopia_public_key: "NETOPIA · cheie publică verificare IPN",
   revolut_merchant: "Revolut Merchant · cheie secretă (plăți)",

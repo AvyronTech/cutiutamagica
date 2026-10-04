@@ -22,6 +22,7 @@ import {
 } from "@/lib/personalization";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
 import { loginAdminAccount } from "@/lib/admin-auth.functions";
+import { CustomerMagicCenter } from "@/components/site/CustomerMagicCenter";
 
 export const Route = createFileRoute("/cont")({
   validateSearch: (
@@ -319,22 +320,7 @@ function CustomerAccount() {
         </button>
       </header>
 
-      <section className="customer-rewards-card" aria-labelledby="customer-rewards-title">
-        <div className="customer-rewards-card__star" aria-hidden>
-          <Star />
-        </div>
-        <div>
-          <p className="catalog-eyebrow">Magic Rewards · în pregătire</p>
-          <h2 id="customer-rewards-title">Magic Stars ✦</h2>
-          <p>
-            O comandă, un review cu fotografie sau o recomandare pot deveni câte o stea — simplu,
-            după confirmarea momentului.
-          </p>
-        </div>
-        <Link className="magic-button magic-button--outline" to="/magic-rewards">
-          Descoperă programul <ArrowRight size={16} />
-        </Link>
-      </section>
+      <CustomerMagicCenter />
 
       <section className="customer-requests" aria-labelledby="customer-requests-title">
         <div className="customer-requests-heading">

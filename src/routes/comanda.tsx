@@ -925,7 +925,7 @@ function OrderPage() {
               )}
               <fieldset
                 disabled={submitting || submissionLocked}
-                className="space-y-5 disabled:opacity-80"
+                className="min-w-0 space-y-5 disabled:opacity-80"
               >
                 <section
                   id="checkout-step-1"
@@ -1500,7 +1500,7 @@ function ChoiceSection({
   return (
     <fieldset
       id={`checkout-step-${step}`}
-      className="rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
+      className="min-w-0 rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
     >
       <legend className="checkout-step-heading font-display text-xl sm:text-2xl">
         <span aria-hidden>{step}</span>
@@ -1509,7 +1509,7 @@ function ChoiceSection({
           <small>{subtitle}</small>
         </span>
       </legend>
-      <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">{children}</div>
+      <div className="mt-2.5 grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2">{children}</div>
     </fieldset>
   );
 }

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/magic-rewards")({
       {
         name: "description",
         content:
-          "Descoperă Magic Stars, viitorul program de fidelitate Cutiuța Magică: stele pentru comenzi, recenzii cu fotografie, recomandări și colecții.",
+          "Descoperă Magic Stars, programul de fidelitate Cutiuța Magică: stele pentru comenzi, recenzii cu fotografie, recomandări și colecții.",
       },
       { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Magic Rewards — loialitate, fără matematică" },
@@ -115,7 +115,7 @@ function MagicRewards() {
       <header className="magic-rewards-hero">
         <div className="magic-rewards-hero__copy">
           <span className="magic-rewards-status">
-            <Sparkles aria-hidden /> Program în pregătire
+            <Sparkles aria-hidden /> Program activ
           </span>
           <p className="scene-eyebrow">Magic Rewards</p>
           <h1>
@@ -134,8 +134,8 @@ function MagicRewards() {
             </a>
           </div>
           <small>
-            Programul nu este încă activ. Nicio stea și niciun beneficiu nu sunt promise retroactiv
-            înainte de publicarea regulamentului.
+            Cinci stele confirmate pot fi transformate într-un cod de 15 lei, valabil 180 de zile.
+            Fiecare stea rămâne vizibilă în istoricul contului.
           </small>
         </div>
 
@@ -200,8 +200,8 @@ function MagicRewards() {
           <p className="scene-eyebrow">Fără Efort</p>
           <h2 id="magic-rewards-flow-title">Tu trăiești povestea. Noi păstrăm stelele.</h2>
           <p>
-            După activare, progresul va fi legat de cont și actualizat doar pe baza evenimentelor
-            confirmate din magazin.
+            Progresul este legat de cont și se actualizează numai pe baza evenimentelor confirmate
+            din magazin.
           </p>
         </div>
         <ol>
@@ -237,9 +237,9 @@ function MagicRewards() {
           <p className="scene-eyebrow">Promisiunea Programului</p>
           <h2 id="magic-rewards-promise-title">Beneficii clare înainte să alegi.</h2>
           <p>
-            Magic Stars nu sunt bani și nu devin automat o reducere. Înainte de activarea
-            programului vom publica regulamentul, perioada de valabilitate și beneficiul exact al
-            fiecărei stele. Fără condiții importante ascunse în litere mici.
+            Magic Stars nu sunt bani și nu devin automat o reducere. La cinci stele poți genera din
+            cont un cod de 15 lei, utilizabil o singură dată în 180 de zile. Configurația și fiecare
+            ajustare rămân auditate în dashboard.
           </p>
         </div>
         <ul>
