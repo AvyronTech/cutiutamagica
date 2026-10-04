@@ -1,5 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, BellRing, CalendarHeart, Gift, Mail, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BellRing,
+  CalendarHeart,
+  Gift,
+  Heart,
+  Mail,
+  PackageSearch,
+  Sparkles,
+  Star,
+} from "lucide-react";
 
 const reminderPreviews = [
   {
@@ -26,6 +36,12 @@ const occasions = [
   "Crăciun",
   "Secret Santa",
   "Zile de naștere",
+];
+
+const accountBenefits = [
+  { icon: Star, title: "Magic Stars", text: "Aduni beneficii din momentele tale." },
+  { icon: Heart, title: "Favorite aproape", text: "Revii rapid la cutiuțele care te-au ales." },
+  { icon: PackageSearch, title: "Comenzi urmărite", text: "Vezi simplu unde a ajuns povestea." },
 ];
 
 export function GiftCalendarSpotlight() {
@@ -56,9 +72,21 @@ export function GiftCalendarSpotlight() {
             </span>
           </div>
 
+          <div className="gift-calendar-benefits" aria-label="Beneficiile contului Magic">
+            {accountBenefits.map(({ icon: Icon, title, text }) => (
+              <span key={title}>
+                <Icon aria-hidden />
+                <span>
+                  <strong>{title}</strong>
+                  <small>{text}</small>
+                </span>
+              </span>
+            ))}
+          </div>
+
           <div className="gift-calendar-actions">
             <Link className="magic-button gift-calendar-cta" to="/cont" search={{ mod: "creare" }}>
-              Deschide calendarul <ArrowRight size={16} />
+              Creează contul Magic <ArrowRight size={16} />
             </Link>
           </div>
         </div>

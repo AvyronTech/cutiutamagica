@@ -4,9 +4,9 @@ export type WidgetSide = "left" | "right";
 export type ChatBubblePosition = { x: number; y: number };
 type ChatPlacement = { side: WidgetSide; open: boolean };
 export const DEFAULT_CHAT_SIDE: WidgetSide = "left";
-// Ignore old bottom-corner preferences after moving the launcher to the middle.
-export const CHAT_SIDE_KEY = "cutiuta:chat-side:center-v2";
-export const CHAT_POSITION_KEY = "cutiuta:chat-position:v1";
+// O cheie nouă ignoră pozițiile vechi și pornește bula sub progresul din stânga.
+export const CHAT_SIDE_KEY = "cutiuta:chat-side:left-bottom-v3";
+export const CHAT_POSITION_KEY = "cutiuta:chat-position:v2";
 export const CHAT_BUBBLE_SIZE = 44;
 export const CHAT_VIEWPORT_MARGIN = 12;
 

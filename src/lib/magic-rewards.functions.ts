@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { assertPermission, requireAdminAuth } from "./admin-auth";
+import { listMagicRewardActivities } from "@/server/services/magic-rewards";
 
 type DbValue = string | number | null;
 type DbRow = Record<string, DbValue>;
@@ -17,8 +18,15 @@ export const getMagicRewardsAdmin = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     assertPermission(context.admin, "promotions.read");
-    const [program, stats, ledger, reminders] = await Promise.all([
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Bucharest",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const [program, activities, stats, ledger, reminders] = await Promise.all([
       env.DB.prepare("SELECT * FROM magic_rewards_program WHERE code='magic_stars'").first<DbRow>(),
+      listMagicRewardActivities(env.DB),
       env.DB.prepare(
         `SELECT
           (SELECT COUNT(*) FROM magic_star_accounts) AS accounts,
@@ -26,8 +34,14 @@ export const getMagicRewardsAdmin = createServerFn({ method: "GET" })
           (SELECT COALESCE(SUM(lifetime_stars),0) FROM magic_star_accounts) AS lifetime_stars,
           (SELECT COUNT(*) FROM magic_star_rewards WHERE status='active') AS active_rewards,
           (SELECT COUNT(*) FROM gift_calendar_events WHERE active=1) AS calendar_events,
-          (SELECT COUNT(*) FROM gift_reminder_dispatches WHERE status='sent') AS reminders_sent`,
-      ).first<DbRow>(),
+          (SELECT COUNT(*) FROM gift_reminder_dispatches WHERE status='sent') AS reminders_sent,
+          (SELECT COUNT(*) FROM magic_reward_activity_events
+           WHERE activity_code='social_share' AND period_key=?1) AS shares_today,
+          (SELECT COUNT(*) FROM magic_reward_activity_events
+           WHERE activity_code='birthday_bonus') AS birthday_bonuses`,
+      )
+        .bind(today)
+        .first<DbRow>(),
       env.DB.prepare(
         `SELECT l.id,a.email,a.display_name,l.delta,l.reason,l.note,l.created_at
          FROM magic_star_ledger l JOIN review_accounts a ON a.id=l.review_account_id
@@ -41,18 +55,23 @@ export const getMagicRewardsAdmin = createServerFn({ method: "GET" })
          ORDER BY d.created_at DESC LIMIT 30`,
       ).all<DbRow>(),
     ]);
-    return { program, stats, ledger: ledger.results, reminders: reminders.results };
+    return { program, activities, stats, ledger: ledger.results, reminders: reminders.results };
   });
+
+export const getPublicMagicRewards = createServerFn({ method: "GET" }).handler(async () => {
+  const [program, activities] = await Promise.all([
+    env.DB.prepare(
+      `SELECT enabled,redemption_threshold,reward_bani,reward_valid_days
+       FROM magic_rewards_program WHERE code='magic_stars'`,
+    ).first<DbRow>(),
+    listMagicRewardActivities(env.DB, true),
+  ]);
+  return { program, activities: activities.filter((activity) => activity.enabled) };
+});
 
 const programInput = z.object({
   enabled: z.boolean(),
-  starsForOrder: z.number().int().min(0).max(20),
-  starsForPhotoReview: z.number().int().min(0).max(20),
-  starsForReferral: z.number().int().min(0).max(20),
-  starsForGiftProfile: z.number().int().min(0).max(20),
-  starsForCollection: z.number().int().min(0).max(20),
   redemptionThreshold: z.number().int().min(1).max(100),
-  rewardLei: z.number().min(1).max(1000),
   rewardValidDays: z.number().int().min(1).max(730),
   termsVersion: z.string().trim().min(4).max(40),
 });
@@ -63,21 +82,14 @@ export const saveMagicRewardsProgram = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     sameOrigin();
     assertPermission(context.admin, "promotions.write");
-    const rewardBani = Math.round(data.rewardLei * 100);
+    const rewardBani = data.redemptionThreshold * 100;
     await env.DB.batch([
       env.DB.prepare(
-        `UPDATE magic_rewards_program SET enabled=?1,stars_for_order=?2,
-          stars_for_photo_review=?3,stars_for_referral=?4,stars_for_gift_profile=?5,
-          stars_for_collection=?6,redemption_threshold=?7,reward_bani=?8,
-          reward_valid_days=?9,terms_version=?10,updated_by=?11,
+        `UPDATE magic_rewards_program SET enabled=?1,redemption_threshold=?2,reward_bani=?3,
+          reward_valid_days=?4,terms_version=?5,updated_by=?6,
           updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE code='magic_stars'`,
       ).bind(
         data.enabled ? 1 : 0,
-        data.starsForOrder,
-        data.starsForPhotoReview,
-        data.starsForReferral,
-        data.starsForGiftProfile,
-        data.starsForCollection,
         data.redemptionThreshold,
         rewardBani,
         data.rewardValidDays,
@@ -89,6 +101,64 @@ export const saveMagicRewardsProgram = createServerFn({ method: "POST" })
           id,actor_admin_user_id,actor_label,action,entity_type,entity_id,after_json,metadata_json
         ) VALUES(?1,?2,?3,'magic_rewards.program.update','magic_rewards_program','magic_stars',?4,'{}')`,
       ).bind(crypto.randomUUID(), context.admin.id, context.admin.email, JSON.stringify(data)),
+    ]);
+    return { ok: true };
+  });
+
+const activitiesInput = z.object({
+  activities: z
+    .array(
+      z.object({
+        code: z
+          .string()
+          .trim()
+          .regex(/^[a-z0-9_]{2,64}$/),
+        stars: z.number().int().min(0).max(100),
+        periodLimit: z.number().int().min(0).max(100),
+        enabled: z.boolean(),
+      }),
+    )
+    .min(1)
+    .max(30),
+});
+
+export const saveMagicRewardActivities = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(activitiesInput)
+  .handler(async ({ context, data }) => {
+    sameOrigin();
+    assertPermission(context.admin, "promotions.write");
+    const existing = await env.DB.prepare("SELECT code FROM magic_reward_activities").all<{
+      code: string;
+    }>();
+    const allowed = new Set(existing.results.map((row) => row.code));
+    if (data.activities.some((activity) => !allowed.has(activity.code)))
+      throw new Error("Lista activităților Magic Rewards s-a schimbat. Reîncarcă pagina.");
+    await env.DB.batch([
+      ...data.activities.map((activity) =>
+        env.DB.prepare(
+          `UPDATE magic_reward_activities
+           SET stars=?2,period_limit=?3,enabled=?4,updated_by=?5,
+             updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+           WHERE code=?1`,
+        ).bind(
+          activity.code,
+          activity.stars,
+          activity.periodLimit,
+          activity.enabled ? 1 : 0,
+          context.admin.id,
+        ),
+      ),
+      env.DB.prepare(
+        `INSERT INTO audit_log(
+          id,actor_admin_user_id,actor_label,action,entity_type,entity_id,after_json,metadata_json
+        ) VALUES(?1,?2,?3,'magic_rewards.activities.update','magic_reward_activities','catalog',?4,'{}')`,
+      ).bind(
+        crypto.randomUUID(),
+        context.admin.id,
+        context.admin.email,
+        JSON.stringify(data.activities),
+      ),
     ]);
     return { ok: true };
   });

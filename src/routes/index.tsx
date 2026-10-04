@@ -16,45 +16,36 @@ import { CompactReturn } from "@/components/site/CompactReturn";
 import { HeroProductRotator } from "@/components/site/HeroProductRotator";
 import { ChristmasDrop } from "@/components/site/ChristmasDrop";
 import { GiftCalendarSpotlight } from "@/components/site/GiftCalendarSpotlight";
+import { MagicRewardsSpotlight } from "@/components/site/MagicRewardsSpotlight";
+import { getPublicMagicRewards } from "@/lib/magic-rewards.functions";
 import { collectionProducts } from "@/lib/collections";
 import { useShop } from "@/store/shop";
 import bgEmotie from "@/assets/bg-emotie.jpg";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/")({
   component: Index,
-  loader: () => getPublicReviews({ data: { slug: null } }),
-  head: () => ({
-    meta: [
-      { title: "Cutiuța Magică — cutiuțe muzicale, cadouri cu poveste" },
-      {
-        name: "description",
-        content:
-          "O cutiuță mică. O emoție care rămâne. Descoperă cutiuțe muzicale din lemn cu manivelă, melodii îndrăgite și cadouri cu poveste.",
-      },
-      { property: "og:title", content: "Cutiuța Magică — o melodie, o amintire" },
-      {
-        property: "og:description",
-        content:
-          "Cutiuțe muzicale din lemn cu manivelă: cadouri pentru fani, colecționari și oameni dragi. Alege după melodie, temă și ocazie.",
-      },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:image", content: "https://cutiutamagica.eu/produse/hp-keeper/1.webp" },
-      { property: "og:image:alt", content: "Cutiuță muzicală din lemn cu manivelă" },
-      { name: "twitter:title", content: "Cutiuța Magică — cutiuțe muzicale cu poveste" },
-      {
-        name: "twitter:description",
-        content: "Cadouri muzicale din lemn, cu manivelă, alese după melodie, temă și ocazie.",
-      },
-      { name: "twitter:image", content: "https://cutiutamagica.eu/produse/hp-keeper/1.webp" },
-      { property: "og:url", content: "https://cutiutamagica.eu/" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/" }],
-  }),
+  loader: async () => {
+    const [reviews, rewards] = await Promise.all([
+      getPublicReviews({ data: { slug: null } }),
+      getPublicMagicRewards(),
+    ]);
+    return { reviews, rewards };
+  },
+  head: () =>
+    seoHead({
+      title: "Cutiuța Magică — cutiuțe muzicale, cadouri cu poveste",
+      description:
+        "O cutiuță mică. O emoție care rămâne. Descoperă cutiuțe muzicale din lemn cu manivelă, melodii îndrăgite și cadouri cu poveste.",
+      path: "/",
+      image: "/produse/hp-keeper/1.webp",
+      imageAlt: "Cutiuță muzicală din lemn cu manivelă, pregătită pentru un cadou",
+    }),
 });
 
 function Index() {
   const { products } = useShop();
-  const reviews = Route.useLoaderData();
+  const { reviews, rewards } = Route.useLoaderData();
   const heroProducts = products
     .filter(isAvailable)
     .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
@@ -277,6 +268,7 @@ function Index() {
             Despre noi <ArrowUpRight size={17} aria-hidden />
           </Link>
         </section>
+        <MagicRewardsSpotlight program={rewards.program} activities={rewards.activities} />
         <ConnectSection />
         <CompactReturn />
       </HeroWorld>

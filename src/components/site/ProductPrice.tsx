@@ -40,7 +40,7 @@ export function ProductPrice({
     >
       {discounted && <del title="Preț anterior documentat">{money(reference)}</del>}
       <span className="product-price__current">{money(current)}</span>
-      <small>Preț final</small>
+      <small className="product-price__label">Preț final</small>
       {discounted && showSavings && (
         <span className="product-price__saving">Economisești {money(savings)}</span>
       )}

@@ -232,12 +232,12 @@ export default function MarketingOrdersAgentControl() {
           <div className="flex items-center gap-2 text-cyan-300">
             <ShieldCheck className="h-5 w-5" />
             <h2 className="text-base font-semibold text-white">
-              Control superadmin · Marketing + comenzi
+              Social Media Agent · control Codex
             </h2>
           </div>
           <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-            Platforma Cutiuța Magică este autoritatea. AVYRON poate primi statistici agregate și
-            pachete aprobate, dar nu poate publica, conversa cu clienții sau crea comenzi.
+            Agentul pregătește în Codex ciorne și propuneri. Cutiuța Magică rămâne autoritatea, iar
+            AVYRON poate primi numai statistici agregate și pachete aprobate.
           </p>
         </div>
         <span className="w-fit rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">

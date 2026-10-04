@@ -36,6 +36,7 @@ export function Header() {
   }, [pathname]);
   const [compact, setCompact] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
   const compactRef = useRef(false);
   const hiddenRef = useRef(false);
 
@@ -54,7 +55,11 @@ export function Header() {
     const update = () => {
       frame = 0;
       const y = Math.max(0, window.scrollY);
-      const next = y > 72;
+      const hero = pathname === "/" ? document.getElementById("inceput") : null;
+      const nextPastHero = Boolean(hero && y >= hero.offsetTop + hero.offsetHeight - 12);
+      setPastHero((current) => (current === nextPastHero ? current : nextPastHero));
+      // Hysteresis prevents the header from oscillating around one scroll threshold.
+      const next = compactRef.current ? y > 28 : y > 84;
       if (next !== compactRef.current) {
         compactRef.current = next;
         setCompact(next);
@@ -68,7 +73,10 @@ export function Header() {
       }
       directionalDistance += Math.abs(delta);
 
-      if (y < 104) {
+      if (pathname === "/" && nextPastHero) {
+        setHeaderHidden(true);
+        directionalDistance = 0;
+      } else if (y < 104) {
         setHeaderHidden(false);
         directionalDistance = 0;
       } else if (direction === "down" && directionalDistance > 42) {
@@ -90,13 +98,13 @@ export function Header() {
       window.removeEventListener("scroll", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
-    if (!cartOpen || !hiddenRef.current) return;
+    if (!cartOpen || !hiddenRef.current || pastHero) return;
     hiddenRef.current = false;
     setHidden(false);
-  }, [cartOpen]);
+  }, [cartOpen, pastHero]);
 
   return (
     <header
@@ -112,11 +120,7 @@ export function Header() {
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/80"
         />
 
-        <div
-          className={`relative mx-auto flex max-w-7xl items-center justify-between px-4 transition-[padding] duration-300 ${
-            compact ? "py-1.5" : "py-3"
-          }`}
-        >
+        <div className="site-header__inner relative mx-auto max-w-7xl px-4">
           <Link
             to="/"
             className="site-header__brand group flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]"
@@ -163,30 +167,20 @@ export function Header() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-7 text-sm text-[color:var(--wood-dark)]/85 md:flex">
-            <Link
-              to="/"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-              activeOptions={{ exact: true }}
-            >
+          <nav
+            className="site-header__nav hidden items-center text-sm text-[color:var(--wood-dark)]/85 min-[1080px]:flex"
+            aria-label="Navigare principală"
+          >
+            <Link to="/" className="site-header__nav-link" activeOptions={{ exact: true }}>
               Acasă
             </Link>
-            <Link
-              to="/produse"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-            >
+            <Link to="/produse" className="site-header__nav-link">
               Cutiuțe Muzicale
             </Link>
-            <Link
-              to="/despre-cutiuta"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-            >
+            <Link to="/despre-cutiuta" className="site-header__nav-link">
               Despre Cutiuță
             </Link>
-            <Link
-              to="/livrare"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-            >
+            <Link to="/livrare" className="site-header__nav-link">
               Livrare
             </Link>
           </nav>
@@ -242,7 +236,12 @@ export function Header() {
         side={cartSide}
         onRestoreFocus={restoreCartFocus}
       />
-      <FloatingCartButton pathname={pathname} open={cartOpen} onOpen={openCart} />
+      <FloatingCartButton
+        pathname={pathname}
+        open={cartOpen}
+        onOpen={openCart}
+        forceVisible={pathname === "/" && pastHero}
+      />
     </header>
   );
 }

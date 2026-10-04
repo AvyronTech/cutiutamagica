@@ -55,6 +55,14 @@ function Privacy() {
           Pentru corectarea sau retragerea unei recenzii, folosește datele de contact ale
           magazinului.
         </p>
+        <p>
+          Dacă folosești Magic Rewards, păstrăm activitățile eligibile, stelele acordate,
+          beneficiile activate și identificatorii necesari prevenirii acordării repetate. Pentru
+          darul aniversar poți salva numai ziua și luna; nu solicităm anul nașterii. Aceste date
+          sunt folosite pentru funcționarea programului, afișarea istoricului și limitarea
+          abuzurilor și pot fi corectate ori șterse odată cu solicitarea privind contul, în limitele
+          obligațiilor legale și ale evidențelor necesare soluționării unui beneficiu deja folosit.
+        </p>
       </LegalSection>
       <LegalSection title="Cereri de personalizare și imagini">
         <p>

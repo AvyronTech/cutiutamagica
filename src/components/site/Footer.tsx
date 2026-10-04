@@ -9,7 +9,7 @@ const navGroups = [
     title: "Descoperă",
     items: [
       { to: "/produse", label: "Cutiuțe muzicale" },
-      { to: "/personalizeaza", label: "Personalizează" },
+      { to: "/personalizeaza", label: "Personalizare · în curând" },
       { to: "/cadouri", label: "Idei de cadouri" },
       { to: "/magic-rewards", label: "Magic Rewards ✦" },
       { to: "/despre-cutiuta", label: "Despre cutiuță" },

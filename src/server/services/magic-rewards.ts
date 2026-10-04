@@ -3,15 +3,22 @@ import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
 type Program = {
   enabled: number;
-  stars_for_order: number;
-  stars_for_photo_review: number;
-  stars_for_referral: number;
-  stars_for_gift_profile: number;
-  stars_for_collection: number;
   redemption_threshold: number;
   reward_bani: number;
   reward_valid_days: number;
   terms_version: string;
+};
+
+export type MagicRewardActivity = {
+  code: string;
+  name: string;
+  description: string;
+  stars: number;
+  cadence: "once" | "per_event" | "daily" | "yearly";
+  periodLimit: number;
+  enabled: boolean;
+  automatic: boolean;
+  customerVisible: boolean;
 };
 
 export type MagicRewardsDashboard = {
@@ -23,11 +30,120 @@ export type MagicRewardsDashboard = {
     termsVersion: string;
   };
   account: { availableStars: number; lifetimeStars: number; redeemedStars: number };
+  activities: MagicRewardActivity[];
+  birthday: { month: number; day: number } | null;
   ledger: Array<Record<string, string | number | null>>;
   rewards: Array<Record<string, string | number | null>>;
   profile: { preferences: Record<string, unknown>; completed: boolean } | null;
   calendar: Array<Record<string, string | number | boolean | number[]>>;
 };
+
+type ActivityRow = {
+  code: string;
+  name: string;
+  description: string;
+  stars: number;
+  cadence: MagicRewardActivity["cadence"];
+  period_limit: number;
+  enabled: number;
+  automatic: number;
+  customer_visible: number;
+};
+
+function publicActivity(row: ActivityRow): MagicRewardActivity {
+  return {
+    code: row.code,
+    name: row.name,
+    description: row.description,
+    stars: Number(row.stars),
+    cadence: row.cadence,
+    periodLimit: Number(row.period_limit),
+    enabled: Number(row.enabled) === 1,
+    automatic: Number(row.automatic) === 1,
+    customerVisible: Number(row.customer_visible) === 1,
+  };
+}
+
+export async function listMagicRewardActivities(
+  db: D1Database,
+  customerVisibleOnly = false,
+): Promise<MagicRewardActivity[]> {
+  const rows = await db
+    .prepare(
+      `SELECT code,name,description,stars,cadence,period_limit,enabled,automatic,customer_visible
+       FROM magic_reward_activities
+       WHERE (?1=0 OR customer_visible=1)
+       ORDER BY sort_order,code`,
+    )
+    .bind(customerVisibleOnly ? 1 : 0)
+    .all<ActivityRow>();
+  return rows.results.map(publicActivity);
+}
+
+export async function awardMagicRewardActivity(
+  db: D1Database,
+  input: {
+    accountId: string;
+    activityCode: string;
+    sourceType: string;
+    sourceId: string;
+    metadata?: Record<string, unknown>;
+    now?: Date;
+  },
+) {
+  const activity = await db
+    .prepare(
+      `SELECT code,name,description,stars,cadence,period_limit,enabled,automatic,customer_visible
+       FROM magic_reward_activities WHERE code=?1`,
+    )
+    .bind(input.activityCode)
+    .first<ActivityRow>();
+  if (!activity || !activity.enabled || Number(activity.stars) <= 0)
+    return { awarded: false, stars: 0, limitReached: false };
+
+  const today = bucharestDate(input.now);
+  const periodKey =
+    activity.cadence === "once"
+      ? "lifetime"
+      : activity.cadence === "yearly"
+        ? today.slice(0, 4)
+        : activity.cadence === "daily"
+          ? today
+          : `event:${input.sourceId}`;
+  const periodLimit =
+    activity.cadence === "per_event" ? 1 : Math.max(1, Number(activity.period_limit));
+  const period = await db
+    .prepare(
+      `SELECT COUNT(*) AS count,COALESCE(MAX(period_slot),0) AS max_slot
+       FROM magic_reward_activity_events
+       WHERE review_account_id=?1 AND activity_code=?2 AND period_key=?3`,
+    )
+    .bind(input.accountId, input.activityCode, periodKey)
+    .first<{ count: number; max_slot: number }>();
+  if (Number(period?.count ?? 0) >= periodLimit)
+    return { awarded: false, stars: 0, limitReached: true };
+
+  const result = await db
+    .prepare(
+      `INSERT OR IGNORE INTO magic_reward_activity_events(
+         id,review_account_id,activity_code,source_type,source_id,period_key,period_slot,stars,metadata_json
+       ) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9)`,
+    )
+    .bind(
+      crypto.randomUUID(),
+      input.accountId,
+      input.activityCode,
+      input.sourceType,
+      input.sourceId,
+      periodKey,
+      Number(period?.max_slot ?? 0) + 1,
+      Number(activity.stars),
+      JSON.stringify(input.metadata ?? {}),
+    )
+    .run();
+  const awarded = Number(result.meta.changes) === 1;
+  return { awarded, stars: awarded ? Number(activity.stars) : 0, limitReached: false };
+}
 
 async function program(db: D1Database): Promise<Program> {
   const row = await db
@@ -37,41 +153,7 @@ async function program(db: D1Database): Promise<Program> {
   return row;
 }
 
-async function addStars(
-  db: D1Database,
-  input: {
-    accountId: string;
-    delta: number;
-    reason: string;
-    sourceType: string;
-    sourceId: string;
-    note?: string;
-    actorAdminId?: string | null;
-  },
-) {
-  if (!input.delta) return false;
-  const result = await db
-    .prepare(
-      `INSERT OR IGNORE INTO magic_star_ledger(
-         id,review_account_id,delta,reason,source_type,source_id,note,actor_admin_user_id
-       ) VALUES(?1,?2,?3,?4,?5,?6,?7,?8)`,
-    )
-    .bind(
-      crypto.randomUUID(),
-      input.accountId,
-      input.delta,
-      input.reason,
-      input.sourceType,
-      input.sourceId,
-      input.note ?? null,
-      input.actorAdminId ?? null,
-    )
-    .run();
-  return Number(result.meta.changes) === 1;
-}
-
-async function awardCollections(db: D1Database, accountId: string, email: string, cfg: Program) {
-  if (!cfg.stars_for_collection) return;
+async function awardCollections(db: D1Database, accountId: string, email: string) {
   const completed = await db
     .prepare(
       `SELECT c.id,c.name
@@ -92,13 +174,12 @@ async function awardCollections(db: D1Database, accountId: string, email: string
     .bind(email)
     .all<{ id: string; name: string }>();
   for (const collection of completed.results) {
-    await addStars(db, {
+    await awardMagicRewardActivity(db, {
       accountId,
-      delta: cfg.stars_for_collection,
-      reason: "collection_completed",
+      activityCode: "collection_completed",
       sourceType: "collection",
       sourceId: collection.id,
-      note: `Colecție completată: ${collection.name}`,
+      metadata: { collectionName: collection.name },
     });
   }
 }
@@ -116,6 +197,12 @@ export async function reconcileMagicStarsAccount(
     .bind(account.id)
     .run();
   if (!cfg.enabled) return;
+  await awardMagicRewardActivity(db, {
+    accountId: account.id,
+    activityCode: "account_created",
+    sourceType: "review_account",
+    sourceId: account.id,
+  });
   const delivered = await db
     .prepare(
       `SELECT id,order_number FROM orders
@@ -124,13 +211,12 @@ export async function reconcileMagicStarsAccount(
     .bind(account.email)
     .all<{ id: string; order_number: string }>();
   for (const order of delivered.results) {
-    await addStars(db, {
+    await awardMagicRewardActivity(db, {
       accountId: account.id,
-      delta: cfg.stars_for_order,
-      reason: "order_delivered",
+      activityCode: "order_delivered",
       sourceType: "order",
       sourceId: order.id,
-      note: `Comandă livrată: ${order.order_number}`,
+      metadata: { orderNumber: order.order_number },
     });
   }
   const referrals = await db
@@ -144,34 +230,55 @@ export async function reconcileMagicStarsAccount(
     .bind(account.email)
     .all<{ id: string }>();
   for (const referral of referrals.results) {
-    await addStars(db, {
+    await awardMagicRewardActivity(db, {
       accountId: account.id,
-      delta: cfg.stars_for_referral,
-      reason: "referral_completed",
+      activityCode: "referral_completed",
       sourceType: "referral_redemption",
       sourceId: referral.id,
-      note: "Recomandare confirmată după livrare",
     });
   }
-  const photoReviews = await db
+  const reviews = await db
     .prepare(
       `SELECT id FROM product_reviews
-       WHERE account_id=?1 AND status='approved'
-         AND photo_r2_key IS NOT NULL AND trim(photo_r2_key)!=''`,
+       WHERE account_id=?1 AND status='approved'`,
     )
     .bind(account.id)
     .all<{ id: string }>();
-  for (const review of photoReviews.results) {
-    await addStars(db, {
+  for (const review of reviews.results) {
+    await awardMagicRewardActivity(db, {
       accountId: account.id,
-      delta: cfg.stars_for_photo_review,
-      reason: "photo_review_approved",
+      activityCode: "review_approved",
       sourceType: "product_review",
       sourceId: review.id,
-      note: "Recenzie cu fotografie aprobată",
     });
   }
-  await awardCollections(db, account.id, account.email, cfg);
+  const profile = await db
+    .prepare("SELECT completed FROM gift_profiles WHERE review_account_id=?1")
+    .bind(account.id)
+    .first<{ completed: number }>();
+  if (Number(profile?.completed) === 1)
+    await awardMagicRewardActivity(db, {
+      accountId: account.id,
+      activityCode: "gift_profile_completed",
+      sourceType: "gift_profile",
+      sourceId: account.id,
+    });
+  const firstCalendarEvent = await db
+    .prepare(
+      `SELECT id FROM gift_calendar_events
+       WHERE review_account_id=?1 ORDER BY created_at,id LIMIT 1`,
+    )
+    .bind(account.id)
+    .first<{ id: string }>();
+  if (firstCalendarEvent)
+    await awardMagicRewardActivity(db, {
+      accountId: account.id,
+      activityCode: "first_calendar_event",
+      sourceType: "gift_calendar_event",
+      sourceId: firstCalendarEvent.id,
+    });
+  await awardCollections(db, account.id, account.email);
+  await awardBirthdayForAccount(db, account.id);
 }
 
 export async function awardMagicStarsForDeliveredOrder(db: D1Database, orderId: string) {
@@ -189,48 +296,146 @@ export async function awardMagicStarsForDeliveredOrder(db: D1Database, orderId: 
   if (account) await reconcileMagicStarsAccount(db, account);
 }
 
+export async function awardMagicStarsForApprovedReview(db: D1Database, reviewId: string) {
+  const review = await db
+    .prepare(
+      `SELECT id,account_id FROM product_reviews
+       WHERE id=?1 AND status='approved' AND account_id IS NOT NULL`,
+    )
+    .bind(reviewId)
+    .first<{ id: string; account_id: string }>();
+  if (!review) return { awarded: false, stars: 0, limitReached: false };
+  return awardMagicRewardActivity(db, {
+    accountId: review.account_id,
+    activityCode: "review_approved",
+    sourceType: "product_review",
+    sourceId: review.id,
+  });
+}
+
+export async function awardMagicStarsForShare(
+  db: D1Database,
+  input: { accountId: string; channel: string; productId: string; actionId: string },
+) {
+  return awardMagicRewardActivity(db, {
+    accountId: input.accountId,
+    activityCode: "social_share",
+    sourceType: "product_share",
+    sourceId: input.actionId,
+    metadata: { channel: input.channel, productId: input.productId },
+  });
+}
+
+export async function saveCustomerBirthday(
+  db: D1Database,
+  accountId: string,
+  birthday: { month: number; day: number },
+) {
+  const probe = new Date(Date.UTC(2024, birthday.month - 1, birthday.day));
+  if (probe.getUTCMonth() !== birthday.month - 1 || probe.getUTCDate() !== birthday.day)
+    throw new Error("Data aniversării nu este validă.");
+  await db
+    .prepare(
+      `UPDATE review_accounts SET birth_month=?2,birth_day=?3
+       WHERE id=?1 AND status='active'`,
+    )
+    .bind(accountId, birthday.month, birthday.day)
+    .run();
+  return awardBirthdayForAccount(db, accountId);
+}
+
+export async function awardBirthdayForAccount(db: D1Database, accountId: string, now = new Date()) {
+  const birthday = await db
+    .prepare("SELECT birth_month,birth_day FROM review_accounts WHERE id=?1 AND status='active'")
+    .bind(accountId)
+    .first<{ birth_month: number | null; birth_day: number | null }>();
+  if (!birthday?.birth_month || !birthday.birth_day)
+    return { awarded: false, stars: 0, limitReached: false };
+  const today = bucharestDate(now);
+  if (
+    Number(today.slice(5, 7)) !== Number(birthday.birth_month) ||
+    Number(today.slice(8, 10)) !== Number(birthday.birth_day)
+  )
+    return { awarded: false, stars: 0, limitReached: false };
+  return awardMagicRewardActivity(db, {
+    accountId,
+    activityCode: "birthday_bonus",
+    sourceType: "birthday",
+    sourceId: today.slice(0, 4),
+    now,
+  });
+}
+
+export async function processBirthdayRewards(db: D1Database, now = new Date()) {
+  const today = bucharestDate(now);
+  const accounts = await db
+    .prepare(
+      `SELECT id FROM review_accounts
+       WHERE status='active' AND birth_month=?1 AND birth_day=?2`,
+    )
+    .bind(Number(today.slice(5, 7)), Number(today.slice(8, 10)))
+    .all<{ id: string }>();
+  let awarded = 0;
+  for (const account of accounts.results) {
+    const result = await awardBirthdayForAccount(db, account.id, now);
+    if (result.awarded) awarded += 1;
+  }
+  return awarded;
+}
+
 export async function magicRewardsDashboard(
   db: D1Database,
   account: { id: string; email: string },
 ): Promise<MagicRewardsDashboard> {
   await reconcileMagicStarsAccount(db, account);
-  const [cfg, balance, ledger, rewards, profile, calendar] = await Promise.all([
-    program(db),
-    db
-      .prepare(
-        `SELECT available_stars,lifetime_stars,redeemed_stars
+  const [cfg, balance, activities, birthday, ledger, rewards, profile, calendar] =
+    await Promise.all([
+      program(db),
+      db
+        .prepare(
+          `SELECT available_stars,lifetime_stars,redeemed_stars
          FROM magic_star_accounts WHERE review_account_id=?1`,
-      )
-      .bind(account.id)
-      .first<{ available_stars: number; lifetime_stars: number; redeemed_stars: number }>(),
-    db
-      .prepare(
-        `SELECT id,delta,reason,source_type,source_id,note,created_at
-         FROM magic_star_ledger WHERE review_account_id=?1
-         ORDER BY created_at DESC LIMIT 50`,
-      )
-      .bind(account.id)
-      .all<Record<string, string | number | null>>(),
-    db
-      .prepare(
-        `SELECT id,code,stars_spent,value_bani,status,expires_at,used_at,created_at
+        )
+        .bind(account.id)
+        .first<{ available_stars: number; lifetime_stars: number; redeemed_stars: number }>(),
+      listMagicRewardActivities(db, true),
+      db
+        .prepare("SELECT birth_month,birth_day FROM review_accounts WHERE id=?1")
+        .bind(account.id)
+        .first<{ birth_month: number | null; birth_day: number | null }>(),
+      db
+        .prepare(
+          `SELECT l.id,l.delta,l.reason,l.source_type,l.source_id,
+          COALESCE(activity.name,l.note) AS note,event.activity_code,l.created_at
+         FROM magic_star_ledger l
+         LEFT JOIN magic_reward_activity_events event
+           ON l.source_type='reward_activity' AND event.id=l.source_id
+         LEFT JOIN magic_reward_activities activity ON activity.code=event.activity_code
+         WHERE l.review_account_id=?1
+         ORDER BY l.created_at DESC LIMIT 50`,
+        )
+        .bind(account.id)
+        .all<Record<string, string | number | null>>(),
+      db
+        .prepare(
+          `SELECT id,code,stars_spent,value_bani,status,expires_at,used_at,created_at
          FROM magic_star_rewards WHERE review_account_id=?1
          ORDER BY created_at DESC LIMIT 20`,
-      )
-      .bind(account.id)
-      .all<Record<string, string | number | null>>(),
-    db
-      .prepare("SELECT preferences_json,completed FROM gift_profiles WHERE review_account_id=?1")
-      .bind(account.id)
-      .first<{ preferences_json: string; completed: number }>(),
-    db
-      .prepare(
-        `SELECT id,occasion,person_name,event_month,event_day,reminder_days_json,email_enabled,active,created_at
+        )
+        .bind(account.id)
+        .all<Record<string, string | number | null>>(),
+      db
+        .prepare("SELECT preferences_json,completed FROM gift_profiles WHERE review_account_id=?1")
+        .bind(account.id)
+        .first<{ preferences_json: string; completed: number }>(),
+      db
+        .prepare(
+          `SELECT id,occasion,person_name,event_month,event_day,reminder_days_json,email_enabled,active,created_at
          FROM gift_calendar_events WHERE review_account_id=?1 ORDER BY event_month,event_day,person_name`,
-      )
-      .bind(account.id)
-      .all<Record<string, string | number>>(),
-  ]);
+        )
+        .bind(account.id)
+        .all<Record<string, string | number>>(),
+    ]);
   return {
     program: {
       enabled: cfg.enabled === 1,
@@ -244,6 +449,11 @@ export async function magicRewardsDashboard(
       lifetimeStars: balance?.lifetime_stars ?? 0,
       redeemedStars: balance?.redeemed_stars ?? 0,
     },
+    activities,
+    birthday:
+      birthday?.birth_month && birthday.birth_day
+        ? { month: Number(birthday.birth_month), day: Number(birthday.birth_day) }
+        : null,
     ledger: ledger.results,
     rewards: rewards.results,
     profile: profile
@@ -281,14 +491,12 @@ export async function saveGiftProfile(
     )
     .bind(accountId, JSON.stringify(preferences), completed ? 1 : 0)
     .run();
-  if (completed && cfg.enabled && cfg.stars_for_gift_profile)
-    await addStars(db, {
+  if (completed && cfg.enabled)
+    await awardMagicRewardActivity(db, {
       accountId,
-      delta: cfg.stars_for_gift_profile,
-      reason: "gift_profile_completed",
+      activityCode: "gift_profile_completed",
       sourceType: "gift_profile",
       sourceId: accountId,
-      note: "Profilul de cadouri a fost completat",
     });
 }
 

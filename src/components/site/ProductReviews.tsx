@@ -11,10 +11,12 @@ const REVIEWS_PER_PAGE = 4;
 export function ProductReviews({
   slug,
   name,
+  products,
   initial,
 }: {
   slug: string;
   name: string;
+  products: Array<{ id: string; name: string }>;
   initial: ReviewList;
 }) {
   const id = useId(),
@@ -46,6 +48,23 @@ export function ProductReviews({
   });
   const data = query.data;
   const displayedReviews = data?.reviews.slice(0, REVIEWS_PER_PAGE) ?? [];
+
+  function inferredLocale() {
+    if (typeof navigator === "undefined")
+      return { language: "ro" as const, countryCode: "RO" as const };
+    const locale = navigator.languages?.[0] || navigator.language || "ro-RO";
+    const [languageCode, countryCode] = locale.replace("_", "-").split("-");
+    const supportedCountry = countryCode?.toUpperCase();
+    return {
+      language: languageCode.toLowerCase() === "ro" ? ("ro" as const) : ("en" as const),
+      countryCode:
+        supportedCountry && supportedCountry in reviewCountries
+          ? (supportedCountry as keyof typeof reviewCountries)
+          : languageCode.toLowerCase() === "ro"
+            ? ("RO" as const)
+            : null,
+    };
+  }
 
   const goToSlide = useCallback(
     (next: number) => {
@@ -83,16 +102,18 @@ export function ProductReviews({
     setMessage("");
     try {
       if (!rating) throw new Error("Alege între 1 și 5 stele.");
+      const locale = inferredLocale();
+      const selectedProduct = String(form.get("productSlug") || slug);
       const created = await reviewApi<{ id: string }>("/api/v1/reviews", {
         method: "POST",
         body: JSON.stringify({
-          productSlug: slug,
+          productSlug: selectedProduct,
           displayName: account.data ? undefined : form.get("displayName"),
           email: account.data ? undefined : form.get("email"),
           rating,
           body: form.get("body"),
-          language: form.get("language"),
-          countryCode: form.get("countryCode"),
+          language: locale.language,
+          countryCode: locale.countryCode,
           consent: form.get("consent") === "on",
           website: form.get("website"),
         }),
@@ -117,7 +138,7 @@ export function ProductReviews({
         }
       }
       trackGrowthEvent("review_submitted", {
-        productSlug: slug,
+        productSlug: selectedProduct,
         quantity: 1,
         properties: { rating, mode: account.data ? "account" : "guest" },
       });
@@ -198,6 +219,16 @@ export function ProductReviews({
                 <input name="website" tabIndex={-1} autoComplete="off" />
               </label>
             </div>
+            <label className="review-product-field">
+              Cutiuța despre care scrii
+              <select name="productSlug" defaultValue={slug} required>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             {!account.data && (
               <div className="review-fields">
                 <label>
@@ -247,23 +278,6 @@ export function ProductReviews({
                     placeholder="Cum ai ales-o? Ce ți-a plăcut sau ce ai îmbunătăți?"
                   />
                 </label>
-                <label>
-                  Limba recenziei
-                  <select name="language">
-                    <option value="ro">Română</option>
-                    <option value="en">English</option>
-                  </select>
-                </label>
-                <label>
-                  Țara
-                  <select name="countryCode" defaultValue="RO" required>
-                    {Object.entries(reviewCountries).map(([code, label]) => (
-                      <option key={code} value={code}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 {account.data && (
                   <label>
                     Fotografie proprie · opțional, maximum 5 MB
@@ -276,8 +290,8 @@ export function ProductReviews({
                   <Link to="/politica-de-confidentialitate">Confidențialitate</Link>
                 </label>
                 <p className="review-form-note">
-                  Sunt binevenite și părerile critice. Nu include date personale în text. Recenziile
-                  sunt moderate înainte de publicare.
+                  Limba și țara sunt deduse automat. Sunt binevenite și părerile critice; nu include
+                  date personale în text. Recenziile sunt moderate înainte de publicare.
                 </p>
               </>
             }

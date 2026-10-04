@@ -1,107 +1,130 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
+  Cake,
   Camera,
   Check,
   Gift,
   Layers3,
   ShieldCheck,
+  Share2,
   Sparkles,
   Star,
   UserRound,
   Users,
 } from "lucide-react";
 import { safeJsonLd } from "@/lib/product-discovery";
+import { getPublicMagicRewards } from "@/lib/magic-rewards.functions";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/magic-rewards")({
   component: MagicRewards,
-  head: () => ({
-    meta: [
-      { title: "Magic Rewards — Magic Stars ✦ | Cutiuța Magică" },
-      {
-        name: "description",
-        content:
-          "Descoperă Magic Stars, programul de fidelitate Cutiuța Magică: stele pentru comenzi, recenzii cu fotografie, recomandări și colecții.",
-      },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "Magic Rewards — loialitate, fără matematică" },
-      {
-        property: "og:description",
-        content:
-          "O acțiune eligibilă, o Magic Star. Momentele tale cu Cutiuța Magică, păstrate simplu și transparent.",
-      },
-      { property: "og:url", content: "https://cutiutamagica.eu/magic-rewards" },
-      { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://cutiutamagica.eu/icon-512.png" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/magic-rewards" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: safeJsonLd({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "WebPage",
-              "@id": "https://cutiutamagica.eu/magic-rewards#page",
-              url: "https://cutiutamagica.eu/magic-rewards",
-              name: "Magic Rewards — Magic Stars",
-              description:
-                "Pagina programului de fidelitate Magic Rewards al magazinului Cutiuța Magică.",
-              inLanguage: "ro-RO",
-              isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
-              about: { "@id": "https://cutiutamagica.eu/#organization" },
-            },
-            {
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                {
-                  "@type": "ListItem",
-                  position: 1,
-                  name: "Acasă",
-                  item: "https://cutiutamagica.eu/",
-                },
-                {
-                  "@type": "ListItem",
-                  position: 2,
-                  name: "Magic Rewards",
-                  item: "https://cutiutamagica.eu/magic-rewards",
-                },
-              ],
-            },
-          ],
-        }),
-      },
-    ],
-  }),
+  loader: () => getPublicMagicRewards(),
+  head: () => {
+    const seo = seoHead({
+      title: "Magic Rewards — Magic Stars ✦ | Cutiuța Magică",
+      description:
+        "Descoperă Magic Stars, programul de fidelitate Cutiuța Magică: stele pentru cont, comenzi, recenzii aprobate, distribuiri și bonus aniversar.",
+      path: "/magic-rewards",
+      image: "/scenes/library.webp",
+      imageAlt: "Magic Rewards — beneficii pentru poveștile și cadourile tale",
+    });
+    return {
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: safeJsonLd({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "WebPage",
+                "@id": "https://cutiutamagica.eu/magic-rewards#page",
+                url: "https://cutiutamagica.eu/magic-rewards",
+                name: "Magic Rewards — Magic Stars",
+                description:
+                  "Pagina programului de fidelitate Magic Rewards al magazinului Cutiuța Magică.",
+                inLanguage: "ro-RO",
+                isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+                about: { "@id": "https://cutiutamagica.eu/#organization" },
+              },
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Acasă",
+                    item: "https://cutiutamagica.eu/",
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Magic Rewards",
+                    item: "https://cutiutamagica.eu/magic-rewards",
+                  },
+                ],
+              },
+            ],
+          }),
+        },
+      ],
+    };
+  },
 });
 
 const rewardMoments = [
   {
+    code: "account_created",
+    icon: UserRound,
+    title: "Cont Magic",
+    text: "Prima filă a poveștii tale și locul în care se strâng toate stelele.",
+    timing: "O singură dată",
+  },
+  {
+    code: "order_delivered",
     icon: Gift,
     title: "O comandă",
-    text: "Steaua se confirmă după ce comanda a ajuns cu bine la tine.",
+    text: "Stelele se confirmă după ce această comandă a ajuns cu bine la tine.",
     timing: "După livrare",
   },
   {
+    code: "review_approved",
     icon: Camera,
-    title: "Un review cu fotografie",
-    text: "O impresie sinceră și o fotografie proprie, după verificarea publicării.",
+    title: "O recenzie",
+    text: "O impresie sinceră, după verificarea și aprobarea publicării.",
     timing: "După aprobare",
   },
   {
+    code: "social_share",
+    icon: Share2,
+    title: "O distribuire",
+    text: "Pornești distribuirea unei cutiuțe din pagina ei, în limita zilnică afișată.",
+    timing: "Limită zilnică",
+  },
+  {
+    code: "birthday_bonus",
+    icon: Cake,
+    title: "Ziua ta",
+    text: "Un dar aniversar ajunge automat în cont în ziua pe care ai salvat-o.",
+    timing: "O dată pe an",
+  },
+  {
+    code: "referral_completed",
     icon: Users,
     title: "Recomandarea unui prieten",
     text: "Când prietenul recomandat primește prima lui comandă eligibilă.",
     timing: "După livrarea prietenului",
   },
   {
+    code: "gift_profile_completed",
     icon: UserRound,
     title: "Profilul de cadouri",
     text: "Completezi preferințele care ne ajută să-ți recomandăm cadouri relevante.",
     timing: "O singură dată",
   },
   {
+    code: "collection_completed",
     icon: Layers3,
     title: "O colecție",
     text: "Aduni modelele eligibile din aceeași poveste și închei colecția.",
@@ -110,6 +133,10 @@ const rewardMoments = [
 ] as const;
 
 function MagicRewards() {
+  const rewards = Route.useLoaderData();
+  const threshold = Number(rewards.program?.redemption_threshold ?? 5);
+  const rewardLei = Number(rewards.program?.reward_bani ?? 500) / 100;
+  const rewardValidDays = Number(rewards.program?.reward_valid_days ?? 180);
   return (
     <article className="magic-rewards-page">
       <header className="magic-rewards-hero">
@@ -123,7 +150,8 @@ function MagicRewards() {
           </h1>
           <p className="magic-rewards-lead">
             Loialitate, fără matematică. Nu aduni sute de puncte și nu cauți conversii ascunse.
-            Fiecare moment eligibil poate deveni o stea, verificată și păstrată în contul tău.
+            Fiecare activitate eligibilă aprinde un număr clar de stele, verificat și păstrat în
+            contul tău.
           </p>
           <div className="magic-rewards-actions">
             <Link className="magic-button" to="/cont">
@@ -134,8 +162,8 @@ function MagicRewards() {
             </a>
           </div>
           <small>
-            Cinci stele confirmate pot fi transformate într-un cod de 15 lei, valabil 180 de zile.
-            Fiecare stea rămâne vizibilă în istoricul contului.
+            {threshold} Magic Stars pot deveni {rewardLei} lei la următoarea comandă. Fiecare stea
+            rămâne vizibilă în istoricul contului.
           </small>
         </div>
 
@@ -150,8 +178,8 @@ function MagicRewards() {
           <span className="magic-rewards-orbit__node magic-rewards-orbit__node--five">✦</span>
           <div className="magic-rewards-orbit__core">
             <Star aria-hidden />
-            <strong>1 moment</strong>
-            <span>1 Magic Star</span>
+            <strong>1 stea</strong>
+            <span>1 leu</span>
           </div>
         </div>
       </header>
@@ -164,30 +192,35 @@ function MagicRewards() {
         <div className="magic-rewards-section-heading">
           <div>
             <p className="scene-eyebrow">Momente Care Contează</p>
-            <h2 id="magic-rewards-moments-title">Cinci moduri simple de a aprinde o stea.</h2>
+            <h2 id="magic-rewards-moments-title">Gesturi mici. Stele cu valoare clară.</h2>
           </div>
           <p>
-            Fiecare acțiune eligibilă valorează o singură stea. Confirmarea se face numai după ce
-            condiția este îndeplinită, pentru ca programul să rămână corect pentru toată lumea.
+            Activitățile de început au fiecare o valoare clară. Recenziile, distribuirile și ziua ta
+            au propriile valori și limite, mereu vizibile înainte să alegi.
           </p>
         </div>
 
         <div className="magic-rewards-grid">
           {rewardMoments.map((moment, index) => {
             const Icon = moment.icon;
+            const activity = rewards.activities.find(({ code }) => code === moment.code);
+            if (!activity) return null;
             return (
               <article key={moment.title}>
                 <div className="magic-rewards-card__top">
                   <span className="magic-rewards-card__icon">
                     <Icon aria-hidden />
                   </span>
-                  <span className="magic-rewards-card__star">+1 ✦</span>
+                  <span className="magic-rewards-card__star">+{activity.stars} ✦</span>
                 </div>
                 <span className="magic-rewards-card__number">0{index + 1}</span>
                 <h3>{moment.title}</h3>
                 <p>{moment.text}</p>
                 <small>
-                  <Check aria-hidden /> {moment.timing}
+                  <Check aria-hidden />{" "}
+                  {moment.code === "social_share" && activity.periodLimit > 0
+                    ? `Max. ${activity.periodLimit} pe zi`
+                    : moment.timing}
                 </small>
               </article>
             );
@@ -237,9 +270,10 @@ function MagicRewards() {
           <p className="scene-eyebrow">Promisiunea Programului</p>
           <h2 id="magic-rewards-promise-title">Beneficii clare înainte să alegi.</h2>
           <p>
-            Magic Stars nu sunt bani și nu devin automat o reducere. La cinci stele poți genera din
-            cont un cod de 15 lei, utilizabil o singură dată în 180 de zile. Istoricul fiecărei
-            stele și al beneficiilor rămâne vizibil în contul tău.
+            Magic Stars nu sunt bani și nu devin automat o reducere. La {threshold} stele poți
+            genera din cont un cod de {rewardLei} lei, utilizabil o singură dată în{" "}
+            {rewardValidDays}
+            de zile. Istoricul fiecărei stele și al beneficiilor rămâne vizibil în contul tău.
           </p>
         </div>
         <ul>

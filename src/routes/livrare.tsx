@@ -16,44 +16,39 @@ import {
 } from "lucide-react";
 import { safeJsonLd } from "@/lib/product-discovery";
 import { waLink } from "@/lib/whatsapp";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/livrare")({
   component: DeliveryPage,
-  head: () => ({
-    meta: [
-      { title: "Livrare cutiuțe muzicale | Cutiuța Magică" },
-      {
-        name: "description",
-        content:
-          "Livrare în 1–2 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate. Curier 25 lei, SAMEDAY easybox 15 lei ori livrare programată.",
-      },
-      { property: "og:title", content: "Livrare — Cutiuța Magică" },
-      {
-        property: "og:description",
-        content:
-          "De la atelier la tine: 1–2 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate.",
-      },
-      { property: "og:url", content: "https://cutiutamagica.eu/livrare" },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/livrare" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: safeJsonLd({
-          "@context": "https://schema.org",
-          "@type": "WebPage",
-          "@id": "https://cutiutamagica.eu/livrare#page",
-          url: "https://cutiutamagica.eu/livrare",
-          name: "Livrare — Cutiuța Magică",
-          description:
-            "Informații despre livrarea cutiuțelor standard în 1–2 zile lucrătoare și a modelelor speciale sau personalizate în 4–7 zile.",
-          inLanguage: "ro-RO",
-          isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
-        }),
-      },
-    ],
-  }),
+  head: () => {
+    const seo = seoHead({
+      title: "Livrare cutiuțe muzicale | Cutiuța Magică",
+      description:
+        "Livrare în 1–2 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate. Curier 25 lei și SAMEDAY easybox 15 lei.",
+      path: "/livrare",
+      image: "/scenes/footer-atelier.webp",
+      imageAlt: "O cutiuță muzicală pregătită cu grijă pentru livrare",
+    });
+    return {
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: safeJsonLd({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "@id": "https://cutiutamagica.eu/livrare#page",
+            url: "https://cutiutamagica.eu/livrare",
+            name: "Livrare — Cutiuța Magică",
+            description:
+              "Informații despre livrarea cutiuțelor standard în 1–2 zile lucrătoare și a modelelor speciale sau personalizate în 4–7 zile.",
+            inLanguage: "ro-RO",
+            isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+          }),
+        },
+      ],
+    };
+  },
 });
 
 const journey = [

@@ -6,7 +6,7 @@ import { ProductWorld } from "@/components/site/ProductWorld";
 import { animateIntoCart } from "@/lib/cart-flight";
 import { ProductInterest } from "@/components/site/ProductInterest";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 import {
   ShoppingBag,
@@ -41,6 +41,7 @@ import {
 import { ProductDeliveryEstimate } from "@/components/site/ProductDeliveryEstimate";
 import { ProductMobileBuyBar } from "@/components/site/ProductMobileBuyBar";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/produs/$id")({
   component: ProductPage,
@@ -69,18 +70,18 @@ export const Route = createFileRoute("/produs/$id")({
     const description =
       loaderData.product.seoDescription ||
       `${loaderData.product.tagline} Cutiuță muzicală din lemn, cu manivelă și mecanism manual${loaderData.product.melody ? `, melodia ${loaderData.product.melody}` : ""}.`;
+    const seo = seoHead({
+      title: loaderData.product.seoTitle || `${loaderData.product.name} | Cutiuța Magică`,
+      description,
+      path: `/produs/${encodeURIComponent(params.id)}`,
+      image,
+      imageAlt: `${loaderData.product.name} — fotografie de produs`,
+      type: "product",
+    });
     return {
+      ...seo,
       meta: [
-        { title: loaderData.product.seoTitle || `${loaderData.product.name} — Cutiuța Magică` },
-        { name: "description", content: description },
-        { name: "robots", content: "index, follow, max-image-preview:large" },
-        { property: "og:image:alt", content: loaderData.product.name },
-        { property: "og:title", content: loaderData.product.name },
-        { property: "og:description", content: description },
-        { property: "og:image", content: image },
-        { name: "twitter:image", content: image },
-        { property: "og:url", content: url },
-        { property: "og:type", content: "product" },
+        ...seo.meta,
         ...(price
           ? [
               { property: "product:price:amount", content: price },
@@ -89,7 +90,6 @@ export const Route = createFileRoute("/produs/$id")({
           : []),
         { property: "product:availability", content: inStock ? "in stock" : "out of stock" },
       ],
-      links: [{ rel: "canonical", href: url }],
       scripts: [
         {
           type: "application/ld+json",
@@ -214,7 +214,6 @@ function ProductPage() {
     availability: "out_of_stock" as const,
   };
   const navigate = useNavigate();
-  const ref = useRef<HTMLDivElement>(null);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
   const [show360, setShow360] = useState(false);
@@ -227,23 +226,6 @@ function ProductPage() {
     animateIntoCart(event.currentTarget, product.image, added);
     notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
   };
-
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rx = useSpring(useTransform(y, [-0.5, 0.5], [12, -12]), { stiffness: 200, damping: 20 });
-  const ry = useSpring(useTransform(x, [-0.5, 0.5], [-16, 16]), { stiffness: 200, damping: 20 });
-
-  function handleMove(e: React.MouseEvent) {
-    if (!ref.current) return;
-    const r = ref.current.getBoundingClientRect();
-    x.set((e.clientX - r.left) / r.width - 0.5);
-    y.set((e.clientY - r.top) / r.height - 0.5);
-  }
-
-  function handleLeave() {
-    x.set(0);
-    y.set(0);
-  }
 
   const related = useMemo(
     () =>
@@ -286,13 +268,7 @@ function ProductPage() {
               <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
             </div>
           ) : (
-            <motion.div
-              ref={ref}
-              onMouseMove={handleMove}
-              onMouseLeave={handleLeave}
-              style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-              className="product-main-visual relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card"
-            >
+            <motion.div className="product-main-visual relative overflow-hidden shadow-warm bg-card">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.button
                   type="button"
@@ -334,7 +310,6 @@ function ProductPage() {
                   exit={{ opacity: 0, scale: 1.01 }}
                   transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
                   className="product-main-visual__trigger absolute inset-0 cursor-zoom-in"
-                  style={{ transform: "translateZ(36px)" }}
                 >
                   <ProductImage
                     src={currentImage.src}
@@ -342,7 +317,7 @@ function ProductPage() {
                     loading="eager"
                     fetchPriority="high"
                     sizes="(max-width: 768px) 92vw, 620px"
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-cover"
                     style={{ objectPosition: currentImage.position ?? "center" }}
                   />
                 </motion.button>
@@ -351,7 +326,6 @@ function ProductPage() {
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(85%_65%_at_50%_15%,oklch(0.95_0.12_85/0.14),transparent_62%)]"
-                style={{ transform: "translateZ(50px)" }}
               />
               <span
                 aria-hidden
@@ -359,10 +333,7 @@ function ProductPage() {
               />
               <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
               {product.melody ? (
-                <motion.div
-                  style={{ transform: "translateZ(60px)" }}
-                  className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
-                >
+                <motion.div className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
                   <Music className="w-3 h-3" /> {product.melody}
                 </motion.div>
               ) : null}
@@ -422,12 +393,19 @@ function ProductPage() {
                   src={image.src}
                   alt={image.label}
                   sizes="120px"
-                  className="aspect-square w-full object-contain"
+                  className="aspect-square w-full object-cover"
                   style={{ objectPosition: image.position ?? "center" }}
                 />
               </button>
             ))}
           </div>
+
+          <article className="product-about-card">
+            <p className="catalog-eyebrow">Povestea modelului</p>
+            <h2>Despre cutiuță</h2>
+            <p>{product.description}</p>
+            <p>{product.story}</p>
+          </article>
         </div>
 
         <div className="product-detail-copy">
@@ -476,31 +454,37 @@ function ProductPage() {
             </div>
           )}
 
-          <div className="mt-6 flex items-center gap-3">
+          <div className="product-purchase-actions mt-6">
             {available && (
               <>
-                <div className="inline-flex items-center rounded-full border bg-card">
+                <div
+                  className="product-quantity-control"
+                  aria-label="Selectează numărul de cutiuțe"
+                >
+                  <span className="product-quantity-control__label">Bucăți</span>
                   <button
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    className="p-2.5 hover:bg-muted rounded-l-full"
-                    aria-label="Scade"
+                    aria-label="Scade cantitatea"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="px-4 font-medium tabular-nums">{qty}</span>
+                  <output aria-live="polite">{qty}</output>
                   <button
                     onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
-                    className="p-2.5 hover:bg-muted rounded-r-full"
-                    aria-label="Crește"
+                    aria-label="Crește cantitatea"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                <button
-                  onClick={(event) => addProductToCart(event)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
-                >
-                  <ShoppingBag className="w-4 h-4" /> Adaugă în coș
+                <button onClick={(event) => addProductToCart(event)} className="product-add-button">
+                  <span className="product-add-button__icon">
+                    <ShoppingBag aria-hidden />
+                  </span>
+                  <span>
+                    <strong>Adaugă în coș</strong>
+                    <small>Pregătește povestea</small>
+                  </span>
+                  <Sparkles className="product-add-button__spark" aria-hidden />
                 </button>
               </>
             )}
@@ -509,7 +493,7 @@ function ProductPage() {
           {available && totalQty > 0 && (
             <Link
               to="/comanda"
-              className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full border border-primary/40 px-6 py-3 text-sm font-medium hover:bg-primary/5"
+              className="product-checkout-link mt-3 inline-flex items-center justify-center gap-2 border border-primary/40 px-4 py-2.5 text-sm font-medium hover:bg-primary/5"
             >
               <Gift className="w-4 h-4" /> Finalizează comanda
             </Link>
@@ -532,14 +516,6 @@ function ProductPage() {
           </div>
 
           <div className="mt-8">
-            <h2 className="font-display text-xl">Despre cutiuță</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {product.description}
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{product.story}</p>
-          </div>
-
-          <div className="mt-8">
             <h3 className="font-display text-xl">Detalii</h3>
             <ul className="mt-3 space-y-2">
               {product.details.map((d: string) => (
@@ -553,18 +529,25 @@ function ProductPage() {
       </div>
 
       <ProductDiscovery product={product} />
-      <ProductReviews key={product.id} slug={product.id} name={product.name} initial={reviews} />
+      <ProductReviews
+        key={product.id}
+        slug={product.id}
+        name={product.name}
+        products={products.map(({ id, name: productName }) => ({ id, name: productName }))}
+        initial={reviews}
+      />
 
       {experienceQuery.data?.animation && (
         <ProductAnimation animation={experienceQuery.data.animation} productName={product.name} />
       )}
 
       {related.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-16">
+        <section className="product-related-section max-w-7xl mx-auto px-4">
           <h2 className="font-display text-3xl mb-6 text-center">Și acestea îți pot plăcea</h2>
           <ProductCardCarousel
             products={related}
             ariaLabel="Alte cutiuțe care ți-ar putea plăcea"
+            compact
           />
         </section>
       )}

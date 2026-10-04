@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Gift, Sparkles, Star, Trash2 } from "lucide-react";
+import { Cake, CalendarDays, Gift, Sparkles, Star, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { reviewApi } from "@/lib/reviews";
@@ -7,7 +7,23 @@ import { reviewApi } from "@/lib/reviews";
 type Dashboard = {
   program: { enabled: boolean; redemptionThreshold: number; rewardBani: number };
   account: { availableStars: number; lifetimeStars: number; redeemedStars: number };
-  ledger: Array<{ id: string; delta: number; reason: string; note: string | null }>;
+  activities: Array<{
+    code: string;
+    name: string;
+    description: string;
+    stars: number;
+    periodLimit: number;
+    enabled: boolean;
+  }>;
+  birthday: { month: number; day: number } | null;
+  ledger: Array<{
+    id: string;
+    delta: number;
+    reason: string;
+    source_type: string;
+    activity_code?: string | null;
+    note: string | null;
+  }>;
   rewards: Array<{
     id: string;
     code: string;
@@ -46,6 +62,21 @@ const reasonLabels: Record<string, string> = {
   reward_redeemed: "Beneficiu activat",
   admin_adjustment: "Ajustare verificată",
 };
+
+const monthNames = [
+  "Ianuarie",
+  "Februarie",
+  "Martie",
+  "Aprilie",
+  "Mai",
+  "Iunie",
+  "Iulie",
+  "August",
+  "Septembrie",
+  "Octombrie",
+  "Noiembrie",
+  "Decembrie",
+];
 
 export function CustomerMagicCenter() {
   const client = useQueryClient();
@@ -131,6 +162,21 @@ export function CustomerMagicCenter() {
       toast.success("Momentul a fost adăugat în calendar.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Momentul nu a putut fi salvat.");
+    }
+  }
+
+  async function saveBirthday(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    try {
+      const form = new FormData(event.currentTarget);
+      await reviewApi("/api/v1/customer/rewards/birthday", {
+        method: "PUT",
+        body: JSON.stringify({ month: Number(form.get("month")), day: Number(form.get("day")) }),
+      });
+      await refresh();
+      toast.success("Ziua ta magică a fost salvată.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Data nu a putut fi salvată.");
     }
   }
 
@@ -252,10 +298,42 @@ export function CustomerMagicCenter() {
               <button className="magic-button">Salvează profilul</button>
             </form>
           )}
+          <form className="customer-birthday" onSubmit={(event) => void saveBirthday(event)}>
+            <span>
+              <Cake size={15} aria-hidden />
+              <span>
+                <strong>Ziua ta magică</strong>
+                <small>+10 ✦ o dată pe an, fără să păstrăm anul nașterii</small>
+              </span>
+            </span>
+            <select name="day" aria-label="Ziua nașterii" defaultValue={data.birthday?.day ?? 1}>
+              {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
+                <option key={day} value={day}>
+                  {day}
+                </option>
+              ))}
+            </select>
+            <select
+              name="month"
+              aria-label="Luna nașterii"
+              defaultValue={data.birthday?.month ?? 1}
+            >
+              {monthNames.map((month, index) => (
+                <option key={month} value={index + 1}>
+                  {month}
+                </option>
+              ))}
+            </select>
+            <button>Salvează</button>
+          </form>
           <div className="customer-star-history">
             {data.ledger.slice(0, 5).map((item) => (
               <div key={item.id}>
-                <span>{reasonLabels[item.reason] ?? item.note ?? "Magic Stars"}</span>
+                <span>
+                  {item.source_type === "reward_activity"
+                    ? (item.note ?? "Activitate Magic Rewards")
+                    : (reasonLabels[item.reason] ?? item.note ?? "Magic Stars")}
+                </span>
                 <strong>
                   {item.delta > 0 ? "+" : ""}
                   {item.delta} ✦
@@ -274,6 +352,25 @@ export function CustomerMagicCenter() {
             </div>
           )}
         </article>
+      </div>
+      <div className="customer-reward-activities">
+        <div>
+          <p className="catalog-eyebrow">Activități disponibile</p>
+          <h3>Fiecare gest are o valoare clară.</h3>
+        </div>
+        <div>
+          {data.activities
+            .filter((activity) => activity.enabled)
+            .map((activity) => (
+              <span key={activity.code}>
+                <strong>+{activity.stars} ✦</strong>
+                <span>{activity.name}</span>
+                {activity.code === "social_share" && activity.periodLimit > 0 ? (
+                  <small>max. {activity.periodLimit}/zi</small>
+                ) : null}
+              </span>
+            ))}
+        </div>
       </div>
     </section>
   );

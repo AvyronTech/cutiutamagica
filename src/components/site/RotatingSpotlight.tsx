@@ -48,7 +48,7 @@ function SpotlightCard({ product }: { product: Product }) {
           <span>
             <Music2 aria-hidden /> {product.melody || "Melodie mecanică"}
           </span>
-          <ProductPrice product={product} size="compact" showSavings={false} />
+          <ProductPrice product={product} size="compact" tone="light" showSavings={false} />
         </div>
         <div className="spotlight-card__actions">
           {available && (

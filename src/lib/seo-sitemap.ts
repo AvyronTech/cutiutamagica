@@ -36,11 +36,6 @@ export function renderSitemap(products: CatalogProduct[]): string {
     { path: "/despre-noi", lastmod: "2026-10-04", images: ["/scenes/catalog-atelier.webp"] },
     { path: "/magic-rewards", lastmod: "2026-10-04", images: ["/icon-512.png"] },
     { path: "/livrare", lastmod: "2026-09-28" },
-    {
-      path: "/personalizeaza",
-      lastmod: "2026-10-04",
-      images: ["/scenes/personalization-box-v2.webp"],
-    },
     { path: "/cadouri", lastmod: DISCOVERY_UPDATED, images: ["/scenes/catalog-atelier.webp"] },
     ...giftGuides.map((g) => ({
       path: `/cadouri/${g.slug}`,

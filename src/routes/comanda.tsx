@@ -41,22 +41,20 @@ import { ProductPrice } from "@/components/site/ProductPrice";
 import { BrandMark } from "@/components/site/BrandMark";
 import type { EasyboxLocker } from "@/lib/easybox";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/comanda")({
   component: OrderPage,
-  head: () => ({
-    meta: [
-      { title: "Comandă online — Cutiuța Magică" },
-      {
-        name: "description",
-        content: "Comandă în siguranță cutiuțele muzicale alese, cu livrare în România.",
-      },
-      { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Comandă online — Cutiuța Magică" },
-      { property: "og:url", content: "https://cutiutamagica.eu/comanda" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/comanda" }],
-  }),
+  head: () =>
+    seoHead({
+      title: "Comandă online | Cutiuța Magică",
+      description:
+        "Finalizează în siguranță comanda pentru cutiuțele muzicale alese și selectează metoda de livrare disponibilă în România.",
+      path: "/comanda",
+      image: "/produse/hp-keeper/1.webp",
+      imageAlt: "Cutiuță muzicală pregătită pentru comandă",
+      robots: "noindex, nofollow",
+    }),
 });
 
 type PaymentMethod = "cash_on_delivery" | "card";
@@ -677,7 +675,7 @@ function OrderPage() {
                         <Link
                           to="/produs/$id"
                           params={{ id: item.product.id }}
-                          className="line-clamp-1 font-display text-sm leading-tight hover:underline sm:text-base"
+                          className="line-clamp-2 font-display text-sm leading-tight hover:underline sm:text-base"
                         >
                           {item.product.name}
                         </Link>

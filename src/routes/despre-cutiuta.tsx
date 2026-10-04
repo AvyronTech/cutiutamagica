@@ -3,45 +3,39 @@ import { lazy, Suspense } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { BrandMark } from "@/components/site/BrandMark";
 import { safeJsonLd } from "@/lib/product-discovery";
+import { seoHead } from "@/lib/seo-head";
 const AssemblyStory = lazy(() => import("@/components/site/AssemblyStory"));
 export const Route = createFileRoute("/despre-cutiuta")({
   component: AboutBox,
-  head: () => ({
-    meta: [
-      { title: "Despre cutiuță — cum prinde viață o melodie | Cutiuța Magică" },
-      {
-        name: "description",
-        content:
-          "Descoperă cutiuța muzicală din lemn, de la capacul gravat la mecanismul cu manivelă. O poveste despre gesturi mici și emoții care rămân.",
-      },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "Despre cutiuță — mecanism, manivelă și melodie" },
-      {
-        property: "og:description",
-        content:
-          "Descoperă cum funcționează cutiuța muzicală din lemn și ce o transformă într-un cadou cu poveste.",
-      },
-      { property: "og:url", content: "https://cutiutamagica.eu/despre-cutiuta" },
-      { property: "og:image", content: "https://cutiutamagica.eu/produse/hp-keeper/1.webp" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/despre-cutiuta" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: safeJsonLd({
-          "@context": "https://schema.org",
-          "@type": "AboutPage",
-          "@id": "https://cutiutamagica.eu/despre-cutiuta#page",
-          url: "https://cutiutamagica.eu/despre-cutiuta",
-          name: "Despre cutiuță — mecanism, manivelă și melodie",
-          description:
-            "Cum funcționează o cutiuță muzicală din lemn cu manivelă și cum o păstrezi în colecția ta.",
-          inLanguage: "ro-RO",
-          isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
-        }),
-      },
-    ],
-  }),
+  head: () => {
+    const seo = seoHead({
+      title: "Despre cutiuță — cum prinde viață o melodie | Cutiuța Magică",
+      description:
+        "Descoperă cutiuța muzicală din lemn, de la capacul decorat la mecanismul cu manivelă. O poveste despre gesturi mici și emoții care rămân.",
+      path: "/despre-cutiuta",
+      image: "/produse/hp-keeper/1.webp",
+      imageAlt: "Detaliu al unei cutiuțe muzicale din lemn cu manivelă",
+    });
+    return {
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: safeJsonLd({
+            "@context": "https://schema.org",
+            "@type": "AboutPage",
+            "@id": "https://cutiutamagica.eu/despre-cutiuta#page",
+            url: "https://cutiutamagica.eu/despre-cutiuta",
+            name: "Despre cutiuță — mecanism, manivelă și melodie",
+            description:
+              "Cum funcționează o cutiuță muzicală din lemn cu manivelă și cum o păstrezi în colecția ta.",
+            inLanguage: "ro-RO",
+            isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+          }),
+        },
+      ],
+    };
+  },
 });
 function AboutBox() {
   return (

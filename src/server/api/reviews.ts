@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { awardMagicStarsForApprovedReview } from "@/server/services/magic-rewards";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import { reviewInput, validReviewSource, type PublicReview } from "@/lib/reviews";
 import { boundedJson } from "./bounded-json";
@@ -236,6 +237,7 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
         ]);
         if (!result[0].meta.changes)
           throw reviewFailure("Recenzia s-a schimbat. Reîncarcă lista.", 409);
+        if (v.status === "approved") await awardMagicStarsForApprovedReview(env.DB, match[1]);
         return reviewJson({ data: { saved: true } });
       }
       throw reviewFailure("Metodă nepermisă.", 405);

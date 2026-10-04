@@ -28,6 +28,8 @@ import {
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
   saveAdminSettingsData,
+  createAdminOrder,
+  createAdminProduct,
   updateOrderStatus,
   updateProductStatus,
 } from "@/server/db/admin.repository";
@@ -64,6 +66,72 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     assertPermission(context.admin, "dashboard.read");
     return getAdminDashboardData(env.DB);
+  });
+
+const createOrderInput = z.object({
+  channelCode: z.enum(["website", "emag", "vinted", "olx", "okazii", "google_merchant"]),
+  customerName: z.string().trim().min(2).max(120),
+  customerPhone: z.string().trim().min(8).max(30),
+  customerEmail: z.union([z.literal(""), z.string().trim().email().max(254)]).optional(),
+  productId: z.string().trim().min(1).max(128),
+  quantity: z.number().int().min(1).max(20),
+  shippingBani: z.number().int().min(0).max(100_000),
+  externalOrderId: z.string().trim().max(120).optional(),
+  internalNote: z.string().trim().max(1_000).optional(),
+});
+
+export const createAdminOrderEntry = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(createOrderInput)
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin) {
+      throw new Error("Cerere de administrare nepermisă.");
+    }
+    assertPermission(context.admin, "orders.write");
+    return {
+      order: await createAdminOrder(env.DB, {
+        ...data,
+        actorId: context.admin.id,
+        requestId: request.headers.get("x-request-id") ?? crypto.randomUUID(),
+      }),
+    };
+  });
+
+const createProductInput = z.object({
+  name: z.string().trim().min(3).max(180),
+  slug: z
+    .string()
+    .trim()
+    .min(3)
+    .max(100)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slugul poate conține litere mici, cifre și cratime."),
+  sku: z
+    .string()
+    .trim()
+    .min(3)
+    .max(80)
+    .regex(/^[A-Za-z0-9_-]+$/, "SKU-ul poate conține litere, cifre, cratimă și underscore."),
+  category: z.string().trim().min(2).max(100),
+  priceBani: z.number().int().min(1).max(10_000_000),
+});
+
+export const createAdminProductDraft = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(createProductInput)
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin) {
+      throw new Error("Cerere de administrare nepermisă.");
+    }
+    assertPermission(context.admin, "catalog.write");
+    const result = await createAdminProduct(env.DB, {
+      ...data,
+      actorId: context.admin.id,
+      requestId: request.headers.get("x-request-id") ?? crypto.randomUUID(),
+    });
+    await env.CACHE.delete("catalog:public:v1");
+    return result;
   });
 
 export const getAdminNotifications = createServerFn({ method: "GET" })

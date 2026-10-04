@@ -1,19 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Box,
   CalendarDays,
   Camera,
-  KeyRound,
   LogOut,
   ShieldCheck,
   Sparkles,
   Star,
   UserRound,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import {
   formatPersonalizationPrice,
   personalizationMelodies,
@@ -21,29 +19,26 @@ import {
   type PersonalizationRequestSummary,
 } from "@/lib/personalization";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
-import { loginAdminAccount } from "@/lib/admin-auth.functions";
 import { CustomerMagicCenter } from "@/components/site/CustomerMagicCenter";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/cont")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { mod?: "creare"; tip?: "admin"; auth?: "neconfigurat" | "eroare" } => ({
+  ): { mod?: "creare"; auth?: "neconfigurat" | "eroare" } => ({
     ...(search.mod === "creare" ? { mod: "creare" as const } : {}),
-    ...(search.tip === "admin" ? { tip: "admin" as const } : {}),
     ...(search.auth === "neconfigurat" || search.auth === "eroare" ? { auth: search.auth } : {}),
   }),
   component: CustomerAccount,
-  head: () => ({
-    meta: [
-      { title: "Contul meu | Cutiuța Magică" },
-      {
-        name: "description",
-        content: "Contul tău Cutiuța Magică pentru cereri de personalizare și recenzii.",
-      },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/cont" }],
-  }),
+  head: () =>
+    seoHead({
+      title: "Contul meu | Cutiuța Magică",
+      description:
+        "Spațiul tău Cutiuța Magică pentru comenzi, Magic Stars, calendarul cadourilor, recenzii și preferințe.",
+      path: "/cont",
+      imageAlt: "Contul Cutiuța Magică pentru comenzi și beneficii",
+      robots: "noindex, nofollow",
+    }),
 });
 
 const statusLabels: Record<PersonalizationRequestSummary["status"], string> = {
@@ -56,9 +51,8 @@ const statusLabels: Record<PersonalizationRequestSummary["status"], string> = {
 };
 
 function CustomerAccount() {
-  const { tip, auth } = Route.useSearch();
+  const { auth } = Route.useSearch();
   const queryClient = useQueryClient();
-  const loginAdmin = useServerFn(loginAdminAccount);
   const account = useQuery({
     queryKey: ["reviewer"],
     queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
@@ -77,30 +71,8 @@ function CustomerAccount() {
     retry: false,
     staleTime: 60_000,
   });
-  const [authSurface, setAuthSurface] = useState<"customer" | "admin">(
-    tip === "admin" ? "admin" : "customer",
-  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  async function authenticateAdmin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setBusy(true);
-    setError("");
-    try {
-      await loginAdmin({
-        data: {
-          email: String(form.get("email") ?? ""),
-          password: String(form.get("password") ?? ""),
-        },
-      });
-      window.location.assign("/admin");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Datele nu au putut fi verificate.");
-      setBusy(false);
-    }
-  }
 
   async function logout() {
     setBusy(true);
@@ -154,7 +126,7 @@ function CustomerAccount() {
               </span>
               <div>
                 <strong>Magic Stars ✦</strong>
-                <small>Comenzi, recomandări și review-uri foto pot aduce beneficii.</small>
+                <small>Contul, comenzile, recenziile aprobate și distribuirile adună stele.</small>
               </div>
             </article>
             <article>
@@ -188,129 +160,62 @@ function CustomerAccount() {
           className="customer-auth-card customer-auth-card--dimensional"
           aria-labelledby="customer-auth-title"
         >
-          <div className="customer-auth-modes">
-            <button
-              type="button"
-              aria-pressed={authSurface === "customer"}
-              onClick={() => {
-                setAuthSurface("customer");
-                setError("");
-              }}
-            >
-              Cont client
-            </button>
-            <button
-              type="button"
-              aria-pressed={authSurface === "admin"}
-              onClick={() => {
-                setAuthSurface("admin");
-                setError("");
-              }}
-            >
-              Administrator
-            </button>
-          </div>
-          {authSurface === "customer" ? (
-            <div className="customer-oauth-panel">
-              <div className="customer-auth-icon" aria-hidden>
-                <UserRound />
-              </div>
-              <p className="customer-auth-kicker">Logare și înregistrare</p>
-              <h2 id="customer-auth-title">
-                {providers.isLoading
-                  ? "Verificăm accesul securizat…"
-                  : googleReady
-                    ? "Un singur pas, cu Google"
-                    : "Conturile Magic se deschid în curând"}
-              </h2>
-              <p>
-                {googleReady
-                  ? "Dacă e prima vizită, contul se creează automat. Dacă ai revenit, intri direct în poveștile tale."
-                  : "Până atunci poți descoperi colecția și poți finaliza orice comandă rapid, fără cont."}
-              </p>
-              {providers.isLoading ? (
-                <span className="customer-google-button" aria-busy="true">
-                  <span aria-hidden>✦</span>
-                  Se verifică accesul…
-                </span>
-              ) : googleReady ? (
-                <a className="customer-google-button" href="/api/v1/reviewer/oauth/google">
-                  <span aria-hidden>G</span>
-                  Continuă cu Google
-                  <ArrowRight size={16} />
-                </a>
-              ) : (
-                <Link className="customer-google-button" to="/produse">
-                  <span aria-hidden>✦</span>
-                  Descoperă cutiuțele
-                  <ArrowRight size={16} />
-                </Link>
-              )}
-              {customerAuthMessage && (
-                <p className="personalization-error" role="alert">
-                  {customerAuthMessage}
-                </p>
-              )}
-              {googleReady && (
-                <>
-                  <div className="customer-auth-assurance">
-                    <ShieldCheck aria-hidden />
-                    <span>
-                      Nu îți cerem o parolă nouă. Folosim doar identitatea, numele și adresa
-                      confirmată de Google.
-                    </span>
-                  </div>
-                  <p className="customer-auth-legal">
-                    Continuând, accepți crearea contului și confirmi că ai citit{" "}
-                    <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
-                  </p>
-                </>
-              )}
+          <div className="customer-oauth-panel">
+            <div className="customer-auth-icon" aria-hidden>
+              <UserRound />
             </div>
-          ) : (
-            <div className="customer-admin-panel">
-              <div className="customer-auth-icon" aria-hidden>
-                <KeyRound />
-              </div>
-              <p className="customer-auth-kicker">Acces administrativ</p>
-              <h2 id="customer-auth-title">Intră în administrare</h2>
-              <p>Folosește e-mailul și parola contului administrativ.</p>
-              <form onSubmit={authenticateAdmin}>
-                <label>
-                  E-mail
-                  <input
-                    name="email"
-                    required
-                    type="email"
-                    maxLength={254}
-                    autoComplete="username"
-                  />
-                </label>
-                <label>
-                  Parolă
-                  <input
-                    name="password"
-                    required
-                    type="password"
-                    maxLength={128}
-                    autoComplete="current-password"
-                  />
-                </label>
-                {error && (
-                  <p className="personalization-error" role="alert">
-                    {error}
-                  </p>
-                )}
-                <button className="magic-button" disabled={busy}>
-                  {busy ? "Se verifică…" : "Intră în administrare"}
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-              <Link className="customer-admin-dedicated" to="/auth">
-                Deschide pagina dedicată administratorilor
+            <p className="customer-auth-kicker">Logare și înregistrare</p>
+            <h2 id="customer-auth-title">
+              {providers.isLoading
+                ? "Verificăm accesul securizat…"
+                : googleReady
+                  ? "Un singur pas, cu Google"
+                  : "Conturile Magic se deschid în curând"}
+            </h2>
+            <p>
+              {googleReady
+                ? "Dacă e prima vizită, contul se creează automat. Dacă ai revenit, intri direct în poveștile tale."
+                : "Până atunci poți descoperi colecția și poți finaliza orice comandă rapid, fără cont."}
+            </p>
+            {providers.isLoading ? (
+              <span className="customer-google-button" aria-busy="true">
+                <span aria-hidden>✦</span>
+                Se verifică accesul…
+              </span>
+            ) : googleReady ? (
+              <a className="customer-google-button" href="/api/v1/reviewer/oauth/google">
+                <span aria-hidden>G</span>
+                Continuă cu Google
+                <ArrowRight size={16} />
+              </a>
+            ) : (
+              <Link className="customer-google-button" to="/produse">
+                <span aria-hidden>✦</span>
+                Descoperă cutiuțele
+                <ArrowRight size={16} />
               </Link>
-            </div>
-          )}
+            )}
+            {customerAuthMessage && (
+              <p className="personalization-error" role="alert">
+                {customerAuthMessage}
+              </p>
+            )}
+            {googleReady && (
+              <>
+                <div className="customer-auth-assurance">
+                  <ShieldCheck aria-hidden />
+                  <span>
+                    Nu îți cerem o parolă nouă. Folosim doar identitatea, numele și adresa
+                    confirmată de Google.
+                  </span>
+                </div>
+                <p className="customer-auth-legal">
+                  Continuând, accepți crearea contului și confirmi că ai citit{" "}
+                  <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
+                </p>
+              </>
+            )}
+          </div>
         </section>
       </div>
     );
@@ -332,6 +237,12 @@ function CustomerAccount() {
           <LogOut size={16} /> Deconectare
         </button>
       </header>
+
+      {error && (
+        <p className="personalization-error" role="alert">
+          {error}
+        </p>
+      )}
 
       <CustomerMagicCenter />
 

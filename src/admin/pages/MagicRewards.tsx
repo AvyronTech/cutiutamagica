@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   adjustMagicStars,
   getMagicRewardsAdmin,
+  saveMagicRewardActivities,
   saveMagicRewardsProgram,
 } from "@/lib/magic-rewards.functions";
 
@@ -16,6 +17,7 @@ export default function MagicRewardsAdmin() {
   const load = useServerFn(getMagicRewardsAdmin);
   const save = useServerFn(saveMagicRewardsProgram);
   const adjust = useServerFn(adjustMagicStars);
+  const saveActivities = useServerFn(saveMagicRewardActivities);
   const query = useQuery({ queryKey: ["admin", "magic-rewards"], queryFn: () => load() });
   const refresh = () => client.invalidateQueries({ queryKey: ["admin", "magic-rewards"] });
   const saveMutation = useMutation({
@@ -34,6 +36,14 @@ export default function MagicRewardsAdmin() {
     },
     onError: (error) => toast.error(error.message),
   });
+  const activitiesMutation = useMutation({
+    mutationFn: saveActivities,
+    onSuccess: async () => {
+      await refresh();
+      toast.success("Activitățile și limitele au fost actualizate.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
   if (query.isLoading) return <p>Se încarcă Magic Rewards…</p>;
   if (!query.data?.program) return <p role="alert">Aplică migrația D1 pentru Magic Rewards.</p>;
   const program = query.data.program as Record<string, string | number>;
@@ -46,13 +56,7 @@ export default function MagicRewardsAdmin() {
     saveMutation.mutate({
       data: {
         enabled: form.get("enabled") === "on",
-        starsForOrder: number("starsForOrder"),
-        starsForPhotoReview: number("starsForPhotoReview"),
-        starsForReferral: number("starsForReferral"),
-        starsForGiftProfile: number("starsForGiftProfile"),
-        starsForCollection: number("starsForCollection"),
         redemptionThreshold: number("redemptionThreshold"),
-        rewardLei: number("rewardLei"),
         rewardValidDays: number("rewardValidDays"),
         termsVersion: String(form.get("termsVersion")),
       },
@@ -70,13 +74,15 @@ export default function MagicRewardsAdmin() {
           Registru append-only pentru stele, beneficii, profiluri de cadouri și remindere e-mail.
         </p>
       </header>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
         {[
           ["Conturi", stats.accounts],
           ["Stele disponibile", stats.available_stars],
           ["Stele acordate", stats.lifetime_stars],
           ["Beneficii active", stats.active_rewards],
           ["Remindere trimise", stats.reminders_sent],
+          ["Distribuiri azi", stats.shares_today],
+          ["Bonusuri aniversare", stats.birthday_bonuses],
         ].map(([label, value]) => (
           <article
             key={String(label)}
@@ -87,6 +93,83 @@ export default function MagicRewardsAdmin() {
           </article>
         ))}
       </section>
+      <form
+        className="space-y-4 rounded-xl border border-slate-700 bg-slate-900/45 p-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const form = new FormData(event.currentTarget);
+          activitiesMutation.mutate({
+            data: {
+              activities: query.data.activities.map((activity) => ({
+                code: activity.code,
+                stars: Number(form.get(`${activity.code}:stars`)),
+                periodLimit: Number(form.get(`${activity.code}:limit`)),
+                enabled: form.get(`${activity.code}:enabled`) === "on",
+              })),
+            },
+          });
+        }}
+      >
+        <div>
+          <h2 className="flex items-center gap-2 font-semibold text-white">
+            <Sparkles size={17} /> Activități și limite
+          </h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Acordarea este automată și idempotentă. Limita se aplică perioadei fiecărei activități.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {query.data.activities.map((activity) => (
+            <article key={activity.code} className="rounded-xl border border-slate-700 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <strong className="text-sm text-white">{activity.name}</strong>
+                  <p className="mt-1 text-xs text-slate-500">{activity.description}</p>
+                </div>
+                <label className="text-xs text-slate-400">
+                  <input
+                    name={`${activity.code}:enabled`}
+                    type="checkbox"
+                    defaultChecked={activity.enabled}
+                  />{" "}
+                  Activă
+                </label>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <label className="text-xs text-slate-400">
+                  Stele
+                  <input
+                    className={`${input} mt-1`}
+                    name={`${activity.code}:stars`}
+                    type="number"
+                    min="0"
+                    max="100"
+                    defaultValue={activity.stars}
+                  />
+                </label>
+                <label className="text-xs text-slate-400">
+                  Limită / perioadă
+                  <input
+                    className={`${input} mt-1`}
+                    name={`${activity.code}:limit`}
+                    type="number"
+                    min="0"
+                    max="100"
+                    defaultValue={activity.periodLimit}
+                    disabled={activity.cadence === "per_event"}
+                  />
+                </label>
+              </div>
+            </article>
+          ))}
+        </div>
+        <button
+          className="inline-flex items-center gap-2 rounded-lg bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-950"
+          disabled={activitiesMutation.isPending}
+        >
+          <Save size={15} /> Salvează activitățile
+        </button>
+      </form>
       <div className="grid gap-5 xl:grid-cols-[1fr_.75fr]">
         <form
           onSubmit={submitProgram}
@@ -100,25 +183,6 @@ export default function MagicRewardsAdmin() {
             Program activ
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              ["starsForOrder", "Comandă livrată", "stars_for_order"],
-              ["starsForPhotoReview", "Review foto aprobat", "stars_for_photo_review"],
-              ["starsForReferral", "Recomandare livrată", "stars_for_referral"],
-              ["starsForGiftProfile", "Profil de cadouri", "stars_for_gift_profile"],
-              ["starsForCollection", "Colecție completată", "stars_for_collection"],
-            ].map(([name, label, key]) => (
-              <label key={name} className="text-xs text-slate-400">
-                {label}
-                <input
-                  className={`${input} mt-1.5`}
-                  name={name}
-                  type="number"
-                  min="0"
-                  max="20"
-                  defaultValue={Number(program[key])}
-                />
-              </label>
-            ))}
             <label className="text-xs text-slate-400">
               Prag stele
               <input
@@ -130,17 +194,12 @@ export default function MagicRewardsAdmin() {
                 defaultValue={Number(program.redemption_threshold)}
               />
             </label>
-            <label className="text-xs text-slate-400">
-              Beneficiu (lei)
-              <input
-                className={`${input} mt-1.5`}
-                name="rewardLei"
-                type="number"
-                min="1"
-                step="0.01"
-                defaultValue={Number(program.reward_bani) / 100}
-              />
-            </label>
+            <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-400">
+              Conversie fixă
+              <strong className="mt-1.5 block text-sm text-amber-200">
+                1 Magic Star = 1 leu · beneficiu {Number(program.redemption_threshold)} lei
+              </strong>
+            </div>
             <label className="text-xs text-slate-400">
               Valabilitate cod (zile)
               <input

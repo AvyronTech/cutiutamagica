@@ -3,5 +3,8 @@ Allow: /
 Disallow: /admin
 Disallow: /auth
 Disallow: /api/
+Disallow: /comanda
+Disallow: /cont
+Disallow: /personalizeaza
 
 Sitemap: https://cutiutamagica.eu/sitemap.xml

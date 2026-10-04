@@ -2,8 +2,11 @@ import { z } from "zod";
 import { boundedJson } from "./bounded-json";
 import { currentReviewer, reviewJson } from "../review-accounts";
 import {
+  awardMagicRewardActivity,
+  awardMagicStarsForShare,
   magicRewardsDashboard,
   redeemMagicStars,
+  saveCustomerBirthday,
   saveGiftProfile,
 } from "../services/magic-rewards";
 
@@ -36,6 +39,26 @@ const eventSchema = z
     },
     { message: "Data calendaristică nu este validă." },
   );
+const birthdaySchema = z
+  .object({
+    month: z.number().int().min(1).max(12),
+    day: z.number().int().min(1).max(31),
+  })
+  .refine(
+    ({ month, day }) => {
+      const date = new Date(Date.UTC(2024, month - 1, day));
+      return date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+    },
+    { message: "Data aniversării nu este validă." },
+  );
+const shareSchema = z.object({
+  channel: z.enum(["native", "facebook", "linkedin", "pinterest", "x", "bluesky"]),
+  productId: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]{1,128}$/),
+  actionId: z.string().uuid(),
+});
 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
@@ -75,6 +98,12 @@ export async function handleCustomerLoyalty(request: Request, env: Env): Promise
           data.emailEnabled ? 1 : 0,
         )
         .run();
+      await awardMagicRewardActivity(env.DB, {
+        accountId: account.id,
+        activityCode: "first_calendar_event",
+        sourceType: "gift_calendar_event",
+        sourceId: id,
+      });
       return reviewJson({ data: { id } }, 201);
     }
     const eventMatch = url.pathname.match(/^\/api\/v1\/customer\/gift-calendar\/([a-f0-9-]{36})$/);
@@ -86,6 +115,16 @@ export async function handleCustomerLoyalty(request: Request, env: Env): Promise
     }
     if (url.pathname === "/api/v1/customer/rewards/redeem" && request.method === "POST")
       return reviewJson({ data: await redeemMagicStars(env.DB, account.id) }, 201);
+    if (url.pathname === "/api/v1/customer/rewards/birthday" && request.method === "PUT") {
+      const data = birthdaySchema.parse(await boundedJson(request, 2_000));
+      await saveCustomerBirthday(env.DB, account.id, data);
+      return reviewJson({ data: { saved: true } });
+    }
+    if (url.pathname === "/api/v1/customer/rewards/share" && request.method === "POST") {
+      const data = shareSchema.parse(await boundedJson(request, 2_000));
+      const result = await awardMagicStarsForShare(env.DB, { accountId: account.id, ...data });
+      return reviewJson({ data: result }, result.awarded ? 201 : 200);
+    }
     return reviewJson({ error: { message: "Pagina nu există." } }, 404);
   } catch (error) {
     const status = error instanceof z.ZodError ? 400 : 409;

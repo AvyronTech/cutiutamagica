@@ -1,5 +1,4 @@
-import { ArrowUpRight, Gift, ImagePlus, Music2, Palette, PenLine } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Clock3, Gift, ImagePlus, Palette, PenLine } from "lucide-react";
 
 export function PersonalizationSpotlight() {
   return (
@@ -15,6 +14,9 @@ export function PersonalizationSpotlight() {
           <p className="scene-eyebrow">
             <span>04</span> Fă-o numai a ta
           </p>
+          <span className="personalization-coming-badge">
+            <Clock3 aria-hidden /> În curând
+          </span>
           <h2 id="personalization-scene-title">
             Personalizează <em>Cutiuța Magică.</em>
           </h2>
@@ -36,9 +38,9 @@ export function PersonalizationSpotlight() {
               <Gift aria-hidden /> Ambalare premium
             </span>
           </div>
-          <Link to="/personalizeaza" className="magic-button">
-            <Music2 size={16} aria-hidden /> Intră în atelier <ArrowUpRight size={15} />
-          </Link>
+          <button type="button" className="magic-button" disabled>
+            Atelierul se pregătește
+          </button>
         </div>
         <div className="personalization-compact-visual" aria-hidden>
           <span className="personalization-compact-orbit" />

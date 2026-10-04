@@ -257,16 +257,16 @@ describe("storefront and dashboard share one catalog", () => {
     expect(products.every((p) => p.discovery?.guides.length)).toBe(true);
     const { renderSitemap } = await import("@/lib/seo-sitemap");
     const sitemap = renderSitemap(products);
-    expect(sitemap.match(/<url>/g)).toHaveLength(12 + giftGuides.length + products.length);
+    expect(sitemap.match(/<url>/g)).toHaveLength(11 + giftGuides.length + products.length);
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/despre-noi</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/magic-rewards</loc>");
-    expect(sitemap).toContain("<loc>https://cutiutamagica.eu/personalizeaza</loc>");
+    expect(sitemap).not.toContain("<loc>https://cutiutamagica.eu/personalizeaza</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/livrare</loc>");
     for (const guide of giftGuides)
       expect(sitemap).toContain(`<loc>https://cutiutamagica.eu/cadouri/${guide.slug}</loc>`);
     for (const p of products) expect(sitemap).toContain(`/produs/${p.slug}</loc>`);
     expect(sitemap).toContain("<image:loc>");
-    expect(sitemap).not.toMatch(/\/(admin|comanda|auth|api)\b/);
+    expect(sitemap).not.toMatch(/\/(admin|comanda|cont|personalizeaza|auth|api)\b/);
   });
   it("honors administrator text, category, media and visibility changes", async () => {
     sqlite.exec(

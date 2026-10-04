@@ -4,42 +4,37 @@ import workshopBg from "@/assets/poveste-workshop.webp";
 import workshopBgSm from "@/assets/poveste-workshop-sm.webp";
 import { EcosystemMarquees } from "@/components/site/EcosystemMarquees";
 import { safeJsonLd } from "@/lib/product-discovery";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/despre-noi")({
   component: AboutUs,
-  head: () => ({
-    meta: [
-      { title: "Despre Noi | Povestea Cutiuței Magice" },
-      {
-        name: "description",
-        content:
-          "Descoperă povestea Cutiuței Magice și felul în care alegem cutiuțe muzicale din lemn, cu manivelă, pentru daruri care păstrează emoții.",
-      },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "Despre Noi — Cutiuța Magică" },
-      {
-        property: "og:description",
-        content: "Obiecte mici, melodii cunoscute și daruri alese pentru emoții care rămân.",
-      },
-      { property: "og:url", content: "https://cutiutamagica.eu/despre-noi" },
-      { property: "og:image", content: "https://cutiutamagica.eu/poveste-workshop.webp" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/despre-noi" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: safeJsonLd({
-          "@context": "https://schema.org",
-          "@type": "AboutPage",
-          url: "https://cutiutamagica.eu/despre-noi",
-          name: "Despre Noi — Cutiuța Magică",
-          inLanguage: "ro-RO",
-          isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
-          about: { "@id": "https://cutiutamagica.eu/#organization" },
-        }),
-      },
-    ],
-  }),
+  head: () => {
+    const seo = seoHead({
+      title: "Despre noi | Povestea Cutiuței Magice",
+      description:
+        "Descoperă povestea Cutiuței Magice și felul în care alegem cutiuțe muzicale din lemn, cu manivelă, pentru daruri care păstrează emoții.",
+      path: "/despre-noi",
+      image: "/scenes/footer-atelier.webp",
+      imageAlt: "Atelierul Cutiuța Magică, locul unde o melodie devine cadou",
+    });
+    return {
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: safeJsonLd({
+            "@context": "https://schema.org",
+            "@type": "AboutPage",
+            url: "https://cutiutamagica.eu/despre-noi",
+            name: "Despre Noi — Cutiuța Magică",
+            inLanguage: "ro-RO",
+            isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+            about: { "@id": "https://cutiutamagica.eu/#organization" },
+          }),
+        },
+      ],
+    };
+  },
 });
 
 function AboutUs() {

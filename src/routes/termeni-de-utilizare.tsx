@@ -65,6 +65,14 @@ function Terms() {
           codul PIN, parola bancară sau codul de autorizare. Un cont în EUR nu înseamnă automat că
           toate comenzile pot fi plătite în EUR.
         </p>
+        <p>
+          Magic Rewards acordă stele numai activităților eligibile afișate în cont. O Magic Star
+          valorează un leu la activarea beneficiului; stelele nu sunt bani, nu pot fi retrase în
+          numerar și devin reducere numai prin codul generat din cont. Recenziile sunt recompensate
+          după aprobare, comenzile după livrare, iar distribuirile au limita zilnică afișată.
+          Încercările automate, activitățile duplicate ori anularea condiției eligibile pot fi
+          verificate și corectate în registrul auditat al programului.
+        </p>
       </LegalSection>
       <LegalSection title="5. Livrare">
         <p>

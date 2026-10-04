@@ -47,4 +47,10 @@ Semnează payload-ul, folosește `Idempotency-Key`, timeout și retry limitat. L
 
 Configurația sau existența unei tabele nu dovedește că Meta, TikTok, WhatsApp, e-mail ori AVYRON sunt conectate. Înaintea primei rulări live verifică separat: contul oficial, scope-urile, mediul, secretul server-side, capabilitatea exactă, o citire de test și o acțiune sandbox/preview când platforma o permite.
 
+Pentru profilul Metricool Cutiuța Magică, contractul de identitate așteptat este: brand `7230540`, proprietar `cutiutamagicaofficial@gmail.com`, website `https://cutiutamagica.eu`, Facebook Page `1154774271054604`, Instagram `cutiutamagicaofficial`, TikTok `cutiua.magic` și fus `Europe/Bucharest`. O nepotrivire oprește rularea și nu se corectează automat. Verificarea prin pluginul Codex dovedește accesul acelui conector, dar nu marchează automat drept activ conectorul backend al platformei interne.
+
+Publicarea hibridă folosește Metricool drept rută principală pentru rețelele conectate și browserul Chrome dedicat drept rută nativă controlată pentru profilul Facebook autorizat, funcții native ori epuizarea limitei planului. Browserul nu este considerat disponibil doar pentru că utilizatorul este autentificat local: fila/profilul trebuie expus sesiunii Codex, identitatea contului trebuie verificată în UI și rezultatul publicării trebuie confirmat prin URL sau dovadă vizibilă. Nu comuta automat între identități Google/Meta și nu folosi profilul AVYRON ca fallback.
+
+Google Search Console este acceptat numai pentru proprietatea de domeniu `sc-domain:cutiutamagica.eu`. Orice proprietate AVYRON sau alt domeniu este respinsă pentru acest agent.
+
 Telefonul Android poate fi folosit ulterior doar ca executor supravegheat pentru funcții fără API. Necesită profil dedicat, ecran blocat, conturi de business, permisiuni minime, jurnal de acțiuni și oprire la challenge/CAPTCHA/2FA. Nu automatiza prin coordonate fragile și nu încerca să ocolești protecțiile platformei.

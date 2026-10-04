@@ -7,6 +7,7 @@ import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useEffect } from "react";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/cadouri/$ocazie")({
   loader: async ({ params }) => {
@@ -26,19 +27,15 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
         ? image
         : `https://cutiutamagica.eu${image}`
       : "https://cutiutamagica.eu/scenes/catalog-atelier.webp";
+    const seo = seoHead({
+      title,
+      description: guide.description,
+      path: `/cadouri/${guide.slug}`,
+      image: primaryImage,
+      imageAlt: `Selecție de cutiuțe muzicale — ${guide.label}`,
+    });
     return {
-      meta: [
-        { title },
-        { name: "description", content: guide.description },
-        { name: "robots", content: "index, follow, max-image-preview:large" },
-        { property: "og:title", content: title },
-        { property: "og:description", content: guide.description },
-        { property: "og:url", content: url },
-        { property: "og:type", content: "website" },
-        { property: "og:image", content: primaryImage },
-        { property: "og:image:alt", content: `Selecție de cutiuțe muzicale — ${guide.label}` },
-      ],
-      links: [{ rel: "canonical", href: url }],
+      ...seo,
       scripts: [
         {
           type: "application/ld+json",

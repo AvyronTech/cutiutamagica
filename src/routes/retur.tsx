@@ -3,23 +3,19 @@ import { useState } from "react";
 import { CheckCircle2, PackageOpen, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import type { ReturnRequestPublicResult } from "@/lib/commerce-operations-contracts";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/retur")({
   component: ReturnsPage,
-  head: () => ({
-    meta: [
-      { title: "Retur și garanție — Cutiuța Magică" },
-      {
-        name: "description",
-        content:
-          "Politica de retur, garanția legală și formularul electronic pentru comenzile Cutiuța Magică.",
-      },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "Retur și garanție — Cutiuța Magică" },
-      { property: "og:url", content: "https://cutiutamagica.eu/retur" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/retur" }],
-  }),
+  head: () =>
+    seoHead({
+      title: "Retur și garanție | Cutiuța Magică",
+      description:
+        "Consultă politica de retur, garanția legală și formularul electronic pentru comenzile Cutiuța Magică.",
+      path: "/retur",
+      image: "/scenes/footer-atelier.webp",
+      imageAlt: "Cutiuța Magică — retur și garanție explicate clar",
+    }),
 });
 
 const fieldClass = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm";

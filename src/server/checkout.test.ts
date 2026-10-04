@@ -16,7 +16,14 @@ import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
 import { verifyStripeWebhook } from "./integrations/stripe";
 import { sendOrderConfirmation, sendOrderOwnerNotification } from "./integrations/resend";
 import { evaluateCheckoutCode, issuePostDeliveryReferral } from "./services/referrals";
-import { magicRewardsDashboard, redeemMagicStars, saveGiftProfile } from "./services/magic-rewards";
+import {
+  awardMagicStarsForApprovedReview,
+  awardMagicStarsForShare,
+  magicRewardsDashboard,
+  processBirthdayRewards,
+  redeemMagicStars,
+  saveGiftProfile,
+} from "./services/magic-rewards";
 vi.mock("@/lib/admin-auth", () => ({
   authenticateAdminRequest: vi.fn(async () => ({ id: "test-admin", email: "test@example.test" })),
 }));
@@ -564,7 +571,7 @@ describe("delivery quote integrity", () => {
 });
 
 describe("Magic Stars loyalty", () => {
-  it("keeps an append-only balance and issues a fixed one-use reward", async () => {
+  it("awards the initial activities once and issues a fixed one-use reward", async () => {
     sqlite.exec(
       `INSERT INTO review_accounts(id,email,display_name,password_hash,password_salt,status,auth_mode)
        VALUES('reviewer-magic','magic@example.test','Client Magic','unused','unused','active','oauth')`,
@@ -574,24 +581,17 @@ describe("Magic Stars loyalty", () => {
       occasions: ["aniversare"],
       themes: ["muzică"],
     });
-    for (let index = 0; index < 4; index += 1) {
-      sqlite
-        .prepare(
-          `INSERT INTO magic_star_ledger(
-             id,review_account_id,delta,reason,source_type,source_id,note
-           ) VALUES(?, 'reviewer-magic', 1, 'admin_adjustment', 'test', ?, 'Test verificabil')`,
-        )
-        .run(`star-${index}`, `source-${index}`);
-    }
-
     const before = await magicRewardsDashboard(env.DB, {
       id: "reviewer-magic",
       email: "magic@example.test",
     });
-    expect(before.account.availableStars).toBe(5);
+    expect(before.account.availableStars).toBe(10);
+    expect(before.activities.find((activity) => activity.code === "account_created")?.stars).toBe(
+      5,
+    );
 
     const reward = await redeemMagicStars(env.DB, "reviewer-magic");
-    expect(reward.valueBani).toBe(1500);
+    expect(reward.valueBani).toBe(500);
     expect(reward.code).toMatch(/^STEA-[A-Z0-9]{10}$/);
     const promotion = sqlite
       .prepare(
@@ -600,19 +600,74 @@ describe("Magic Stars loyalty", () => {
          WHERE pc.code=?`,
       )
       .get(reward.code)!;
-    expect(promotion).toMatchObject({ value: 1500, status: "active", usage_limit: 1 });
+    expect(promotion).toMatchObject({ value: 500, status: "active", usage_limit: 1 });
 
     const after = await magicRewardsDashboard(env.DB, {
       id: "reviewer-magic",
       email: "magic@example.test",
     });
-    expect(after.account.availableStars).toBe(0);
+    expect(after.account.availableStars).toBe(5);
     expect(after.account.redeemedStars).toBe(5);
 
     sqlite.prepare("UPDATE promotion_codes SET status='consumed' WHERE code=?").run(reward.code);
     expect(
       sqlite.prepare("SELECT status FROM magic_star_rewards WHERE code=?").get(reward.code),
     ).toMatchObject({ status: "used" });
+  });
+
+  it("enforces social limits and awards approved reviews and birthdays idempotently", async () => {
+    sqlite.exec(
+      `INSERT INTO review_accounts(id,email,display_name,password_hash,password_salt,status,auth_mode,birth_month,birth_day)
+       VALUES('reviewer-activity','activity@example.test','Client Activ','unused','unused','active','oauth',10,4)`,
+    );
+    for (let index = 0; index < 6; index += 1) {
+      await awardMagicStarsForShare(env.DB, {
+        accountId: "reviewer-activity",
+        channel: "facebook",
+        productId: "hp-keeper",
+        actionId: `00000000-0000-4000-8000-00000000000${index}`,
+      });
+    }
+    const shares = sqlite
+      .prepare(
+        `SELECT COUNT(*) AS count,COALESCE(SUM(stars),0) AS stars
+         FROM magic_reward_activity_events
+         WHERE review_account_id='reviewer-activity' AND activity_code='social_share'`,
+      )
+      .get()!;
+    expect(shares).toMatchObject({ count: 5, stars: 5 });
+
+    const product = sqlite.prepare("SELECT id FROM products LIMIT 1").get() as { id: string };
+    sqlite
+      .prepare(
+        `INSERT INTO product_reviews(
+          id,product_id,account_id,display_name,email,rating,body,language,country_code,origin,status
+        ) VALUES('review-reward',?,'reviewer-activity','Client Activ','activity@example.test',5,
+          'O recenzie autentică și suficient de detaliată.','ro','RO','account','approved')`,
+      )
+      .run(product.id);
+    await awardMagicStarsForApprovedReview(env.DB, "review-reward");
+    await awardMagicStarsForApprovedReview(env.DB, "review-reward");
+    expect(
+      sqlite
+        .prepare(
+          `SELECT stars FROM magic_reward_activity_events
+           WHERE review_account_id='reviewer-activity' AND activity_code='review_approved'`,
+        )
+        .get(),
+    ).toMatchObject({ stars: 3 });
+
+    const birthdayNow = new Date("2026-10-04T09:00:00Z");
+    expect(await processBirthdayRewards(env.DB, birthdayNow)).toBe(1);
+    expect(await processBirthdayRewards(env.DB, birthdayNow)).toBe(0);
+    expect(
+      sqlite
+        .prepare(
+          `SELECT stars FROM magic_reward_activity_events
+           WHERE review_account_id='reviewer-activity' AND activity_code='birthday_bonus'`,
+        )
+        .get(),
+    ).toMatchObject({ stars: 10 });
   });
 });
 
