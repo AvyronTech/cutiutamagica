@@ -51,6 +51,13 @@ export const getAdminProducts = createServerFn({ method: "GET" })
     return { products: await listAdminProducts(env.DB, env.PUBLIC_SITE_URL) };
   });
 
+export const getAdminInventoryProducts = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    assertPermission(context.admin, "inventory.read");
+    return { products: await listAdminProducts(env.DB, env.PUBLIC_SITE_URL) };
+  });
+
 export const getAdminDashboard = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
@@ -119,6 +126,73 @@ export const saveEstetoAccount = createServerFn({ method: "POST" })
         context.admin.id,
         context.admin.email,
         JSON.stringify({ accountId: data.accountId, accountLabel: data.accountLabel }),
+      ),
+    ]);
+    return { ok: true };
+  });
+
+export const saveAvyronCrmAccount = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(
+    z.object({
+      accountId: z.string().trim().min(2).max(120),
+      accountLabel: z.string().trim().min(2).max(120).default("CRM intern · AVYRON"),
+      apiBaseUrl: z
+        .string()
+        .trim()
+        .url()
+        .max(500)
+        .refine((value) => {
+          const url = new URL(value);
+          return (
+            url.protocol === "https:" &&
+            !url.username &&
+            !url.password &&
+            !url.port &&
+            !["localhost", "127.0.0.1", "::1"].includes(url.hostname)
+          );
+        }, "Endpointul CRM trebuie să fie un URL HTTPS public, fără credențiale sau port explicit."),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin)
+      throw new Error("Cerere de administrare nepermisă.");
+    assertPermission(context.admin, "integrations.write");
+    const now = new Date().toISOString();
+    const apiBaseUrl = data.apiBaseUrl.replace(/\/$/, "");
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE integration_accounts
+         SET external_account_id=?1,account_label=?2,
+             config_json=json_set(config_json,'$.account_id',?1,'$.api_base_url',?3,
+               '$.activation','admin_approval_required'),
+             status='setup_required',last_error_code=NULL,last_error_message=NULL,updated_at=?4
+         WHERE id='integration_avyron_crm_production'`,
+      ).bind(data.accountId, data.accountLabel, apiBaseUrl, now),
+      env.DB.prepare(
+        `UPDATE provider_configurations
+         SET settings_json=json_set(settings_json,'$.account_id',?1,'$.api_base_url',?2,
+               '$.activation','admin_approval_required'),
+             status='setup_required',last_error_code=NULL,last_error_message=NULL,updated_at=?3
+         WHERE provider='avyron_crm' AND environment='production'`,
+      ).bind(data.accountId, apiBaseUrl, now),
+      env.DB.prepare(
+        `INSERT INTO audit_log(
+           id,actor_admin_user_id,actor_label,action,entity_type,entity_id,
+           after_json,metadata_json
+         ) VALUES(?1,?2,?3,'integration.avyron_crm_account.update','integration_account',
+           'integration_avyron_crm_production',?4,'{}')`,
+      ).bind(
+        crypto.randomUUID(),
+        context.admin.id,
+        context.admin.email,
+        JSON.stringify({
+          accountId: data.accountId,
+          accountLabel: data.accountLabel,
+          apiBaseUrl,
+          status: "setup_required",
+        }),
       ),
     ]);
     return { ok: true };

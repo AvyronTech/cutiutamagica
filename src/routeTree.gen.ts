@@ -19,6 +19,7 @@ import { Route as DespreNoiRouteImport } from './routes/despre-noi'
 import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
 import { Route as GoogleProductsDotxmlRouteImport } from './routes/google-products[.]xml'
 import { Route as LivrareRouteImport } from './routes/livrare'
+import { Route as MagicRewardsRouteImport } from './routes/magic-rewards'
 import { Route as PersonalizeazaRouteImport } from './routes/personalizeaza'
 import { Route as PoliticaDeConfidentialitateRouteImport } from './routes/politica-de-confidentialitate'
 import { Route as PovesteRouteImport } from './routes/poveste'
@@ -109,6 +110,11 @@ const GoogleProductsDotxmlRoute = GoogleProductsDotxmlRouteImport.update({
 const LivrareRoute = LivrareRouteImport.update({
   id: '/livrare',
   path: '/livrare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MagicRewardsRoute = MagicRewardsRouteImport.update({
+  id: '/magic-rewards',
+  path: '/magic-rewards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PersonalizeazaRoute = PersonalizeazaRouteImport.update({
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/google-products.xml': typeof GoogleProductsDotxmlRoute
   '/livrare': typeof LivrareRoute
+  '/magic-rewards': typeof MagicRewardsRoute
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
@@ -405,6 +412,7 @@ export interface FileRoutesByTo {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/google-products.xml': typeof GoogleProductsDotxmlRoute
   '/livrare': typeof LivrareRoute
+  '/magic-rewards': typeof MagicRewardsRoute
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
@@ -458,6 +466,7 @@ export interface FileRoutesById {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/google-products.xml': typeof GoogleProductsDotxmlRoute
   '/livrare': typeof LivrareRoute
+  '/magic-rewards': typeof MagicRewardsRoute
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
@@ -512,6 +521,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/google-products.xml'
     | '/livrare'
+    | '/magic-rewards'
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
@@ -564,6 +574,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/google-products.xml'
     | '/livrare'
+    | '/magic-rewards'
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
@@ -616,6 +627,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/google-products.xml'
     | '/livrare'
+    | '/magic-rewards'
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
@@ -670,6 +682,7 @@ export interface RootRouteChildren {
   GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
   GoogleProductsDotxmlRoute: typeof GoogleProductsDotxmlRoute
   LivrareRoute: typeof LivrareRoute
+  MagicRewardsRoute: typeof MagicRewardsRoute
   PersonalizeazaRoute: typeof PersonalizeazaRoute
   PoliticaDeConfidentialitateRoute: typeof PoliticaDeConfidentialitateRoute
   PovesteRoute: typeof PovesteRoute
@@ -752,6 +765,13 @@ declare module '@tanstack/react-router' {
       path: '/livrare'
       fullPath: '/livrare'
       preLoaderRoute: typeof LivrareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/magic-rewards': {
+      id: '/magic-rewards'
+      path: '/magic-rewards'
+      fullPath: '/magic-rewards'
+      preLoaderRoute: typeof MagicRewardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/personalizeaza': {
@@ -1152,6 +1172,7 @@ const rootRouteChildren: RootRouteChildren = {
   GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
   GoogleProductsDotxmlRoute: GoogleProductsDotxmlRoute,
   LivrareRoute: LivrareRoute,
+  MagicRewardsRoute: MagicRewardsRoute,
   PersonalizeazaRoute: PersonalizeazaRoute,
   PoliticaDeConfidentialitateRoute: PoliticaDeConfidentialitateRoute,
   PovesteRoute: PovesteRoute,

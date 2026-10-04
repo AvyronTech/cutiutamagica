@@ -1,8 +1,12 @@
 import {
+  CHAT_POSITION_KEY,
   CHAT_SIDE_KEY,
+  clampChatPosition,
   DEFAULT_CHAT_SIDE,
+  parseChatPosition,
   preferredChatSide,
   publishChatPlacement,
+  type ChatBubblePosition,
 } from "@/lib/floating-widgets";
 import { useLocation } from "@tanstack/react-router";
 import {
@@ -12,7 +16,7 @@ import {
   type FormEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { ChevronDown, LoaderCircle, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { LoaderCircle, MessageCircle, Send, Sparkles, X } from "lucide-react";
 
 type PublicChatConfig = {
   enabled: boolean;
@@ -80,8 +84,16 @@ export function ChatWidget() {
   const [consent, setConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [dragX, setDragX] = useState(0);
-  const pointer = useRef<{ id: number; startX: number; moved: boolean } | null>(null);
+  const [bubblePosition, setBubblePosition] = useState<ChatBubblePosition | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const pointer = useRef<{
+    id: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+    moved: boolean;
+  } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -101,6 +113,16 @@ export function ChatWidget() {
           /* Private browsing can block persistence. */
         }
         setSide(preferredChatSide(stored, data.position));
+        try {
+          const savedPosition = parseChatPosition(localStorage.getItem(CHAT_POSITION_KEY));
+          if (savedPosition) {
+            const next = clampChatPosition(savedPosition, window.innerWidth, window.innerHeight);
+            setBubblePosition(next);
+            setSide(next.x + 22 < window.innerWidth / 2 ? "left" : "right");
+          }
+        } catch {
+          /* Private browsing can block persistence. */
+        }
         setSession(loadSession());
       })
       .catch(() => setConfig(null));
@@ -151,6 +173,28 @@ export function ChatWidget() {
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  const hasCustomBubblePosition = bubblePosition !== null;
+  useEffect(() => {
+    if (!hasCustomBubblePosition) return;
+    let frame = 0;
+    const keepInsideViewport = () => {
+      frame = 0;
+      setBubblePosition((current) =>
+        current ? clampChatPosition(current, window.innerWidth, window.innerHeight) : current,
+      );
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(keepInsideViewport);
+    };
+    window.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("resize", schedule);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("resize", schedule);
+    };
+  }, [hasCustomBubblePosition]);
 
   useEffect(() => {
     if (!open) return;
@@ -257,35 +301,75 @@ export function ChatWidget() {
   }
 
   function pointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-    pointer.current = { id: event.pointerId, startX: event.clientX, moved: false };
+    if (!event.isPrimary || event.button !== 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    pointer.current = {
+      id: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: rect.left,
+      originY: rect.top,
+      moved: false,
+    };
+    setDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function pointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
     if (!pointer.current || pointer.current.id !== event.pointerId) return;
-    const delta = event.clientX - pointer.current.startX;
-    if (Math.abs(delta) > 5) pointer.current.moved = true;
-    setDragX(Math.max(-180, Math.min(180, delta)));
+    const deltaX = event.clientX - pointer.current.startX;
+    const deltaY = event.clientY - pointer.current.startY;
+    if (Math.hypot(deltaX, deltaY) > 5) pointer.current.moved = true;
+    if (!pointer.current.moved) return;
+    event.preventDefault();
+    setBubblePosition(
+      clampChatPosition(
+        { x: pointer.current.originX + deltaX, y: pointer.current.originY + deltaY },
+        window.innerWidth,
+        window.innerHeight,
+      ),
+    );
   }
 
   function pointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
     const state = pointer.current;
     pointer.current = null;
-    setDragX(0);
+    setDragging(false);
     if (!state?.moved) {
       setOpen((value) => !value);
       return;
     }
-    const next = event.clientX < window.innerWidth / 2 ? "left" : "right";
+    const nextPosition = clampChatPosition(
+      {
+        x: state.originX + event.clientX - state.startX,
+        y: state.originY + event.clientY - state.startY,
+      },
+      window.innerWidth,
+      window.innerHeight,
+    );
+    setBubblePosition(nextPosition);
+    const next = nextPosition.x + 22 < window.innerWidth / 2 ? "left" : "right";
     setSide(next);
     try {
       localStorage.setItem(SIDE_KEY, next);
+      localStorage.setItem(CHAT_POSITION_KEY, JSON.stringify(nextPosition));
     } catch {
       /* Position still works for this visit. */
     }
   }
 
+  function pointerCancel() {
+    const state = pointer.current;
+    pointer.current = null;
+    setDragging(false);
+    if (state?.moved) setBubblePosition({ x: state.originX, y: state.originY });
+  }
+
   const operatorOnline = activeConfig.availability !== "offline";
+  const collapseChat = () => {
+    setOpen(false);
+    requestAnimationFrame(() => bubbleRef.current?.focus({ preventScroll: true }));
+  };
 
   return (
     <div
@@ -297,164 +381,170 @@ export function ChatWidget() {
       style={{ "--chat-accent": activeConfig.accentColor } as React.CSSProperties}
     >
       {open && (
-        <section
-          ref={panelRef}
-          id="cutiuta-chat-panel"
-          tabIndex={-1}
-          className="chat-panel flex flex-col rounded-2xl border border-white/50 bg-[#fffaf1] shadow-2xl"
-          role="region"
-          aria-label="Chat Cutiuța Magică"
-        >
-          <header className="relative overflow-hidden bg-[#35251d] px-4 py-3.5 text-white">
-            <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_80%_15%,#eabf70,transparent_38%)]" />
-            <div className="relative flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-md border border-amber-200/35 bg-amber-100/10">
-                <Sparkles size={18} className="text-amber-200" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="truncate font-display text-lg font-semibold">
-                  {activeConfig.welcomeTitle}
-                </h2>
-                <p className="flex items-center gap-1.5 text-[11px] text-amber-50/75">
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${operatorOnline ? "bg-emerald-400" : "bg-amber-400"}`}
-                  />
-                  {operatorOnline ? activeConfig.responseTimeLabel : "Mesajele rămân salvate"}
-                </p>
-              </div>
-              <button
-                className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
-                onClick={() => {
-                  setOpen(false);
-                  requestAnimationFrame(() => bubbleRef.current?.focus({ preventScroll: true }));
-                }}
-                aria-label="Închide chatul"
-              >
-                <ChevronDown size={19} />
-              </button>
-            </div>
-          </header>
-
-          <div
-            ref={listRef}
-            className="flex-1 space-y-3 overflow-y-auto px-3 py-4"
-            aria-live="polite"
+        <>
+          <button
+            type="button"
+            className="chat-backdrop"
+            aria-label="Restrânge fereastra de chat"
+            onClick={collapseChat}
+          />
+          <section
+            ref={panelRef}
+            id="cutiuta-chat-panel"
+            tabIndex={-1}
+            className="chat-panel flex flex-col rounded-2xl border border-white/50 bg-[#fffaf1] shadow-2xl"
+            role="region"
+            aria-label="Chat Cutiuța Magică"
           >
-            <div className="max-w-[88%] rounded-lg rounded-tl-sm border border-amber-900/10 bg-white px-3 py-2.5 text-sm leading-relaxed text-[#4b382d] shadow-sm">
-              {operatorOnline ? activeConfig.welcomeMessage : activeConfig.offlineMessage}
+            <header className="relative overflow-hidden bg-[#35251d] px-4 py-3.5 text-white">
+              <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_80%_15%,#eabf70,transparent_38%)]" />
+              <div className="relative flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-md border border-amber-200/35 bg-amber-100/10">
+                  <Sparkles size={18} className="text-amber-200" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate font-display text-lg font-semibold">
+                    {activeConfig.welcomeTitle}
+                  </h2>
+                  <p className="flex items-center gap-1.5 text-[11px] text-amber-50/75">
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${operatorOnline ? "bg-emerald-400" : "bg-amber-400"}`}
+                    />
+                    {operatorOnline ? activeConfig.responseTimeLabel : "Mesajele rămân salvate"}
+                  </p>
+                </div>
+                <button
+                  className="rounded-md p-2 text-white/70 hover:bg-white/10 hover:text-white"
+                  onClick={collapseChat}
+                  aria-label="Restrânge chatul la bulă"
+                  title="Restrânge chatul"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </header>
+
+            <div
+              ref={listRef}
+              className="flex-1 space-y-3 overflow-y-auto px-3 py-4"
+              aria-live="polite"
+            >
+              <div className="max-w-[88%] rounded-lg rounded-tl-sm border border-amber-900/10 bg-white px-3 py-2.5 text-sm leading-relaxed text-[#4b382d] shadow-sm">
+                {operatorOnline ? activeConfig.welcomeMessage : activeConfig.offlineMessage}
+              </div>
+              {messages.length === 0 && activeConfig.quickReplies.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {activeConfig.quickReplies.map((reply) => (
+                    <button
+                      key={reply}
+                      onClick={() => void sendMessage(reply)}
+                      className="rounded-full border border-[#a8733d]/30 bg-white px-3 py-1.5 text-xs font-medium text-[#654527] transition hover:border-[#a8733d] hover:bg-amber-50"
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {messages.map((item) => {
+                const mine = item.senderType === "visitor";
+                return (
+                  <div key={item.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-sm ${mine ? "rounded-br-sm bg-[var(--chat-accent)] text-white" : "rounded-bl-sm border border-amber-900/10 bg-white text-[#4b382d]"}`}
+                    >
+                      {item.body}
+                      <span
+                        className={`mt-1 block text-[9px] ${mine ? "text-white/65" : "text-[#8b735f]"}`}
+                      >
+                        {new Intl.DateTimeFormat("ro-RO", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }).format(new Date(item.createdAt))}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            {messages.length === 0 && activeConfig.quickReplies.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {activeConfig.quickReplies.map((reply) => (
-                  <button
-                    key={reply}
-                    onClick={() => void sendMessage(reply)}
-                    className="rounded-full border border-[#a8733d]/30 bg-white px-3 py-1.5 text-xs font-medium text-[#654527] transition hover:border-[#a8733d] hover:bg-amber-50"
-                  >
-                    {reply}
-                  </button>
-                ))}
+
+            {!session && (activeConfig.collectName || activeConfig.collectEmail) && (
+              <div className="grid grid-cols-2 gap-2 border-t border-[#6d4a2b]/10 bg-white/60 px-3 pt-3">
+                {activeConfig.collectName && (
+                  <input
+                    aria-label="Prenume"
+                    autoComplete="given-name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    maxLength={100}
+                    placeholder="Prenume"
+                    className="min-w-0 rounded-md border border-[#8d6b4e]/25 bg-white px-2.5 py-2 text-xs outline-none focus:border-[var(--chat-accent)]"
+                  />
+                )}
+                {activeConfig.collectEmail && (
+                  <input
+                    aria-label="E-mail"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    maxLength={254}
+                    type="email"
+                    placeholder="E-mail"
+                    className="min-w-0 rounded-md border border-[#8d6b4e]/25 bg-white px-2.5 py-2 text-xs outline-none focus:border-[var(--chat-accent)]"
+                  />
+                )}
               </div>
             )}
-            {messages.map((item) => {
-              const mine = item.senderType === "visitor";
-              return (
-                <div key={item.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-sm ${mine ? "rounded-br-sm bg-[var(--chat-accent)] text-white" : "rounded-bl-sm border border-amber-900/10 bg-white text-[#4b382d]"}`}
-                  >
-                    {item.body}
-                    <span
-                      className={`mt-1 block text-[9px] ${mine ? "text-white/65" : "text-[#8b735f]"}`}
-                    >
-                      {new Intl.DateTimeFormat("ro-RO", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }).format(new Date(item.createdAt))}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {!session && (activeConfig.collectName || activeConfig.collectEmail) && (
-            <div className="grid grid-cols-2 gap-2 border-t border-[#6d4a2b]/10 bg-white/60 px-3 pt-3">
-              {activeConfig.collectName && (
+            {activeConfig.requireConsent && !session && (
+              <label className="flex items-start gap-2 bg-white/60 px-3 pt-2 text-[10px] leading-snug text-[#705946]">
                 <input
-                  aria-label="Prenume"
-                  autoComplete="given-name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  maxLength={100}
-                  placeholder="Prenume"
-                  className="min-w-0 rounded-md border border-[#8d6b4e]/25 bg-white px-2.5 py-2 text-xs outline-none focus:border-[var(--chat-accent)]"
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(event) => setConsent(event.target.checked)}
+                  className="mt-0.5"
                 />
-              )}
-              {activeConfig.collectEmail && (
-                <input
-                  aria-label="E-mail"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  maxLength={254}
-                  type="email"
-                  placeholder="E-mail"
-                  className="min-w-0 rounded-md border border-[#8d6b4e]/25 bg-white px-2.5 py-2 text-xs outline-none focus:border-[var(--chat-accent)]"
-                />
-              )}
-            </div>
-          )}
-          {activeConfig.requireConsent && !session && (
-            <label className="flex items-start gap-2 bg-white/60 px-3 pt-2 text-[10px] leading-snug text-[#705946]">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(event) => setConsent(event.target.checked)}
-                className="mt-0.5"
-              />
-              <span>
-                Sunt de acord cu prelucrarea mesajului conform{" "}
-                <a href="/politica-de-confidentialitate" className="underline">
-                  politicii de confidențialitate
-                </a>
-                .
-              </span>
-            </label>
-          )}
-          {error && (
-            <p className="bg-white/60 px-3 pt-2 text-xs text-red-700" role="alert">
-              {error}
-            </p>
-          )}
-          <form
-            onSubmit={submit}
-            className="flex items-end gap-2 border-t border-[#6d4a2b]/10 bg-white/75 p-3"
-          >
-            <textarea
-              aria-label="Mesajul tău"
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                  event.preventDefault();
-                  submit(event);
-                }
-              }}
-              rows={1}
-              maxLength={2000}
-              placeholder="Scrie un mesaj..."
-              className="max-h-24 min-h-10 flex-1 resize-none rounded-lg border border-[#8d6b4e]/25 bg-white px-3 py-2.5 text-sm text-[#3c2b22] outline-none focus:border-[var(--chat-accent)]"
-            />
-            <button
-              disabled={sending || !message.trim()}
-              className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--chat-accent)] text-white transition hover:brightness-110 disabled:opacity-45"
-              aria-label="Trimite mesajul"
+                <span>
+                  Sunt de acord cu prelucrarea mesajului conform{" "}
+                  <a href="/politica-de-confidentialitate" className="underline">
+                    politicii de confidențialitate
+                  </a>
+                  .
+                </span>
+              </label>
+            )}
+            {error && (
+              <p className="bg-white/60 px-3 pt-2 text-xs text-red-700" role="alert">
+                {error}
+              </p>
+            )}
+            <form
+              onSubmit={submit}
+              className="flex items-end gap-2 border-t border-[#6d4a2b]/10 bg-white/75 p-3"
             >
-              {sending ? <LoaderCircle size={17} className="animate-spin" /> : <Send size={17} />}
-            </button>
-          </form>
-        </section>
+              <textarea
+                aria-label="Mesajul tău"
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    submit(event);
+                  }
+                }}
+                rows={1}
+                maxLength={2000}
+                placeholder="Scrie un mesaj..."
+                className="max-h-24 min-h-10 flex-1 resize-none rounded-lg border border-[#8d6b4e]/25 bg-white px-3 py-2.5 text-sm text-[#3c2b22] outline-none focus:border-[var(--chat-accent)]"
+              />
+              <button
+                disabled={sending || !message.trim()}
+                className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--chat-accent)] text-white transition hover:brightness-110 disabled:opacity-45"
+                aria-label="Trimite mesajul"
+              >
+                {sending ? <LoaderCircle size={17} className="animate-spin" /> : <Send size={17} />}
+              </button>
+            </form>
+          </section>
+        </>
       )}
 
       <button
@@ -462,25 +552,28 @@ export function ChatWidget() {
         type="button"
         hidden={open}
         aria-controls="cutiuta-chat-panel"
-        className="chat-bubble relative grid h-14 w-14 touch-none place-items-center rounded-full border border-white/60 bg-[#3a281f] text-amber-100 shadow-[0_12px_35px_rgba(52,35,26,0.35)] transition-[transform,box-shadow] hover:shadow-[0_15px_38px_rgba(52,35,26,0.45)]"
-        style={{ transform: `translateX(${dragX}px)` }}
+        className="chat-bubble relative grid h-11 w-11 touch-none place-items-center rounded-full border border-white/60 bg-[#3a281f] text-amber-100 shadow-[0_12px_35px_rgba(52,35,26,0.35)] transition-[transform,box-shadow] hover:shadow-[0_15px_38px_rgba(52,35,26,0.45)]"
+        style={
+          bubblePosition
+            ? { left: bubblePosition.x, top: bubblePosition.y, right: "auto" }
+            : undefined
+        }
+        data-dragging={dragging || undefined}
         onClick={(event) => {
           if (event.detail === 0) setOpen((value) => !value);
         }}
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
-        onPointerCancel={() => {
-          pointer.current = null;
-          setDragX(0);
-        }}
+        onPointerCancel={pointerCancel}
         aria-expanded={open}
-        aria-label={open ? "Închide chatul" : "Deschide chatul"}
+        aria-label="Deschide chatul. Ține apăsat pentru a muta bula"
+        title="Apasă pentru chat · ține apăsat și mută bula"
       >
         <span className="absolute inset-[-5px] -z-10 rounded-full border border-amber-500/30 motion-safe:animate-ping [animation-duration:3s]" />
-        {open ? <X size={22} /> : <MessageCircle size={23} />}
+        <MessageCircle size={19} />
         {!open && (
-          <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#fffaf1] bg-emerald-500" />
+          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#fffaf1] bg-emerald-500" />
         )}
       </button>
     </div>

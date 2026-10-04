@@ -104,6 +104,20 @@ describe("growth and commerce integration", () => {
     const rows = await listPublicCatalog(db);
     expect(rows.length).toBe(8);
     expect(new Set(rows.map((r) => r.slug)).size).toBe(rows.length);
+    sql
+      .prepare(
+        `INSERT INTO growth_event_daily(event_day,event_name,product_slug,path,event_count)
+         VALUES('2026-10-04','page_view','','/',1),
+               ('2026-10-04','product_view','hp-keeper','/produs/hp-keeper',1)`,
+      )
+      .run();
+    expect(
+      sql
+        .prepare(
+          "SELECT event_name FROM growth_event_daily WHERE event_name IN ('page_view','product_view') ORDER BY event_name",
+        )
+        .all(),
+    ).toEqual([{ event_name: "page_view" }, { event_name: "product_view" }]);
     expect(sql.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
   });
   it("encrypts credentials and binds ciphertext to its provider", async () => {

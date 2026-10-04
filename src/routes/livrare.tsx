@@ -2,8 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
   Box,
+  CalendarClock,
   CheckCircle2,
   Clock3,
+  Home,
+  MapPinned,
   MapPin,
   MessageCircle,
   PackageCheck,
@@ -22,13 +25,13 @@ export const Route = createFileRoute("/livrare")({
       {
         name: "description",
         content:
-          "Află cum pregătim și livrăm cutiuțele muzicale, cum se calculează transportul și ce faci după expedierea coletului.",
+          "Livrare în 2–3 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate. Curier, SAMEDAY easybox ori livrare programată.",
       },
       { property: "og:title", content: "Livrare — Cutiuța Magică" },
       {
         property: "og:description",
         content:
-          "De la atelier la ușa ta: ambalare atentă, cost confirmat în checkout și informații clare despre expediere.",
+          "De la atelier la tine: 2–3 zile lucrătoare pentru cutiuțele standard și 4–7 zile pentru modelele speciale sau personalizate.",
       },
       { property: "og:url", content: "https://cutiutamagica.eu/livrare" },
       { name: "robots", content: "index, follow, max-image-preview:large" },
@@ -44,7 +47,7 @@ export const Route = createFileRoute("/livrare")({
           url: "https://cutiutamagica.eu/livrare",
           name: "Livrare — Cutiuța Magică",
           description:
-            "Informații despre pregătirea, costul, expedierea și recepția comenzilor Cutiuța Magică.",
+            "Informații despre livrarea cutiuțelor standard în 2–3 zile lucrătoare și a modelelor speciale sau personalizate în 4–7 zile.",
           inLanguage: "ro-RO",
           isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
         }),
@@ -57,20 +60,51 @@ const journey = [
   {
     icon: PackageCheck,
     number: "01",
-    title: "Confirmăm comanda",
-    text: "După trimiterea comenzii verificăm produsele, datele de contact și adresa. Mesajul automat confirmă primirea solicitării; acceptarea și detaliile expedierii sunt comunicate separat.",
+    title: "Confirmăm și verificăm",
+    text: "După comandă verificăm produsele, datele de contact și metoda aleasă. Primești confirmarea pe e-mail, fără să fie necesar un cont.",
   },
   {
     icon: Box,
     number: "02",
-    title: "Pregătim coletul",
-    text: "Cutiuța este verificată și protejată pentru transport. Pentru o cutiuță personalizată, pregătirea și livrarea sunt estimate la 4–7 zile lucrătoare.",
+    title: "Protejăm cutiuța",
+    text: "Testăm mecanismul, fixăm cutiuța în ambalaj și pregătim coletul pentru traseul ales. Ambalarea specială rămâne separată de protecția de transport.",
   },
   {
     icon: Truck,
     number: "03",
-    title: "Predăm curierului",
-    text: "După predare primești detaliile disponibile pentru expediere. Intervalul final depinde de adresă, volum și serviciul curierului.",
+    title: "Expediem și te anunțăm",
+    text: "După predare primești detaliile de urmărire disponibile. Pentru cutiuțele standard, termenul estimat în România este de 2–3 zile lucrătoare.",
+  },
+] as const;
+
+const deliveryOptions = [
+  {
+    icon: Home,
+    eyebrow: "La ușa ta",
+    title: "Curier la adresă",
+    badge: "2–3 zile",
+    text: "Alegi livrarea la adresa completată în comandă. Curierul folosește numărul de telefon pentru notificare și predare.",
+    details: ["adresă din România", "urmărire după expediere", "cost vizibil în checkout"],
+  },
+  {
+    icon: MapPinned,
+    eyebrow: "Ridici când îți este comod",
+    title: "SAMEDAY easybox",
+    badge: "selectare pe hartă",
+    text: "Dacă opțiunea este activă pentru comandă, alegi easybox-ul înainte de finalizare și confirmi tariful afișat.",
+    details: ["punct ales de tine", "disponibilitate verificată", "limitele lockerului se aplică"],
+  },
+  {
+    icon: CalendarClock,
+    eyebrow: "Pentru un moment anume",
+    title: "Livrare programată",
+    badge: "la cerere",
+    text: "Ne scrii înainte de expediere, iar noi confirmăm ziua sau fereastra disponibilă împreună cu partenerul de curierat.",
+    details: [
+      "confirmare în scris",
+      "în funcție de localitate",
+      "fără promisiunea unei ore exacte",
+    ],
   },
 ] as const;
 
@@ -93,9 +127,18 @@ function DeliveryPage() {
           <em>Magia rămâne întreagă.</em>
         </h1>
         <p>
-          Fiecare cutiuță pornește la drum numai după ce este verificată și protejată. Costul și
-          opțiunea disponibilă pentru adresa ta se confirmă transparent în fluxul de comandă.
+          Cutiuțele standard ajung, de regulă, în 2–3 zile lucrătoare. Modelele speciale și
+          personalizate au un termen estimat de 4–7 zile lucrătoare. Alegi traseul potrivit, iar
+          costul și disponibilitatea se confirmă transparent înainte de comandă.
         </p>
+        <div className="delivery-promise" aria-label="Termen estimat de livrare">
+          <Clock3 aria-hidden />
+          <span>
+            <small>Cutiuțe standard în România</small>
+            <strong>2–3 zile lucrătoare</strong>
+          </span>
+          <i>speciale și personalizate: 4–7 zile</i>
+        </div>
         <div className="delivery-hero__actions">
           <Link to="/produse" className="magic-button">
             Alege o cutiuță <ArrowUpRight size={17} />
@@ -112,6 +155,58 @@ function DeliveryPage() {
           </a>
         </div>
       </header>
+
+      <section className="delivery-options" aria-labelledby="delivery-options-heading">
+        <div className="delivery-section-heading delivery-section-heading--split">
+          <div>
+            <p className="scene-eyebrow">Alege traseul potrivit</p>
+            <h2 id="delivery-options-heading">Trei moduri de a primi povestea</h2>
+          </div>
+          <p>
+            În checkout vezi numai opțiunile disponibile pentru comanda și adresa ta. Livrarea
+            programată se stabilește cu noi înainte ca pachetul să plece.
+          </p>
+        </div>
+        <div className="delivery-options__grid">
+          {deliveryOptions.map(({ icon: Icon, eyebrow, title, badge, text, details }, index) => (
+            <article key={title} className={`delivery-option delivery-option--${index + 1}`}>
+              <div className="delivery-option__topline">
+                <span className="delivery-option__icon">
+                  <Icon aria-hidden />
+                </span>
+                <span className="delivery-option__badge">{badge}</span>
+              </div>
+              <p>{eyebrow}</p>
+              <h3>{title}</h3>
+              <div className="delivery-option__route" aria-hidden>
+                <i />
+                <Sparkles />
+                <i />
+              </div>
+              <p>{text}</p>
+              <ul aria-label={`Detalii ${title}`}>
+                {details.map((detail) => (
+                  <li key={detail}>
+                    <CheckCircle2 aria-hidden /> {detail}
+                  </li>
+                ))}
+              </ul>
+              {index === 2 && (
+                <a
+                  href={waLink(
+                    "Bună! Aș vrea să verific o livrare programată pentru o cutiuță muzicală.",
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="scene-link"
+                >
+                  Verifică o dată <ArrowUpRight size={14} />
+                </a>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="delivery-journey" aria-labelledby="delivery-journey-heading">
         <div className="delivery-section-heading">
@@ -156,16 +251,16 @@ function DeliveryPage() {
               <Clock3 aria-hidden />
               <span>
                 <strong>Termen</strong>
-                Pentru produsele disponibile, livrarea în România este estimată la 1–3 zile
-                lucrătoare. Produsele personalizate au termenul comunicat de 4–7 zile lucrătoare.
+                Cutiuțele standard ajung, de regulă, în 2–3 zile lucrătoare. Pentru modelele
+                speciale și personalizate, termenul estimat este de 4–7 zile lucrătoare.
               </span>
             </li>
             <li>
               <ShieldCheck aria-hidden />
               <span>
                 <strong>Cost transparent</strong>
-                Livrarea la adresă în România costă 25 lei pentru comenzile sub 300 lei și este
-                gratuită pentru comenzile de minimum 300 lei.
+                Tariful este afișat înainte de trimiterea comenzii, după adresă și metoda aleasă.
+                Dacă se aplică pragul de livrare gratuită, acesta apare direct în coș.
               </span>
             </li>
             <li>

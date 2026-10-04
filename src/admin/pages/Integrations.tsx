@@ -18,6 +18,7 @@ import type { AdminChannelMetric, AdminIntegrationAccount } from "@/lib/admin-co
 import {
   getAdminIntegrations,
   getCommerceOperations,
+  saveAvyronCrmAccount,
   saveEstetoAccount,
 } from "@/lib/admin.functions";
 
@@ -31,6 +32,7 @@ const PORTALS: Record<string, string> = {
   pinterest: "https://business.pinterest.com",
   whatsapp: "https://business.whatsapp.com",
   esteto: "https://marketplace.esteto.ro",
+  avyron_crm: "https://avyron.ro",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -60,6 +62,7 @@ const OPERATIONAL_PROVIDERS: Record<
   stripe: { label: "Stripe", route: "/admin/financiar" },
   resend: { label: "Resend", route: "/admin/email" },
   esteto: { label: "Esteto Marketplace", route: "/admin/integrations" },
+  avyron_crm: { label: "CRM intern · AVYRON", route: "/admin/integrations" },
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -211,6 +214,105 @@ function EstetoConnector({
   );
 }
 
+function AvyronCrmConnector({
+  account,
+  onSaved,
+}: {
+  account: AdminIntegrationAccount | undefined;
+  onSaved: () => Promise<unknown>;
+}) {
+  const saveAccount = useServerFn(saveAvyronCrmAccount);
+  const mutation = useMutation({
+    mutationFn: saveAccount,
+    onSuccess: async () => {
+      await onSaved();
+      toast.success("Contul CRM a fost salvat. Sincronizarea rămâne oprită până la aprobare.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  return (
+    <section className="glass-card rounded-xl p-4 md:p-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">
+            Conector CRM opțional
+          </p>
+          <h2 className="mt-1 text-base font-semibold text-white">CRM intern · AVYRON</h2>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-400">
+            Pregătit pentru clienți, comenzi și statusuri printr-un webhook HTTPS semnat. Magazinul
+            rămâne independent, iar datele nu părăsesc platforma până la activarea aprobată de un
+            administrator.
+          </p>
+        </div>
+        <StatusPill status={account?.status ?? "setup_required"} />
+      </div>
+      <form
+        className="mt-4 grid items-end gap-3 xl:grid-cols-[1fr_1fr_1.4fr_auto]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const form = new FormData(event.currentTarget);
+          mutation.mutate({
+            data: {
+              accountId: String(form.get("accountId") || ""),
+              accountLabel: String(form.get("accountLabel") || "CRM intern · AVYRON"),
+              apiBaseUrl: String(form.get("apiBaseUrl") || ""),
+            },
+          });
+        }}
+      >
+        <label className="space-y-2 text-sm text-slate-300">
+          <span>ID cont / organizație</span>
+          <input
+            name="accountId"
+            required
+            minLength={2}
+            maxLength={120}
+            defaultValue={account?.externalAccountId ?? ""}
+            placeholder="Se introduce la conectare"
+            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white"
+          />
+        </label>
+        <label className="space-y-2 text-sm text-slate-300">
+          <span>Denumire conexiune</span>
+          <input
+            name="accountLabel"
+            required
+            minLength={2}
+            maxLength={120}
+            defaultValue={account?.label ?? "CRM intern · AVYRON"}
+            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white"
+          />
+        </label>
+        <label className="space-y-2 text-sm text-slate-300">
+          <span>Endpoint webhook HTTPS</span>
+          <input
+            name="apiBaseUrl"
+            required
+            type="url"
+            inputMode="url"
+            defaultValue={account?.apiBaseUrl ?? ""}
+            placeholder="https://crm.exemplu.ro/webhooks/cutiuta"
+            className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white"
+          />
+        </label>
+        <button
+          disabled={mutation.isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-violet-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" /> Salvează contul
+        </button>
+      </form>
+      <div className="mt-4">
+        <CredentialPanel providers={["avyron_crm"]} />
+      </div>
+      <p className="mt-3 text-xs text-slate-500">
+        Secretul HMAC este criptat și nu se afișează după salvare. Conectorul este doar pregătit;
+        activarea și primul transfer necesită aprobare explicită.
+      </p>
+    </section>
+  );
+}
+
 export default function Integrations() {
   const fetchIntegrations = useServerFn(getAdminIntegrations);
   const fetchOperations = useServerFn(getCommerceOperations);
@@ -260,6 +362,11 @@ export default function Integrations() {
 
       <EstetoConnector
         account={data?.accounts.find((account) => account.provider === "esteto")}
+        onSaved={() => integrationsQuery.refetch()}
+      />
+
+      <AvyronCrmConnector
+        account={data?.accounts.find((account) => account.provider === "avyron_crm")}
         onSaved={() => integrationsQuery.refetch()}
       />
 

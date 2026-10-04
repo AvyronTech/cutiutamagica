@@ -1,6 +1,8 @@
 export type CommerceEnv = Env & {
   EMAIL?: SendEmail;
   GOOGLE_MERCHANT_ACCESS_TOKEN?: string;
+  CUSTOMER_GOOGLE_CLIENT_ID?: string;
+  CUSTOMER_GOOGLE_CLIENT_SECRET?: string;
   NETOPIA_API_KEY?: string;
   NETOPIA_PUBLIC_KEY?: string;
   REVOLUT_MERCHANT_SECRET_KEY?: string;
@@ -15,6 +17,7 @@ export type CommerceEnv = Env & {
   GOOGLE_ACCESS_TOKEN?: string;
   META_ACCESS_TOKEN?: string;
   ESTETO_API_KEY?: string;
+  AVYRON_CRM_HMAC_SECRET?: string;
   FGO_PRIVATE_KEY?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;

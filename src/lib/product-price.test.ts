@@ -3,15 +3,20 @@ import { isAvailable, products } from "@/data/products";
 import { calculateProductDiscountTotals, productSavingsBani } from "@/lib/product-price";
 
 describe("product discounts", () => {
-  it("keeps every available product within the approved 20–45 lei reduction", () => {
+  it("keeps the initial current prices and compares them with higher reference prices", () => {
     const available = products.filter(isAvailable);
 
     expect(available).toHaveLength(5);
-    for (const product of available) {
-      expect(product.originalPrice).toBeGreaterThan(product.price ?? 0);
-      expect(productSavingsBani(product)).toBeGreaterThanOrEqual(2_000);
-      expect(productSavingsBani(product)).toBeLessThanOrEqual(4_500);
-    }
+    expect(available.map(({ id, price, originalPrice }) => ({ id, price, originalPrice }))).toEqual(
+      [
+        { id: "hp-keeper", price: 149, originalPrice: 189 },
+        { id: "got-winter", price: 149, originalPrice: 189 },
+        { id: "kitten", price: 129, originalPrice: 159 },
+        { id: "halloween", price: 139, originalPrice: 169 },
+        { id: "sunshine", price: 129, originalPrice: 149 },
+      ],
+    );
+    expect(available.map(productSavingsBani)).toEqual([4000, 4000, 3000, 3000, 2000]);
   });
 
   it("calculates product savings without subtracting them twice from the cart total", () => {
@@ -24,9 +29,9 @@ describe("product discounts", () => {
         { product: winter, quantity: 1 },
       ]),
     ).toEqual({
-      currentSubtotalBani: 34_700,
-      referenceSubtotalBani: 44_700,
-      productDiscountBani: 10_000,
+      currentSubtotalBani: 44_700,
+      referenceSubtotalBani: 56_700,
+      productDiscountBani: 12_000,
     });
   });
 

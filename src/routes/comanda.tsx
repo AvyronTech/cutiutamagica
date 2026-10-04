@@ -139,6 +139,8 @@ function OrderPage() {
   const [promotionError, setPromotionError] = useState("");
   const [promotionExpanded, setPromotionExpanded] = useState(false);
   const [activeCheckoutStep, setActiveCheckoutStep] = useState(1);
+  const stripePaymentReady =
+    config?.payments.options.some((option) => option.id === "stripe") ?? false;
   const cartSignature = JSON.stringify(itemsDetailed.map((item) => [item.id, item.qty]));
   const activePromotion =
     appliedPromotion?.cartSignature === cartSignature ? appliedPromotion : null;
@@ -657,26 +659,27 @@ function OrderPage() {
                 </Link>
               </div>
             ) : (
-              <ul inert={submissionLocked} className="checkout-cart-list mt-5 space-y-2.5">
+              <ul inert={submissionLocked} className="checkout-cart-list mt-5 space-y-2">
                 {itemsDetailed.map((item) => (
-                  <li
-                    key={item.id}
-                    className="checkout-cart-item flex gap-3 rounded-2xl border border-border bg-card/90 p-3"
-                  >
-                    <Link to="/produs/$id" params={{ id: item.product.id }} className="shrink-0">
+                  <li key={item.id} className="checkout-cart-item">
+                    <Link
+                      to="/produs/$id"
+                      params={{ id: item.product.id }}
+                      className="checkout-cart-item__media"
+                    >
                       <ProductImage
                         src={item.product.image}
                         alt={item.product.name}
-                        sizes="88px"
-                        className="h-20 w-20 rounded-xl bg-muted/40 object-cover sm:h-[5.5rem] sm:w-[5.5rem]"
+                        sizes="72px"
+                        className="h-full w-full object-cover"
                       />
                     </Link>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
+                    <div className="checkout-cart-item__body">
+                      <div className="checkout-cart-item__head">
                         <Link
                           to="/produs/$id"
                           params={{ id: item.product.id }}
-                          className="line-clamp-2 font-display text-base leading-tight hover:underline sm:text-lg"
+                          className="line-clamp-1 font-display text-sm leading-tight hover:underline sm:text-base"
                         >
                           {item.product.name}
                         </Link>
@@ -684,41 +687,43 @@ function OrderPage() {
                           type="button"
                           aria-label={`Elimină ${item.product.name}`}
                           onClick={() => removeFromCart(item.id)}
-                          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                       {item.product.melody && (
-                        <div className="mt-0.5 text-xs text-muted-foreground">
+                        <div className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground">
                           {item.product.melody}
                         </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => saveForGiftList(item.id)}
-                        className="mt-1.5 inline-flex min-h-8 items-center gap-1.5 text-[11px] font-medium text-[color:var(--wood)] hover:underline"
-                      >
-                        <Bookmark className="h-3.5 w-3.5" aria-hidden /> Păstrează pentru mai târziu
-                      </button>
-                      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
-                        <div className="inline-flex items-center rounded-full border border-border bg-background">
+                      <div className="checkout-cart-item__footer">
+                        <div className="checkout-cart-item__tools">
+                          <div className="inline-flex items-center rounded-full border border-border bg-background/80">
+                            <button
+                              type="button"
+                              aria-label={`Scade cantitatea pentru ${item.product.name}`}
+                              onClick={() => setQty(item.id, Math.max(1, item.qty - 1))}
+                              className="grid h-8 w-8 place-items-center rounded-l-full hover:bg-muted"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-7 text-center text-xs tabular-nums">{item.qty}</span>
+                            <button
+                              type="button"
+                              aria-label={`Crește cantitatea pentru ${item.product.name}`}
+                              onClick={() => setQty(item.id, Math.min(MAX_QTY, item.qty + 1))}
+                              className="grid h-8 w-8 place-items-center rounded-r-full hover:bg-muted"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                           <button
                             type="button"
-                            aria-label={`Scade cantitatea pentru ${item.product.name}`}
-                            onClick={() => setQty(item.id, Math.max(1, item.qty - 1))}
-                            className="grid h-10 w-10 place-items-center rounded-l-full hover:bg-muted"
+                            onClick={() => saveForGiftList(item.id)}
+                            className="checkout-cart-item__save"
                           >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-8 text-center text-sm tabular-nums">{item.qty}</span>
-                          <button
-                            type="button"
-                            aria-label={`Crește cantitatea pentru ${item.product.name}`}
-                            onClick={() => setQty(item.id, Math.min(MAX_QTY, item.qty + 1))}
-                            className="grid h-10 w-10 place-items-center rounded-r-full hover:bg-muted"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
+                            <Bookmark className="h-3 w-3" aria-hidden /> Salvează
                           </button>
                         </div>
                         <div className="text-right">
@@ -1082,27 +1087,28 @@ function OrderPage() {
                             : money(shippingCost)
                     }
                   />
-                  {config?.shipping.easyboxEnabled && (
-                    <Choice
-                      name="shipping-method"
-                      selected={shippingOption === "easybox"}
-                      onChange={() => {
-                        setShippingOption("easybox");
-                        setQuote(null);
-                      }}
-                      icon={<MapPin className="h-5 w-5" />}
-                      title="SAMEDAY Easybox"
-                      note={
-                        activeQuote && shippingOption === "easybox"
+                  <Choice
+                    name="shipping-method"
+                    disabled={!config?.shipping.easyboxEnabled}
+                    selected={shippingOption === "easybox"}
+                    onChange={() => {
+                      setShippingOption("easybox");
+                      setQuote(null);
+                    }}
+                    icon={<MapPin className="h-5 w-5" />}
+                    title="SAMEDAY Easybox"
+                    note={
+                      !config?.shipping.easyboxEnabled
+                        ? "Disponibil după conectarea contului SAMEDAY"
+                        : activeQuote && shippingOption === "easybox"
                           ? activeQuote.price === 0
                             ? "Livrare gratuită"
                             : money(activeQuote.price)
                           : easyboxLocker
                             ? "Confirmă tariful punctului ales"
                             : "Alege punctul pe hartă"
-                      }
-                    />
-                  )}
+                    }
+                  />
                   {shippingOption === "easybox" && config?.shipping.easyboxEnabled && (
                     <EasyboxPicker
                       selected={easyboxLocker}
@@ -1130,8 +1136,8 @@ function OrderPage() {
                     selected={paymentMethod === "cash_on_delivery"}
                     onChange={() => setPaymentMethod("cash_on_delivery")}
                     icon={<PackageCheck className="h-5 w-5" />}
-                    title="La livrare"
-                    note="Achită când primești cutiuța"
+                    title="Ramburs"
+                    note="Achită coletul la predare"
                   />
                   {config?.payments.options.map((option) => (
                     <Choice
@@ -1154,11 +1160,23 @@ function OrderPage() {
                       }
                     />
                   ))}
-                  <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
-                    {paymentMethod === "card"
-                      ? "Vei continua pe pagina securizată a procesatorului. Datele cardului nu sunt introduse sau stocate pe acest site."
-                      : "Nu se retrage nicio sumă online. Plata se face la primirea coletului."}
-                  </p>
+                  {!stripePaymentReady && (
+                    <Choice
+                      name="payment-method"
+                      disabled
+                      selected={false}
+                      onChange={() => undefined}
+                      icon={<CreditCard className="h-5 w-5" />}
+                      title="Card online"
+                      note="Stripe · disponibil după activarea securizată"
+                    />
+                  )}
+                  {paymentMethod === "card" && (
+                    <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
+                      Continui pe pagina securizată a procesatorului; datele cardului nu sunt
+                      introduse sau stocate pe acest site.
+                    </p>
+                  )}
                 </ChoiceSection>
 
                 <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card/90 p-3.5 text-xs leading-relaxed sm:text-sm">
@@ -1330,6 +1348,10 @@ function OrderPage() {
 function CheckoutAtmosphere() {
   return (
     <div className="checkout-atmosphere" aria-hidden="true">
+      <span className="checkout-starfield" />
+      <span className="checkout-nebula" />
+      <span className="checkout-story-path checkout-story-path--one" />
+      <span className="checkout-story-path checkout-story-path--two" />
       <span className="checkout-glow checkout-glow--one" />
       <span className="checkout-glow checkout-glow--two" />
       <span className="checkout-music checkout-music--one">♪</span>

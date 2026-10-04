@@ -28,7 +28,7 @@ export async function handleAdminInventory(request: Request, env: Env): Promise<
     const admin = await authenticateAdminRequest(
       request,
       env,
-      request.method === "GET" ? "catalog.read" : "catalog.write",
+      request.method === "GET" ? "inventory.read" : "inventory.write",
     );
     if (request.method === "GET") {
       const variant = await env.DB.prepare(
@@ -60,11 +60,24 @@ export async function handleAdminInventory(request: Request, env: Env): Promise<
     const audit = env.DB.prepare(
       `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,after_json,metadata_json) SELECT ?1,?2,?3,'inventory.update','product_variant',?4,?5,'{}' WHERE changes()=1`,
     ).bind(mutationId, admin.id, admin.email, d.variantId, JSON.stringify(d));
-    const writes = d.levels.map((l) =>
+    const writes = d.levels.flatMap((l) => [
+      env.DB.prepare(
+        `INSERT INTO inventory_movements(
+           id,variant_id,location_id,movement_type,quantity_delta,
+           reference_type,reference_id,reason,actor_admin_user_id
+         )
+         SELECT ?1,?2,?3,'adjustment',?4-COALESCE(il.on_hand_quantity,0),
+           'admin_inventory',?5,'Actualizare manuală din dashboard',?6
+         FROM stock_locations sl
+         LEFT JOIN inventory_levels il ON il.variant_id=?2 AND il.location_id=sl.id
+         WHERE sl.id=?3 AND sl.active=1
+           AND ?4!=COALESCE(il.on_hand_quantity,0)
+           AND EXISTS(SELECT 1 FROM audit_log WHERE id=?5)`,
+      ).bind(crypto.randomUUID(), d.variantId, l.locationId, l.onHand, mutationId, admin.id),
       env.DB.prepare(
         `INSERT INTO inventory_levels(id,variant_id,location_id,on_hand_quantity,safety_stock_quantity) SELECT ?1,?2,?3,?4,?5 WHERE EXISTS(SELECT 1 FROM audit_log WHERE id=?6) ON CONFLICT(variant_id,location_id) DO UPDATE SET on_hand_quantity=excluded.on_hand_quantity,safety_stock_quantity=excluded.safety_stock_quantity,version=inventory_levels.version+1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')`,
       ).bind(crypto.randomUUID(), d.variantId, l.locationId, l.onHand, l.safety, mutationId),
-    );
+    ]);
     const results = await env.DB.batch([gate, audit, ...writes]);
     if (!results[0].meta.changes)
       return json(

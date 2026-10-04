@@ -117,12 +117,11 @@ function AuthPage() {
               Magia din vitrină începe aici.
             </h1>
             <p className="mt-5 max-w-lg text-sm leading-6 text-[#f7ead3]/72 md:text-base">
-              Produse, comenzi, povești și campanii coordonate într-un spațiu privat, construit
-              pentru echipa Cutiuța Magică.
+              Acces securizat la produsele, comenzile și operațiunile magazinului Cutiuța Magică.
             </p>
             <div className="mt-7 hidden gap-3 sm:grid sm:grid-cols-3 lg:grid">
               {[
-                [ShieldCheck, "Doar 4 conturi"],
+                [ShieldCheck, "Acces verificat"],
                 [LockKeyhole, "Sesiuni protejate"],
                 [KeyRound, "E-mail și parolă"],
               ].map(([Icon, label]) => (
@@ -150,8 +149,7 @@ function AuthPage() {
             </div>
             <h2 className="mt-4 font-display text-3xl">Intră în administrare</h2>
             <p className="mt-2 text-sm leading-6 text-[#f7ead3]/65">
-              Acces exclusiv pentru cele patru conturi administrative aprobate, folosind adresa de
-              e-mail și parola contului.
+              Folosește adresa de e-mail și parola contului administrativ.
             </p>
 
             <form onSubmit={submitLogin} className="mt-6 space-y-4">

@@ -11,6 +11,7 @@ describe("page story loading profiles", () => {
     ["/livrare", "delivery"],
     ["/despre-cutiuta", "workshop"],
     ["/cadouri/craciun", "gifts"],
+    ["/magic-rewards", "rewards"],
     ["/cont", "account"],
     ["/retur", "care"],
     ["/politica-de-confidentialitate", "legal"],

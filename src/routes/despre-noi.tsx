@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, Heart, Music2, PackageCheck } from "lucide-react";
+import { ArrowUpRight, Eye, Heart, Music2, PackageCheck, Sparkles } from "lucide-react";
 import workshopBg from "@/assets/poveste-workshop.webp";
 import workshopBgSm from "@/assets/poveste-workshop-sm.webp";
 import { EcosystemMarquees } from "@/components/site/EcosystemMarquees";
@@ -44,6 +44,11 @@ export const Route = createFileRoute("/despre-noi")({
 function AboutUs() {
   return (
     <article className="about-us-page">
+      <div className="about-us-atmosphere" aria-hidden>
+        <span />
+        <span />
+        <span />
+      </div>
       <header className="about-us-hero">
         <picture aria-hidden>
           <source media="(max-width: 760px)" srcSet={workshopBgSm} />
@@ -65,8 +70,8 @@ function AboutUs() {
             <em>Emoții care rămân.</em>
           </h1>
           <p>
-            Cutiuța Magică a pornit de la un gest simplu: învârți o manivelă și o melodie cunoscută
-            readuce aproape un om, un film sau o amintire.
+            Am pornit de la un gest simplu: învârți o manivelă, iar o melodie cunoscută readuce
+            aproape un om, un film sau o amintire. De aici începe fiecare poveste pe care o alegem.
           </p>
           <Link className="magic-button" to="/produse">
             Descoperă Colecția <ArrowUpRight aria-hidden />
@@ -93,25 +98,58 @@ function AboutUs() {
             Pentru noi, produsul este doar începutul. Contează momentul în care se deschide capacul,
             prima rotire a manivelei și persoana căreia îi este oferită cutiuța.
           </p>
+          <div className="about-us-story__notes" aria-label="Pe scurt despre Cutiuța Magică">
+            <span>
+              <strong>Mică în palmă</strong>
+              <small>aleasă pentru un moment mare</small>
+            </span>
+            <span>
+              <strong>Manuală</strong>
+              <small>fără baterii și fără aplicație</small>
+            </span>
+          </div>
         </div>
       </section>
 
-      <section className="about-us-values" aria-label="Valorile Cutiuței Magice">
-        <article>
-          <Heart aria-hidden />
-          <h2>Alegere Cu Sens</h2>
-          <p>Fiecare temă este gândită pentru un fan, un colecționar sau un om drag.</p>
-        </article>
-        <article>
-          <Music2 aria-hidden />
-          <h2>Magie Mecanică</h2>
-          <p>Melodia pornește din gestul tău, fără baterii și fără o aplicație.</p>
-        </article>
-        <article>
-          <PackageCheck aria-hidden />
-          <h2>Grijă Până La Livrare</h2>
-          <p>Verificăm detaliile și pregătim fiecare comandă pentru drumul spre tine.</p>
-        </article>
+      <section className="about-us-values" aria-labelledby="about-us-values-title">
+        <header className="about-us-values__heading">
+          <div>
+            <p className="scene-eyebrow">
+              <Sparkles size={14} aria-hidden /> Ce păstrăm important
+            </p>
+            <h2 id="about-us-values-title">Căldura poveștii, claritatea alegerii.</h2>
+          </div>
+          <p>
+            Vrem ca drumul de la prima melodie ascultată până la deschiderea coletului să fie
+            simplu, atent și lipsit de surprize neplăcute.
+          </p>
+        </header>
+        <div className="about-us-values__grid">
+          <article>
+            <Heart aria-hidden />
+            <span>01</span>
+            <h3>Alegere cu sens</h3>
+            <p>Fiecare temă este aleasă pentru un fan, un colecționar sau un om drag.</p>
+          </article>
+          <article>
+            <Music2 aria-hidden />
+            <span>02</span>
+            <h3>Magie mecanică</h3>
+            <p>Melodia pornește din gestul tău, printr-un mecanism manual, fără baterii.</p>
+          </article>
+          <article>
+            <Eye aria-hidden />
+            <span>03</span>
+            <h3>Detalii înainte de comandă</h3>
+            <p>Arătăm imaginile, dimensiunile și audiția disponibile pentru fiecare model.</p>
+          </article>
+          <article>
+            <PackageCheck aria-hidden />
+            <span>04</span>
+            <h3>Grijă până la livrare</h3>
+            <p>Pregătim comanda atent și explicăm transparent opțiunile și termenele.</p>
+          </article>
+        </div>
       </section>
 
       <EcosystemMarquees />

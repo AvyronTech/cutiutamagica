@@ -14,7 +14,17 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Banknote, PackageCheck, Repeat, ShoppingBag, Users } from "lucide-react";
+import {
+  Banknote,
+  Boxes,
+  CircleAlert,
+  PackageCheck,
+  Repeat,
+  ShieldCheck,
+  ShoppingBag,
+  Users,
+  Warehouse,
+} from "lucide-react";
 import { getAdminStatistics } from "@/lib/admin.functions";
 import { GROWTH_EVENT_NAMES } from "@/lib/growth-events";
 
@@ -60,6 +70,7 @@ export default function Statistics() {
     event,
     count: data?.growth.find((item) => item.event === event)?.count ?? 0,
   }));
+  const inventory = data?.inventory;
   const kpis = [
     {
       label: "Venit net",
@@ -116,6 +127,80 @@ export default function Statistics() {
           );
         })}
       </div>
+
+      <section className="glass-card rounded-xl p-4 md:p-5" aria-labelledby="inventory-stats-title">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-300">
+              Exclusiv intern
+            </p>
+            <h2 id="inventory-stats-title" className="mt-1 text-base font-semibold text-white">
+              Situația stocului
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500">Fizic − rezervat − siguranță = disponibil</p>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
+          {[
+            {
+              label: "Fizic",
+              value: inventory?.onHand ?? 0,
+              icon: Warehouse,
+              tone: "text-violet-300",
+            },
+            {
+              label: "Rezervat",
+              value: inventory?.reserved ?? 0,
+              icon: PackageCheck,
+              tone: "text-amber-300",
+            },
+            {
+              label: "Siguranță",
+              value: inventory?.safety ?? 0,
+              icon: ShieldCheck,
+              tone: "text-cyan-300",
+            },
+            {
+              label: "Disponibil",
+              value: inventory?.available ?? 0,
+              icon: Boxes,
+              tone: "text-emerald-300",
+            },
+            {
+              label: "Urmărite",
+              value: inventory?.trackedProducts ?? 0,
+              icon: PackageCheck,
+              tone: "text-slate-300",
+            },
+            {
+              label: "Stoc redus",
+              value: inventory?.lowStockProducts ?? 0,
+              icon: CircleAlert,
+              tone: "text-amber-300",
+            },
+            {
+              label: "Epuizate",
+              value: inventory?.outOfStockProducts ?? 0,
+              icon: CircleAlert,
+              tone: "text-red-300",
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.label}
+                className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-3"
+              >
+                <Icon className={`mb-2 h-4 w-4 ${item.tone}`} />
+                <p className="text-xl font-bold tabular-nums text-white">
+                  {isLoading ? "…" : item.value}
+                </p>
+                <p className="mt-1 text-[10px] text-slate-500">{item.label}</p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="glass-card rounded-xl p-4 md:p-5">

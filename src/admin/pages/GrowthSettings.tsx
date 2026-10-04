@@ -38,6 +38,7 @@ const labels: Record<CredentialProvider, string> = {
   google: "Google (token OAuth readonly)",
   meta: "Meta (token de acces)",
   esteto: "Esteto Marketplace · cod API",
+  avyron_crm: "CRM intern · secret HMAC",
 };
 function useSettings() {
   const load = useServerFn(getGrowthSettings);

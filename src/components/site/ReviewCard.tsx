@@ -1,3 +1,4 @@
+import { BadgeCheck, Quote } from "lucide-react";
 import { reviewCountries, reviewSources, type PublicReview } from "@/lib/reviews";
 
 function countryFlag(code: string) {
@@ -27,14 +28,24 @@ export function ReviewCard({
       lang={review.language}
     >
       <div className="review-card-top">
-        <strong>{review.displayName}</strong>
+        <div>
+          <strong>{review.displayName}</strong>
+          {review.sourceUrl && (
+            <span className="review-source-proof">
+              <BadgeCheck aria-hidden /> Sursă verificabilă
+            </span>
+          )}
+        </div>
         <ReviewStars rating={review.rating} />
       </div>
       <p className="review-product-name">{review.productName}</p>
-      <blockquote>{review.body}</blockquote>
+      <blockquote>
+        <Quote aria-hidden />
+        {review.body}
+      </blockquote>
       <footer>
         <div>
-          {review.sourceUrl && !compact ? (
+          {review.sourceUrl ? (
             <a href={review.sourceUrl} target="_blank" rel="noopener noreferrer">
               Preluată din {reviewSources[review.source]} ↗
             </a>

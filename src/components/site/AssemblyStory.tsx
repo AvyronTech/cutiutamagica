@@ -9,7 +9,7 @@ const steps = [
   {
     title: "Un loc pentru amintiri.",
     detail:
-      "Baza și pereții din lemn formează o lume mică. Muchii, textură, îmbinări: detaliile pe care le simți înainte de prima notă.",
+      "Corpul compact din lemn închis păstrează proporțiile cutiuțelor noastre: muchii tactile, îmbinări în trepte și panouri decupate cu detalii fine.",
     label: "Lemnul",
     facts: ["corp din lemn", "îmbinări vizibile", "interior protejat"],
   },
@@ -23,7 +23,7 @@ const steps = [
   {
     title: "O poveste pe capac.",
     detail:
-      "Capacul se așază pe balamale și se deschide spre tine. Gravura și ilustrația dau fiecărui model propria poveste.",
+      "Placa subțire se ridică pe balamale, asemenea modelului You Are My Sunshine. Emblema originală Cutiuța Magică rămâne orientată corect spre privitor.",
     label: "Capacul",
     facts: ["balamale metalice", "placă ilustrată", "ramă din lemn"],
   },
@@ -86,7 +86,7 @@ export default function AssemblyStory() {
           antialias: true,
           powerPreference: "high-performance",
         });
-        renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+        renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 640 ? 1.2 : 1.5));
         renderer.setClearColor(0x17120f, 0);
         renderer.outputColorSpace = T.SRGBColorSpace;
         renderer.toneMapping = T.ACESFilmicToneMapping;
@@ -149,10 +149,17 @@ export default function AssemblyStory() {
         });
         const darkWood = new T.MeshPhysicalMaterial({
           map: texture,
+          roughness: 0.66,
+          color: 0x4d4943,
+          clearcoat: 0.1,
+          clearcoatRoughness: 0.76,
+        });
+        const carvedWood = new T.MeshPhysicalMaterial({
+          map: texture,
           roughness: 0.62,
-          color: 0x674127,
-          clearcoat: 0.12,
-          clearcoatRoughness: 0.72,
+          color: 0xc3a77c,
+          clearcoat: 0.08,
+          clearcoatRoughness: 0.74,
         });
         const brass = new T.MeshPhysicalMaterial({
           color: 0xc09a58,
@@ -213,42 +220,79 @@ export default function AssemblyStory() {
           return mesh;
         }
         const body = part(0, [0, -4, 0], [0, 0, 0], [-0.08, 0.12, -0.04]);
-        block(body, 6.4, 0.28, 4.8, 0, -1.65, 0);
-        block(body, 6.4, 2.8, 0.25, 0, -0.15, 2.27);
-        block(body, 6.4, 2.8, 0.25, 0, -0.15, -2.27);
-        block(body, 0.25, 2.8, 4.55, -3.07, -0.15, 0);
-        block(body, 0.25, 2.8, 4.55, 3.07, -0.15, 0);
-        block(body, 5.82, 0.075, 4.12, 0, -1.46, 0, felt, 0.025);
-        // Inner ledge, feet and visible corner joinery keep the proportions close to the real boxes.
-        block(body, 5.98, 0.1, 0.13, 0, 1.14, 2.05, darkWood, 0.025);
-        block(body, 5.98, 0.1, 0.13, 0, 1.14, -2.05, darkWood, 0.025);
-        block(body, 0.13, 0.1, 4.0, -2.91, 1.14, 0, darkWood, 0.025);
-        block(body, 0.13, 0.1, 4.0, 2.91, 1.14, 0, darkWood, 0.025);
-        for (const x of [-2.62, 2.62])
-          for (const z of [-1.85, 1.85]) {
+        block(body, 5.9, 0.28, 4.82, 0, -1.58, 0, darkWood);
+        block(body, 5.9, 2.64, 0.24, 0, -0.12, 2.29, darkWood);
+        block(body, 5.9, 2.64, 0.24, 0, -0.12, -2.29, darkWood);
+        block(body, 0.24, 2.64, 4.34, -2.83, -0.12, 0, darkWood);
+        block(body, 0.24, 2.64, 4.34, 2.83, -0.12, 0, darkWood);
+        block(body, 5.38, 0.075, 4.04, 0, -1.39, 0, felt, 0.025);
+        // Inner ledge, feet and stepped corner joinery follow the sold box more closely.
+        block(body, 5.46, 0.1, 0.13, 0, 1.12, 2.06, carvedWood, 0.025);
+        block(body, 5.46, 0.1, 0.13, 0, 1.12, -2.06, carvedWood, 0.025);
+        block(body, 0.13, 0.1, 4.0, -2.66, 1.12, 0, carvedWood, 0.025);
+        block(body, 0.13, 0.1, 4.0, 2.66, 1.12, 0, carvedWood, 0.025);
+        for (const x of [-2.47, 2.47])
+          for (const z of [-1.86, 1.86]) {
             const foot = new T.Mesh(new T.CylinderGeometry(0.2, 0.23, 0.18, 18), darkWood);
-            foot.position.set(x, -1.82, z);
+            foot.position.set(x, -1.75, z);
             foot.castShadow = renderer.shadowMap.enabled;
             body.add(foot);
           }
-        for (const side of [-1, 1])
-          for (let y = 0; y < 5; y++)
-            block(body, 0.3, 0.24, 0.025, side * 2.8, -1.25 + y * 0.52, 2.411, darkWood);
-        // A restrained engraved diamond makes the schematic independent of licensed artwork.
-        const ornament = new T.Line(
+        for (const z of [-1, 1])
+          for (const side of [-1, 1])
+            for (let y = 0; y < 5; y++)
+              block(
+                body,
+                0.32,
+                0.23,
+                0.035,
+                side * 2.55,
+                -1.2 + y * 0.5,
+                z * 2.42,
+                carvedWood,
+                0.015,
+              );
+
+        const carving = new T.LineBasicMaterial({
+          color: 0xc9a66f,
+          transparent: true,
+          opacity: 0.88,
+        });
+        const framePoints = [
+          new T.Vector3(-2.05, -0.98, 2.423),
+          new T.Vector3(2.05, -0.98, 2.423),
+          new T.Vector3(2.05, 0.72, 2.423),
+          new T.Vector3(-2.05, 0.72, 2.423),
+        ];
+        body.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(framePoints), carving));
+        // Laser-cut inspired vines and central diamond, drawn as light geometry rather than licensed art.
+        for (const side of [-1, 1]) {
+          const vine = new T.CatmullRomCurve3([
+            new T.Vector3(side * 1.93, -0.82, 2.426),
+            new T.Vector3(side * 1.48, -0.42, 2.426),
+            new T.Vector3(side * 1.68, 0.06, 2.426),
+            new T.Vector3(side * 1.24, 0.54, 2.426),
+            new T.Vector3(side * 0.72, 0.18, 2.426),
+          ]);
+          body.add(new T.Line(new T.BufferGeometry().setFromPoints(vine.getPoints(28)), carving));
+          for (let i = 0; i < 3; i++) {
+            const leaf = new T.Mesh(new T.CircleGeometry(0.12 - i * 0.012, 4), carvedWood);
+            leaf.scale.set(1.65, 0.72, 1);
+            leaf.rotation.z = side * (0.36 + i * 0.24);
+            leaf.position.set(side * (1.58 - i * 0.34), -0.27 + i * 0.34, 2.43);
+            body.add(leaf);
+          }
+        }
+        const diamond = new T.LineLoop(
           new T.BufferGeometry().setFromPoints([
-            new T.Vector3(-1.6, -0.2, 2.411),
-            new T.Vector3(0, 0.8, 2.411),
-            new T.Vector3(1.6, -0.2, 2.411),
-            new T.Vector3(0, -1.15, 2.411),
-            new T.Vector3(-1.6, -0.2, 2.411),
+            new T.Vector3(0, 0.52, 2.43),
+            new T.Vector3(0.48, -0.12, 2.43),
+            new T.Vector3(0, -0.76, 2.43),
+            new T.Vector3(-0.48, -0.12, 2.43),
           ]),
-          new T.LineBasicMaterial({ color: 0xd4ac6d }),
+          carving,
         );
-        body.add(ornament);
-        const latch = block(body, 0.72, 0.5, 0.16, 0, -0.2, 2.47, brass, 0.05);
-        latch.rotation.x = 0.03;
-        block(body, 0.32, 0.16, 0.08, 0, 0.05, 2.57, shadow, 0.025);
+        body.add(diamond);
 
         const mechanism = part(0.2, [0, 6, 0], [0, -0.75, 0], [0.12, -0.18, 0.07]);
         block(mechanism, 4.65, 0.16, 2.9, 0, 0, 0, steel, 0.04);
@@ -321,15 +365,13 @@ export default function AssemblyStory() {
         const driveGear = addGear(1.72, -0.78, 0.48, 12);
         const transferGear = addGear(2.28, -0.18, 0.3, 9);
 
-        const lid = part(0.4, [0, 6, -4], [0, 1.28, -2.27], [-0.16, 0.1, 0.05]);
+        const lid = part(0.4, [0, 6, -4], [0, 1.22, -2.25], [-0.16, 0.1, 0.05]);
         const lidPivot = new T.Group();
         lid.add(lidPivot);
-        block(lidPivot, 6.4, 0.25, 4.8, 0, 0, 2.27);
-        block(lidPivot, 5.82, 0.055, 4.2, 0, -0.145, 2.27, darkWood, 0.018);
-        block(lidPivot, 5.38, 0.025, 3.76, 0, -0.182, 2.27, felt, 0.012);
-        const badge = block(lidPivot, 3.85, 0.045, 2.46, 0, -0.205, 2.27, wood, 0.045);
-        badge.rotation.y = 0.02;
-        for (const x of [-1.85, 1.85]) {
+        block(lidPivot, 5.12, 0.2, 3.58, 0, 0, 1.78, darkWood);
+        block(lidPivot, 4.68, 0.052, 3.14, 0, -0.126, 1.78, carvedWood, 0.028);
+        block(lidPivot, 4.44, 0.027, 2.9, 0, -0.165, 1.78, felt, 0.018);
+        for (const x of [-1.72, 1.72]) {
           block(lidPivot, 0.62, 0.15, 0.44, x, 0.04, 0, brass, 0.035);
           const hingePin = new T.Mesh(new T.CylinderGeometry(0.075, 0.075, 0.82, 16), steel);
           hingePin.rotation.z = Math.PI / 2;
@@ -338,57 +380,101 @@ export default function AssemblyStory() {
         }
 
         const artCanvas = document.createElement("canvas");
-        artCanvas.width = 640;
-        artCanvas.height = 400;
+        artCanvas.width = 512;
+        artCanvas.height = 336;
         const art = artCanvas.getContext("2d")!;
-        const artGradient = art.createRadialGradient(320, 180, 30, 320, 200, 360);
-        artGradient.addColorStop(0, "#27494b");
-        artGradient.addColorStop(0.52, "#172f35");
-        artGradient.addColorStop(1, "#101d24");
+        const artGradient = art.createRadialGradient(256, 146, 20, 256, 168, 300);
+        artGradient.addColorStop(0, "#27393a");
+        artGradient.addColorStop(0.56, "#17282b");
+        artGradient.addColorStop(1, "#0d171b");
         art.fillStyle = artGradient;
-        art.fillRect(0, 0, 640, 400);
-        art.strokeStyle = "rgba(238,197,123,.76)";
+        art.fillRect(0, 0, 512, 336);
+        art.strokeStyle = "rgba(232,193,122,.82)";
+        art.lineWidth = 2;
+        art.strokeRect(17, 17, 478, 302);
+        art.strokeStyle = "rgba(232,193,122,.44)";
+        art.strokeRect(25, 25, 462, 286);
+        art.strokeStyle = "rgba(238,197,123,.82)";
+        art.lineWidth = 3;
+        art.beginPath();
+        art.arc(256, 126, 66, 0, Math.PI * 2);
+        art.stroke();
+        for (let i = 0; i < 16; i++) {
+          const a = (i / 16) * Math.PI * 2;
+          art.beginPath();
+          art.moveTo(256 + Math.cos(a) * 75, 126 + Math.sin(a) * 75);
+          art.lineTo(256 + Math.cos(a) * 86, 126 + Math.sin(a) * 86);
+          art.stroke();
+        }
+        // Original music-box emblem: compact enough to read as a logo, not product artwork.
         art.lineWidth = 4;
         art.beginPath();
-        art.arc(320, 202, 106, 0, Math.PI * 2);
+        art.moveTo(221, 135);
+        art.lineTo(256, 145);
+        art.lineTo(291, 135);
+        art.lineTo(291, 163);
+        art.lineTo(256, 174);
+        art.lineTo(221, 163);
+        art.closePath();
         art.stroke();
-        art.lineWidth = 2;
-        for (let i = 0; i < 28; i++) {
+        art.beginPath();
+        art.moveTo(224, 132);
+        art.lineTo(224, 100);
+        art.lineTo(273, 90);
+        art.lineTo(289, 101);
+        art.lineTo(289, 132);
+        art.stroke();
+        art.lineWidth = 3;
+        art.beginPath();
+        art.moveTo(253, 103);
+        art.lineTo(253, 127);
+        art.lineTo(265, 124);
+        art.stroke();
+        art.fillStyle = "#f3d59e";
+        art.beginPath();
+        art.arc(247, 130, 6, 0, Math.PI * 2);
+        art.fill();
+        for (let i = 0; i < 18; i++) {
           const a = i * 2.399;
-          const r = 58 + (i % 6) * 34;
-          const x = 320 + Math.cos(a) * r;
-          const y = 198 + Math.sin(a) * r * 0.58;
-          art.fillStyle = i % 4 === 0 ? "#f5d28a" : "rgba(246,229,194,.64)";
+          const r = 102 + (i % 4) * 12;
           art.beginPath();
-          art.arc(x, y, i % 4 === 0 ? 3.2 : 1.8, 0, Math.PI * 2);
+          art.arc(
+            256 + Math.cos(a) * r,
+            126 + Math.sin(a) * r * 0.42,
+            i % 3 ? 1.3 : 2.3,
+            0,
+            Math.PI * 2,
+          );
           art.fill();
         }
-        art.fillStyle = "#f3d59e";
-        art.font = "600 29px serif";
+        art.font = "600 28px Georgia, serif";
         art.textAlign = "center";
-        art.fillText("CUTIUȚA MAGICĂ", 320, 212);
-        art.font = "italic 18px serif";
+        art.letterSpacing = "3px";
+        art.fillText("CUTIUȚA MAGICĂ", 256, 245);
+        art.font = "italic 15px Georgia, serif";
+        art.letterSpacing = "1px";
         art.fillStyle = "rgba(246,229,194,.82)";
-        art.fillText("o poveste în fiecare notă", 320, 244);
+        art.fillText("o poveste în fiecare notă", 256, 273);
         const artTexture = new T.CanvasTexture(artCanvas);
         artTexture.colorSpace = T.SRGBColorSpace;
         artTexture.anisotropy = texture.anisotropy;
         textures.push(artTexture);
         const artPlate = new T.Mesh(
-          new T.PlaneGeometry(3.58, 2.18),
+          new T.PlaneGeometry(4.16, 2.62),
           new T.MeshPhysicalMaterial({
             map: artTexture,
             roughness: 0.36,
             clearcoat: 0.32,
             clearcoatRoughness: 0.42,
-            side: T.DoubleSide,
+            side: T.FrontSide,
           }),
         );
-        artPlate.rotation.x = -Math.PI / 2;
-        artPlate.position.set(0, -0.237, 2.27);
+        // The logo lives on the inner face. FrontSide + this rotation prevents mirrored text when opened.
+        artPlate.rotation.x = Math.PI / 2;
+        artPlate.position.set(0, -0.184, 1.78);
         lidPivot.add(artPlate);
 
-        const crank = part(0.6, [7, 0, 0], [3.28, 0, -0.45], [0, 0.45, -0.2]);
+        const crank = part(0.6, [7, 0, 0], [3.02, -0.03, -0.45], [0, 0.45, -0.2]);
         const axle = new T.Mesh(new T.CylinderGeometry(0.11, 0.11, 0.75, 14), steel);
         axle.rotation.z = Math.PI / 2;
         axle.position.x = 0.25;
@@ -397,7 +483,7 @@ export default function AssemblyStory() {
         crankPivot.position.x = 0.6;
         crank.add(crankPivot);
         block(crankPivot, 0.13, 0.8, 0.13, 0, 0.35, 0, steel);
-        const grip = new T.Mesh(new T.CylinderGeometry(0.17, 0.19, 0.58, 18), darkWood);
+        const grip = new T.Mesh(new T.CylinderGeometry(0.16, 0.16, 0.58, 18), steel);
         grip.rotation.z = Math.PI / 2;
         grip.position.set(0.22, 0.72, 0);
         grip.castShadow = renderer.shadowMap.enabled;
@@ -412,8 +498,9 @@ export default function AssemblyStory() {
         floor.receiveShadow = renderer.shadowMap.enabled;
         scene.add(floor);
 
-        const dustPositions = new Float32Array(72 * 3);
-        for (let i = 0; i < 72; i++) {
+        const dustCount = innerWidth < 640 ? 42 : 72;
+        const dustPositions = new Float32Array(dustCount * 3);
+        for (let i = 0; i < dustCount; i++) {
           dustPositions[i * 3] = (Math.random() - 0.5) * 12;
           dustPositions[i * 3 + 1] = Math.random() * 8 - 2;
           dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 8;
@@ -530,7 +617,7 @@ export default function AssemblyStory() {
             camera.aspect = w / h;
             camera.updateProjectionMatrix();
           }
-          const compact = w < 500;
+          const compact = w < 680;
           camera.position.set(
             (compact ? 14 : 11.4) - p * (compact ? 0.25 : 0.8) + currentPointerX * 0.22,
             (compact ? 9.6 : 8.7) - p * 0.42 - currentPointerY * 0.18,
@@ -625,10 +712,16 @@ export default function AssemblyStory() {
       ref={root}
       id="constructie"
       className={`assembly-story ${fallback ? "assembly-story--static" : ""} ${interactive ? "assembly-story--interactive" : ""}`}
+      data-stage={stage}
       aria-label="Cum se construiește o cutiuță muzicală"
     >
       <div className="assembly-sticky">
         <div className="assembly-stage" ref={visibleStage}>
+          <div className="assembly-stage-aurora" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </div>
           <div
             ref={canvas}
             className="assembly-canvas"
@@ -658,7 +751,7 @@ export default function AssemblyStory() {
             </button>
           )}
           <p className="assembly-caption">
-            Ilustrație a mecanismului · detaliile diferă între modele
+            Reconstrucție 3D inspirată de modelele reale · detaliile pot varia
           </p>
         </div>
         <div className="assembly-copy">

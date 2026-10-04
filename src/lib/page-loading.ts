@@ -7,6 +7,7 @@ export type PageStoryScene =
   | "delivery"
   | "workshop"
   | "gifts"
+  | "rewards"
   | "account"
   | "care"
   | "legal";
@@ -94,6 +95,15 @@ const profiles: Record<PageStoryScene, PageStoryProfile> = {
     accent: "#e9b9a5",
     glow: "#74424c",
   },
+  rewards: {
+    scene: "rewards",
+    eyebrow: "Se aprinde o stea",
+    title: "Momentele tale devin Magic Stars",
+    detail: "O poveste. O stea. Fără calcule complicate.",
+    symbol: "✦",
+    accent: "#f3d18d",
+    glow: "#6e4f8f",
+  },
   account: {
     scene: "account",
     eyebrow: "Spațiul tău",
@@ -143,6 +153,7 @@ export function pageStoryProfile(pathname: string): PageStoryProfile {
     return profiles.workshop;
   if (pathname === "/cadouri" || pathname.startsWith("/cadouri/")) return profiles.gifts;
   if (pathname === "/ghid-cadouri-personalizate") return profiles.gifts;
+  if (pathname === "/magic-rewards") return profiles.rewards;
   if (pathname === "/cont") return profiles.account;
   if (pathname === "/retur") return profiles.care;
   if (pathname === "/termeni-de-utilizare" || pathname === "/politica-de-confidentialitate")

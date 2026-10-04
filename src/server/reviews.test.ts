@@ -92,6 +92,7 @@ beforeEach(() => {
 afterEach(() => {
   sqlite.close();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 function request(path: string, body?: unknown, cookie?: string, method = body ? "POST" : "GET") {
   return new Request(`https://cutiutamagica.eu/api/v1/${path}`, {
@@ -266,30 +267,98 @@ describe("reviews and moderation using real SQLite", () => {
   });
 });
 
-describe("separate reviewer accounts", () => {
-  const credentials = {
-    email: "member@example.test",
-    password: "o parola suficient de lunga",
-    displayName: "Maria P.",
-    consent: true,
-  };
-  async function register() {
-    const r = (await handleReviewAccount(request("reviewer/register", credentials), env))!;
-    expect(r.status).toBe(201);
-    return r.headers.get("set-cookie")!;
+describe("customer Google OpenID Connect accounts", () => {
+  function enableGoogle() {
+    Object.assign(env, {
+      CUSTOMER_GOOGLE_CLIENT_ID: "google-client-id.apps.googleusercontent.com",
+      CUSTOMER_GOOGLE_CLIENT_SECRET: "google-client-secret",
+    });
   }
-  it("registers securely and uses the authenticated name instead of supplied identities", async () => {
-    const cookie = await register();
-    expect(cookie).toContain("HttpOnly");
-    expect(cookie).toContain("SameSite=Strict");
-    expect(cookie).toContain("Secure");
-    const row = sqlite.prepare("SELECT * FROM review_accounts").get()!;
-    expect(row.password_hash).not.toBe(credentials.password);
+
+  async function beginGoogleLogin() {
+    const response = (await handleReviewAccount(request("reviewer/oauth/google"), env))!;
+    expect(response.status).toBe(302);
+    const location = new URL(response.headers.get("location")!);
+    const state = location.searchParams.get("state")!;
+    const stateCookie = response.headers.get("set-cookie")!;
+    return { location, state, stateCookie };
+  }
+
+  it("keeps OAuth visibly disabled until the two Worker secrets exist", async () => {
+    const providers = (await handleReviewAccount(request("reviewer/providers"), env))!;
+    expect(await providers.json()).toEqual({ data: { google: { enabled: false } } });
+
+    const start = (await handleReviewAccount(request("reviewer/oauth/google"), env))!;
+    expect(start.status).toBe(302);
+    expect(start.headers.get("location")).toBe("https://cutiutamagica.eu/cont?auth=neconfigurat");
+  });
+
+  it("starts Google authorization with a short-lived, HttpOnly state cookie", async () => {
+    enableGoogle();
+    const { location, stateCookie } = await beginGoogleLogin();
+    expect(location.origin).toBe("https://accounts.google.com");
+    expect(location.searchParams.get("scope")).toBe("openid email profile");
+    expect(location.searchParams.get("response_type")).toBe("code");
+    expect(location.searchParams.get("redirect_uri")).toBe(
+      "https://cutiutamagica.eu/api/v1/reviewer/oauth/google/callback",
+    );
+    expect(stateCookie).toContain("cm_customer_oauth_state=");
+    expect(stateCookie).toContain("HttpOnly");
+    expect(stateCookie).toContain("SameSite=Lax");
+    expect(stateCookie).toContain("Secure");
+  });
+
+  it("creates an OAuth-only account, session and trusted review identity", async () => {
+    enableGoogle();
+    const { state, stateCookie } = await beginGoogleLogin();
+    const providerFetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ access_token: "google-access-token-for-test", token_type: "Bearer" }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          sub: "google-subject-123",
+          email: "member@example.test",
+          email_verified: true,
+          name: "Maria P.",
+        }),
+      );
+    vi.stubGlobal("fetch", providerFetch);
+
+    const callback = (await handleReviewAccount(
+      request(
+        `reviewer/oauth/google/callback?code=valid-code&state=${state}`,
+        undefined,
+        stateCookie,
+      ),
+      env,
+    ))!;
+    expect(callback.status).toBe(302);
+    expect(callback.headers.get("location")).toBe("https://cutiutamagica.eu/cont");
+    expect(providerFetch).toHaveBeenCalledTimes(2);
+
+    const cookies = callback.headers.get("set-cookie")!;
+    expect(cookies).toContain("cm_reviewer=");
+    expect(cookies).toContain("HttpOnly");
+    expect(cookies).toContain("SameSite=Strict");
+    const session = cookies.match(/cm_reviewer=[a-f0-9]{64}/)?.[0];
+    expect(session).toBeTruthy();
+    expect(
+      sqlite.prepare("SELECT email,display_name,auth_mode FROM review_accounts").get(),
+    ).toMatchObject({ email: "member@example.test", display_name: "Maria P.", auth_mode: "oauth" });
+    expect(
+      sqlite.prepare("SELECT provider,provider_subject FROM review_oauth_identities").get(),
+    ).toMatchObject({ provider: "google", provider_subject: "google-subject-123" });
+
+    expect(await currentReviewer(request("reviewer", undefined, session), env)).toMatchObject({
+      displayName: "Maria P.",
+    });
     expect(
       (
         await submit(
           { ...input, email: "forged@example.test", displayName: "Pretend author" },
-          cookie,
+          session,
         )
       ).status,
     ).toBe(201);
@@ -301,39 +370,22 @@ describe("separate reviewer accounts", () => {
       origin: "account",
       status: "pending",
     });
-    expect(await currentReviewer(request("reviewer", undefined, cookie), env)).toMatchObject({
-      displayName: "Maria P.",
-    });
-    expect((await handleReviewAccount(request("reviewer/logout", {}, cookie), env))!.status).toBe(
-      200,
-    );
-    expect(await currentReviewer(request("reviewer", undefined, cookie), env)).toBeNull();
   });
-  it("rejects incorrect passwords and invalid or expired sessions", async () => {
-    const cookie = await register();
-    expect(
-      (await handleReviewAccount(
-        request("reviewer/login", { ...credentials, password: "this password is incorrect" }),
-        env,
-      ))!.status,
-    ).toBe(401);
-    const login = (await handleReviewAccount(request("reviewer/login", credentials), env))!;
-    expect(login.status).toBe(200);
-    sqlite.exec("UPDATE review_sessions SET expires_at=1");
-    expect(await currentReviewer(request("reviewer", undefined, cookie), env)).toBeNull();
-    expect(
-      await currentReviewer(request("reviewer", undefined, "cm_reviewer=made-up"), env),
-    ).toBeNull();
-  });
-  it("requires explicit registration consent and blocks cross-origin account changes", async () => {
-    expect(
-      (await handleReviewAccount(
-        request("reviewer/register", { ...credentials, consent: false }),
-        env,
-      ))!.status,
-    ).toBe(400);
-    const r = request("reviewer/register", credentials);
-    r.headers.set("origin", "https://other.test");
-    expect((await handleReviewAccount(r, env))!.status).toBe(403);
+
+  it("rejects forged OAuth state and retires local customer passwords", async () => {
+    enableGoogle();
+    const { stateCookie } = await beginGoogleLogin();
+    const forged = (await handleReviewAccount(
+      request(
+        "reviewer/oauth/google/callback?code=valid-code&state=forged-state",
+        undefined,
+        stateCookie,
+      ),
+      env,
+    ))!;
+    expect(forged.status).toBe(302);
+    expect(forged.headers.get("location")).toBe("https://cutiutamagica.eu/cont?auth=eroare");
+    expect((await handleReviewAccount(request("reviewer/login", {}), env))!.status).toBe(410);
+    expect((await handleReviewAccount(request("reviewer/register", {}), env))!.status).toBe(410);
   });
 });

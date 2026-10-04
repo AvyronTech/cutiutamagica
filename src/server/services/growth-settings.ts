@@ -59,6 +59,7 @@ const secretNames = {
   google: "GOOGLE_ACCESS_TOKEN",
   meta: "META_ACCESS_TOKEN",
   esteto: "ESTETO_API_KEY",
+  avyron_crm: "AVYRON_CRM_HMAC_SECRET",
 } as const;
 
 const providerAliases: Partial<Record<CredentialProvider, string>> = {

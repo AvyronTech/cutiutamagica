@@ -14,6 +14,8 @@ import { UpcomingCollection } from "@/components/site/UpcomingCollection";
 import { PersonalizationSpotlight } from "@/components/site/PersonalizationSpotlight";
 import { CompactReturn } from "@/components/site/CompactReturn";
 import { HeroProductRotator } from "@/components/site/HeroProductRotator";
+import { ChristmasDrop } from "@/components/site/ChristmasDrop";
+import { GiftCalendarSpotlight } from "@/components/site/GiftCalendarSpotlight";
 import { collectionProducts } from "@/lib/collections";
 import { useShop } from "@/store/shop";
 import bgEmotie from "@/assets/bg-emotie.jpg";
@@ -37,6 +39,13 @@ export const Route = createFileRoute("/")({
       },
       { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:image", content: "https://cutiutamagica.eu/produse/hp-keeper/1.webp" },
+      { property: "og:image:alt", content: "Cutiuță muzicală din lemn cu manivelă" },
+      { name: "twitter:title", content: "Cutiuța Magică — cutiuțe muzicale cu poveste" },
+      {
+        name: "twitter:description",
+        content: "Cadouri muzicale din lemn, cu manivelă, alese după melodie, temă și ocazie.",
+      },
+      { name: "twitter:image", content: "https://cutiutamagica.eu/produse/hp-keeper/1.webp" },
       { property: "og:url", content: "https://cutiutamagica.eu/" },
     ],
     links: [{ rel: "canonical", href: "https://cutiutamagica.eu/" }],
@@ -50,8 +59,44 @@ function Index() {
     .filter(isAvailable)
     .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
   const upcoming = products.filter((p) => !isAvailable(p));
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": "https://cutiutamagica.eu/#featured-products",
+    name: "Cutiuțe muzicale disponibile",
+    numberOfItems: heroProducts.length,
+    itemListElement: heroProducts.map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}`,
+      item: {
+        "@type": "Product",
+        "@id": `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}#product`,
+        name: product.name,
+        image: new URL(product.image, "https://cutiutamagica.eu").href,
+        sku: product.sku,
+        brand: { "@type": "Brand", name: product.brand || "Cutiuța Magică" },
+        offers:
+          product.price == null
+            ? undefined
+            : {
+                "@type": "Offer",
+                price: product.price,
+                priceCurrency: "RON",
+                availability: "https://schema.org/InStock",
+                url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}`,
+              },
+      },
+    })),
+  };
   return (
     <div className="magic-landing">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(collectionSchema).replaceAll("<", "\\u003c"),
+        }}
+      />
       <HeroWorld>
         <section
           id="inceput"
@@ -172,7 +217,9 @@ function Index() {
           </Link>
         </section>
         <UpcomingCollection products={upcoming} />
+        <ChristmasDrop />
         <ReviewCarousel data={reviews} />
+        <GiftCalendarSpotlight />
         <section className="landing-faq" data-world="atelier" aria-labelledby="faq-heading">
           <p className="scene-eyebrow">Lucrurile simple, explicate</p>
           <h2 id="faq-heading">
@@ -198,6 +245,14 @@ function Index() {
                 "Este potrivită pentru copii?",
                 "Modelele prezentate sunt obiecte decorative și de colecție, nu jucării. Verifică recomandarea de vârstă și detaliile fiecărui produs.",
               ],
+              [
+                "Cât durează transportul?",
+                "Cutiuțele standard ajung, de regulă, în 2–3 zile lucrătoare. Pentru modelele speciale și personalizate, termenul estimat este de 4–7 zile lucrătoare, după confirmarea detaliilor.",
+              ],
+              [
+                "Cum pot plăti?",
+                "În checkout alegi metoda disponibilă: ramburs la curier, cu verificarea coletului acolo unde serviciul este disponibil, sau online cu cardul prin pagina securizată a procesatorului. Totalul este afișat înainte de confirmare.",
+              ],
             ].map(([q, a]) => (
               <details key={q}>
                 <summary>
@@ -209,8 +264,21 @@ function Index() {
             ))}
           </div>
         </section>
-        <CompactReturn />
+        <section className="landing-about-entry" aria-labelledby="landing-about-title">
+          <div>
+            <p className="scene-eyebrow">Cine se află în spatele poveștii</p>
+            <h2 id="landing-about-title">Alegem melodii care apropie oamenii.</h2>
+            <p>
+              Descoperă cum alegem cutiuțele, ce detalii contează pentru noi și de ce fiecare
+              comandă începe cu o emoție, nu cu un produs.
+            </p>
+          </div>
+          <Link to="/despre-noi" className="magic-button magic-button--outline">
+            Despre noi <ArrowUpRight size={17} aria-hidden />
+          </Link>
+        </section>
         <ConnectSection />
+        <CompactReturn />
       </HeroWorld>
       <FloatingContacts />
     </div>

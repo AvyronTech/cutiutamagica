@@ -164,6 +164,12 @@ describe("storefront and dashboard share one catalog", () => {
   it("shows exactly five available products in the three collections and five upcoming products", async () => {
     const products = catalogProducts(await catalog());
     expect(products).toHaveLength(10);
+    for (const product of products) {
+      expect(product).not.toHaveProperty("stock");
+      expect(product).not.toHaveProperty("onHand");
+      expect(product).not.toHaveProperty("reserved");
+      expect(product).not.toHaveProperty("safety");
+    }
     expect(
       products
         .filter(isAvailable)
@@ -251,8 +257,9 @@ describe("storefront and dashboard share one catalog", () => {
     expect(products.every((p) => p.discovery?.guides.length)).toBe(true);
     const { renderSitemap } = await import("@/lib/seo-sitemap");
     const sitemap = renderSitemap(products);
-    expect(sitemap.match(/<url>/g)).toHaveLength(11 + giftGuides.length + products.length);
+    expect(sitemap.match(/<url>/g)).toHaveLength(12 + giftGuides.length + products.length);
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/despre-noi</loc>");
+    expect(sitemap).toContain("<loc>https://cutiutamagica.eu/magic-rewards</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/personalizeaza</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/livrare</loc>");
     for (const guide of giftGuides)
@@ -333,6 +340,7 @@ describe("dashboard writes and interest registration", () => {
       ).data;
     };
     let data = await load();
+    const previousOnHand = data.levels[0].onHand;
     const body = {
       variantId: data.variant.id,
       expectedVersion: data.variant.version,
@@ -351,6 +359,19 @@ describe("dashboard writes and interest registration", () => {
         .prepare("SELECT on_hand_quantity FROM inventory_levels WHERE variant_id=?")
         .get(data.variant.id)!.on_hand_quantity,
     ).toBe(7);
+    expect(
+      sqlite
+        .prepare(
+          "SELECT movement_type,quantity_delta,reference_type,reason,actor_admin_user_id FROM inventory_movements WHERE variant_id=? AND reference_type='admin_inventory' ORDER BY created_at DESC LIMIT 1",
+        )
+        .get(data.variant.id),
+    ).toMatchObject({
+      movement_type: "adjustment",
+      quantity_delta: 7 - previousOnHand,
+      reference_type: "admin_inventory",
+      reason: "Actualizare manuală din dashboard",
+      actor_admin_user_id: "test-admin",
+    });
     sqlite
       .prepare(
         "UPDATE inventory_levels SET reserved_quantity=3,version=version+1 WHERE variant_id=?",

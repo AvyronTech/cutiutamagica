@@ -1,4 +1,6 @@
 export const GROWTH_EVENT_NAMES = [
+  "page_view",
+  "product_view",
   "gift_finder_started",
   "gift_finder_completed",
   "audio_play",

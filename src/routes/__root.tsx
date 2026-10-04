@@ -11,6 +11,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "sonner";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { ShopProvider } from "@/store/shop";
@@ -21,6 +22,37 @@ import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { ChatWidget } from "@/components/site/ChatWidget";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
 import { getStorePricing } from "@/lib/store-pricing.functions";
+import { trackGrowthEvent } from "@/lib/growth-events";
+
+function GrowthPageView({ pathname }: { pathname: string }) {
+  useEffect(() => {
+    const productSlug = pathname.startsWith("/produs/")
+      ? decodeURIComponent(pathname.slice("/produs/".length))
+      : undefined;
+    trackGrowthEvent("page_view", {
+      productSlug,
+      once: `page_view:${pathname}`,
+      properties: {
+        pageType: productSlug
+          ? "product"
+          : pathname === "/comanda"
+            ? "checkout"
+            : pathname === "/produse"
+              ? "catalog"
+              : pathname === "/"
+                ? "home"
+                : "content",
+      },
+    });
+    if (productSlug) {
+      trackGrowthEvent("product_view", {
+        productSlug,
+        once: `product_view:${productSlug}`,
+      });
+    }
+  }, [pathname]);
+  return null;
+}
 
 function NotFoundComponent() {
   return (
@@ -196,6 +228,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
         <ShopProvider pricing={pricing}>
+          {isChrome && <GrowthPageView pathname={pathname} />}
           {isChrome && <PageStoryLoader initialPath={pathname} />}
           {isChrome && <Header />}
           {isChrome && <CartRecoveryPrompt pathname={pathname} />}

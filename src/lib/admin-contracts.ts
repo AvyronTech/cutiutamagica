@@ -150,6 +150,15 @@ export interface AdminStatisticsData {
     shippingRevenue: number;
     estimatedCost: number | null;
   };
+  inventory: {
+    onHand: number;
+    reserved: number;
+    safety: number;
+    available: number;
+    trackedProducts: number;
+    lowStockProducts: number;
+    outOfStockProducts: number;
+  };
   monthly: AdminMonthlyMetric[];
   channels: AdminChannelMetric[];
   topProducts: AdminProductMetric[];
@@ -164,6 +173,7 @@ export interface AdminIntegrationAccount {
   environment: string;
   label: string;
   externalAccountId: string | null;
+  apiBaseUrl: string | null;
   secretReference: string | null;
   status: string;
   lastHealthcheckAt: string | null;

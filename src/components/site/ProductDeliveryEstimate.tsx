@@ -58,7 +58,7 @@ export function ProductDeliveryEstimate() {
   const estimate = useMemo(() => {
     const local = bucharestParts(now);
     const beforeCutoff = local.hour < 12;
-    const delivery = addBusinessDays(local.year, local.month, local.day, beforeCutoff ? 2 : 3);
+    const delivery = addBusinessDays(local.year, local.month, local.day, beforeCutoff ? 1 : 2);
     return {
       beforeCutoff,
       label: new Intl.DateTimeFormat("ro-RO", {

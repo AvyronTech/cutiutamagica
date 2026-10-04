@@ -1,14 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { useReducedMotion } from "framer-motion";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Music2 } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Music2, ShoppingBag } from "lucide-react";
 import { ProductImage } from "./ProductImage";
 import type { Product } from "@/data/products";
 import { LimitedEditionBadge } from "./LimitedEditionBadge";
 import { ProductPrice } from "./ProductPrice";
+import { useShop } from "@/store/shop";
+import { animateIntoCart } from "@/lib/cart-flight";
+import { notifyAddedToCart } from "@/lib/notify";
+import { isAvailable } from "@/data/products";
 
 function SpotlightCard({ product }: { product: Product }) {
+  const { addToCart, products } = useShop();
+  const navigate = useNavigate();
+  product = products.find((candidate) => candidate.id === product.id) ?? product;
+  const available = isAvailable(product);
+
   return (
     <article className="spotlight-card" data-magic-card>
       <Link
@@ -41,9 +50,24 @@ function SpotlightCard({ product }: { product: Product }) {
           </span>
           <ProductPrice product={product} size="compact" showSavings={false} />
         </div>
-        <Link className="spotlight-card__link" to="/produs/$id" params={{ id: product.id }}>
-          Vezi cutiuța <ArrowUpRight aria-hidden />
-        </Link>
+        <div className="spotlight-card__actions">
+          {available && (
+            <button
+              type="button"
+              className="spotlight-card__add"
+              onClick={(event) => {
+                const added = addToCart(product.id, 1);
+                animateIntoCart(event.currentTarget, product.image, added);
+                notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
+              }}
+            >
+              <ShoppingBag aria-hidden /> Adaugă în coș
+            </button>
+          )}
+          <Link className="spotlight-card__link" to="/produs/$id" params={{ id: product.id }}>
+            Vezi cutiuța <ArrowUpRight aria-hidden />
+          </Link>
+        </div>
       </div>
     </article>
   );

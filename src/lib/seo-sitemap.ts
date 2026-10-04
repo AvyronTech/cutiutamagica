@@ -20,7 +20,7 @@ export function renderSitemap(products: CatalogProduct[]): string {
     .sort()
     .at(-1);
   const entries: Array<{ path: string; lastmod?: string; images?: string[] }> = [
-    { path: "/", lastmod: DISCOVERY_UPDATED, images: ["/produse/hp-keeper/1.webp"] },
+    { path: "/", lastmod: "2026-10-04", images: ["/produse/hp-keeper/1.webp"] },
     {
       path: "/produse",
       lastmod:
@@ -34,6 +34,7 @@ export function renderSitemap(products: CatalogProduct[]): string {
       images: ["/scenes/catalog-atelier.webp"],
     },
     { path: "/despre-noi", lastmod: "2026-10-03", images: ["/scenes/catalog-atelier.webp"] },
+    { path: "/magic-rewards", lastmod: "2026-10-04", images: ["/icon-512.png"] },
     { path: "/livrare", lastmod: "2026-09-28" },
     {
       path: "/personalizeaza",

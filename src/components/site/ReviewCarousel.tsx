@@ -1,20 +1,61 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Link } from "@tanstack/react-router";
+import useEmblaCarousel from "embla-carousel-react";
+import AutoScroll from "embla-carousel-auto-scroll";
+import { useReducedMotion } from "framer-motion";
+import { ArrowUpRight, BadgeCheck, MessageCircleHeart } from "lucide-react";
 import type { ReviewList } from "@/lib/reviews";
 import { ReviewCard } from "./ReviewCard";
+
 export function ReviewCarousel({ data }: { data: ReviewList }) {
-  const section = useRef<HTMLElement>(null),
-    [visible, setVisible] = useState(false);
+  const section = useRef<HTMLElement>(null);
+  const reducedMotion = useReducedMotion();
+  const averageLabel = data.average?.toFixed(1) ?? "—";
+  const autoScroll = useMemo(
+    () =>
+      AutoScroll({
+        speed: 0.42,
+        direction: "backward",
+        playOnInit: false,
+        stopOnInteraction: false,
+        stopOnMouseEnter: false,
+        stopOnFocusIn: false,
+      }),
+    [],
+  );
+  const [viewport, api] = useEmblaCarousel(
+    { loop: data.reviews.length > 2, align: "start", dragFree: true },
+    [autoScroll],
+  );
+
   useEffect(() => {
     const node = section.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      rootMargin: "100px",
-    });
+    if (!node || !api || data.reviews.length < 2 || reducedMotion) {
+      autoScroll.stop();
+      return;
+    }
+    let visible = false;
+    const sync = () => {
+      if (visible && !document.hidden) autoScroll.play();
+      else autoScroll.stop();
+    };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        sync();
+      },
+      { rootMargin: "120px", threshold: 0.12 },
+    );
     observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  if (!data.reviews.length)
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+      autoScroll.stop();
+    };
+  }, [api, autoScroll, data.reviews.length, reducedMotion]);
+
+  if (!data.reviews.length) {
     return (
       <section
         ref={section}
@@ -26,25 +67,33 @@ export function ReviewCarousel({ data }: { data: ReviewList }) {
           <div>
             <p className="scene-eyebrow">Ecouri din povești mici</p>
             <h2 id="review-carousel-title">
-              Recenzii autentice.
+              Povești cumpărate.
               <br />
-              <em>Fără povești inventate.</em>
+              <em>Cuvinte adevărate.</em>
             </h2>
           </div>
           <p>
-            Primele păreri vor apărea aici după verificarea sursei și aprobarea publicării.
-            <Link to="/produse">Descoperă cutiuțele ↗</Link>
+            Publicăm aici numai recenzii aprobate, asociate cutiuței și sursei lor.
+            <Link to="/produse">
+              Descoperă colecția <ArrowUpRight aria-hidden />
+            </Link>
           </p>
         </div>
-        <div className="review-empty-ribbon" aria-hidden="true">
+        <div className="review-empty-proof" aria-label="Cum sunt publicate recenziile">
+          <span>
+            <MessageCircleHeart aria-hidden /> Părere trimisă
+          </span>
+          <i aria-hidden />
+          <span>
+            <BadgeCheck aria-hidden /> Sursă verificată
+          </span>
+          <i aria-hidden />
           <span>Produs identificat</span>
-          <span>Sursă verificabilă</span>
-          <span>Română &amp; English</span>
-          <span>Țară și platformă</span>
         </div>
       </section>
     );
-  const moving = data.reviews.length > 2;
+  }
+
   return (
     <section
       ref={section}
@@ -61,33 +110,31 @@ export function ReviewCarousel({ data }: { data: ReviewList }) {
             <em>Și gândul bun.</em>
           </h2>
         </div>
-        <p>
-          Păreri despre cutiuțe, păstrate în cuvintele celor care le-au descoperit.
-          <Link to="/produse">Găsește cutiuța ta ↗</Link>
-        </p>
+        <div className="review-carousel__intro">
+          <span className="review-carousel__score" aria-label={`${averageLabel} din 5`}>
+            <strong>{averageLabel}</strong>
+            <span aria-hidden>★</span>
+            <small>{data.total} recenzii publicate</small>
+          </span>
+          <p>Glisează pentru a descoperi părerile, produsul și sursa fiecărei recenzii.</p>
+          <Link to="/produse">
+            Găsește cutiuța ta <ArrowUpRight aria-hidden />
+          </Link>
+        </div>
       </div>
-      <div className={`review-marquee ${moving ? "is-moving" : ""}`}>
-        <div
-          className="review-marquee-track"
-          style={
-            {
-              "--review-duration": `${Math.max(50, data.reviews.length * 8)}s`,
-              animationPlayState: visible ? "running" : "paused",
-            } as CSSProperties
-          }
-        >
-          <div className="review-marquee-group">
-            {data.reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} compact />
-            ))}
-          </div>
-          {moving && (
-            <div className="review-marquee-group review-clone" aria-hidden="true" inert>
-              {data.reviews.map((review) => (
-                <ReviewCard key={review.id} review={review} compact />
-              ))}
+      <div
+        ref={viewport}
+        className="review-viewport"
+        role="region"
+        aria-roledescription="carusel"
+        aria-label="Recenzii despre cutiuțele muzicale"
+      >
+        <div className="review-track">
+          {data.reviews.map((review) => (
+            <div className="review-slide" key={review.id}>
+              <ReviewCard review={review} compact />
             </div>
-          )}
+          ))}
         </div>
       </div>
     </section>

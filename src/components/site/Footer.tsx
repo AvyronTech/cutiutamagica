@@ -11,6 +11,7 @@ const navGroups = [
       { to: "/produse", label: "Cutiuțe muzicale" },
       { to: "/personalizeaza", label: "Personalizează" },
       { to: "/cadouri", label: "Idei de cadouri" },
+      { to: "/magic-rewards", label: "Magic Rewards ✦" },
       { to: "/despre-cutiuta", label: "Despre cutiuță" },
     ],
   },
@@ -110,6 +111,19 @@ export function Footer() {
               <span>
                 <strong>Soluționarea litigiilor</strong>
                 <small>ADR și ECC-Net</small>
+              </span>
+            </a>
+            <a
+              href="https://stripe.com/payments"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Stripe Payments — infrastructură pentru plăți online securizate"
+              className="magic-stripe-badge"
+            >
+              <span aria-hidden>stripe</span>
+              <span>
+                <strong>Stripe Payments</strong>
+                <small>Infrastructură pregătită</small>
               </span>
             </a>
           </section>

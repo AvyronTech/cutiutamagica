@@ -62,10 +62,10 @@ export function ProductInventory({
     }
   }
   return (
-    <section className="mt-8 rounded-xl border border-slate-700 p-5 text-slate-200">
-      <h2 className="text-lg font-semibold">Preț și stoc</h2>
+    <section className="mt-5 rounded-xl border border-slate-700 p-4 text-slate-200 md:p-5">
+      <h2 className="text-lg font-semibold">Stoc intern</h2>
       <a href="/admin/promotions" className="mt-2 inline-block text-sm text-amber-200 underline">
-        Editează prețurile și promoțiile →
+        Prețurile și promoțiile se editează separat →
       </a>
       {query.isLoading ? (
         <p>Se încarcă stocul…</p>
