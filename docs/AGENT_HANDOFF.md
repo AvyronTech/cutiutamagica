@@ -57,3 +57,16 @@ Descrierea pull requestului trebuie să includă:
 - Interdicții: fără aprobarea/publicarea propriilor materiale, răspunsuri directe către clienți, rambursări, modificări de catalog/stoc, promoții, secrete, conturi, echipă, audit sau controlul agentului.
 - Separare de atribuții: crearea ciornelor acceptă `marketing.draft`; aprobarea socială și deciziile de unfollow continuă să ceară `marketing.write`.
 - Dashboardul filtrează navigația și acțiunile rapide după permisiunile sesiunii; formularea de prim acces nu mai pretinde acces total pentru rolurile limitate.
+
+## Handoff 2026-10-04 — Studio AI local pentru conținut
+
+- Scop: coadă local-first pentru texte, imagini și video, vizibilă în `/admin/ai`, conectată la `agent_marketing_orders` și la pachetul versionat al skillului `cutiuta-magica-marketing-comenzi`.
+- Stack verificat: Ollama + Qwen3 pentru text/orchestrare; ComfyUI cu workflow-uri oficiale pentru Qwen Image și Wan 2.2. Repository-urile și licențele sunt afișate în dashboard; greutățile modelelor nu sunt incluse.
+- Migrare append-only: `0053_local_ai_content_studio.sql`, coordonată după `0051_marketing_agent_flow_monitoring.sql` și `0052_manager_codex_social_account.sql`.
+- Fișiere principale: `src/server/api/admin-ai-studio.ts`, `src/admin/pages/AiContentStudio.tsx`, `scripts/ai-studio-runner.mjs`, `docs/AI_CONTENT_STUDIO.md` și testul `src/server/ai-content-studio.test.ts`.
+- Date: D1 păstrează profilurile publice ale modelelor, lucrările, snapshoturile filtrate și starea de review; R2 păstrează rezultatele media private cu SHA-256. Endpointurile locale și secretele nu intră în D1.
+- Securitate: runner pull semnat HMAC cu timestamp și nonce anti-replay; context fără date personale sau credențiale; numai media publică, aprobată și cu drepturi validate; rezultat obligatoriu în `approval_requests`; fără auto-publicare.
+- Protecția produsului: workflow-urile media trebuie să primească fotografia aprobată prin `__SOURCE_IMAGE_NAME__` și să o compună ca strat protejat; runnerul refuză workflow-uri fără markerii obligatorii.
+- Verificări: `npm run typecheck`, `npm run lint`, `npm test` (208/208), `npm run build`, migrări D1 locale, `node --check scripts/ai-studio-runner.mjs` și `npm run cf:deploy:dry` au trecut.
+- Configurare rămasă: verificarea hardware-ului iMac, instalarea manuală a proiectelor/model weights oficiale, alegerea workflow-urilor API și setarea aceluiași secret în Worker (`AI_STUDIO_RUNNER_HMAC_SECRET`) și în mediul local (`AI_STUDIO_RUNNER_SECRET`).
+- Neexecutat: nicio instalare de model, cheie, migrare remote, push, deploy, publicare sau activare cu cost.

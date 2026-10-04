@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Bot } from "lucide-react";
 import OperationsPage from "@/admin/pages/OperationsPage";
 import MarketingOrdersAgentControl from "@/admin/pages/MarketingOrdersAgentControl";
+import AiContentStudio from "@/admin/pages/AiContentStudio";
 
 export const Route = createFileRoute("/_authenticated/admin/ai")({
   component: () => (
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/admin/ai")({
         ]}
         activationNote="Agenții sunt intenționat în starea configurare necesară până la alegerea modelului, bugetului și surselor. Nu există auto-învățare necontrolată."
       />
+      <AiContentStudio />
       <MarketingOrdersAgentControl />
     </div>
   ),

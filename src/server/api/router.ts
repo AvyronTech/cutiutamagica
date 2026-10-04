@@ -24,6 +24,7 @@ import { handleAdminProductExperienceApi } from "@/server/api/admin-product-expe
 import { handleAdminProductApi } from "@/server/api/admin-product";
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
 import { handleAdminMarketingAgentApi } from "@/server/api/admin-marketing-agent";
+import { handleAdminAiStudioApi } from "@/server/api/admin-ai-studio";
 import { handlePromotionCodes } from "@/server/api/promotions";
 import { getPublicProductExperience } from "@/server/api/product-experience";
 import { handleCommerceApi } from "@/server/api/commerce";
@@ -235,6 +236,9 @@ export async function handleApiRequest(
 
   const adminMarketingAgentResponse = await handleAdminMarketingAgentApi(request, env);
   if (adminMarketingAgentResponse) return adminMarketingAgentResponse;
+
+  const adminAiStudioResponse = await handleAdminAiStudioApi(request, env);
+  if (adminAiStudioResponse) return adminAiStudioResponse;
 
   const shippingResponse = await handleShippingCheckout(request, env as CommerceEnv);
   if (shippingResponse) return shippingResponse;
