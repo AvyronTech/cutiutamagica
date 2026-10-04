@@ -1,7 +1,8 @@
+import { localMediaPreview, mediaApprovalSql } from "../media-policy";
 function json(data: unknown, init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers);
   headers.set("content-type", "application/json; charset=utf-8");
-  headers.set("cache-control", "public, max-age=60, s-maxage=300");
+  headers.set("cache-control", "no-store");
   return Response.json(data, { ...init, headers });
 }
 
@@ -18,7 +19,7 @@ export async function getPublicProductExperience(env: Env, slug: string): Promis
   const product = await env.DB.prepare(
     `
     SELECT id, slug, name FROM products
-    WHERE slug = ?1 COLLATE NOCASE AND product_type = 'music_box' AND status = 'active'
+    WHERE slug = ?1 COLLATE NOCASE AND product_type = 'music_box' AND status = 'active' AND published_at IS NOT NULL
   `,
   )
     .bind(slug)
@@ -30,8 +31,9 @@ export async function getPublicProductExperience(env: Env, slug: string): Promis
       `
       SELECT id, media_type, slot_code, title, promo_text_ro, alt_text, mime_type,
              width, height, duration_seconds, usage_type, sort_order
-      FROM product_media
+      FROM product_media pm
       WHERE product_id = ?1 AND status = 'active' AND public_access = 1
+        AND ${mediaApprovalSql("pm", localMediaPreview(env))}
         AND slot_code IS NOT NULL
       ORDER BY sort_order, created_at
     `,
@@ -40,20 +42,23 @@ export async function getPublicProductExperience(env: Env, slug: string): Promis
       .all(),
     env.DB.prepare(
       `
-      SELECT pac.display_name, pm.id AS media_id, pm.mime_type
+      SELECT pac.display_name, pm.id AS media_id, pm.mime_type, pm.duration_seconds
       FROM product_audio_config pac
       JOIN product_media pm ON pm.id = pac.media_id
       WHERE pac.product_id = ?1 AND pac.public_enabled = 1 AND pac.status = 'active'
-        AND pm.status = 'active' AND pm.public_access = 1
+        AND pm.status = 'active' AND pm.public_access = 1 AND ${mediaApprovalSql("pm", localMediaPreview(env))}
     `,
     )
       .bind(product.id)
       .first(),
     env.DB.prepare(
       `
-      SELECT enabled, spin_type, cover_media_id, primary_media_id, frame_count, status
-      FROM product_360_config
-      WHERE product_id = ?1 AND enabled = 1 AND status = 'ready'
+      SELECT sc.enabled, sc.spin_type, cover.id AS cover_media_id, primary_asset.id AS primary_media_id, sc.frame_count, sc.status
+      FROM product_360_config sc
+      LEFT JOIN product_media cover ON cover.id=sc.cover_media_id AND cover.status='active' AND cover.public_access=1 AND ${mediaApprovalSql("cover", localMediaPreview(env))}
+      LEFT JOIN product_media primary_asset ON primary_asset.id=sc.primary_media_id AND primary_asset.status='active' AND primary_asset.public_access=1 AND ${mediaApprovalSql("primary_asset", localMediaPreview(env))}
+      WHERE sc.product_id = ?1 AND sc.enabled = 1 AND sc.status = 'ready'
+        AND (sc.spin_type='image_sequence' OR primary_asset.id IS NOT NULL)
     `,
     )
       .bind(product.id)
@@ -64,9 +69,9 @@ export async function getPublicProductExperience(env: Env, slug: string): Promis
              video.id AS video_media_id, poster.id AS poster_media_id
       FROM product_animation_config pac
       JOIN product_media video ON video.id = pac.video_media_id
-      LEFT JOIN product_media poster ON poster.id = pac.poster_media_id
+      LEFT JOIN product_media poster ON poster.id = pac.poster_media_id AND poster.status='active' AND poster.public_access=1 AND ${mediaApprovalSql("poster", localMediaPreview(env))}
       WHERE pac.product_id = ?1 AND pac.enabled = 1 AND pac.status = 'ready'
-        AND video.status = 'active' AND video.public_access = 1
+        AND video.status = 'active' AND video.public_access = 1 AND ${mediaApprovalSql("video", localMediaPreview(env))}
     `,
     )
       .bind(product.id)
@@ -82,7 +87,7 @@ export async function getPublicProductExperience(env: Env, slug: string): Promis
         JOIN product_media pm ON pm.id = pf.media_id
         WHERE pf.product_id = ?1
           AND pm.status = 'active' AND pm.public_access = 1
-          AND pm.marketing_approved = 1 AND pm.rights_status = 'cleared'
+          AND ${mediaApprovalSql("pm", localMediaPreview(env))}
         ORDER BY pf.frame_index
       `,
         )

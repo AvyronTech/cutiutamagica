@@ -1,5 +1,19 @@
+import { handleReviews } from "./reviews";
+import { handlePersonalization } from "./personalization";
+import { handleReviewAccount } from "../review-accounts";
+import { localMediaPreview } from "@/server/media-policy";
+import { handleCheckoutAdmin } from "./checkout-admin";
+import { handleStoryScene } from "./story-scene";
+import { handleShippingCheckout } from "./shipping-checkout";
+import { handlePayments } from "./payments";
+import { checkoutReadiness } from "../services/checkout-readiness";
+import { boundedJson } from "./bounded-json";
+import { handleSalesWorkbench } from "./sales-workbench";
+import { handleStorefrontDesign } from "./storefront-design";
+import { handleAdminInventory } from "./admin-inventory";
+import { handleProductInterest } from "./product-interest";
 import { listPublicCatalog } from "@/server/db/catalog.repository";
-import { websiteOrderInputSchema } from "@/lib/order-contracts";
+import { websiteOrderInputSchema, type WebsiteOrderInput } from "@/lib/order-contracts";
 import {
   CheckoutError,
   createWebsiteOrder,
@@ -9,10 +23,18 @@ import { handleAdminMediaApi } from "@/server/api/admin-media";
 import { handleAdminProductExperienceApi } from "@/server/api/admin-product-experience";
 import { handleAdminProductApi } from "@/server/api/admin-product";
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
+import { handleAdminMarketingAgentApi } from "@/server/api/admin-marketing-agent";
+import { handlePromotionCodes } from "@/server/api/promotions";
 import { getPublicProductExperience } from "@/server/api/product-experience";
 import { handleCommerceApi } from "@/server/api/commerce";
-import { sendOrderConfirmation } from "@/server/integrations/resend";
+import { handleChatApi } from "@/server/api/chat";
+import {
+  hasEmailTransport,
+  sendOrderConfirmation,
+  sendOrderOwnerNotification,
+} from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
+import { handleGrowthEvents, recordPurchaseGrowthEvent } from "./growth-events";
 
 const API_PREFIX = "/api/v1/";
 
@@ -28,6 +50,29 @@ function methodNotAllowed(allow: string): Response {
     { error: { code: "METHOD_NOT_ALLOWED", message: "Metoda nu este permisa." } },
     { status: 405, headers: { allow } },
   );
+}
+
+function recordOrderMetric(
+  env: Env,
+  result: Awaited<ReturnType<typeof createWebsiteOrder>>,
+  input: WebsiteOrderInput,
+): void {
+  if (result.replayed) return;
+  try {
+    env.ANALYTICS.writeDataPoint({
+      indexes: ["commerce_order"],
+      blobs: [
+        env.APP_ENV,
+        result.orderNumber,
+        input.paymentMethod,
+        input.shippingOption,
+        result.currency,
+      ],
+      doubles: [result.total, input.items.reduce((sum, item) => sum + item.quantity, 0)],
+    });
+  } catch (error) {
+    console.warn("order.analytics_write_failed", { orderId: result.orderId, error });
+  }
 }
 
 async function createOrder(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -55,7 +100,7 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
 
   let body: unknown;
   try {
-    body = await request.json();
+    body = await boundedJson(request, 32_768);
   } catch {
     return json(
       { error: { code: "INVALID_JSON", message: "Cererea JSON nu este validă." } },
@@ -74,7 +119,18 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
   }
 
   try {
-    const result = await createWebsiteOrder(env.DB, parsed.data);
+    const result = await createWebsiteOrder(env.DB, parsed.data, async () => {
+      if (parsed.data.paymentMethod === "bank_transfer")
+        throw new CheckoutError("Alege o metodă de plată disponibilă.", 409);
+      if (parsed.data.paymentMethod === "card") {
+        const ready = await checkoutReadiness(env as CommerceEnv);
+        if (!ready.options.some((o) => o.id === (parsed.data.paymentProvider ?? "stripe")))
+          throw new CheckoutError(
+            "Metoda de plată nu mai este disponibilă. Alege o altă opțiune.",
+            409,
+          );
+      }
+    });
     if (result.outboxId) {
       try {
         await env.COMMERCE_EVENTS.send({ version: 1, outboxId: result.outboxId });
@@ -88,12 +144,31 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
       }
     }
     const commerceEnv = env as CommerceEnv;
-    if (commerceEnv.RESEND_API_KEY) {
-      ctx.waitUntil(
-        sendOrderConfirmation(commerceEnv, result.orderId).catch((error) =>
-          console.error("order.customer_email_failed", { orderId: result.orderId, error }),
-        ),
-      );
+    recordOrderMetric(env, result, parsed.data);
+    if (!result.replayed) {
+      recordPurchaseGrowthEvent(env, ctx, {
+        orderId: result.orderId,
+        total: result.total,
+        quantity: parsed.data.items.reduce((sum, item) => sum + item.quantity, 0),
+        shippingOption: parsed.data.shippingOption,
+      });
+    }
+    if (await hasEmailTransport(commerceEnv)) {
+      try {
+        await env.COMMERCE_EVENTS.send({
+          version: 2,
+          type: "order.email",
+          orderId: result.orderId,
+        });
+      } catch (error) {
+        console.warn("order.email_queue_failed", { orderId: result.orderId, error });
+        ctx.waitUntil(
+          Promise.all([
+            sendOrderConfirmation(commerceEnv, result.orderId),
+            sendOrderOwnerNotification(commerceEnv, result.orderId),
+          ]).then(() => undefined),
+        );
+      }
     }
 
     const { outboxId: _outboxId, replayed: _replayed, ...publicResult } = result;
@@ -121,6 +196,31 @@ export async function handleApiRequest(
   const url = new URL(request.url);
   if (!url.pathname.startsWith(API_PREFIX)) return null;
 
+  const reviewAccountResponse = await handleReviewAccount(request, env);
+  if (reviewAccountResponse) return reviewAccountResponse;
+  const reviewsResponse = await handleReviews(request, env);
+  if (reviewsResponse) return reviewsResponse;
+
+  const personalizationResponse = await handlePersonalization(request, env);
+  if (personalizationResponse) return personalizationResponse;
+
+  const growthResponse = await handleGrowthEvents(request, env, ctx);
+  if (growthResponse) return growthResponse;
+
+  const storyResponse = await handleStoryScene(request, env);
+  if (storyResponse) return storyResponse;
+
+  const checkoutAdminResponse = await handleCheckoutAdmin(request, env as CommerceEnv);
+  if (checkoutAdminResponse) return checkoutAdminResponse;
+  const salesResponse = await handleSalesWorkbench(request, env);
+  if (salesResponse) return salesResponse;
+  const designResponse = await handleStorefrontDesign(request, env);
+  if (designResponse) return designResponse;
+  const inventoryResponse = await handleAdminInventory(request, env);
+  if (inventoryResponse) return inventoryResponse;
+  const interestResponse = await handleProductInterest(request, env);
+  if (interestResponse) return interestResponse;
+
   const adminMediaResponse = await handleAdminMediaApi(request, env);
   if (adminMediaResponse) return adminMediaResponse;
 
@@ -133,8 +233,22 @@ export async function handleApiRequest(
   const adminAvyronResponse = await handleAdminAvyronSyncApi(request, env);
   if (adminAvyronResponse) return adminAvyronResponse;
 
+  const adminMarketingAgentResponse = await handleAdminMarketingAgentApi(request, env);
+  if (adminMarketingAgentResponse) return adminMarketingAgentResponse;
+
+  const shippingResponse = await handleShippingCheckout(request, env as CommerceEnv);
+  if (shippingResponse) return shippingResponse;
+  const paymentResponse = await handlePayments(request, env as CommerceEnv);
+  if (paymentResponse) return paymentResponse;
+
+  const promotionResponse = await handlePromotionCodes(request, env as CommerceEnv);
+  if (promotionResponse) return promotionResponse;
+
   const commerceResponse = await handleCommerceApi(request, env as CommerceEnv, ctx);
   if (commerceResponse) return commerceResponse;
+
+  const chatResponse = await handleChatApi(request, env);
+  if (chatResponse) return chatResponse;
 
   if (url.pathname === "/api/v1/orders") {
     if (request.method !== "POST") return methodNotAllowed("POST");
@@ -160,19 +274,8 @@ export async function handleApiRequest(
   }
 
   if (url.pathname === "/api/v1/catalog/products") {
-    const cacheKey = "catalog:public:v1";
-    const cached = await env.CACHE.get(cacheKey, "json");
-    if (cached) {
-      return json(cached, {
-        headers: { "cache-control": "public, max-age=60, s-maxage=300", "x-cache": "HIT" },
-      });
-    }
-    const products = await listPublicCatalog(env.DB);
-    const payload = { data: products, meta: { count: products.length, productType: "music_box" } };
-    ctx.waitUntil(env.CACHE.put(cacheKey, JSON.stringify(payload), { expirationTtl: 300 }));
-    return json(payload, {
-      headers: { "cache-control": "public, max-age=60, s-maxage=300", "x-cache": "MISS" },
-    });
+    const products = await listPublicCatalog(env.DB, localMediaPreview(env));
+    return json({ data: products, meta: { count: products.length, productType: "music_box" } });
   }
 
   const experienceMatch = url.pathname.match(

@@ -1,250 +1,285 @@
+import { ReviewCarousel } from "@/components/site/ReviewCarousel";
+import { getPublicReviews } from "@/lib/reviews.functions";
+import { HeroWorld, HeroStoryBridge, HeroMechanismHalo } from "@/components/site/HeroWorld";
+import { SceneAtmosphere } from "@/components/site/SceneAtmosphere";
+import { BrandMark } from "@/components/site/BrandMark";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion, useReducedMotion } from "framer-motion";
-import { Sparkles, Package, BookOpen, Gift, ArrowRight } from "lucide-react";
-import { products } from "@/data/products";
+import { ArrowDown, ArrowUpRight, Sparkles } from "lucide-react";
+import { isAvailable } from "@/data/products";
 import { ProductCarouselSection } from "@/components/site/ProductCarouselSection";
 import { ConnectSection } from "@/components/site/ConnectSection";
 import { FloatingContacts } from "@/components/site/FloatingContacts";
 import { RotatingSpotlight } from "@/components/site/RotatingSpotlight";
-
-import bgPoveste from "@/assets/bg-poveste.jpg";
+import { UpcomingCollection } from "@/components/site/UpcomingCollection";
+import { PersonalizationSpotlight } from "@/components/site/PersonalizationSpotlight";
+import { CompactReturn } from "@/components/site/CompactReturn";
+import { HeroProductRotator } from "@/components/site/HeroProductRotator";
+import { ChristmasDrop } from "@/components/site/ChristmasDrop";
+import { GiftCalendarSpotlight } from "@/components/site/GiftCalendarSpotlight";
+import { collectionProducts } from "@/lib/collections";
+import { useShop } from "@/store/shop";
 import bgEmotie from "@/assets/bg-emotie.jpg";
-import bgUnice from "@/assets/bg-unice.jpg";
-
-const heroImage = products[0].image;
-const socialHeroImage = `https://cutiutamagica.eu${heroImage}`;
 
 export const Route = createFileRoute("/")({
   component: Index,
+  loader: () => getPublicReviews({ data: { slug: null } }),
   head: () => ({
     meta: [
-      { title: "Cutiuța Magică — cutiuțe muzicale cu manivelă" },
+      { title: "Cutiuța Magică — cutiuțe muzicale, cadouri cu poveste" },
       {
         name: "description",
         content:
-          "Cutiuțe muzicale din lemn cu manivelă și mecanism clasic. Descoperă modele tematice Harry Potter, Stăpânul Inelelor, fantasy și idei de cadou.",
+          "O cutiuță mică. O emoție care rămâne. Descoperă cutiuțe muzicale din lemn cu manivelă, melodii îndrăgite și cadouri cu poveste.",
       },
-      { property: "og:title", content: "Cutiuța Magică — cutiuțe muzicale din lemn" },
+      { property: "og:title", content: "Cutiuța Magică — o melodie, o amintire" },
       {
         property: "og:description",
-        content: "Cutiuțe muzicale din lemn, cu manivelă și teme inspirate de povești îndrăgite.",
+        content:
+          "Cutiuțe muzicale din lemn cu manivelă: cadouri pentru fani, colecționari și oameni dragi. Alege după melodie, temă și ocazie.",
       },
-      { property: "og:image", content: socialHeroImage },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
+      { property: "og:image", content: "https://cutiutamagica.eu/produse/hp-keeper/1.webp" },
+      { property: "og:image:alt", content: "Cutiuță muzicală din lemn cu manivelă" },
+      { name: "twitter:title", content: "Cutiuța Magică — cutiuțe muzicale cu poveste" },
+      {
+        name: "twitter:description",
+        content: "Cadouri muzicale din lemn, cu manivelă, alese după melodie, temă și ocazie.",
+      },
+      { name: "twitter:image", content: "https://cutiutamagica.eu/produse/hp-keeper/1.webp" },
       { property: "og:url", content: "https://cutiutamagica.eu/" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: socialHeroImage },
     ],
-    links: [
-      { rel: "canonical", href: "https://cutiutamagica.eu/" },
-      { rel: "preload", as: "image", href: heroImage, fetchpriority: "high" },
-    ],
+    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/" }],
   }),
 });
 
 function Index() {
-  const hero = products[0];
-  const reducedMotion = useReducedMotion();
-
-  const povesteSpotlight = ["hp-keeper", "lotr-rings", "starwars-dad"];
-  const emotieSpotlight = ["fairy", "kitten", "hp-always"];
-  const dedicateSpotlight = ["halloween", "hp-keeper", "fairy"];
-
-  const byIds = (ids: string[]) =>
-    ids
-      .map((id) => products.find((p) => p.id === id))
-      .filter((p): p is (typeof products)[number] => Boolean(p));
-
+  const { products } = useShop();
+  const reviews = Route.useLoaderData();
+  const heroProducts = products
+    .filter(isAvailable)
+    .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+  const upcoming = products.filter((p) => !isAvailable(p));
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": "https://cutiutamagica.eu/#featured-products",
+    name: "Cutiuțe muzicale disponibile",
+    numberOfItems: heroProducts.length,
+    itemListElement: heroProducts.map((product, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}`,
+      item: {
+        "@type": "Product",
+        "@id": `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}#product`,
+        name: product.name,
+        image: new URL(product.image, "https://cutiutamagica.eu").href,
+        sku: product.sku,
+        brand: { "@type": "Brand", name: product.brand || "Cutiuța Magică" },
+        offers:
+          product.price == null
+            ? undefined
+            : {
+                "@type": "Offer",
+                price: product.price,
+                priceCurrency: "RON",
+                availability: "https://schema.org/InStock",
+                url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}`,
+              },
+      },
+    })),
+  };
   return (
-    <div>
-      {/* HERO — minimal, asymmetric. Cutiuța rămâne vizibilă în dreapta. */}
-      <section className="relative overflow-hidden">
-        <div className="relative h-[82vh] min-h-[560px] max-h-[820px] w-full">
-          <motion.img
-            src={hero.image}
-            alt={hero.name}
-            width={1200}
-            height={800}
-            fetchPriority="high"
-            decoding="async"
-            initial={reducedMotion ? false : { scale: 1.035, y: 10 }}
-            animate={{ scale: 1, y: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 1.2, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 w-full h-full object-cover object-[70%_center] md:object-[65%_center]"
-          />
-          {/* Overlay asimetric: întunecă stânga pentru text, lasă dreapta clară pentru cutiuță */}
-          <div
-            aria-hidden
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(100deg, oklch(0.18 0.04 40 / 0.92) 0%, oklch(0.2 0.04 40 / 0.78) 28%, oklch(0.22 0.04 40 / 0.38) 55%, oklch(0.22 0.04 40 / 0.1) 75%, oklch(0.22 0.04 40 / 0.35) 100%)",
-            }}
-          />
-          {/* Halou auriu subtil în jurul cutiuței (dreapta) */}
-          <div
-            aria-hidden
-            className="absolute inset-0 hidden md:block"
-            style={{
-              background:
-                "radial-gradient(38% 55% at 72% 52%, oklch(0.85 0.16 75 / 0.18), transparent 65%)",
-            }}
-          />
-          {/* Vignette jos pentru continuitate cu strip-ul de transport */}
-          <div
-            aria-hidden
-            className="absolute inset-x-0 bottom-0 h-40"
-            style={{
-              background: "linear-gradient(180deg, transparent, oklch(0.18 0.04 40 / 0.85))",
-            }}
-          />
-
-          <div className="relative h-full max-w-7xl mx-auto px-5 md:px-8 grid grid-cols-1 md:grid-cols-12 items-center text-[color:var(--cream)]">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="md:col-span-7 lg:col-span-6 text-left max-w-xl"
-            >
-              {/* Banner de produs — liquid glass, slim, tematic */}
-              <div className="relative inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.32em] text-[color:var(--gold)] mb-3 rounded-full pl-3 pr-3.5 py-1 overflow-hidden border border-[color:var(--gold)]/30 bg-white/[0.06] backdrop-blur-2xl shadow-[inset_0_1px_1px_0_oklch(0.95_0.05_90/0.12),0_6px_20px_-10px_oklch(0_0_0/0.5)]">
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,oklch(0.95_0.05_90/0.08)_0%,transparent_55%)]"
-                />
-                <span
-                  aria-hidden
-                  className="relative inline-block w-1 h-1 rounded-full bg-[color:var(--gold)] shadow-[0_0_6px_oklch(0.85_0.18_75/0.9)]"
-                />
-                <span className="relative">Cutiuță din lemn · Mecanism cu manivelă</span>
-              </div>
-
-              <h1 className="font-display text-[2.6rem] sm:text-5xl md:text-[4.4rem] lg:text-[5rem] leading-[0.98] tracking-tight text-balance">
-                Cutiuțe muzicale
-                <br />
-                <span className="gold-text italic">cu manivelă.</span>
-              </h1>
-
-              <div className="mt-5 flex items-center gap-3 text-[color:var(--gold)]/80">
-                <span aria-hidden className="h-px w-10 bg-[color:var(--gold)]/50" />
-                <span className="text-[11px] uppercase tracking-[0.3em]">
-                  Lemn · Manivelă · Melodie
-                </span>
-              </div>
-
-              <p className="mt-5 text-base md:text-lg text-[color:var(--cream)]/85 max-w-md text-balance">
-                O învârtire de manivelă și camera se umple de o melodie care aduce înapoi o emoție
-                dragă.
+    <div className="magic-landing">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(collectionSchema).replaceAll("<", "\\u003c"),
+        }}
+      />
+      <HeroWorld>
+        <section
+          id="inceput"
+          data-world="story"
+          className="magic-hero"
+          aria-labelledby="hero-heading"
+        >
+          <SceneAtmosphere />
+          <div className="hero-magic-ambience" aria-hidden>
+            <span className="hero-magic-orbit" />
+            <span className="hero-magic-staff">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="hero-magic-glint hero-magic-glint--one">✦</span>
+            <span className="hero-magic-glint hero-magic-glint--two">✧</span>
+            <span className="hero-magic-glint hero-magic-glint--three">·</span>
+          </div>
+          <div className="magic-hero-inner">
+            <div className="hero-copy">
+              <p className="scene-eyebrow">
+                <span className="tiny-star">✧</span> Lemn. Manivelă. Melodie.
               </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  to="/produse"
-                  className="group relative inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-[color:var(--wood-dark)] bg-[linear-gradient(135deg,oklch(0.92_0.09_85)_0%,oklch(0.82_0.13_70)_55%,oklch(0.7_0.16_55)_100%)] border border-[color:var(--gold)]/70 shadow-[0_12px_30px_-10px_oklch(0.55_0.18_45/0.7),inset_0_1px_0_oklch(0.99_0.05_95/0.5)] hover:scale-[1.03] hover:shadow-[0_16px_38px_-10px_oklch(0.55_0.18_45/0.85),inset_0_1px_0_oklch(0.99_0.05_95/0.6)] transition-all overflow-hidden"
-                >
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute -inset-x-10 -top-10 h-16 bg-[linear-gradient(90deg,transparent,oklch(0.99_0.02_95/0.55),transparent)] blur-md translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-[1100ms]"
-                  />
-                  <Gift className="w-4 h-4 relative" />
-                  <span className="relative font-display tracking-wide text-base">
-                    Vezi cutiuțele
-                  </span>
-                  <ArrowRight className="w-4 h-4 relative group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-
-                <Link
-                  to="/poveste"
-                  className="group inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-[color:var(--cream)] bg-[color:var(--cream)]/8 backdrop-blur-md border border-[color:var(--cream)]/30 hover:bg-[color:var(--cream)]/16 hover:border-[color:var(--gold)]/60 transition"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  <span className="font-display tracking-wide text-base">Povestea noastră</span>
-                </Link>
+              <h1 id="hero-heading">
+                <span className="hero-solar-line">O cutiuță mică.</span>
+                <br />
+                <em className="hero-solar-line">O lume care cântă.</em>
+              </h1>
+              <p className="hero-description">
+                Deschizi capacul. Învârți manivela. Și o melodie te duce aproape de cineva drag, de
+                o amintire, de lumea ta.
+              </p>
+              <div className="hero-actions">
+                <a href="#povesti" className="magic-button">
+                  Găsește cutiuța ta
+                  <ArrowUpRight size={17} />
+                </a>
               </div>
-            </motion.div>
-
-            {/* Dreapta: spațiu rezervat ca să respire cutiuța din imagine */}
-            <div className="hidden md:block md:col-span-5 lg:col-span-6" aria-hidden />
-          </div>
-        </div>
-      </section>
-
-      {/* Compact product and offer strip */}
-      <section className="max-w-5xl mx-auto px-4 -mt-10 md:-mt-14 relative z-10">
-        <h2 className="sr-only">Ofertă și caracteristici</h2>
-        <div className="rounded-2xl bg-card border border-border shadow-warm overflow-hidden grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border text-center">
-          <div className="px-4 py-4 bg-[color:var(--gold)]/10">
-            <Gift className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
-            <div className="font-display italic text-base md:text-lg leading-snug text-foreground">
-              Două cutiuțe la <span className="gold-text not-italic font-medium">150 lei</span>
+              <p className="hero-footnote">
+                Cutiuțe muzicale din lemn · mecanism manual · fără baterii
+              </p>
             </div>
-            <div className="font-display text-sm md:text-base mt-0.5 text-[color:var(--wood-dark)]/85">
-              75 lei pentru fiecare cutiuță
-            </div>
-            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Poți combina modelele din catalog
-            </div>
-          </div>
-
-          <div className="px-4 py-4">
-            <Sparkles className="w-4 h-4 mx-auto mb-1 text-[color:var(--gold)]" />
-            <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Mecanism clasic
-            </div>
-            <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
-              Învârți manivela,
-              <br />
-              asculți melodia
-            </div>
-            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Fără baterii sau aplicație
+            <div className="hero-object">
+              <HeroMechanismHalo />
+              <span className="hero-object-kicker">O mică lume, gata să fie descoperită</span>
+              {heroProducts.length ? (
+                <HeroProductRotator products={heroProducts} />
+              ) : (
+                <div className="hero-photo hero-photo--empty" aria-hidden="true">
+                  <BrandMark className="h-2/3 w-2/3" />
+                </div>
+              )}
+              <Link
+                to="/despre-cutiuta"
+                className="hero-about"
+                aria-label="Despre cutiuță — descoperă mecanismul și povestea"
+              >
+                <span className="hero-about-spark" aria-hidden="true">
+                  <Sparkles size={19} />
+                </span>
+                <span>
+                  <small>Dincolo de capac</small>
+                  <strong>Despre</strong>
+                </span>
+                <ArrowUpRight size={19} />
+              </Link>
             </div>
           </div>
-
-          <div className="px-4 py-4">
-            <Package className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-            <div className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Produsul pe care îl vezi
-            </div>
-            <div className="font-display text-base md:text-lg mt-0.5 leading-tight">
-              Fotografii clare,
-              <br />
-              detalii înainte de comandă
-            </div>
-            <div className="text-[11px] md:text-xs text-muted-foreground mt-1">
-              Alegi modelul și melodia din catalog
-            </div>
+          <a className="hero-scroll" href="#povesti">
+            Intră în poveste <ArrowDown size={15} />
+          </a>
+        </section>
+        <HeroStoryBridge />
+        <ProductCarouselSection
+          id="povesti"
+          scene="story"
+          number="01"
+          eyebrow="Pentru cei care cred în povești"
+          title="Descoperă povestea."
+          description="Universuri pe care le iubești, păstrate într-o cutiuță. Alege melodia care te duce înapoi."
+          sharedWorld
+          spotlight={<RotatingSpotlight products={collectionProducts(products, "story")} />}
+        />
+        <ProductCarouselSection
+          id="emotii"
+          scene="emotion"
+          number="02"
+          eyebrow="Pentru cineva care înseamnă totul"
+          title="Trăiește emoția."
+          description="Uneori, «mă gândesc la tine» încape într-o melodie. Un dar mic, cu un loc mare în suflet."
+          bgImage={bgEmotie}
+          spotlight={<RotatingSpotlight products={collectionProducts(products, "emotion")} />}
+        />
+        <ProductCarouselSection
+          id="dedicate"
+          scene="dedicated"
+          number="03"
+          eyebrow="Pentru micile lumi ale fiecăruia"
+          title="Cutiuțe dedicate."
+          description="Pentru iubitorii de pisici, de mister și de lucruri care îi reprezintă. Un cadou atât de ei."
+          bgImage="/scenes/dedicated.webp"
+          spotlight={<RotatingSpotlight products={collectionProducts(products, "dedicated")} />}
+        />
+        <PersonalizationSpotlight />
+        <section className="story-invitation" data-world="dedicated">
+          <p className="scene-eyebrow">Dincolo de capac</p>
+          <h2>
+            Cum prinde viață
+            <br />
+            <em>o melodie?</em>
+          </h2>
+          <p>Lemn gravat. Un mecanism mic. Și gestul tău, care le pune în mișcare.</p>
+          <Link className="magic-button magic-button--outline" to="/despre-cutiuta">
+            Intră în cutiuță
+            <ArrowUpRight size={17} />
+          </Link>
+        </section>
+        <UpcomingCollection products={upcoming} />
+        <ChristmasDrop />
+        <ReviewCarousel data={reviews} />
+        <GiftCalendarSpotlight />
+        <section className="landing-faq" data-world="atelier" aria-labelledby="faq-heading">
+          <p className="scene-eyebrow">Lucrurile simple, explicate</p>
+          <h2 id="faq-heading">
+            Puțin lemn.
+            <br />
+            <em>Multă magie.</em>
+          </h2>
+          <div>
+            {[
+              [
+                "Cum începe melodia?",
+                "Rotești ușor manivela laterală. Mecanismul cântă cât timp o învârți, fără baterii și fără încărcare.",
+              ],
+              [
+                "Cât de mare este cutiuța?",
+                "Este un obiect compact, care încape în palmă. Dimensiunile exacte ale fiecărui model sunt în pagina lui.",
+              ],
+              [
+                "Pot asculta înainte să aleg?",
+                "În pagina produsului găsești butonul de audiție atunci când este disponibilă înregistrarea acelei cutiuțe.",
+              ],
+              [
+                "Este potrivită pentru copii?",
+                "Modelele prezentate sunt obiecte decorative și de colecție, nu jucării. Verifică recomandarea de vârstă și detaliile fiecărui produs.",
+              ],
+              [
+                "Cât durează transportul?",
+                "Cutiuțele standard ajung, de regulă, în 2–3 zile lucrătoare. Pentru modelele speciale și personalizate, termenul estimat este de 4–7 zile lucrătoare, după confirmarea detaliilor.",
+              ],
+              [
+                "Cum pot plăti?",
+                "În checkout alegi metoda disponibilă: ramburs la curier, cu verificarea coletului acolo unde serviciul este disponibil, sau online cu cardul prin pagina securizată a procesatorului. Totalul este afișat înainte de confirmare.",
+              ],
+            ].map(([q, a]) => (
+              <details key={q}>
+                <summary>
+                  {q}
+                  <span aria-hidden>+</span>
+                </summary>
+                <p>{a}</p>
+              </details>
+            ))}
           </div>
-        </div>
-      </section>
-
-      <ProductCarouselSection
-        title="Descoperă povestea"
-        description="Cutiuțe inspirate din filmele și universurile care ne-au marcat copilăria."
-        secondaryCta={{ label: "Vezi povestea", to: "/poveste" }}
-        bgImage={bgPoveste}
-        tone="cream"
-        spotlight={
-          <RotatingSpotlight products={byIds(povesteSpotlight)} eyebrow="Aleasă din poveste" />
-        }
-      />
-
-      <ProductCarouselSection
-        title="Trăiește emoția"
-        description="Modele delicate, pentru momente romantice și cadouri din suflet."
-        bgImage={bgEmotie}
-        tone="cream"
-        spotlight={<RotatingSpotlight products={byIds(emotieSpotlight)} />}
-      />
-
-      <ProductCarouselSection
-        title="Descoperă Cutiuțe dedicate"
-        description="Modele pentru tata, iubitori de pisici, Halloween și alte ocazii în care o melodie spune mai mult decât un obiect obișnuit."
-        bgImage={bgUnice}
-        tone="cream"
-        spotlight={<RotatingSpotlight products={byIds(dedicateSpotlight)} />}
-      />
-
-      <ConnectSection />
+        </section>
+        <section className="landing-about-entry" aria-labelledby="landing-about-title">
+          <div>
+            <p className="scene-eyebrow">Cine se află în spatele poveștii</p>
+            <h2 id="landing-about-title">Alegem melodii care apropie oamenii.</h2>
+            <p>
+              Descoperă cum alegem cutiuțele, ce detalii contează pentru noi și de ce fiecare
+              comandă începe cu o emoție, nu cu un produs.
+            </p>
+          </div>
+          <Link to="/despre-noi" className="magic-button magic-button--outline">
+            Despre noi <ArrowUpRight size={17} aria-hidden />
+          </Link>
+        </section>
+        <ConnectSection />
+        <CompactReturn />
+      </HeroWorld>
       <FloatingContacts />
     </div>
   );

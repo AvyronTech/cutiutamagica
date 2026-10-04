@@ -130,6 +130,13 @@ export interface AdminDeliveryMetric {
   orders: number;
 }
 
+export interface AdminGrowthMetric {
+  event: string;
+  count: number;
+  value: number;
+  quantity: number;
+}
+
 export interface AdminStatisticsData {
   summary: {
     netRevenue: number;
@@ -143,10 +150,20 @@ export interface AdminStatisticsData {
     shippingRevenue: number;
     estimatedCost: number | null;
   };
+  inventory: {
+    onHand: number;
+    reserved: number;
+    safety: number;
+    available: number;
+    trackedProducts: number;
+    lowStockProducts: number;
+    outOfStockProducts: number;
+  };
   monthly: AdminMonthlyMetric[];
   channels: AdminChannelMetric[];
   topProducts: AdminProductMetric[];
   deliveries: AdminDeliveryMetric[];
+  growth: AdminGrowthMetric[];
 }
 
 export interface AdminIntegrationAccount {
@@ -155,6 +172,9 @@ export interface AdminIntegrationAccount {
   provider: string;
   environment: string;
   label: string;
+  externalAccountId: string | null;
+  apiBaseUrl: string | null;
+  secretReference: string | null;
   status: string;
   lastHealthcheckAt: string | null;
   lastSuccessAt: string | null;

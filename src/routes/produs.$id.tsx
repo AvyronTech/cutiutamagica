@@ -1,78 +1,187 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { ProductReviews } from "@/components/site/ProductReviews";
+import { getPublicReviews } from "@/lib/reviews.functions";
+import { ProductDiscovery } from "@/components/site/ProductDiscovery";
+import { safeJsonLd } from "@/lib/product-discovery";
+import { ProductWorld } from "@/components/site/ProductWorld";
+import { animateIntoCart } from "@/lib/cart-flight";
+import { ProductInterest } from "@/components/site/ProductInterest";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
-import { Heart, ShoppingBag, Music, Package, Gift, Sparkles, Minus, Plus } from "lucide-react";
-import { getProduct, products, PRICE, MAX_QTY } from "@/data/products";
+import {
+  ShoppingBag,
+  Music,
+  Package,
+  Gift,
+  Sparkles,
+  Minus,
+  Plus,
+  Rotate3D,
+  Hourglass,
+} from "lucide-react";
+import { isAvailable, MAX_QTY } from "@/data/products";
+import { getStorePricing } from "@/lib/store-pricing.functions";
+import { catalogProducts } from "@/lib/catalog-products";
 import { useShop } from "@/store/shop";
-import { ProductCard } from "@/components/site/ProductCard";
+import { ProductImage } from "@/components/site/ProductImage";
+import { ProductPrice } from "@/components/site/ProductPrice";
+import { ProductLightbox } from "@/components/site/ProductLightbox";
+import { playTick } from "@/lib/sound";
+import { notifyAddedToCart } from "@/lib/notify";
+import { ProductCardCarousel } from "@/components/site/ProductCardCarousel";
+import { ProductShare } from "@/components/site/ProductShare";
+import { LimitedEditionBadge } from "@/components/site/LimitedEditionBadge";
 import {
   ProductAnimation,
   ProductAudioOverlay,
+  ProductAudioUnavailable,
   ProductSpinViewer,
   useProductExperience,
 } from "@/components/site/ProductMediaExperience";
-
-import { toast } from "sonner";
+import { ProductDeliveryEstimate } from "@/components/site/ProductDeliveryEstimate";
+import { ProductMobileBuyBar } from "@/components/site/ProductMobileBuyBar";
+import { trackGrowthEvent } from "@/lib/growth-events";
 
 export const Route = createFileRoute("/produs/$id")({
   component: ProductPage,
-  loader: ({ params }) => {
-    const product = getProduct(params.id);
+  loader: async ({ params }) => {
+    const pricing = await getStorePricing();
+    const product = catalogProducts(pricing.catalog).find((p) => p.id === params.id);
     if (!product) throw notFound();
-    return { product };
+    return { product, reviews: await getPublicReviews({ data: { slug: params.id } }) };
   },
   head: ({ loaderData, params }) => {
     if (!loaderData) return {};
-    const url = `https://cutiutamagica.eu/produs/${params.id}`;
+    const url = `https://cutiutamagica.eu/produs/${encodeURIComponent(params.id)}`;
     const image = loaderData.product.image.startsWith("http")
       ? loaderData.product.image
       : `https://cutiutamagica.eu${loaderData.product.image}`;
-    const description = `${loaderData.product.tagline} Cutiuță muzicală din lemn, cu manivelă și mecanism manual${loaderData.product.melody ? `, melodia ${loaderData.product.melody}` : ""}.`;
+    const price =
+      !isAvailable(loaderData.product) || loaderData.product.price == null
+        ? undefined
+        : String(loaderData.product.price);
+    const absolute = (src: string) =>
+      src.startsWith("http") ? src : `https://cutiutamagica.eu${src}`;
+    const images = [
+      ...new Set([image, ...loaderData.product.gallery.map((entry) => absolute(entry.src))]),
+    ];
+    const inStock = isAvailable(loaderData.product);
+    const description =
+      loaderData.product.seoDescription ||
+      `${loaderData.product.tagline} Cutiuță muzicală din lemn, cu manivelă și mecanism manual${loaderData.product.melody ? `, melodia ${loaderData.product.melody}` : ""}.`;
     return {
       meta: [
-        { title: `${loaderData.product.name} — Cutiuța Magică` },
+        { title: loaderData.product.seoTitle || `${loaderData.product.name} — Cutiuța Magică` },
         { name: "description", content: description },
+        { name: "robots", content: "index, follow, max-image-preview:large" },
+        { property: "og:image:alt", content: loaderData.product.name },
         { property: "og:title", content: loaderData.product.name },
         { property: "og:description", content: description },
         { property: "og:image", content: image },
         { name: "twitter:image", content: image },
         { property: "og:url", content: url },
         { property: "og:type", content: "product" },
-        { property: "product:price:amount", content: "119" },
-        { property: "product:price:currency", content: "RON" },
+        ...(price
+          ? [
+              { property: "product:price:amount", content: price },
+              { property: "product:price:currency", content: "RON" },
+            ]
+          : []),
+        { property: "product:availability", content: inStock ? "in stock" : "out of stock" },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "Product",
+            "@id": `${url}#product`,
+            mainEntityOfPage: { "@type": "WebPage", "@id": url },
             name: loaderData.product.name,
             sku: loaderData.product.sku,
-            image: [image],
-            description,
+            gtin: loaderData.product.gtin,
+            mpn: loaderData.product.mpn,
+            image: images,
+            description: [loaderData.product.description, loaderData.product.discovery?.intro]
+              .filter(Boolean)
+              .join(" "),
+            keywords: loaderData.product.searchTerms.join(", "),
             category: loaderData.product.category,
             material: "Lemn",
-            brand: { "@type": "Brand", name: "Cutiuța Magică" },
+            brand: { "@type": "Brand", name: loaderData.product.brand || "Cutiuța Magică" },
+            audience: loaderData.product.discovery?.audience
+              ? {
+                  "@type": "Audience",
+                  audienceType: loaderData.product.discovery.audience,
+                }
+              : undefined,
             additionalProperty: [
               { "@type": "PropertyValue", name: "Mecanism", value: "Manual, cu manivelă" },
               ...(loaderData.product.melody
                 ? [{ "@type": "PropertyValue", name: "Melodie", value: loaderData.product.melody }]
                 : []),
+              ...(loaderData.product.limitedEdition
+                ? [
+                    {
+                      "@type": "PropertyValue",
+                      name: "Ediție",
+                      value: `Limited Edition — serie de ${loaderData.product.limitedEdition.totalUnits} bucăți`,
+                    },
+                  ]
+                : []),
             ],
-            offers: {
-              "@type": "Offer",
-              price: "119",
-              priceCurrency: "RON",
-              url,
-              seller: { "@type": "Organization", name: "Cutiuța Magică" },
-            },
+            url,
+            aggregateRating:
+              loaderData.reviews.total > 0 && loaderData.reviews.average
+                ? {
+                    "@type": "AggregateRating",
+                    ratingValue: loaderData.reviews.average,
+                    reviewCount: loaderData.reviews.total,
+                    bestRating: 5,
+                    worstRating: 1,
+                  }
+                : undefined,
+            review: loaderData.reviews.reviews.slice(0, 10).map((review) => ({
+              "@type": "Review",
+              author: { "@type": "Person", name: review.displayName },
+              reviewBody: review.body,
+              inLanguage: review.language,
+              reviewRating: {
+                "@type": "Rating",
+                ratingValue: review.rating,
+                bestRating: 5,
+                worstRating: 1,
+              },
+            })),
+            offers: price
+              ? {
+                  "@type": "Offer",
+                  price,
+                  priceCurrency: "RON",
+                  availability: inStock
+                    ? "https://schema.org/InStock"
+                    : "https://schema.org/OutOfStock",
+                  itemCondition: "https://schema.org/NewCondition",
+                  url,
+                  seller: { "@type": "Organization", name: "Cutiuța Magică" },
+                  // Exact ce spune /retur: retragere în 14 zile, returul prin curier, cost suportat de client.
+                  hasMerchantReturnPolicy: {
+                    "@type": "MerchantReturnPolicy",
+                    applicableCountry: "RO",
+                    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+                    merchantReturnDays: 14,
+                    returnMethod: "https://schema.org/ReturnByMail",
+                    returnFees: "https://schema.org/ReturnShippingFees",
+                    merchantReturnLink: "https://cutiutamagica.eu/retur",
+                  },
+                }
+              : undefined,
           }),
         },
         {
           type: "application/ld+json",
-          children: JSON.stringify({
+          children: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
@@ -98,13 +207,26 @@ export const Route = createFileRoute("/produs/$id")({
 });
 
 function ProductPage() {
-  const { product } = Route.useLoaderData();
-  const { addToCart, toggleFavorite, isFavorite } = useShop();
-  const fav = isFavorite(product.id);
+  const { product: loadedProduct, reviews } = Route.useLoaderData();
+  const { addToCart, products, totalQty } = useShop();
+  const product = products.find((p) => p.id === loadedProduct.id) ?? {
+    ...loadedProduct,
+    availability: "out_of_stock" as const,
+  };
+  const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
+  const [show360, setShow360] = useState(false);
+  const gallerySwipe = useRef<{ x: number; y: number; at: number } | null>(null);
+  const suppressGalleryClick = useRef(false);
   const experienceQuery = useProductExperience(product.id);
+
+  const addProductToCart = (event: React.MouseEvent<HTMLButtonElement>, quantity = qty) => {
+    const added = addToCart(product.id, quantity);
+    animateIntoCart(event.currentTarget, product.image, added);
+    notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
+  };
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -125,62 +247,181 @@ function ProductPage() {
 
   const related = useMemo(
     () =>
-      products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4),
-    [product.id, product.category],
+      products
+        .filter((p) => p.id !== product.id)
+        // Întâi modelele disponibile acum, apoi cele din aceeași categorie.
+        .sort(
+          (a, b) =>
+            Number(isAvailable(b)) - Number(isAvailable(a)) ||
+            Number(b.category === product.category) - Number(a.category === product.category),
+        )
+        .slice(0, 4),
+    [product.id, product.category, products],
   );
-  const remoteGallery =
-    experienceQuery.data?.gallery.map((image) => ({
-      src: image.url,
-      label: image.alt_text || image.title || product.name,
-      position: "center",
-    })) ?? [];
-  const gallery = remoteGallery.length > 0 ? remoteGallery : product.gallery;
-  const currentImage = gallery[active] ?? gallery[0];
+  const gallery = product.gallery;
+  const available = isAvailable(product);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const currentImage = gallery[active] ?? gallery[0] ?? { src: product.image, label: product.name };
+  const spin = experienceQuery.data?.spin360 ?? null;
+  const has360 = Boolean(
+    spin &&
+    ((spin.spin_type === "image_sequence" && spin.frames.length >= 2) ||
+      (spin.spin_type === "turntable_video" && spin.primaryMediaUrl)),
+  );
+  const spinThumb = spin ? (spin.coverUrl ?? spin.frames[0]?.url ?? null) : null;
+  const moveGallery = (delta: number) => {
+    if (gallery.length < 2) return;
+    setActive((current) => (current + delta + gallery.length) % gallery.length);
+    setShow360(false);
+    playTick();
+  };
 
   return (
-    <div>
-      <div className="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
-        <div className="perspective-1000">
-          <motion.div
-            ref={ref}
-            onMouseMove={handleMove}
-            onMouseLeave={handleLeave}
-            style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-            className="relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card p-4"
-          >
-            <motion.img
-              src={currentImage.src}
-              alt={`${product.name} — ${currentImage.label}`}
-              className="w-full h-full object-contain"
-              style={{
-                transform: "translateZ(36px)",
-                objectPosition: currentImage.position ?? "center",
-              }}
-            />
-            {experienceQuery.data?.audio ? (
-              <ProductAudioOverlay audio={experienceQuery.data.audio} />
-            ) : product.melody ? (
-              <motion.div
-                style={{ transform: "translateZ(60px)" }}
-                className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
-              >
-                <Music className="w-3 h-3" /> {product.melody}
-              </motion.div>
-            ) : null}
-          </motion.div>
+    <ProductWorld product={product}>
+      <div className="product-detail-shell max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
+        <div className="product-detail-gallery perspective-1000">
+          {show360 && spin && has360 ? (
+            <div className="relative overflow-hidden rounded-2xl shadow-warm">
+              <ProductSpinViewer spin={spin} productName={product.name} />
+              <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
+            </div>
+          ) : (
+            <motion.div
+              ref={ref}
+              onMouseMove={handleMove}
+              onMouseLeave={handleLeave}
+              style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
+              className="product-main-visual relative aspect-square rounded-2xl overflow-hidden shadow-warm bg-card"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.button
+                  type="button"
+                  key={currentImage.src}
+                  onPointerDown={(event) => {
+                    if (event.pointerType === "mouse") return;
+                    gallerySwipe.current = {
+                      x: event.clientX,
+                      y: event.clientY,
+                      at: performance.now(),
+                    };
+                  }}
+                  onPointerUp={(event) => {
+                    const start = gallerySwipe.current;
+                    gallerySwipe.current = null;
+                    if (!start || event.pointerType === "mouse") return;
+                    const dx = event.clientX - start.x;
+                    const dy = event.clientY - start.y;
+                    const quick = performance.now() - start.at < 650;
+                    if (quick && Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+                      suppressGalleryClick.current = true;
+                      moveGallery(dx < 0 ? 1 : -1);
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    gallerySwipe.current = null;
+                  }}
+                  onClick={() => {
+                    if (suppressGalleryClick.current) {
+                      suppressGalleryClick.current = false;
+                      return;
+                    }
+                    setZoomOpen(true);
+                    trackGrowthEvent("gallery_open", { productSlug: product.id });
+                  }}
+                  aria-label="Vezi fotografia mărită"
+                  initial={{ opacity: 0, scale: 0.985 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.01 }}
+                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  className="product-main-visual__trigger absolute inset-0 cursor-zoom-in"
+                  style={{ transform: "translateZ(36px)" }}
+                >
+                  <ProductImage
+                    src={currentImage.src}
+                    alt={`${product.name} — ${currentImage.label}`}
+                    loading="eager"
+                    fetchPriority="high"
+                    sizes="(max-width: 768px) 92vw, 620px"
+                    className="h-full w-full object-contain"
+                    style={{ objectPosition: currentImage.position ?? "center" }}
+                  />
+                </motion.button>
+              </AnimatePresence>
+              {/* Halou cald peste fotografie: dă senzația de lumină de lumânare, fără să acopere produsul. */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(85%_65%_at_50%_15%,oklch(0.95_0.12_85/0.14),transparent_62%)]"
+                style={{ transform: "translateZ(50px)" }}
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-[color:var(--gold)]/25"
+              />
+              <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
+              {product.melody ? (
+                <motion.div
+                  style={{ transform: "translateZ(60px)" }}
+                  className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
+                >
+                  <Music className="w-3 h-3" /> {product.melody}
+                </motion.div>
+              ) : null}
+            </motion.div>
+          )}
           <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
-            <Sparkles className="w-3 h-3" /> Efect de profunzime aplicat fotografiei produsului
+            {show360 ? (
+              <>
+                <Rotate3D className="w-3 h-3" /> Vedere 360° din cadre reale · trage sau folosește
+                săgețile
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3 h-3" /> Atinge pentru mărire · glisează pentru altă imagine
+              </>
+            )}
           </p>
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-5">
+            {has360 && (
+              <button
+                type="button"
+                onClick={() => setShow360(true)}
+                aria-pressed={show360}
+                aria-label="Vedere 360 de grade"
+                className={`group relative overflow-hidden rounded-xl border p-0 bg-card transition ${show360 ? "border-[color:var(--gold)] shadow-soft" : "border-border hover:bg-muted"}`}
+              >
+                {spinThumb ? (
+                  <img
+                    src={spinThumb}
+                    alt=""
+                    className="aspect-square w-full object-contain opacity-80 transition group-hover:opacity-100"
+                  />
+                ) : (
+                  <span className="block aspect-square w-full" />
+                )}
+                <span className="absolute inset-0 grid place-items-center">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--gold)]/60 bg-[oklch(0.2_0.035_40/0.88)] px-2 py-1 text-[11px] font-semibold tracking-wide text-[color:var(--gold)] shadow-soft backdrop-blur">
+                    <Rotate3D className="h-3.5 w-3.5" /> 360°
+                  </span>
+                </span>
+              </button>
+            )}
             {gallery.map((image, index) => (
               <button
                 key={`${product.id}-${image.label}`}
-                onClick={() => setActive(index)}
-                className={`rounded-xl border p-2 bg-card transition ${active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}
+                type="button"
+                aria-label={`Afișează imaginea: ${image.label}`}
+                aria-pressed={!show360 && active === index}
+                onClick={() => {
+                  setActive(index);
+                  setShow360(false);
+                  playTick();
+                }}
+                className={`overflow-hidden rounded-xl border p-0 bg-card transition ${!show360 && active === index ? "border-primary shadow-soft" : "border-border hover:bg-muted"}`}
               >
-                <img
+                <ProductImage
                   src={image.src}
                   alt={image.label}
+                  sizes="120px"
                   className="aspect-square w-full object-contain"
                   style={{ objectPosition: image.position ?? "center" }}
                 />
@@ -189,62 +430,99 @@ function ProductPage() {
           </div>
         </div>
 
-        <div>
+        <div className="product-detail-copy">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             {product.category}
           </p>
           <h1 className="font-display text-4xl md:text-5xl mt-2">{product.name}</h1>
           <p className="mt-3 text-lg text-muted-foreground">{product.tagline}</p>
-
-          <div className="mt-6 flex items-baseline gap-3">
-            <span className="font-display text-4xl">{PRICE} lei</span>
-            <span className="text-sm text-muted-foreground">75 lei/buc de la 2 cutiuțe</span>
-          </div>
+          {available ? (
+            <div className="mt-6">
+              <ProductPrice product={product} size="detail" tone="light" />
+              <span className="mt-1 block text-xs text-muted-foreground">preț pe cutiuță</span>
+              {experienceQuery.data?.audio && (
+                <ProductAudioOverlay
+                  key={experienceQuery.data.audio.media_id}
+                  audio={experienceQuery.data.audio}
+                  productSlug={product.id}
+                />
+              )}
+              {!experienceQuery.isLoading && !experienceQuery.data?.audio && (
+                <ProductAudioUnavailable melody={product.melody} />
+              )}
+              <ProductDeliveryEstimate />
+            </div>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 p-4">
+              <p className="inline-flex items-center gap-2 font-display text-2xl">
+                <Hourglass className="h-5 w-5 text-[color:var(--gold)]" aria-hidden />
+                {product.availability === "out_of_stock"
+                  ? "Revine în colecție"
+                  : "Disponibilă în curând"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Pregătim acest model pentru magazin. Între timp poți alege una dintre cutiuțele
+                disponibile acum.
+              </p>
+              <div className="mt-4">
+                <ProductInterest product={product} />
+              </div>
+              <Link
+                to="/produse"
+                className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                Vezi cutiuțele disponibile
+              </Link>
+            </div>
+          )}
 
           <div className="mt-6 flex items-center gap-3">
-            <div className="inline-flex items-center rounded-full border bg-card">
-              <button
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="p-2.5 hover:bg-muted rounded-l-full"
-                aria-label="Scade"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="px-4 font-medium tabular-nums">{qty}</span>
-              <button
-                onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
-                className="p-2.5 hover:bg-muted rounded-r-full"
-                aria-label="Crește"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                addToCart(product.id, qty);
-                toast.success(`${qty} × ${product.name} adăugată în coș`);
-              }}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
-            >
-              <ShoppingBag className="w-4 h-4" /> Adaugă în coș
-            </button>
-            <button
-              onClick={() => toggleFavorite(product.id)}
-              className={`p-3 rounded-full border ${fav ? "bg-primary/10 border-primary text-primary" : "bg-card hover:bg-muted"}`}
-              aria-label="Favorite"
-            >
-              <Heart className={`w-5 h-5 ${fav ? "fill-current" : ""}`} />
-            </button>
+            {available && (
+              <>
+                <div className="inline-flex items-center rounded-full border bg-card">
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="p-2.5 hover:bg-muted rounded-l-full"
+                    aria-label="Scade"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="px-4 font-medium tabular-nums">{qty}</span>
+                  <button
+                    onClick={() => setQty((q) => Math.min(MAX_QTY, q + 1))}
+                    className="p-2.5 hover:bg-muted rounded-r-full"
+                    aria-label="Crește"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={(event) => addProductToCart(event)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground px-6 py-3 font-medium hover:opacity-90"
+                >
+                  <ShoppingBag className="w-4 h-4" /> Adaugă în coș
+                </button>
+              </>
+            )}
           </div>
 
-          <Link
-            to="/comanda"
-            className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full border border-primary/40 px-6 py-3 text-sm font-medium hover:bg-primary/5"
-          >
-            <Gift className="w-4 h-4" /> Finalizează comanda
-          </Link>
+          {available && totalQty > 0 && (
+            <Link
+              to="/comanda"
+              className="mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full border border-primary/40 px-6 py-3 text-sm font-medium hover:bg-primary/5"
+            >
+              <Gift className="w-4 h-4" /> Finalizează comanda
+            </Link>
+          )}
 
-          <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+          <ProductShare
+            id={product.id}
+            name={product.name}
+            tagline={product.tagline}
+            image={product.image}
+          />
+
+          <div className="product-detail-assurances mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2 rounded-xl border p-3">
               <Music className="w-4 h-4" /> Mecanism manual
             </div>
@@ -274,14 +552,8 @@ function ProductPage() {
         </div>
       </div>
 
-      {experienceQuery.data?.spin360 && (
-        <section className="mx-auto max-w-5xl px-4 py-12" aria-labelledby="product-360-title">
-          <h2 id="product-360-title" className="mb-6 text-center font-display text-3xl">
-            Descoperă cutiuța din fiecare unghi
-          </h2>
-          <ProductSpinViewer spin={experienceQuery.data.spin360} productName={product.name} />
-        </section>
-      )}
+      <ProductDiscovery product={product} />
+      <ProductReviews key={product.id} slug={product.id} name={product.name} initial={reviews} />
 
       {experienceQuery.data?.animation && (
         <ProductAnimation animation={experienceQuery.data.animation} productName={product.name} />
@@ -290,13 +562,31 @@ function ProductPage() {
       {related.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="font-display text-3xl mb-6 text-center">Și acestea îți pot plăcea</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {related.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
-          </div>
+          <ProductCardCarousel
+            products={related}
+            ariaLabel="Alte cutiuțe care ți-ar putea plăcea"
+          />
         </section>
       )}
-    </div>
+
+      <AnimatePresence>
+        {zoomOpen && (
+          <ProductLightbox
+            images={gallery}
+            index={active}
+            productName={product.name}
+            onClose={() => setZoomOpen(false)}
+            onIndexChange={setActive}
+          />
+        )}
+      </AnimatePresence>
+      {available && (
+        <ProductMobileBuyBar
+          product={product}
+          audioAvailable={Boolean(experienceQuery.data?.audio)}
+          onAdd={(event) => addProductToCart(event, 1)}
+        />
+      )}
+    </ProductWorld>
   );
 }

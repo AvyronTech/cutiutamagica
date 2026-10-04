@@ -1,3 +1,5 @@
+import { localMediaPreview } from "../media-policy";
+import { pcmWavDuration } from "@/lib/audio-clip";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 
@@ -56,6 +58,7 @@ const uploadMetadataSchema = z
   });
 
 const updateMetadataSchema = z.object({
+  sortOrder: z.number().int().min(-10000).max(10000).optional(),
   title: z.string().trim().max(120).optional(),
   promoTextRo: z.string().trim().max(90).optional(),
   altText: z.string().trim().max(240).optional(),
@@ -158,7 +161,7 @@ async function firstBytes(stream: ReadableStream<Uint8Array>, count: number): Pr
       received += value.byteLength;
     }
   } finally {
-    await reader.cancel().catch(() => undefined);
+    void reader.cancel().catch(() => undefined);
   }
   const output = new Uint8Array(Math.min(received, count));
   let offset = 0;
@@ -180,7 +183,7 @@ async function listProductMedia(request: Request, env: Env, productId: string): 
         `
       SELECT id, slug, name, status, tagline, short_description, description, story,
              category, material, dimensions_text, weight_g, rights_status, rights_notes,
-             seo_title, seo_description, search_terms, version, updated_at
+             seo_title, seo_description, search_terms, discovery_json, short_name, landing_collection, landing_order, storefront_state, is_featured, preorder_enabled, release_note, details_json, version, updated_at
       FROM products
       WHERE id = ?1 AND product_type = 'music_box'
     `,
@@ -246,6 +249,7 @@ async function listProductMedia(request: Request, env: Env, productId: string): 
   return json({
     data: {
       product,
+      developmentPreview: localMediaPreview(env),
       media: media.results,
       audio,
       spin360: spin ? { ...spin, frames: spinFrames.results } : null,
@@ -309,10 +313,28 @@ async function uploadProductMedia(
     );
   }
   const [inspectionStream, uploadStream] = request.body.tee();
-  const signature = await firstBytes(inspectionStream, 16);
+  const signature = await firstBytes(inspectionStream, 44);
   if (!isExpectedSignature(contentType as AllowedMime, signature)) {
     await uploadStream.cancel().catch(() => undefined);
     return json({ error: { code: "INVALID_FILE_SIGNATURE" } }, { status: 400 });
+  }
+
+  const duration =
+    parsed.data.mediaType === "audio" ? pcmWavDuration(signature, declaredSize) : null;
+  if (
+    parsed.data.mediaType === "audio" &&
+    (contentType !== "audio/wav" || duration === null || duration < 15 || duration > 30)
+  ) {
+    void uploadStream.cancel().catch(() => undefined);
+    return json(
+      {
+        error: {
+          code: "INVALID_AUDIO_DURATION",
+          message: "Utilisează selectorul audio pentru un fragment WAV de 15–30 secunde.",
+        },
+      },
+      { status: 400 },
+    );
   }
 
   const assetId = `media_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -351,10 +373,10 @@ async function uploadProductMedia(
       INSERT INTO product_media (
         id, product_id, media_type, r2_key, alt_text, mime_type, file_format,
         file_size_bytes, original_filename, slot_code, title, promo_text_ro,
-        tags_json, usage_type, sync_to_avyron, status, rights_status, sort_order, is_primary
+        tags_json, usage_type, sync_to_avyron, status, rights_status, sort_order, is_primary, duration_seconds
       ) VALUES (
         ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,
-        ?13, ?14, ?15, 'draft', 'review_required', ?16, ?17
+        ?13, ?14, ?15, 'draft', 'review_required', ?16, ?17, ?18
       )
     `,
       ).bind(
@@ -373,8 +395,9 @@ async function uploadProductMedia(
         JSON.stringify(parsed.data.tags),
         parsed.data.usageType,
         parsed.data.syncToAvyron ? 1 : 0,
-        parsed.data.slotCode ? Number(parsed.data.slotCode.slice(0, 2)) : 100,
+        parsed.data.slotCode ? Number(parsed.data.slotCode.slice(0, 2)) - 200 : 100,
         parsed.data.slotCode === "01_hero" ? 1 : 0,
+        duration,
       ),
     );
     if (parsed.data.mediaType === "document") {
@@ -451,7 +474,7 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
   const syncToAvyron = parsed.data.syncToAvyron ?? Boolean(current.sync_to_avyron);
   const nextStatus = parsed.data.status ?? String(current.status);
   if (
-    (publicAccess || syncToAvyron || nextStatus === "active") &&
+    (syncToAvyron || (!localMediaPreview(env) && (publicAccess || nextStatus === "active"))) &&
     (!approved || rights !== "cleared")
   ) {
     return json(
@@ -468,7 +491,7 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
   const result = await env.DB.prepare(
     `
     UPDATE product_media
-    SET title = COALESCE(?1, title),
+    SET sort_order=COALESCE(?12,sort_order), title = COALESCE(?1, title),
         promo_text_ro = COALESCE(?2, promo_text_ro),
         alt_text = COALESCE(?3, alt_text),
         tags_json = COALESCE(?4, tags_json),
@@ -495,6 +518,7 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
       nextStatus,
       mediaId,
       parsed.data.expectedVersion,
+      parsed.data.sortOrder ?? null,
     )
     .run();
   if (Number(result.meta.changes) !== 1) {

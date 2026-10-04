@@ -6,5 +6,11 @@
 
 - [Acasă](/): Prezentare și produse selectate.
 - [Produse](/produse): Catalogul complet de cutiuțe muzicale.
-- [Poveste](/poveste): Ideea colecției Cutiuța Magică.
+- [Despre cutiuță](/despre-cutiuta): Mecanism, manivelă și modul de folosire.
+- [Despre noi](/despre-noi): Povestea atelierului Cutiuța Magică.
+- [Personalizează](/personalizeaza): Cutiuță personalizată cu imagine, culoare și gravură.
+- [Idei de cadouri](/cadouri): Ghiduri după ocazie, destinatar și pasiune.
+- [Magic Rewards](/magic-rewards): Magic Stars pentru momente eligibile și viitorul program de fidelitate.
 - [Ghid de cadouri](/ghid-cadouri-personalizate): Cum alegi o cutiuță muzicală pentru cadou.
+- [Livrare](/livrare): Pregătirea, expedierea și recepția comenzilor.
+- [Sitemap XML](/sitemap.xml): Lista URL-urilor canonice publice și imaginile produselor.

@@ -123,6 +123,20 @@ export async function issueFgoInvoiceForOrder(
           : []),
       ],
     });
+    const verifiedAt = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE integration_credentials SET checked_at=?1,check_status='verified' WHERE provider='fgo'",
+      ).bind(verifiedAt),
+      env.DB.prepare(
+        `UPDATE provider_configurations SET status='active',last_healthcheck_at=?1,
+         last_error_code=NULL,last_error_message=NULL,updated_at=?1 WHERE provider='fgo'`,
+      ).bind(verifiedAt),
+      env.DB.prepare(
+        `UPDATE connector_secret_refs SET status='configured',last_verified_at=?1,updated_at=?1
+         WHERE provider='fgo'`,
+      ).bind(verifiedAt),
+    ]);
     const invoiceId = crypto.randomUUID();
     const invoiceNumber = `${result.series}-${result.number}`;
     const nowIso = new Date().toISOString();
@@ -271,6 +285,21 @@ export async function issueFgoInvoiceForOrder(
     });
     return { invoiceId, invoiceNumber, pdfUrl: result.pdfUrl };
   } catch (error) {
+    if (
+      error instanceof ProviderError &&
+      ["FGO_INVOICE_FAILED", "PROVIDER_TIMEOUT", "PROVIDER_NETWORK_ERROR"].includes(error.code)
+    ) {
+      const failedAt = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare(
+          "UPDATE integration_credentials SET checked_at=?1,check_status='failed' WHERE provider='fgo'",
+        ).bind(failedAt),
+        env.DB.prepare(
+          `UPDATE provider_configurations SET status='degraded',last_healthcheck_at=?1,
+           last_error_code=?2,last_error_message=?3,updated_at=?1 WHERE provider='fgo'`,
+        ).bind(failedAt, error.code, error.message.slice(0, 500)),
+      ]);
+    }
     await logProviderOperation(env.DB, {
       provider: "fgo",
       operationType: "invoice.issue",

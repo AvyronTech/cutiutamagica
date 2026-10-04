@@ -1,0 +1,11 @@
+# Decorul catalogului
+
+Mod: generare nouă, prin instrumentul imagegen integrat; fără referințe de produs. Imagine decorativă, nu fotografie contractuală a modelelor vândute.
+
+Original: `design/catalog-atelier-source.png`, 1672 × 941 px. Cererea a specificat 3840 × 2160, dar rezultatul nu este 4K nativ. Nu a fost mărit artificial.
+
+Variante: `public/scenes/catalog-atelier.webp` (1672 × 941, 208602 bytes); `public/scenes/catalog-atelier-mobile.webp` (960 × 540, 76264 bytes). Compresie WebP și redimensionare în jos, fără retușare creativă ulterioară.
+
+## Prompt final
+
+Create a premium cinematic photorealistic 3D scene, requested output 3840x2160 (4K), wide 16:9, for the Romanian music box shop Cutiuța Magică product catalogue background. One coherent intimate magical library and artisan atelier at twilight, with three distinctly visible SMALL palm-sized walnut wooden hand-cranked mechanical music boxes arranged toward the left and right margins. Realistic open engraved hinged wooden lids, tiny metal pinned cylinders and metal comb mechanisms visible, small metal side cranks. Left foreground: an open music box beside an open storybook and reading spectacles, an emotional reading ritual. Right foreground: another small open box beside understated linen gift ribbon and wrapped kraft gift. Far right midground: closed engraved box displayed lovingly on a collector's shelf. Boxes physically resting on surfaces, plausible fine joinery, tiny realistic dimensions, no electronics. Warm honey sunlight grazing walnut and antique brass, subdued sage velvet, deep midnight teal and espresso shadows, soft volumetric light, sparse golden motes, premium photographic depth and detailed tactile materials. The center 50 percent of the image must stay quietly dark with smooth low-contrast atmospheric negative space for readable website headings, no bright objects or clutter there. Unified composition, not collage or separate panels. Atmospheric and mysterious but inviting, believable boutique product photography with cinematic CGI lighting. No writing, lettering, logo, watermark, people or hands. Decorative mood illustration rather than exact merchandise photographs. Beautiful refined detail, restrained magical atmosphere, no giant fantasy chests.

@@ -1,105 +1,195 @@
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ProductCard } from "@/components/site/ProductCard";
+import { useCallback, useEffect, useRef, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import { useReducedMotion } from "framer-motion";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Music2, ShoppingBag } from "lucide-react";
+import { ProductImage } from "./ProductImage";
 import type { Product } from "@/data/products";
+import { LimitedEditionBadge } from "./LimitedEditionBadge";
+import { ProductPrice } from "./ProductPrice";
+import { useShop } from "@/store/shop";
+import { animateIntoCart } from "@/lib/cart-flight";
+import { notifyAddedToCart } from "@/lib/notify";
+import { isAvailable } from "@/data/products";
 
-type Props = {
-  products: Product[];
-  intervalMs?: number;
-  eyebrow?: string;
-};
-
-export function RotatingSpotlight({ products, intervalMs = 4600, eyebrow }: Props) {
-  const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inView = useRef(true);
-  const reduced = useReducedMotion();
-
-  // Pause when offscreen — saves work on long pages with 3 rotators.
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        inView.current = entry.isIntersecting;
-      },
-      { threshold: 0.2 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (products.length <= 1 || reduced) return;
-    const t = window.setInterval(() => {
-      if (paused || !inView.current || document.hidden) return;
-      setI((v) => (v + 1) % products.length);
-    }, intervalMs);
-    return () => window.clearInterval(t);
-  }, [products.length, intervalMs, paused, reduced]);
-
-  if (!products.length) return null;
-  const current = products[i];
+function SpotlightCard({ product }: { product: Product }) {
+  const { addToCart, products } = useShop();
+  const navigate = useNavigate();
+  product = products.find((candidate) => candidate.id === product.id) ?? product;
+  const available = isAvailable(product);
 
   return (
-    <div
-      ref={containerRef}
-      className="mt-8 md:mt-10 flex flex-col items-center"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {eyebrow && (
-        <div className="flex items-center gap-3 mb-4 text-[color:var(--gold)]">
-          <span aria-hidden className="h-px w-8 bg-[color:var(--gold)]/60" />
-          <span className="text-[10px] md:text-[11px] uppercase tracking-[0.32em]">{eyebrow}</span>
-          <span aria-hidden className="h-px w-8 bg-[color:var(--gold)]/60" />
-        </div>
-      )}
-
-      <div
-        className="relative w-[min(92vw,320px)] sm:w-[340px]"
-        style={{ transform: "translateZ(0)" }}
+    <article className="spotlight-card" data-magic-card>
+      <Link
+        to="/produs/$id"
+        params={{ id: product.id }}
+        className="spotlight-card__media"
+        aria-label={`Descoperă ${product.name}`}
       >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={current.id}
-            initial={
-              reduced ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.96, filter: "blur(6px)" }
-            }
-            animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={
-              reduced ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.98, filter: "blur(4px)" }
-            }
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            style={{ willChange: "transform, opacity, filter" }}
-          >
-            <ProductCard product={current} variant="glass" />
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {products.length > 1 && (
-        <div
-          className="mt-4 flex items-center gap-1.5"
-          role="tablist"
-          aria-label="Selectează produsul afișat"
-        >
-          {products.map((p, idx) => (
+        <ProductImage
+          src={product.image}
+          alt={product.name}
+          className="spotlight-card__image"
+          sizes="(max-width: 640px) 78vw, 330px"
+          width={720}
+          height={720}
+        />
+        <LimitedEditionBadge edition={product.limitedEdition} surface="card" />
+        <span className="spotlight-card__category">{product.category}</span>
+      </Link>
+      <div className="spotlight-card__copy">
+        <h3>
+          <Link to="/produs/$id" params={{ id: product.id }}>
+            {product.shortName || product.name}
+          </Link>
+        </h3>
+        <p>{product.tagline}</p>
+        <div className="spotlight-card__meta">
+          <span>
+            <Music2 aria-hidden /> {product.melody || "Melodie mecanică"}
+          </span>
+          <ProductPrice product={product} size="compact" showSavings={false} />
+        </div>
+        <div className="spotlight-card__actions">
+          {available && (
             <button
-              key={p.id}
               type="button"
-              role="tab"
-              aria-selected={idx === i}
-              aria-label={`Arată ${p.name}`}
-              onClick={() => setI(idx)}
-              className={`h-1.5 rounded-full transition-all duration-500 ease-out ${
-                idx === i
-                  ? "w-6 bg-[color:var(--gold)]"
-                  : "w-1.5 bg-[color:var(--cream)]/40 hover:bg-[color:var(--cream)]/70"
-              }`}
-            />
+              className="spotlight-card__add"
+              onClick={(event) => {
+                const added = addToCart(product.id, 1);
+                animateIntoCart(event.currentTarget, product.image, added);
+                notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
+              }}
+            >
+              <ShoppingBag aria-hidden /> Adaugă în coș
+            </button>
+          )}
+          <Link className="spotlight-card__link" to="/produs/$id" params={{ id: product.id }}>
+            Vezi cutiuța <ArrowUpRight aria-hidden />
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function RotatingSpotlight({
+  products,
+  eyebrow,
+}: {
+  products: Product[];
+  eyebrow?: string;
+}) {
+  const [viewport, api] = useEmblaCarousel({
+    loop: products.length > 1,
+    align: "center",
+    duration: 24,
+    skipSnaps: false,
+  });
+  const reduced = useReducedMotion();
+  const [selected, setSelected] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const [interacting, setInteracting] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
+  const cooldownTimer = useRef<number | undefined>(undefined);
+  const update = useCallback(() => setSelected(api?.selectedScrollSnap() ?? 0), [api]);
+  useEffect(() => {
+    if (!api) return;
+    update();
+    api.on("select", update).on("reInit", update);
+    return () => {
+      api.off("select", update).off("reInit", update);
+    };
+  }, [api, update]);
+  useEffect(() => {
+    if (!api) return;
+    const node = api.rootNode();
+    let inView = false;
+    const sync = () => setVisible(inView && !document.hidden);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        sync();
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(node);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, [api]);
+  useEffect(() => {
+    if (!api || reduced || !visible || interacting || cooldown || products.length < 2) return;
+    const timer = window.setTimeout(() => api.scrollNext(), 4800);
+    return () => window.clearTimeout(timer);
+  }, [api, cooldown, interacting, products.length, reduced, selected, visible]);
+  useEffect(
+    () => () => {
+      if (cooldownTimer.current) window.clearTimeout(cooldownTimer.current);
+    },
+    [],
+  );
+
+  const moveManually = (direction: "previous" | "next") => {
+    setCooldown(true);
+    if (cooldownTimer.current) window.clearTimeout(cooldownTimer.current);
+    cooldownTimer.current = window.setTimeout(() => setCooldown(false), 6500);
+    if (direction === "previous") api?.scrollPrev();
+    else api?.scrollNext();
+  };
+  if (!products.length)
+    return (
+      <p className="collection-empty">
+        Pregătim următoarea cutiuță din această poveste. Descoperă modelele din „Magia care
+        urmează”.
+      </p>
+    );
+  return (
+    <div
+      className="collection-spotlight"
+      role="region"
+      aria-roledescription="carusel"
+      aria-label={eyebrow || "Cutiuțele colecției"}
+      onPointerEnter={() => setInteracting(true)}
+      onPointerLeave={() => setInteracting(false)}
+      onFocusCapture={() => setInteracting(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setInteracting(false);
+      }}
+    >
+      {eyebrow && <p className="scene-eyebrow">{eyebrow}</p>}
+      <div ref={viewport} className="spotlight-viewport">
+        <div className="spotlight-track">
+          {products.map((product, i) => (
+            <div
+              className="spotlight-slide"
+              key={product.id}
+              data-selected={selected === i || undefined}
+            >
+              <SpotlightCard product={product} />
+            </div>
           ))}
+        </div>
+      </div>
+      {products.length > 1 && (
+        <div className="carousel-controls">
+          <button
+            type="button"
+            aria-label="Cutiuța precedentă"
+            onClick={() => moveManually("previous")}
+          >
+            <ArrowLeft size={17} />
+          </button>
+          <span aria-live="off" aria-atomic="true">
+            {String(selected + 1).padStart(2, "0")} <span aria-hidden>/</span>{" "}
+            {String(products.length).padStart(2, "0")}
+          </span>
+          <button type="button" aria-label="Cutiuța următoare" onClick={() => moveManually("next")}>
+            <ArrowRight size={17} />
+          </button>
         </div>
       )}
     </div>

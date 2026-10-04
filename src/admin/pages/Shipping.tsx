@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Loader2, MapPin, Save, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { getCommerceOperations, saveShippingPolicy } from "@/lib/admin.functions";
+import { CredentialPanel } from "@/admin/pages/GrowthSettings";
 
 const inputClass =
   "w-full rounded-lg border border-[#334155] bg-[#0b1526] px-3 py-2.5 text-sm text-slate-100 focus:border-cyan-400/60 focus:outline-none";
@@ -26,6 +27,13 @@ export default function Shipping() {
     onError: (error) =>
       toast.error("Configurația nu a fost salvată", { description: error.message }),
   });
+  if (query.isError)
+    return (
+      <p role="alert">
+        Livrările nu au putut fi încărcate.{" "}
+        <button onClick={() => query.refetch()}>Reîncearcă</button>
+      </p>
+    );
   if (query.isLoading || !query.data)
     return <Loader2 className="h-6 w-6 animate-spin text-cyan-300" />;
   const policy = query.data.shippingPolicy;
@@ -42,12 +50,24 @@ export default function Shipping() {
     };
     mutation.mutate({
       data: {
+        defaultWeightG: Number(form.get("defaultWeightG")),
+        defaultLengthCm: Number(form.get("defaultLengthCm")),
+        defaultWidthCm: Number(form.get("defaultWidthCm")),
+        defaultHeightCm: Number(form.get("defaultHeightCm")),
+        allowedCountries: String(form.get("allowedCountries") || "RO"),
+        internationalReady: form.get("internationalReady") === "on",
         standardPrice: amount("standardPrice"),
         lockerPrice: amount("lockerPrice"),
         freeOver: amount("freeOver"),
         easyboxEnabled: form.get("easyboxEnabled") === "on",
         useLiveQuotes: form.get("useLiveQuotes") === "on",
         markVerified: form.get("markVerified") === "on",
+        senderName: String(form.get("senderName") ?? ""),
+        senderAddress: String(form.get("senderAddress") ?? ""),
+        senderEmail: String(form.get("senderEmail") ?? ""),
+        senderPhone: String(form.get("senderPhone") ?? ""),
+        senderCityId: amount("senderCityId"),
+        senderSector: Number(form.get("senderSector") || 0),
       },
     });
   }
@@ -61,6 +81,7 @@ export default function Shipping() {
           politică.
         </p>
       </header>
+      <CredentialPanel providers={["smartship"]} />
       <div
         className={`flex gap-3 rounded-lg border p-4 text-sm ${smartship?.secretConfigured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-amber-400/30 bg-amber-400/10 text-amber-100"}`}
       >
@@ -115,6 +136,111 @@ export default function Shipping() {
             </Field>
           </div>
           <div className="mt-5 space-y-3 text-xs text-slate-300">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Greutate implicită (g)">
+                <input
+                  name="defaultWeightG"
+                  type="number"
+                  min="100"
+                  max="10000"
+                  required
+                  defaultValue={policy.defaultWeightG}
+                  className={inputClass}
+                />
+              </Field>
+              {(
+                [
+                  ["defaultLengthCm", "Lungime (cm)"],
+                  ["defaultWidthCm", "Lățime (cm)"],
+                  ["defaultHeightCm", "Înălțime (cm)"],
+                ] as const
+              ).map(([name, label]) => (
+                <Field key={name} label={label}>
+                  <input
+                    name={name}
+                    type="number"
+                    min="1"
+                    max="500"
+                    required
+                    defaultValue={policy[name]}
+                    className={inputClass}
+                  />
+                </Field>
+              ))}
+              <Field label="Țări pregătite (coduri ISO, separate prin virgulă)">
+                <input
+                  name="allowedCountries"
+                  defaultValue={policy.allowedCountries.join(", ")}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+            <div className="border-t border-[#28364d] pt-4">
+              <h3 className="mb-3 text-sm font-semibold text-white">Expeditor SmartShip</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Nume / firmă expeditor">
+                  <input
+                    name="senderName"
+                    defaultValue={policy.senderName}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="E-mail expeditor">
+                  <input
+                    name="senderEmail"
+                    type="email"
+                    defaultValue={policy.senderEmail}
+                    className={inputClass}
+                  />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Adresă completă de ridicare">
+                    <input
+                      name="senderAddress"
+                      defaultValue={policy.senderAddress}
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+                <Field label="Telefon românesc (10 cifre)">
+                  <input
+                    name="senderPhone"
+                    inputMode="tel"
+                    defaultValue={policy.senderPhone}
+                    placeholder="07xxxxxxxx"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="ID localitate SmartShip">
+                  <input
+                    name="senderCityId"
+                    type="number"
+                    min="1"
+                    defaultValue={policy.senderCityId ?? ""}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Sector București (0 în afara Bucureștiului)">
+                  <input
+                    name="senderSector"
+                    type="number"
+                    min="0"
+                    max="6"
+                    defaultValue={policy.senderSector}
+                    className={inputClass}
+                  />
+                </Field>
+                <ReadOnlyField label="Țară" value={policy.senderCountryCode} />
+              </div>
+              <p className="mt-3 text-[11px] leading-5 text-slate-500">
+                ID-ul localității provine din nomenclatorul SmartShip. Datele sunt folosite numai
+                server-side pentru cotații și AWB; cheia API rămâne criptată separat.
+              </p>
+            </div>
+            <Check name="internationalReady" defaultChecked={policy.internationalReady}>
+              Pregătește livrări internaționale; tarifele și checkout-ul extern necesită validare
+              separată
+            </Check>
             <Check name="easyboxEnabled" defaultChecked={policy.easyboxEnabled}>
               Permite alegerea Easybox în checkout
             </Check>
@@ -167,6 +293,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span>{label}</span>
       {children}
     </label>
+  );
+}
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1.5 text-xs text-slate-400">
+      <span>{label}</span>
+      <p className={`${inputClass} text-slate-400`}>{value}</p>
+    </div>
   );
 }
 function Check({

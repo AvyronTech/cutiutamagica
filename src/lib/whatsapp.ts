@@ -17,8 +17,6 @@ export function messageForPath(pathname: string): string {
     return "Bună! Am o întrebare legată de comanda mea în curs. Mă puteți ajuta, vă rog?";
   if (pathname.startsWith("/poveste"))
     return "Bună! Mi-a plăcut povestea atelierului și aș vrea să aflu mai multe despre cutiuțele voastre.";
-  if (pathname.startsWith("/favorite"))
-    return "Bună! Am câteva cutiuțe salvate la favorite. Mai sunt disponibile și pot comanda mai multe deodată?";
   return "Bună! Aș vrea mai multe detalii despre cutiuțele muzicale de la voi. Mulțumesc!";
 }
 

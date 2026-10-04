@@ -3,6 +3,7 @@ import type {
   AdminDashboardData,
   AdminDashboardStats,
   AdminDeliveryMetric,
+  AdminGrowthMetric,
   AdminIntegrationAccount,
   AdminIntegrationsData,
   AdminNotification,
@@ -68,6 +69,18 @@ function nullableString(value: DbValue | undefined): string | null {
   return value == null ? null : String(value);
 }
 
+function integrationApiBaseUrl(value: DbValue | undefined): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value) as { api_base_url?: unknown };
+    return typeof parsed.api_base_url === "string" && parsed.api_base_url
+      ? parsed.api_base_url
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function baniToRon(value: DbValue | undefined): number {
   return numberValue(value) / 100;
 }
@@ -84,7 +97,7 @@ function mapOrder(row: DbRow): AdminOrder {
     platform: PLATFORM_LABELS[channelCode] ?? stringValue(row.channel_name),
     channelCode,
     customer: stringValue(row.customer_name) || "Client",
-    products: stringValue(row.products_summary) || "Fara produse",
+    products: stringValue(row.products_summary) || "Fără produse",
     total: baniToRon(row.total_bani),
     currency: stringValue(row.currency) || "RON",
     status: toAdminOrderStatus({
@@ -378,9 +391,16 @@ export async function dismissAdminNotification(
 }
 
 export async function getAdminStatisticsData(db: D1Database): Promise<AdminStatisticsData> {
-  const [summaryResult, monthlyResult, channelsResult, productsResult, deliveriesResult] =
-    await db.batch<DbRow>([
-      db.prepare(`
+  const [
+    summaryResult,
+    monthlyResult,
+    channelsResult,
+    productsResult,
+    deliveriesResult,
+    growthResult,
+    inventoryResult,
+  ] = await db.batch<DbRow>([
+    db.prepare(`
         SELECT
           COUNT(*) AS orders_total,
           COALESCE(SUM(CASE WHEN order_status != 'cancelled' THEN total_bani - refunded_bani ELSE 0 END), 0) AS net_revenue_bani,
@@ -398,7 +418,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
           COUNT(estimated_cost_bani) AS orders_with_cost
         FROM orders
       `),
-      db.prepare(`
+    db.prepare(`
         SELECT
           month,
           SUM(revenue_bani) AS revenue_bani,
@@ -410,10 +430,8 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         GROUP BY month
         ORDER BY month ASC
       `),
-      db.prepare(
-        "SELECT * FROM v_admin_channel_metrics ORDER BY valid_orders_count DESC, name ASC",
-      ),
-      db.prepare(`
+    db.prepare("SELECT * FROM v_admin_channel_metrics ORDER BY valid_orders_count DESC, name ASC"),
+    db.prepare(`
         SELECT
           COALESCE(p.id, oi.product_id, oi.sku) AS id,
           COALESCE(p.name, oi.product_name) AS name,
@@ -428,7 +446,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         ORDER BY units_count DESC, revenue_bani DESC
         LIMIT 10
       `),
-      db.prepare(`
+    db.prepare(`
         SELECT delivery_method, COUNT(*) AS orders_count
         FROM (
           SELECT
@@ -447,7 +465,37 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         GROUP BY delivery_method
         ORDER BY orders_count DESC
       `),
-    ]);
+    db.prepare(`
+        SELECT event_name,SUM(event_count) AS event_count,
+          SUM(value_total) AS value_total,SUM(quantity_total) AS quantity_total
+        FROM growth_event_daily
+        WHERE event_day >= date('now','-29 days')
+        GROUP BY event_name
+        ORDER BY event_count DESC,event_name ASC
+      `),
+    db.prepare(`
+        SELECT
+          COALESCE(SUM(on_hand),0) AS on_hand,
+          COALESCE(SUM(reserved),0) AS reserved,
+          COALESCE(SUM(safety),0) AS safety,
+          COALESCE(SUM(available),0) AS available,
+          COUNT(DISTINCT product_id) AS tracked_products,
+          COUNT(DISTINCT CASE WHEN available BETWEEN 1 AND 3 THEN product_id END) AS low_stock_products,
+          COUNT(DISTINCT CASE WHEN available=0 THEN product_id END) AS out_of_stock_products
+        FROM (
+          SELECT pv.product_id,pv.id,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN il.on_hand_quantity ELSE 0 END),0) AS on_hand,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN il.reserved_quantity ELSE 0 END),0) AS reserved,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN il.safety_stock_quantity ELSE 0 END),0) AS safety,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN MAX(0,il.on_hand_quantity-il.reserved_quantity-il.safety_stock_quantity) ELSE 0 END),0) AS available
+          FROM product_variants pv
+          LEFT JOIN inventory_levels il ON il.variant_id=pv.id
+          LEFT JOIN stock_locations sl ON sl.id=il.location_id
+          WHERE pv.status='active' AND pv.inventory_policy='deny'
+          GROUP BY pv.product_id,pv.id
+        ) tracked_inventory
+      `),
+  ]);
 
   const summary = summaryResult.results[0] ?? {};
   const ordersTotal = numberValue(summary.orders_total);
@@ -463,6 +511,13 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
     name: stringValue(row.delivery_method),
     orders: numberValue(row.orders_count),
   }));
+  const growth: AdminGrowthMetric[] = growthResult.results.map((row) => ({
+    event: stringValue(row.event_name),
+    count: numberValue(row.event_count),
+    value: numberValue(row.value_total),
+    quantity: numberValue(row.quantity_total),
+  }));
+  const inventory = inventoryResult.results[0] ?? {};
 
   return {
     summary: {
@@ -480,6 +535,15 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
           ? baniToRon(summary.estimated_cost_bani)
           : null,
     },
+    inventory: {
+      onHand: numberValue(inventory.on_hand),
+      reserved: numberValue(inventory.reserved),
+      safety: numberValue(inventory.safety),
+      available: numberValue(inventory.available),
+      trackedProducts: numberValue(inventory.tracked_products),
+      lowStockProducts: numberValue(inventory.low_stock_products),
+      outOfStockProducts: numberValue(inventory.out_of_stock_products),
+    },
     monthly: monthlyResult.results.map((row) => ({
       month: stringValue(row.month),
       revenue: baniToRon(row.revenue_bani),
@@ -491,6 +555,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
     channels: channelsResult.results.map(mapChannel),
     topProducts: products,
     deliveries,
+    growth,
   };
 }
 
@@ -514,6 +579,9 @@ export async function getAdminIntegrationsData(db: D1Database): Promise<AdminInt
     provider: stringValue(row.provider),
     environment: stringValue(row.environment),
     label: stringValue(row.account_label),
+    externalAccountId: nullableString(row.external_account_id),
+    apiBaseUrl: integrationApiBaseUrl(row.config_json),
+    secretReference: nullableString(row.secret_reference),
     status: stringValue(row.status),
     lastHealthcheckAt: nullableString(row.last_healthcheck_at),
     lastSuccessAt: nullableString(row.last_success_at),

@@ -7,7 +7,14 @@ import { getBusinessHubData } from "@/server/db/business-hub.repository";
 import { getAdminCommerceOperations } from "@/server/db/commerce-operations.repository";
 import { issueFgoInvoiceForOrder } from "@/server/services/commerce-operations.service";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
+import { credentialStatuses, credential } from "@/server/services/growth-settings";
 import { ADMIN_ORDER_STATUSES } from "@/lib/admin-contracts";
+import { issuePostDeliveryReferral } from "@/server/services/referrals";
+import {
+  hasEmailTransport,
+  sendReferralInvitation,
+  sendReferralReward,
+} from "@/server/integrations/resend";
 import {
   getAdminDashboardData,
   getAdminIntegrationsData,
@@ -30,22 +37,6 @@ export const getMyRole = createServerFn({ method: "GET" })
     return { ...context.admin, userId: context.admin.id, isAdmin: true };
   });
 
-export const completeAdminOnboarding = createServerFn({ method: "POST" })
-  .middleware([requireAdminAuth])
-  .handler(async ({ context }) => {
-    await env.DB.prepare(
-      `
-      UPDATE admin_users
-      SET onboarding_status = 'complete',
-          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE id = ?1
-    `,
-    )
-      .bind(context.admin.id)
-      .run();
-    return { ok: true };
-  });
-
 export const getAdminOrders = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
@@ -57,6 +48,13 @@ export const getAdminProducts = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     assertPermission(context.admin, "catalog.read");
+    return { products: await listAdminProducts(env.DB, env.PUBLIC_SITE_URL) };
+  });
+
+export const getAdminInventoryProducts = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    assertPermission(context.admin, "inventory.read");
     return { products: await listAdminProducts(env.DB, env.PUBLIC_SITE_URL) };
   });
 
@@ -88,6 +86,118 @@ export const getAdminIntegrations = createServerFn({ method: "GET" })
     return getAdminIntegrationsData(env.DB);
   });
 
+export const saveEstetoAccount = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(
+    z.object({
+      accountId: z.string().trim().min(2).max(120),
+      accountLabel: z.string().trim().min(2).max(120).default("Esteto Marketplace"),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin)
+      throw new Error("Cerere de administrare nepermisă.");
+    assertPermission(context.admin, "integrations.write");
+    const now = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE integration_accounts
+         SET external_account_id=?1,account_label=?2,
+             config_json=json_set(config_json,'$.account_id',?1,
+               '$.contract_status','credentials_pending_verification'),
+             status='setup_required',updated_at=?3
+         WHERE id='integration_esteto_production'`,
+      ).bind(data.accountId, data.accountLabel, now),
+      env.DB.prepare(
+        `UPDATE provider_configurations
+         SET settings_json=json_set(settings_json,'$.account_id',?1),
+             status='setup_required',updated_at=?2
+         WHERE provider='esteto' AND environment='production'`,
+      ).bind(data.accountId, now),
+      env.DB.prepare(
+        `INSERT INTO audit_log(
+           id,actor_admin_user_id,actor_label,action,entity_type,entity_id,
+           after_json,metadata_json
+         ) VALUES(?1,?2,?3,'integration.esteto_account.update','integration_account',
+           'integration_esteto_production',?4,'{}')`,
+      ).bind(
+        crypto.randomUUID(),
+        context.admin.id,
+        context.admin.email,
+        JSON.stringify({ accountId: data.accountId, accountLabel: data.accountLabel }),
+      ),
+    ]);
+    return { ok: true };
+  });
+
+export const saveAvyronCrmAccount = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(
+    z.object({
+      accountId: z.string().trim().min(2).max(120),
+      accountLabel: z.string().trim().min(2).max(120).default("CRM intern · AVYRON"),
+      apiBaseUrl: z
+        .string()
+        .trim()
+        .url()
+        .max(500)
+        .refine((value) => {
+          const url = new URL(value);
+          return (
+            url.protocol === "https:" &&
+            !url.username &&
+            !url.password &&
+            !url.port &&
+            !["localhost", "127.0.0.1", "::1"].includes(url.hostname)
+          );
+        }, "Endpointul CRM trebuie să fie un URL HTTPS public, fără credențiale sau port explicit."),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin)
+      throw new Error("Cerere de administrare nepermisă.");
+    assertPermission(context.admin, "integrations.write");
+    const now = new Date().toISOString();
+    const apiBaseUrl = data.apiBaseUrl.replace(/\/$/, "");
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE integration_accounts
+         SET external_account_id=?1,account_label=?2,
+             config_json=json_set(config_json,'$.account_id',?1,'$.api_base_url',?3,
+               '$.activation','admin_approval_required'),
+             status='setup_required',last_error_code=NULL,last_error_message=NULL,updated_at=?4
+         WHERE id='integration_avyron_crm_production'`,
+      ).bind(data.accountId, data.accountLabel, apiBaseUrl, now),
+      env.DB.prepare(
+        `UPDATE provider_configurations
+         SET settings_json=json_set(settings_json,'$.account_id',?1,'$.api_base_url',?2,
+               '$.activation','admin_approval_required'),
+             status='setup_required',last_error_code=NULL,last_error_message=NULL,updated_at=?3
+         WHERE provider='avyron_crm' AND environment='production'`,
+      ).bind(data.accountId, apiBaseUrl, now),
+      env.DB.prepare(
+        `INSERT INTO audit_log(
+           id,actor_admin_user_id,actor_label,action,entity_type,entity_id,
+           after_json,metadata_json
+         ) VALUES(?1,?2,?3,'integration.avyron_crm_account.update','integration_account',
+           'integration_avyron_crm_production',?4,'{}')`,
+      ).bind(
+        crypto.randomUUID(),
+        context.admin.id,
+        context.admin.email,
+        JSON.stringify({
+          accountId: data.accountId,
+          accountLabel: data.accountLabel,
+          apiBaseUrl,
+          status: "setup_required",
+        }),
+      ),
+    ]);
+    return { ok: true };
+  });
+
 export const getAdminSettings = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
@@ -108,20 +218,22 @@ export const getCommerceOperations = createServerFn({ method: "GET" })
     assertPermission(context.admin, "dashboard.read");
     const data = await getAdminCommerceOperations(env.DB);
     const runtime = env as CommerceEnv;
+    const configured = await credentialStatuses(runtime);
     return {
       ...data,
+      trafficReadiness: data.trafficReadiness,
       providers: data.providers.map((provider) => ({
         ...provider,
-        secretConfigured:
-          provider.provider === "fgo"
-            ? Boolean(runtime.FGO_PRIVATE_KEY)
-            : provider.provider === "stripe"
-              ? Boolean(runtime.STRIPE_SECRET_KEY && runtime.STRIPE_WEBHOOK_SECRET)
-              : provider.provider === "smartship"
-                ? Boolean(runtime.SMARTSHIP_API_KEY)
-                : provider.provider === "resend"
-                  ? Boolean(runtime.RESEND_API_KEY)
-                  : false,
+        secretConfigured: configured.some((c) => c.provider === provider.provider && c.configured),
+      })),
+      financialAccounts: data.financialAccounts.map((account) => ({
+        ...account,
+        secretConfigured: configured.some(
+          (c) =>
+            c.provider ===
+              (account.provider === "revolut_business" ? "revolut" : account.provider) &&
+            c.configured,
+        ),
       })),
     };
   });
@@ -221,29 +333,93 @@ const shippingPolicyInput = z.object({
   standardPrice: nullableMoney,
   lockerPrice: nullableMoney,
   freeOver: nullableMoney,
+  defaultWeightG: z.number().int().min(100).max(10_000),
+  defaultLengthCm: z.number().int().min(1).max(500),
+  defaultWidthCm: z.number().int().min(1).max(500),
+  defaultHeightCm: z.number().int().min(1).max(500),
+  allowedCountries: z.string().max(800).default("RO"),
+  internationalReady: z.boolean(),
   easyboxEnabled: z.boolean(),
   useLiveQuotes: z.boolean(),
   markVerified: z.boolean(),
+  senderName: z.string().trim().max(120),
+  senderAddress: z.string().trim().max(300),
+  senderEmail: z.union([z.literal(""), z.string().trim().email().max(254)]),
+  senderPhone: z.string().trim().max(20),
+  senderCityId: z.union([z.number().int().positive(), z.null()]),
+  senderSector: z.number().int().min(0).max(6),
 });
+
+function parseCountryList(input: string): string[] {
+  const countries = (input ?? "")
+    .split(/[;,\n\r]+/)
+    .map((value) => value.trim().toUpperCase())
+    .filter(Boolean);
+  if (countries.some((value) => !/^[A-Z]{2}$/.test(value)))
+    throw new Error("Folosește coduri de țară ISO din două litere.");
+  const uniqueCountries = Array.from(new Set(countries));
+  return uniqueCountries.length ? uniqueCountries : ["RO"];
+}
 
 export const saveShippingPolicy = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator(shippingPolicyInput)
   .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin)
+      throw new Error("Origine nepermisă.");
     assertPermission(context.admin, "integrations.write");
+    const allowedCountries = parseCountryList(data.allowedCountries);
+    const smartshipCredential = await credential(env as CommerceEnv, "smartship");
+    if (data.useLiveQuotes && !smartshipCredential)
+      throw new Error("Configurează cheia SmartShip înainte de activarea cotațiilor.");
+    if (!allowedCountries.includes("RO")) {
+      throw new Error("RO este obligatoriu pentru transportul de bază.");
+    }
+    if (data.internationalReady && allowedCountries.length <= 1) {
+      throw new Error("Pentru livrare internațională setează cel puțin două țări în listă.");
+    }
+    if (!data.internationalReady) {
+      allowedCountries.length = 1;
+      allowedCountries[0] = "RO";
+    }
     if (data.markVerified && !data.useLiveQuotes && data.standardPrice == null) {
       throw new Error("Completează costul standard sau activează cotațiile SmartShip.");
     }
     if (data.easyboxEnabled && !data.useLiveQuotes && data.lockerPrice == null) {
       throw new Error("Completează costul Easybox sau activează cotațiile SmartShip.");
     }
-    await env.DB.prepare(
-      `UPDATE shipping_policy_configs SET standard_price_bani = ?1, locker_price_bani = ?2,
-       free_over_bani = ?3, easybox_enabled = ?4, use_live_quotes = ?5,
-       validation_status = ?6, updated_by = ?7,
+    if (
+      data.markVerified &&
+      data.useLiveQuotes &&
+      (!data.senderName ||
+        !data.senderAddress ||
+        !data.senderEmail ||
+        !/^0\d{9}$/.test(data.senderPhone.replace(/[\s().-]/g, "")) ||
+        !data.senderCityId)
+    ) {
+      throw new Error(
+        "Pentru SmartShip verificat sunt obligatorii numele, adresa, e-mailul, telefonul românesc și ID-ul localității expeditorului.",
+      );
+    }
+    const operationalStatus =
+      data.markVerified && smartshipCredential ? "active" : "setup_required";
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE shipping_policy_configs SET default_weight_g = ?1, default_length_cm = ?2, default_width_cm = ?3,
+       default_height_cm = ?4, allowed_countries_json = ?5,
+       standard_price_bani = ?6, locker_price_bani = ?7,
+       free_over_bani = ?8, easybox_enabled = ?9, use_live_quotes = ?10,
+       validation_status = ?11, updated_by = ?12, sender_name = ?13,
+       sender_address = ?14, sender_email = ?15, sender_phone = ?16,
+       sender_city_id = ?17, sender_sector = ?18, sender_country_code = 'RO',
        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE code = 'RO_STANDARD'`,
-    )
-      .bind(
+      ).bind(
+        data.defaultWeightG,
+        data.defaultLengthCm,
+        data.defaultWidthCm,
+        data.defaultHeightCm,
+        JSON.stringify(allowedCountries),
         data.standardPrice == null ? null : Math.round(data.standardPrice * 100),
         data.lockerPrice == null ? null : Math.round(data.lockerPrice * 100),
         data.freeOver == null ? null : Math.round(data.freeOver * 100),
@@ -251,8 +427,22 @@ export const saveShippingPolicy = createServerFn({ method: "POST" })
         data.useLiveQuotes ? 1 : 0,
         data.markVerified ? "verified" : "requires_approval",
         context.admin.id,
-      )
-      .run();
+        data.senderName || null,
+        data.senderAddress || null,
+        data.senderEmail || null,
+        data.senderPhone || null,
+        data.senderCityId,
+        data.senderSector,
+      ),
+      env.DB.prepare(
+        `UPDATE shipping_methods SET status = ?1,
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE provider = 'smartship'`,
+      ).bind(operationalStatus),
+      env.DB.prepare(
+        `UPDATE delivery_provider_accounts SET status = ?1,
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE provider = 'smartship'`,
+      ).bind(operationalStatus),
+    ]);
     await env.CACHE.delete("commerce:public-config:v1");
     return { ok: true };
   });
@@ -394,13 +584,33 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
     assertPermission(context.admin, "orders.write");
     const request = getRequest();
     const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
-    return {
-      order: await updateOrderStatus(env.DB, {
-        ...data,
-        actorId: context.admin.id,
-        requestId,
-      }),
-    };
+    const order = await updateOrderStatus(env.DB, {
+      ...data,
+      actorId: context.admin.id,
+      requestId,
+    });
+    if (data.status === "Livrată") {
+      const referral = await issuePostDeliveryReferral(env.DB, data.orderId);
+      if (await hasEmailTransport(env as CommerceEnv)) {
+        if (referral.invitation) {
+          await sendReferralInvitation(env as CommerceEnv, {
+            orderId: data.orderId,
+            ...referral.invitation,
+          }).catch((error) =>
+            console.error("referral.invitation_email_failed", { orderId: data.orderId, error }),
+          );
+        }
+        if (referral.advocateReward) {
+          await sendReferralReward(env as CommerceEnv, {
+            orderId: data.orderId,
+            ...referral.advocateReward,
+          }).catch((error) =>
+            console.error("referral.reward_email_failed", { orderId: data.orderId, error }),
+          );
+        }
+      }
+    }
+    return { order };
   });
 
 const updateProductStatusInput = z.object({
