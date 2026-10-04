@@ -75,8 +75,10 @@ function Privacy() {
           și ales pentru comandă, datele necesare pot fi transmise procesatorului de plăți Stripe,
           serviciului de curierat prin SmartShip, furnizorului de facturare FGO și serviciului de
           e-mail Cloudflare Email Service, cu Resend disponibil numai ca soluție de rezervă.
-          Contabilitatea și autoritățile pot primi documentele impuse de lege. Furnizorii au acces
-          în limita rolului lor.
+          Metricool poate primi date tehnice și de utilizare numai după acordul pentru analiză,
+          pentru măsurarea agregată a traficului și eficienței campaniilor. Contabilitatea și
+          autoritățile pot primi documentele impuse de lege. Furnizorii au acces în limita rolului
+          lor.
         </p>
         <p>
           Introducerea unui conector în dashboard nu activează automat transferul. Integrarea
@@ -96,7 +98,9 @@ function Privacy() {
           Setările de import Google Analytics și Search Console din administrare citesc rapoarte ale
           proprietăților autorizate. Ele nu instalează singure urmărire în browser. Dacă vor fi
           activate instrumente opționale de analiză sau publicitate pentru vizitatori, alegerea și
-          retragerea consimțământului vor fi disponibile înaintea utilizării acestora.
+          retragerea consimțământului vor fi disponibile înaintea utilizării acestora. Scriptul
+          Metricool este încărcat numai după opțiunea „Accept analiza”; alegerea este păstrată local
+          în browser și poate fi schimbată oricând din butonul „Preferințe cookie”.
         </p>
       </LegalSection>
       <LegalSection title="Păstrare și acces">
