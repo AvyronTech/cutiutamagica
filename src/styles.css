@@ -3800,7 +3800,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    min-height: 46px;
     border-radius: 14px;
   }
   .product-mobile-buy-bar button svg {
