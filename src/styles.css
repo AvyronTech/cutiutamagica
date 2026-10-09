@@ -3800,7 +3800,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 42px;
+    min-height: 44px;
     border-radius: 14px;
   }
   .product-mobile-buy-bar button svg {
@@ -3985,7 +3985,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   right: 18px;
   z-index: 65;
   display: grid;
-  grid-template-columns: 68px minmax(0, 1fr) 44px;
+  grid-template-columns: 68px minmax(0, 1fr) 46px;
   gap: 11px;
   width: min(390px, calc(100vw - 24px));
   padding: 10px;
@@ -4070,7 +4070,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 .cart-recovery__actions > :first-child {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 46px;
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
@@ -4082,7 +4082,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 .cart-recovery__later {
   min-width: 44px;
-  min-height: 44px;
+  min-height: 46px;
   color: rgb(255 246 231 / 0.62);
   font-size: 10px;
 }
@@ -4090,8 +4090,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   place-items: center;
   border-radius: 50%;
   color: rgb(255 246 231 / 0.6);
@@ -4115,7 +4115,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   .cart-recovery {
     top: max(5.25rem, calc(env(safe-area-inset-top) + 4.4rem));
     right: 12px;
-    grid-template-columns: 58px minmax(0, 1fr) 44px;
+    grid-template-columns: 58px minmax(0, 1fr) 46px;
     gap: 9px;
     width: calc(100vw - 24px);
     border-radius: 17px;
@@ -16146,8 +16146,8 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 }
 .product-card-rail__controls button {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
   border-radius: 999px;
@@ -17186,12 +17186,18 @@ body.product-lightbox-open
   .magic-footer-contact a,
   .magic-footer-nav a {
     display: inline-flex;
+    min-width: 44px;
     min-height: 44px;
     align-items: center;
     padding-block: 9px;
   }
   .magic-footer-nav > div {
     gap: 0;
+  }
+  .magic-footer-brand > a,
+  .magic-footer-cta,
+  .magic-footer-avyron {
+    min-height: 44px;
   }
   .magic-anpc-badge,
   .magic-adr-badge,

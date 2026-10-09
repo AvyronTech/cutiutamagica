@@ -172,7 +172,7 @@ export function ProductCard({
                 animateIntoCart(e.currentTarget, product.image, added);
                 notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
               }}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
             >
               <ShoppingBag className="h-4 w-4" /> Adaugă în coș
             </button>
@@ -180,7 +180,7 @@ export function ProductCard({
         ) : (
           <Link
             {...productLink(product.id)}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-md border py-2 text-sm font-medium transition ${
+            className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border py-2 text-sm font-medium transition ${
               isGlass
                 ? "border-white/25 bg-white/10 text-[color:var(--cream)] hover:bg-white/15"
                 : "border-[color:var(--gold)]/40 bg-[color:var(--cream)]/60 text-[color:var(--wood-dark)] hover:bg-[color:var(--cream)]"

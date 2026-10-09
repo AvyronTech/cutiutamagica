@@ -533,11 +533,11 @@ export function ChatWidget() {
                 rows={1}
                 maxLength={2000}
                 placeholder="Scrie un mesaj..."
-                className="max-h-24 min-h-10 flex-1 resize-none rounded-lg border border-[#8d6b4e]/25 bg-white px-3 py-2.5 text-sm text-[#3c2b22] outline-none focus:border-[var(--chat-accent)]"
+                className="max-h-24 min-h-11 flex-1 resize-none rounded-lg border border-[#8d6b4e]/25 bg-white px-3 py-2.5 text-sm text-[#3c2b22] outline-none focus:border-[var(--chat-accent)]"
               />
               <button
                 disabled={sending || !message.trim()}
-                className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--chat-accent)] text-white transition hover:brightness-110 disabled:opacity-45"
+                className="grid h-11 w-11 place-items-center rounded-lg bg-[var(--chat-accent)] text-white transition hover:brightness-110 disabled:opacity-45"
                 aria-label="Trimite mesajul"
               >
                 {sending ? <LoaderCircle size={17} className="animate-spin" /> : <Send size={17} />}
@@ -552,7 +552,7 @@ export function ChatWidget() {
         type="button"
         hidden={open}
         aria-controls="cutiuta-chat-panel"
-        className="chat-bubble relative grid h-11 w-11 touch-none place-items-center rounded-full border border-white/60 bg-[#3a281f] text-amber-100 shadow-[0_12px_35px_rgba(52,35,26,0.35)] transition-[transform,box-shadow] hover:shadow-[0_15px_38px_rgba(52,35,26,0.45)]"
+        className="chat-bubble relative grid h-12 w-12 touch-none place-items-center rounded-full border border-white/60 bg-[#3a281f] text-amber-100 shadow-[0_12px_35px_rgba(52,35,26,0.35)] transition-[transform,box-shadow] hover:shadow-[0_15px_38px_rgba(52,35,26,0.45)]"
         style={
           bubblePosition
             ? { left: bubblePosition.x, top: bubblePosition.y, right: "auto" }
