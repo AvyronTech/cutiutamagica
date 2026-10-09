@@ -1212,7 +1212,7 @@
 }
 .magic-anpc-badge,
 .magic-adr-badge,
-.magic-payment-badge {
+.magic-stripe-badge {
   height: 36px;
 }
 .magic-footer-bottom {
@@ -14692,7 +14692,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 }
 .magic-anpc-badge,
 .magic-adr-badge,
-.magic-payment-badge {
+.magic-stripe-badge {
   display: flex;
   align-items: center;
   height: 42px;
@@ -14706,7 +14706,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 }
 .magic-anpc-badge:hover,
 .magic-adr-badge:hover,
-.magic-payment-badge:hover {
+.magic-stripe-badge:hover {
   border-color: #e3bf7a7a;
   transform: translateY(-2px);
 }
@@ -14748,32 +14748,32 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   color: #d8e4f7;
   font-size: 8px;
 }
-.magic-payment-badge {
+.magic-stripe-badge {
   width: 170px;
   gap: 9px;
   padding: 0 10px;
   color: #242338;
   background: linear-gradient(135deg, #f7f5ff, #e5e0ff);
 }
-.magic-payment-badge > span:first-child {
+.magic-stripe-badge > span:first-child {
   color: #635bff;
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.06em;
 }
-.magic-payment-badge > span:last-child {
+.magic-stripe-badge > span:last-child {
   display: grid;
   gap: 2px;
   padding-left: 9px;
   border-left: 1px solid #635bff30;
 }
-.magic-payment-badge strong {
+.magic-stripe-badge strong {
   font-size: 8px;
   line-height: 1.1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.magic-payment-badge small {
+.magic-stripe-badge small {
   color: #57536c;
   font-size: 7px;
 }
@@ -15081,7 +15081,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   }
   .magic-anpc-badge,
   .magic-adr-badge,
-  .magic-payment-badge {
+  .magic-stripe-badge {
     width: 168px;
   }
   .magic-footer-avyron {
@@ -16968,7 +16968,7 @@ body.product-lightbox-open
 }
 .magic-anpc-badge,
 .magic-adr-badge,
-.magic-payment-badge {
+.magic-stripe-badge {
   height: 36px;
 }
 .magic-footer-bottom {
@@ -17251,7 +17251,7 @@ body.product-lightbox-open
   }
   .magic-anpc-badge,
   .magic-adr-badge,
-  .magic-payment-badge {
+  .magic-stripe-badge {
     height: 44px;
   }
 }

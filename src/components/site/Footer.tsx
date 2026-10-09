@@ -114,13 +114,18 @@ export function Footer() {
                 <small>ADR și ECC-Net</small>
               </span>
             </a>
-            <div aria-label="Plată ramburs la livrare" className="magic-payment-badge">
-              <span aria-hidden>RON</span>
+            <a
+              href="https://stripe.com/payments"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Stripe Payments"
+              className="magic-stripe-badge"
+            >
+              <span aria-hidden>stripe</span>
               <span>
-                <strong>Plată ramburs</strong>
-                <small>La livrare</small>
+                <strong>Stripe Payments</strong>
               </span>
-            </div>
+            </a>
           </section>
 
           <a
