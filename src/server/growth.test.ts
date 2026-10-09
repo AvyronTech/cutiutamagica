@@ -9,7 +9,7 @@ import { listPublicCatalog } from "./db/catalog.repository";
 import { previousMonth, reportSettingsSchema, marketplaceForUrl } from "@/lib/growth-contracts";
 import type { CommerceEnv } from "./integrations/provider-runtime";
 import { readProviderJson } from "./integrations/provider-runtime";
-import { syncTraffic } from "./services/traffic-integrations";
+import { checkConnection, syncTraffic } from "./services/traffic-integrations";
 
 const databases: DatabaseSync[] = [];
 function database() {
@@ -108,7 +108,7 @@ describe("growth and commerce integration", () => {
       .prepare(
         `INSERT INTO growth_event_daily(event_day,event_name,product_slug,path,event_count)
          VALUES('2026-10-04','page_view','','/',1),
-               ('2026-10-04','product_view','hp-keeper','/produs/hp-keeper',1)`,
+               ('2026-10-04','product_view','hp-keeper','/produs-cutiuta-muzicala-harry-potter-hedwig',1)`,
       )
       .run();
     expect(
@@ -119,6 +119,34 @@ describe("growth and commerce integration", () => {
         .all(),
     ).toEqual([{ event_name: "page_view" }, { event_name: "product_view" }]);
     expect(sql.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    expect(
+      sql
+        .prepare(
+          "SELECT legal_name,registration_number,registered_address,vat_status FROM legal_entities WHERE id='legal_entity_main'",
+        )
+        .get(),
+    ).toMatchObject({
+      legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
+      registration_number: "J2026041938009",
+      registered_address: "JUD. IAŞI, SAT DUMBRĂVIŢA COM. RUGINOASA, STR. RĂZEŞILOR, NR.14",
+      vat_status: "non_vat_payer",
+    });
+  });
+  it("verifies Merchant Center tokens against the current Merchant API", async () => {
+    const { db } = database();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ accounts: [] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const env = { DB: db, GOOGLE_MERCHANT_ACCESS_TOKEN: "merchant-test-token" } as CommerceEnv;
+    await expect(checkConnection(env, "google_merchant")).resolves.toMatchObject({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://merchantapi.googleapis.com/accounts/v1/accounts?pageSize=1",
+      expect.objectContaining({
+        headers: { authorization: "Bearer merchant-test-token" },
+        redirect: "manual",
+      }),
+    );
   });
   it("encrypts credentials and binds ciphertext to its provider", async () => {
     const { db, sql, actor } = database();
@@ -131,21 +159,21 @@ describe("growth and commerce integration", () => {
     sql.exec("UPDATE integration_credentials SET provider='stripe'");
     await expect(credential(env, "stripe")).rejects.toThrow();
   });
-  it("moves FGO onboarding to ready for test without exposing its key", async () => {
+  it("keeps Oblio onboarding inactive while storing its secret encrypted", async () => {
     const { db, sql, actor } = database();
     const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("b".repeat(32)) } as CommerceEnv;
-    await storeCredential(env, "fgo", "fgo-private-test-value", actor);
-    expect(await credential(env, "fgo")).toBe("fgo-private-test-value");
+    await storeCredential(env, "oblio", "oblio-private-test-value", actor);
+    expect(await credential(env, "oblio")).toBe("oblio-private-test-value");
     expect(
       sql
         .prepare(
-          "SELECT status FROM provider_configurations WHERE provider='fgo' AND environment='production'",
+          "SELECT status FROM provider_configurations WHERE provider='oblio' AND environment='production'",
         )
         .get(),
     ).toMatchObject({ status: "ready_for_test" });
     expect(
       JSON.stringify(sql.prepare("SELECT * FROM integration_credentials").all()),
-    ).not.toContain("fgo-private-test-value");
+    ).not.toContain("oblio-private-test-value");
   });
   it("deduplicates monthly reports and excludes customer identity", async () => {
     const { db, actor } = database();

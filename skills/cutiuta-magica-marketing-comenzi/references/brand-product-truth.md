@@ -26,11 +26,13 @@ Evită fundalurile AI generice, sclipiciul excesiv, deformarea cutiuței, mecani
 
 Pentru o adaptare din fotografia reală:
 
-- păstrează produsul ca strat protejat; editează numai fundalul, recuzita, lumina și gradarea;
+- păstrează produsul ca strat protejat și nemodificat; generează fundalul separat, apoi compune fotografia originală sau un decupaj aprobat peste el;
 - verifică forma, capacul, gravura, manivela, cilindrul, pieptenele, șuruburile și proporțiile față de sursă;
 - nu elimina imperfecțiuni reale care ar schimba așteptarea cumpărătorului;
-- indică atunci când recuzita din scenă nu este inclusă;
+- nu enumera recuzita ca parte a ofertei și nu sugera că este inclusă; evită însă fraza standard „decorurile nu sunt incluse” în descrierea socială, exceptând situațiile în care imaginea poate crea o confuzie comercială reală sau politica platformei o cere;
 - păstrează un master fără text și exportă separat pentru fiecare canal.
+
+Un edit generativ direct este numai o previzualizare până la comparația cu sursa. Orice diferență de text, desen, muchie, mecanism, manivelă, reflexie structurală sau proporție invalidează asset-ul. Nu încerca să repari succesiv produsul generat; revino la fotografia originală și schimbă numai placa de fundal.
 
 Formate de pornire, reverificate înainte de publicare: feed vertical `1080×1350`, pătrat `1080×1080`, story/reel/TikTok `1080×1920`. Păstrează textul și CTA-ul în safe zones și nu include un buton desenat dacă platforma nu permite un link/sticker funcțional în acel loc.
 

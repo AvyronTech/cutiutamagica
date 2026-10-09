@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { awardMagicStarsForApprovedReview } from "@/server/services/magic-rewards";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import { reviewInput, validReviewSource, type PublicReview } from "@/lib/reviews";
 import { boundedJson } from "./bounded-json";
@@ -39,7 +40,27 @@ const moderationInput = z.object({
 });
 const visible = "p.status='active' AND p.published_at IS NOT NULL AND p.product_type='music_box'";
 const publicSelect =
-  "r.id,p.slug AS productSlug,p.name AS productName,r.display_name AS displayName,r.rating,r.body,r.language,r.country_code AS countryCode,r.source,r.source_url AS sourceUrl";
+  "r.id,p.slug AS productSlug,p.name AS productName,r.display_name AS displayName,r.rating,r.body,r.language,r.country_code AS countryCode,r.source,r.source_url AS sourceUrl,CASE WHEN r.photo_r2_key IS NOT NULL THEN '/api/v1/review-media/'||r.id ELSE NULL END AS photoUrl";
+
+function imageExtension(bytes: Uint8Array, type: string): "jpg" | "png" | "webp" | null {
+  if (type === "image/jpeg" && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
+    return "jpg";
+  if (
+    type === "image/png" &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  )
+    return "png";
+  if (
+    type === "image/webp" &&
+    new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" &&
+    new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP"
+  )
+    return "webp";
+  return null;
+}
 async function product(env: Env, slug: string) {
   const p = await env.DB.prepare(
     `SELECT p.id,p.name FROM products p WHERE p.slug=?1 AND ${visible}`,
@@ -75,8 +96,64 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
   const url = new URL(request.url),
     path = url.pathname,
     admin = path === "/api/v1/admin/reviews" || path.startsWith("/api/v1/admin/reviews/");
-  if (!admin && path !== "/api/v1/reviews") return null;
+  const photoMatch = path.match(/^\/api\/v1\/reviews\/([a-f0-9-]{36})\/photo$/);
+  const publicPhotoMatch = path.match(/^\/api\/v1\/review-media\/([a-f0-9-]{36})$/);
+  if (!admin && path !== "/api/v1/reviews" && !photoMatch && !publicPhotoMatch) return null;
   try {
+    if (publicPhotoMatch && request.method === "GET") {
+      const row = await env.DB.prepare(
+        "SELECT photo_r2_key FROM product_reviews WHERE id=?1 AND status='approved' AND photo_r2_key IS NOT NULL",
+      )
+        .bind(publicPhotoMatch[1])
+        .first<{ photo_r2_key: string }>();
+      if (!row) return new Response("Not found", { status: 404 });
+      const object = await env.MEDIA.get(row.photo_r2_key);
+      if (!object) return new Response("Not found", { status: 404 });
+      const headers = new Headers();
+      object.writeHttpMetadata(headers);
+      headers.set("etag", object.httpEtag);
+      headers.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+      headers.set("x-content-type-options", "nosniff");
+      return new Response(object.body, { headers });
+    }
+    if (photoMatch && request.method === "POST") {
+      sameOrigin(request);
+      const account = await currentReviewer(request, env);
+      if (!account) throw reviewFailure("Conectează-te cu Google pentru a adăuga fotografia.", 401);
+      const review = await env.DB.prepare(
+        `SELECT id FROM product_reviews
+         WHERE id=?1 AND account_id=?2 AND status='pending' AND photo_r2_key IS NULL`,
+      )
+        .bind(photoMatch[1], account.id)
+        .first<{ id: string }>();
+      if (!review)
+        throw reviewFailure("Fotografia nu mai poate fi adăugată acestei recenzii.", 409);
+      const contentLength = Number(request.headers.get("content-length") ?? 0);
+      if (contentLength > 5_500_000)
+        throw reviewFailure("Fotografia poate avea maximum 5 MB.", 413);
+      const form = await request.formData();
+      const file = form.get("photo");
+      if (!(file instanceof File) || file.size < 100 || file.size > 5_000_000)
+        throw reviewFailure("Alege o fotografie JPG, PNG sau WebP de maximum 5 MB.");
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const extension = imageExtension(bytes, file.type);
+      if (!extension) throw reviewFailure("Formatul fotografiei nu este acceptat.");
+      const key = `reviews/${account.id}/${review.id}/${crypto.randomUUID()}.${extension}`;
+      await env.MEDIA.put(key, bytes, {
+        httpMetadata: { contentType: file.type },
+        customMetadata: { reviewId: review.id, accountId: account.id },
+      });
+      const result = await env.DB.prepare(
+        "UPDATE product_reviews SET photo_r2_key=?1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?2 AND account_id=?3 AND photo_r2_key IS NULL",
+      )
+        .bind(key, review.id, account.id)
+        .run();
+      if (!result.meta.changes) {
+        await env.MEDIA.delete(key);
+        throw reviewFailure("Fotografia a fost deja adăugată.", 409);
+      }
+      return reviewJson({ data: { uploaded: true } }, 201);
+    }
     if (admin) {
       const identity = await authenticateAdminRequest(
         request,
@@ -160,6 +237,7 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
         ]);
         if (!result[0].meta.changes)
           throw reviewFailure("Recenzia s-a schimbat. Reîncarcă lista.", 409);
+        if (v.status === "approved") await awardMagicStarsForApprovedReview(env.DB, match[1]);
         return reviewJson({ data: { saved: true } });
       }
       throw reviewFailure("Metodă nepermisă.", 405);

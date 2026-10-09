@@ -5,7 +5,7 @@ import { z } from "zod";
 import { assertPermission, requireAdminAuth } from "@/lib/admin-auth";
 import { getBusinessHubData } from "@/server/db/business-hub.repository";
 import { getAdminCommerceOperations } from "@/server/db/commerce-operations.repository";
-import { issueFgoInvoiceForOrder } from "@/server/services/commerce-operations.service";
+import { issueInvoiceForOrder } from "@/server/services/commerce-operations.service";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 import { credentialStatuses, credential } from "@/server/services/growth-settings";
 import { ADMIN_ORDER_STATUSES } from "@/lib/admin-contracts";
@@ -15,6 +15,7 @@ import {
   sendReferralInvitation,
   sendReferralReward,
 } from "@/server/integrations/resend";
+import { awardMagicStarsForDeliveredOrder } from "@/server/services/magic-rewards";
 import {
   getAdminDashboardData,
   getAdminIntegrationsData,
@@ -27,6 +28,8 @@ import {
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
   saveAdminSettingsData,
+  createAdminOrder,
+  createAdminProduct,
   updateOrderStatus,
   updateProductStatus,
 } from "@/server/db/admin.repository";
@@ -63,6 +66,72 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     assertPermission(context.admin, "dashboard.read");
     return getAdminDashboardData(env.DB);
+  });
+
+const createOrderInput = z.object({
+  channelCode: z.enum(["website", "emag", "vinted", "olx", "okazii", "google_merchant"]),
+  customerName: z.string().trim().min(2).max(120),
+  customerPhone: z.string().trim().min(8).max(30),
+  customerEmail: z.union([z.literal(""), z.string().trim().email().max(254)]).optional(),
+  productId: z.string().trim().min(1).max(128),
+  quantity: z.number().int().min(1).max(20),
+  shippingBani: z.number().int().min(0).max(100_000),
+  externalOrderId: z.string().trim().max(120).optional(),
+  internalNote: z.string().trim().max(1_000).optional(),
+});
+
+export const createAdminOrderEntry = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(createOrderInput)
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin) {
+      throw new Error("Cerere de administrare nepermisă.");
+    }
+    assertPermission(context.admin, "orders.write");
+    return {
+      order: await createAdminOrder(env.DB, {
+        ...data,
+        actorId: context.admin.id,
+        requestId: request.headers.get("x-request-id") ?? crypto.randomUUID(),
+      }),
+    };
+  });
+
+const createProductInput = z.object({
+  name: z.string().trim().min(3).max(180),
+  slug: z
+    .string()
+    .trim()
+    .min(3)
+    .max(100)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slugul poate conține litere mici, cifre și cratime."),
+  sku: z
+    .string()
+    .trim()
+    .min(3)
+    .max(80)
+    .regex(/^[A-Za-z0-9_-]+$/, "SKU-ul poate conține litere, cifre, cratimă și underscore."),
+  category: z.string().trim().min(2).max(100),
+  priceBani: z.number().int().min(1).max(10_000_000),
+});
+
+export const createAdminProductDraft = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(createProductInput)
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin) {
+      throw new Error("Cerere de administrare nepermisă.");
+    }
+    assertPermission(context.admin, "catalog.write");
+    const result = await createAdminProduct(env.DB, {
+      ...data,
+      actorId: context.admin.id,
+      requestId: request.headers.get("x-request-id") ?? crypto.randomUUID(),
+    });
+    await env.CACHE.delete("catalog:public:v1");
+    return result;
   });
 
 export const getAdminNotifications = createServerFn({ method: "GET" })
@@ -240,12 +309,12 @@ export const getCommerceOperations = createServerFn({ method: "GET" })
 
 const invoiceOrderInput = z.object({ orderId: z.string().uuid() });
 
-export const issueFgoInvoice = createServerFn({ method: "POST" })
+export const issueInvoice = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator(invoiceOrderInput)
   .handler(async ({ context, data }) => {
     assertPermission(context.admin, "orders.write");
-    return issueFgoInvoiceForOrder(env as CommerceEnv, data.orderId, {
+    return issueInvoiceForOrder(env as CommerceEnv, data.orderId, {
       id: context.admin.id,
       email: context.admin.email,
     });
@@ -591,6 +660,7 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
     });
     if (data.status === "Livrată") {
       const referral = await issuePostDeliveryReferral(env.DB, data.orderId);
+      await awardMagicStarsForDeliveredOrder(env.DB, data.orderId);
       if (await hasEmailTransport(env as CommerceEnv)) {
         if (referral.invitation) {
           await sendReferralInvitation(env as CommerceEnv, {

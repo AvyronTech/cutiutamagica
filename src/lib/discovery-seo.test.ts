@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { readProductDiscovery, safeJsonLd } from "./product-discovery";
 import { giftGuide, giftGuides } from "@/data/gift-guides";
 import { renderSitemap } from "./seo-sitemap";
-import type { CatalogProduct } from "@/server/db/catalog.repository";
+import type { SitemapProduct } from "./seo-sitemap";
 
 describe("product discovery and search metadata", () => {
   it("has distinct valid editorial profiles for all ten models", () => {
@@ -98,12 +98,14 @@ describe("product discovery and search metadata", () => {
     const products = [
       { slug: "music & joy", imageUrl: "/photo.webp?a=1&b=2", updatedAt: "2026-09-23T12:00:00Z" },
       { slug: "future", imageUrl: "javascript:alert(1)", updatedAt: "invalid" },
-    ] as CatalogProduct[];
+    ] as SitemapProduct[];
     const xml = renderSitemap(products);
-    expect(xml).toContain("/produs/music%20%26%20joy</loc>");
+    expect(xml).toContain("/produs-cutiuta-muzicala-music-joy</loc>");
     expect(xml).toContain("photo.webp?a=1&amp;b=2");
     expect(xml).not.toContain("javascript:");
     expect(xml).not.toContain("invalid");
-    expect(xml).toContain("<url><loc>https://cutiutamagica.eu/produs/future</loc></url>");
+    expect(xml).toContain(
+      "<url><loc>https://cutiutamagica.eu/produs-cutiuta-muzicala-future</loc></url>",
+    );
   });
 });

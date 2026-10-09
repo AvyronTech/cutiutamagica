@@ -1,4 +1,5 @@
 import type { CatalogProduct } from "@/server/db/catalog.repository";
+import { productPath } from "@/lib/product-url";
 
 const STORE_URL = "https://cutiutamagica.eu";
 const STORE_NAME = "Cutiuța Magică";
@@ -40,7 +41,7 @@ export function merchantProducts(products: CatalogProduct[]) {
 export function renderGoogleMerchantFeed(products: CatalogProduct[]): string {
   const items = merchantProducts(products)
     .map((product) => {
-      const productUrl = `${STORE_URL}/produs/${encodeURIComponent(product.slug)}`;
+      const productUrl = `${STORE_URL}${productPath(product.slug)}`;
       const primaryImage = absoluteUrl(product.imageUrl)!;
       const additionalImages = [
         ...new Set(

@@ -1,407 +1,327 @@
-import { useState, useEffect } from "react";
-import {
-  ShoppingCart,
-  TrendingUp,
-  Package,
-  Truck,
-  ArrowUpRight,
-  ArrowDownRight,
-  ExternalLink,
-  Calendar,
-  Clock,
-  Sun,
-  Moon,
-  Sunrise,
-  Coffee,
-} from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Bot,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Package,
+  PackageCheck,
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  TrendingUp,
+  Truck,
+  Wallet,
+} from "lucide-react";
 import { getAdminDashboard } from "@/lib/admin.functions";
 
-const quickLinks = [
-  { name: "SameDay Courier", url: "https://www.sameday.ro", color: "#F59E0B" },
-  { name: "FanCourier", url: "https://www.fancourier.ro", color: "#10B981" },
-  { name: "Verificare AWB", url: "https://www.sameday.ro/tracking", color: "#7C3AED" },
-  { name: "eMag Marketplace", url: "https://marketplace.emag.ro", color: "#3B82F6" },
-];
-
 const channelColors: Record<string, string> = {
-  website: "#7C3AED",
-  emag: "#F59E0B",
-  olx: "#10B981",
-  instagram: "#E1306C",
-  tiktok: "#69C9D0",
-  facebook: "#3B82F6",
-  pinterest: "#EF4444",
-  whatsapp: "#22C55E",
+  website: "bg-violet-400",
+  emag: "bg-amber-400",
+  vinted: "bg-teal-400",
+  olx: "bg-emerald-400",
+  okazii: "bg-rose-400",
+  google_merchant: "bg-blue-400",
 };
 
-function getFormattedDate(): string {
-  const now = new Date();
-  const days = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
-  const months = [
-    "Ianuarie",
-    "Februarie",
-    "Martie",
-    "Aprilie",
-    "Mai",
-    "Iunie",
-    "Iulie",
-    "August",
-    "Septembrie",
-    "Octombrie",
-    "Noiembrie",
-    "Decembrie",
-  ];
-  return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-}
-
-function getFormattedTime(): string {
-  const now = new Date();
-  return now.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
-}
-
-function getGreeting(): { text: string; emoji: string; description: string; Icon: typeof Sun } {
+function greeting() {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 9) {
-    return {
-      text: "Bună dimineața",
-      emoji: "☀️",
-      description: "Începe o zi productivă! Verifică comenzile noi.",
-      Icon: Sunrise,
-    };
-  }
-  if (hour >= 9 && hour < 12) {
-    return {
-      text: "Bună dimineața",
-      emoji: "☕",
-      description: "Timp perfect pentru procesarea comenzilor.",
-      Icon: Coffee,
-    };
-  }
-  if (hour >= 12 && hour < 18) {
-    return {
-      text: "Bună ziua",
-      emoji: "🌤️",
-      description: "Verifică statusul livrărilor de azi.",
-      Icon: Sun,
-    };
-  }
-  if (hour >= 18 && hour < 22) {
-    return {
-      text: "Bună seara",
-      emoji: "🌙",
-      description: "Rezumatul zilei - vezi ce ai realizat!",
-      Icon: Moon,
-    };
-  }
-  return {
-    text: "Noapte bună",
-    emoji: "🌙",
-    description: "Odihnește-te, mâine e o zi nouă!",
-    Icon: Moon,
-  };
+  if (hour < 12) return "Bună dimineața";
+  if (hour < 18) return "Bună ziua";
+  return "Bună seara";
+}
+
+function formatDate(now: Date) {
+  return new Intl.DateTimeFormat("ro-RO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(now);
 }
 
 export default function Dashboard() {
   const fetchDashboard = useServerFn(getAdminDashboard);
-  const {
-    data: live,
-    isLoading,
-    isError,
-  } = useQuery({
+  const [now, setNow] = useState(() => new Date());
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "dashboard"],
     queryFn: () => fetchDashboard(),
     staleTime: 30_000,
   });
 
-  const liveStats = live?.stats;
-  const stats = [
-    {
-      label: "Comenzi Totale",
-      value: liveStats ? String(liveStats.ordersTotal) : "—",
-      change: liveStats ? `${liveStats.ordersCount30d} / 30z` : "",
-      trend: "up" as const,
-      icon: ShoppingCart,
-      color: "from-purple-500 to-purple-700",
-    },
-    {
-      label: "Venituri 30z",
-      value: liveStats ? `${liveStats.revenue30d.toLocaleString("ro-RO")} RON` : "—",
-      change: "Live",
-      trend: "up" as const,
-      icon: TrendingUp,
-      color: "from-amber-500 to-amber-700",
-    },
-    {
-      label: "Produse Active",
-      value: liveStats ? `${liveStats.productsActive}` : "—",
-      change: liveStats ? `/ ${liveStats.productsTotal} total` : "",
-      trend: "up" as const,
-      icon: Package,
-      color: "from-emerald-500 to-emerald-700",
-    },
-    {
-      label: "Comenzi Deschise",
-      value: liveStats ? String(liveStats.ordersOpen) : "—",
-      change: "În procesare",
-      trend: "up" as const,
-      icon: Truck,
-      color: "from-cyan-500 to-cyan-700",
-    },
-  ];
-
-  const recentOrders = live?.recentOrders ?? [];
-  const totalChannelOrders = (live?.channels ?? []).reduce(
-    (total, channel) => total + channel.validOrdersCount,
-    0,
-  );
-  const platformStats = (live?.channels ?? [])
-    .filter((channel) => channel.validOrdersCount > 0)
-    .map((channel) => ({
-      name: channel.name,
-      orders: channel.validOrdersCount,
-      value:
-        totalChannelOrders > 0
-          ? Math.round((channel.validOrdersCount / totalChannelOrders) * 1_000) / 10
-          : 0,
-      color: channelColors[channel.code] ?? "#64748B",
-    }));
-  const [currentTime, setCurrentTime] = useState(getFormattedTime());
-  const greeting = getGreeting();
-
-  // Update time every minute
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(getFormattedTime());
-    }, 60000);
-    return () => clearInterval(interval);
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
   }, []);
 
-  return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Page Title with Date - Dynamic greeting synced with time */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-bold text-white">
-              {greeting.text}! {greeting.emoji}
-            </h1>
-          </div>
-          <p className="text-slate-400 text-xs md:text-sm mt-1">{greeting.description}</p>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1E293B]/60 border border-[#334155]/50">
-          <Calendar className="w-4 h-4 text-purple-400" />
-          <div className="text-right">
-            <p className="text-xs md:text-sm font-medium text-white">{getFormattedDate()}</p>
-            <div className="flex items-center gap-1 justify-end">
-              <Clock className="w-3 h-3 text-slate-500" />
-              <p className="text-[10px] text-slate-400">{currentTime} • Sincronizat</p>
-            </div>
-          </div>
-        </div>
-      </div>
+  const stats = data?.stats;
+  const attention = [
+    {
+      label: "Comenzi de procesat",
+      value: stats?.ordersOpen ?? 0,
+      hint: "Confirmă, pregătește și predă curierului",
+      path: "/admin/orders",
+      icon: ShoppingCart,
+      tone: "text-blue-300 bg-blue-400/10 border-blue-400/20",
+    },
+    {
+      label: "Produse incomplete",
+      value: stats?.productsIncomplete ?? 0,
+      hint: "Completează imagini, SEO și informații",
+      path: "/admin/products",
+      icon: Package,
+      tone: "text-amber-300 bg-amber-400/10 border-amber-400/20",
+    },
+    {
+      label: "Sincronizări cu probleme",
+      value: stats?.syncFailuresOpen ?? 0,
+      hint: "Verifică legăturile cu platformele",
+      path: "/admin/integrations",
+      icon: AlertTriangle,
+      tone: "text-rose-300 bg-rose-400/10 border-rose-400/20",
+    },
+  ];
+  const channels = data?.channels ?? [];
+  const totalChannelOrders = channels.reduce((sum, channel) => sum + channel.validOrdersCount, 0);
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.label} className="glass-card rounded-xl p-3 md:p-5">
-              <div className="flex items-center justify-between mb-2 md:mb-3">
-                <div
-                  className={`w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-br ${stat.color} flex items-center justify-center`}
-                >
-                  <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                </div>
-                <div
-                  className={`flex items-center gap-0.5 text-[10px] md:text-xs font-medium ${stat.trend === "up" ? "text-emerald-400" : "text-red-400"}`}
-                >
-                  {stat.trend === "up" ? (
-                    <ArrowUpRight className="w-3 h-3" />
-                  ) : (
-                    <ArrowDownRight className="w-3 h-3" />
-                  )}
-                  {stat.change}
-                </div>
-              </div>
-              <p className="text-lg md:text-2xl font-bold text-white">{stat.value}</p>
-              <p className="text-[11px] md:text-sm text-slate-400 mt-0.5 md:mt-1">{stat.label}</p>
+  return (
+    <div className="space-y-5 md:space-y-6">
+      <section className="relative overflow-hidden rounded-2xl border border-purple-400/20 bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.18),transparent_35%),linear-gradient(135deg,#131d31,#0d1727)] p-5 md:p-7">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-purple-300">
+              <Sparkles className="h-4 w-4" /> Centrul Cutiuței Magice
             </div>
-          );
-        })}
-      </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+              Prezentare generală
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              {greeting()}. Aici vezi ce merită atenție acum și continui rapid fiecare flux al
+              magazinului.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+              <CalendarDays className="h-4 w-4 text-purple-300" /> {formatDate(now)}
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+              <Clock3 className="h-4 w-4 text-cyan-300" />
+              {now.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          </div>
+        </div>
+      </section>
 
       {isError && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-          Dashboardul D1 nu a putut fi încărcat. Verifică autentificarea și bindingul Workerului.
+          Datele operaționale nu au putut fi încărcate. Verifică autentificarea și conexiunea D1.
         </div>
       )}
 
-      {/* Main Content Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Recent Orders - Takes 2 columns */}
-        <div className="lg:col-span-2 glass-card rounded-xl p-4 md:p-5">
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <h3 className="text-base md:text-lg font-semibold text-white">Comenzi Recente</h3>
-            <a
-              href="/orders"
-              className="text-purple-400 text-xs md:text-sm hover:text-purple-300 transition-colors"
+      <section aria-label="Indicatori esențiali" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {[
+          {
+            label: "Venituri · 30 zile",
+            value: stats ? `${stats.revenue30d.toLocaleString("ro-RO")} lei` : "—",
+            note: stats ? `${stats.ordersCount30d} comenzi` : "Se încarcă",
+            icon: Wallet,
+            color: "from-violet-500 to-fuchsia-600",
+          },
+          {
+            label: "Comenzi deschise",
+            value: stats ? String(stats.ordersOpen) : "—",
+            note: `${stats?.fulfillmentOpen ?? 0} în livrare`,
+            icon: Truck,
+            color: "from-blue-500 to-cyan-500",
+          },
+          {
+            label: "Produse publicate",
+            value: stats ? String(stats.productsActive) : "—",
+            note: `${stats?.productsTotal ?? 0} în catalog`,
+            icon: ShoppingBag,
+            color: "from-emerald-500 to-teal-500",
+          },
+          {
+            label: "Plăți de verificat",
+            value: stats ? String(stats.paymentsFailed) : "—",
+            note: stats?.paymentsFailed ? "Necesită atenție" : "Totul este în regulă",
+            icon: stats?.paymentsFailed ? AlertTriangle : CheckCircle2,
+            color: stats?.paymentsFailed
+              ? "from-rose-500 to-orange-500"
+              : "from-slate-500 to-slate-600",
+          },
+        ].map(({ label, value, note, icon: Icon, color }) => (
+          <article key={label} className="glass-card rounded-xl p-4 md:p-5">
+            <div
+              className={`mb-4 grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br ${color}`}
             >
-              Vezi toate →
-            </a>
+              <Icon className="h-4 w-4 text-white" />
+            </div>
+            <p className="text-xl font-bold text-white md:text-2xl">{isLoading ? "…" : value}</p>
+            <p className="mt-1 text-xs font-medium text-slate-300">{label}</p>
+            <p className="mt-1 text-[11px] text-slate-500">{note}</p>
+          </article>
+        ))}
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
+        <section className="glass-card rounded-2xl p-4 md:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-white">Necesită atenție</h2>
+              <p className="mt-1 text-xs text-slate-500">Priorități calculate din datele reale.</p>
+            </div>
+            <Link
+              to="/admin/notifications"
+              className="text-xs font-medium text-purple-300 hover:text-purple-200"
+            >
+              Toate alertele
+            </Link>
           </div>
-          <div className="space-y-2">
-            {recentOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-[#1E293B]/50 transition-colors border-b border-[#334155]/30 last:border-0"
+          <div className="grid gap-3 md:grid-cols-3">
+            {attention.map(({ label, value, hint, path, icon: Icon, tone }) => (
+              <Link
+                key={label}
+                to={path}
+                className={`group rounded-xl border p-4 transition hover:-translate-y-0.5 ${tone}`}
               >
-                <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-[#1E293B] flex items-center justify-center flex-shrink-0">
-                    <span className="text-[10px] font-bold text-purple-300">
-                      {order.customer
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")}
+                <div className="flex items-center justify-between">
+                  <Icon className="h-5 w-5" />
+                  <span className="text-2xl font-bold text-white">{isLoading ? "…" : value}</span>
+                </div>
+                <p className="mt-4 text-sm font-semibold text-white">{label}</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-400">{hint}</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold">
+                  Deschide <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="glass-card rounded-2xl p-4 md:p-5">
+          <h2 className="text-base font-semibold text-white">Acțiuni rapide</h2>
+          <p className="mt-1 text-xs text-slate-500">Continuă un flux fără pași în plus.</p>
+          <div className="mt-4 grid gap-2">
+            {[
+              { label: "Adaugă o comandă", path: "/admin/orders", icon: ShoppingCart },
+              { label: "Adaugă un produs", path: "/admin/products", icon: PackageCheck },
+              { label: "Deschide Social Media Agent", path: "/admin/ai", icon: Bot },
+              { label: "Vezi situația financiară", path: "/admin/financiar", icon: TrendingUp },
+            ].map(({ label, path, icon: Icon }) => (
+              <Link
+                key={label}
+                to={path}
+                className="group flex items-center justify-between rounded-lg border border-[#2b3950] bg-[#0d1727] px-3 py-2.5 text-xs font-medium text-slate-300 transition hover:border-purple-400/40 hover:text-white"
+              >
+                <span className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-purple-300" /> {label}
+                </span>
+                <ArrowRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-purple-300" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
+        <section className="glass-card rounded-2xl p-4 md:p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-white">Comenzi recente</h2>
+              <p className="mt-1 text-xs text-slate-500">Ultimele intrări din toate canalele.</p>
+            </div>
+            <Link
+              to="/admin/orders"
+              className="text-xs font-medium text-purple-300 hover:text-purple-200"
+            >
+              Vezi toate
+            </Link>
+          </div>
+          <div className="space-y-1.5">
+            {(data?.recentOrders ?? []).slice(0, 6).map((order) => (
+              <Link
+                key={order.id}
+                to="/admin/orders"
+                className="flex items-center justify-between gap-3 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-[#334155] hover:bg-[#0f1929]"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-white">
+                      {order.customer}
+                    </span>
+                    <span className="rounded bg-purple-400/10 px-1.5 py-0.5 text-[9px] font-semibold text-purple-200">
+                      {order.platform}
                     </span>
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs md:text-sm font-medium text-slate-200 truncate">
-                        {order.customer}
-                      </p>
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-medium whitespace-nowrap ${
-                          order.platform === "Cutiuța Magică"
-                            ? "platform-cutiuta"
-                            : order.platform === "eMag"
-                              ? "platform-emag"
-                              : order.platform === "OLX"
-                                ? "platform-olx"
-                                : order.platform === "Vinted"
-                                  ? "platform-vinted"
-                                  : order.platform === "Instagram"
-                                    ? "platform-instagram"
-                                    : order.platform === "TikTok"
-                                      ? "platform-tiktok"
-                                      : "platform-facebook"
-                        }`}
-                      >
-                        {order.platform}
-                      </span>
-                    </div>
-                    <p className="text-[10px] md:text-xs text-slate-400 truncate">
-                      {order.products}
-                    </p>
-                  </div>
+                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                    {order.orderNumber} · {order.products}
+                  </p>
                 </div>
-                <div className="text-right flex-shrink-0 ml-2">
-                  <p className="text-xs md:text-sm font-semibold text-white">{order.total} RON</p>
-                  <span
-                    className={`text-[10px] md:text-xs ${
-                      order.status === "Nouă"
-                        ? "text-blue-400"
-                        : order.status === "Procesare"
-                          ? "text-amber-400"
-                          : order.status === "Expediată"
-                            ? "text-purple-400"
-                            : order.status === "Livrată"
-                              ? "text-emerald-400"
-                              : "text-red-400"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
+                <div className="shrink-0 text-right">
+                  <p className="text-xs font-semibold text-white">
+                    {order.total.toLocaleString("ro-RO")} {order.currency}
+                  </p>
+                  <p className="text-[10px] text-slate-500">{order.status}</p>
                 </div>
-              </div>
+              </Link>
             ))}
-            {!isLoading && recentOrders.length === 0 && (
-              <div className="py-10 text-center">
-                <Package className="mx-auto mb-2 h-9 w-9 text-slate-700" />
-                <p className="text-sm text-slate-400">Nu există încă nicio comandă în D1.</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Datele demonstrative au fost eliminate.
-                </p>
+            {!isLoading && !(data?.recentOrders.length ?? 0) && (
+              <div className="py-10 text-center text-sm text-slate-500">
+                Nu există încă nicio comandă.
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Platform Distribution */}
-        <div className="glass-card rounded-xl p-4 md:p-5">
-          <h3 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4">
-            Comenzi pe Platforme
-          </h3>
-          {platformStats.length > 0 ? (
-            <ResponsiveContainer width="100%" height={160}>
-              <PieChart>
-                <Pie
-                  data={platformStats}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={65}
-                  dataKey="value"
-                >
-                  {platformStats.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "#1E293B",
-                    border: "1px solid #334155",
-                    borderRadius: "8px",
-                    color: "#F1F5F9",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex h-40 items-center justify-center text-center text-xs text-slate-500">
-              Distribuția va apărea după prima comandă reală.
+        <section className="glass-card rounded-2xl p-4 md:p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-white">Canale de vânzare</h2>
+              <p className="mt-1 text-xs text-slate-500">Comenzi și stare de conectare.</p>
             </div>
-          )}
-          <div className="space-y-1.5 mt-2">
-            {platformStats.map((p) => (
-              <div key={p.name} className="flex items-center justify-between text-xs md:text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }}></div>
-                  <span className="text-slate-300">{p.name}</span>
-                </div>
-                <span className="text-slate-400">{p.value}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Links */}
-      <div className="glass-card rounded-xl p-4 md:p-5">
-        <h3 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4">Acces Rapid</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-          {quickLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-[#0F172A] border border-[#334155] hover:border-purple-500/50 transition-all group"
+            <Link
+              to="/admin/platforms"
+              className="text-xs font-medium text-purple-300 hover:text-purple-200"
             >
-              <div
-                className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: `${link.color}20` }}
-              >
-                <ExternalLink className="w-3.5 h-3.5 md:w-4 md:h-4" style={{ color: link.color }} />
-              </div>
-              <span className="text-xs md:text-sm font-medium text-slate-300 group-hover:text-white transition-colors truncate">
-                {link.name}
-              </span>
-            </a>
-          ))}
-        </div>
+              Administrează
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {channels.slice(0, 7).map((channel) => {
+              const share = totalChannelOrders
+                ? Math.round((channel.validOrdersCount / totalChannelOrders) * 100)
+                : 0;
+              return (
+                <div key={channel.id}>
+                  <div className="mb-1.5 flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-2 text-slate-300">
+                      <span
+                        className={`h-2 w-2 rounded-full ${channelColors[channel.code] ?? "bg-slate-500"}`}
+                      />
+                      {channel.name}
+                    </span>
+                    <span className="text-slate-500">
+                      {channel.validOrdersCount} ·{" "}
+                      {channel.status === "active" ? "activ" : "de configurat"}
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[#0d1727]">
+                    <div
+                      className={`h-full rounded-full ${channelColors[channel.code] ?? "bg-slate-500"}`}
+                      style={{ width: `${Math.max(share, channel.validOrdersCount ? 4 : 0)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
     </div>
   );

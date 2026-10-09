@@ -36,7 +36,7 @@ describe("growth event ingestion", () => {
         name: "add_to_cart",
         sessionId: "dd5c7018-cbc4-456e-b459-1b696104f863",
         productSlug: "hp-keeper",
-        path: "/produs/hp-keeper",
+        path: "/produs-cutiuta-muzicala-harry-potter-hedwig",
         value: 119,
         quantity: 1,
         properties: { source: "product" },
@@ -58,7 +58,7 @@ describe("growth event ingestion", () => {
       "test",
       expect.stringMatching(/^[a-f0-9]{24}$/),
       "hp-keeper",
-      "/produs/hp-keeper",
+      "/produs-cutiuta-muzicala-harry-potter-hedwig",
       '{"source":"product"}',
     ]);
     expect(blobs).not.toContain("dd5c7018-cbc4-456e-b459-1b696104f863");
@@ -66,7 +66,7 @@ describe("growth event ingestion", () => {
     expect(harness.bind).toHaveBeenCalledWith(
       "add_to_cart",
       "hp-keeper",
-      "/produs/hp-keeper",
+      "/produs-cutiuta-muzicala-harry-potter-hedwig",
       119,
       1,
     );

@@ -13,23 +13,26 @@ export function FloatingCartButton({
   pathname,
   open,
   onOpen,
+  forceVisible = false,
 }: {
   pathname: string;
   open: boolean;
   onOpen: (trigger: HTMLButtonElement, side: WidgetSide) => void;
+  forceVisible?: boolean;
 }) {
   const { totalQty, totals } = useShop();
   const chat = useChatPlacement();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  if (!mounted || !showFloatingCart(pathname, totalQty)) return null;
-  const side = oppositeSide(chat.side);
+  if (!mounted || (!forceVisible && !showFloatingCart(pathname, totalQty))) return null;
+  const side = forceVisible ? "right" : oppositeSide(chat.side);
   return createPortal(
     <button
       type="button"
       hidden={open || chat.open}
       className="floating-cart-button"
       data-side={side}
+      data-after-hero={forceVisible || undefined}
       data-cart-target="floating"
       aria-label={`Deschide coșul: ${totalQty} ${totalQty === 1 ? "cutiuță" : "cutiuțe"}, ${totals.total.toLocaleString("ro-RO")} lei`}
       aria-haspopup="dialog"
@@ -42,7 +45,7 @@ export function FloatingCartButton({
       </span>
       <span>
         <strong>Coșul tău</strong>
-        <small>{totals.total.toLocaleString("ro-RO")} lei · TVA incl.</small>
+        <small>{totals.total.toLocaleString("ro-RO")} lei · preț final</small>
       </span>
       <ArrowUpRight size={16} aria-hidden="true" />
     </button>,

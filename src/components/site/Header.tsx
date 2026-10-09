@@ -36,6 +36,7 @@ export function Header() {
   }, [pathname]);
   const [compact, setCompact] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
   const compactRef = useRef(false);
   const hiddenRef = useRef(false);
 
@@ -54,7 +55,11 @@ export function Header() {
     const update = () => {
       frame = 0;
       const y = Math.max(0, window.scrollY);
-      const next = y > 72;
+      const hero = pathname === "/" ? document.getElementById("inceput") : null;
+      const nextPastHero = Boolean(hero && y >= hero.offsetTop + hero.offsetHeight - 12);
+      setPastHero((current) => (current === nextPastHero ? current : nextPastHero));
+      // Hysteresis prevents the header from oscillating around one scroll threshold.
+      const next = compactRef.current ? y > 28 : y > 84;
       if (next !== compactRef.current) {
         compactRef.current = next;
         setCompact(next);
@@ -68,7 +73,10 @@ export function Header() {
       }
       directionalDistance += Math.abs(delta);
 
-      if (y < 104) {
+      if (pathname === "/" && nextPastHero) {
+        setHeaderHidden(true);
+        directionalDistance = 0;
+      } else if (y < 104) {
         setHeaderHidden(false);
         directionalDistance = 0;
       } else if (direction === "down" && directionalDistance > 42) {
@@ -90,13 +98,13 @@ export function Header() {
       window.removeEventListener("scroll", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
-    if (!cartOpen || !hiddenRef.current) return;
+    if (!cartOpen || !hiddenRef.current || pastHero) return;
     hiddenRef.current = false;
     setHidden(false);
-  }, [cartOpen]);
+  }, [cartOpen, pastHero]);
 
   return (
     <header
@@ -112,11 +120,7 @@ export function Header() {
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/80"
         />
 
-        <div
-          className={`relative mx-auto flex max-w-7xl items-center justify-between px-4 transition-[padding] duration-300 ${
-            compact ? "py-1.5" : "py-3"
-          }`}
-        >
+        <div className="site-header__inner relative mx-auto max-w-7xl px-4">
           <Link
             to="/"
             className="site-header__brand group flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]"
@@ -134,11 +138,19 @@ export function Header() {
             </span>
             <span className="site-header__wordmark min-w-0 leading-tight">
               <span
-                className={`site-header__wordmark-title block truncate font-display tracking-normal text-[color:var(--wood-dark)] transition-[font-size] duration-300 ${
+                className={`site-header__wordmark-title block whitespace-nowrap font-display tracking-normal transition-[font-size] duration-300 ${
                   compact ? "text-xl" : "text-[1.35rem] sm:text-2xl"
                 }`}
               >
-                Cutiuța <span className="gold-text italic">Magică</span>
+                <span className="site-header__wordmark-depth" aria-hidden>
+                  Cutiuța <span className="italic">Magică</span>
+                </span>
+                <span className="site-header__wordmark-face">
+                  Cutiuța <span className="site-header__wordmark-magic italic">Magică</span>
+                </span>
+                <span className="site-header__wordmark-reflection" aria-hidden>
+                  Cutiuța <span className="italic">Magică</span>
+                </span>
               </span>
               <span className="site-header__spark site-header__spark--one" aria-hidden />
               <span className="site-header__spark site-header__spark--two" aria-hidden />
@@ -155,30 +167,23 @@ export function Header() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-7 text-sm text-[color:var(--wood-dark)]/85 md:flex">
-            <Link
-              to="/"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-              activeOptions={{ exact: true }}
-            >
+          <nav
+            className="site-header__nav hidden items-center text-sm text-[color:var(--wood-dark)]/85 min-[1080px]:flex"
+            aria-label="Navigare principală"
+          >
+            <Link to="/" className="site-header__nav-link" activeOptions={{ exact: true }}>
               Acasă
             </Link>
-            <Link
-              to="/produse"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-            >
+            <Link to="/produse" className="site-header__nav-link">
               Cutiuțe Muzicale
             </Link>
-            <Link
-              to="/despre-cutiuta"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-            >
+            <Link to="/cadouri" className="site-header__nav-link">
+              Idei de Cadouri
+            </Link>
+            <Link to="/despre-cutiuta" className="site-header__nav-link">
               Despre Cutiuță
             </Link>
-            <Link
-              to="/livrare"
-              className="transition hover:text-[color:var(--wood-dark)] [&.active]:font-semibold"
-            >
+            <Link to="/livrare" className="site-header__nav-link">
               Livrare
             </Link>
           </nav>
@@ -191,7 +196,7 @@ export function Header() {
               title="Contul meu"
               className={
                 "site-header__account group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
-                (compact ? "h-10 w-10" : "h-11 w-11 sm:h-12 sm:w-12")
+                (compact ? "h-11 w-11" : "h-11 w-11 sm:h-12 sm:w-12")
               }
             >
               <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
@@ -209,7 +214,7 @@ export function Header() {
                 cartOpen
                   ? "border-[color:var(--gold)] bg-white/75"
                   : "border-[color:var(--gold)]/55"
-              } ${compact ? "h-10 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"}`}
+              } ${compact ? "h-11 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"}`}
             >
               <ShoppingBag
                 className={`transition-transform group-hover:scale-105 ${compact ? "h-[18px] w-[18px]" : "h-5 w-5"}`}
@@ -234,7 +239,12 @@ export function Header() {
         side={cartSide}
         onRestoreFocus={restoreCartFocus}
       />
-      <FloatingCartButton pathname={pathname} open={cartOpen} onOpen={openCart} />
+      <FloatingCartButton
+        pathname={pathname}
+        open={cartOpen}
+        onOpen={openCart}
+        forceVisible={pathname === "/" && pastHero}
+      />
     </header>
   );
 }

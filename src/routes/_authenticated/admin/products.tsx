@@ -1,7 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import Products from "@/admin/pages/Products";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
-  component: Products,
-  head: () => ({ meta: [{ title: "Admin · Produse" }] }),
+  component: Outlet,
 });

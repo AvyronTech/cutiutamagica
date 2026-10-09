@@ -7,6 +7,8 @@ import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useEffect } from "react";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { seoHead } from "@/lib/seo-head";
+import { productLink, productPath } from "@/lib/product-url";
 
 export const Route = createFileRoute("/cadouri/$ocazie")({
   loader: async ({ params }) => {
@@ -26,19 +28,15 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
         ? image
         : `https://cutiutamagica.eu${image}`
       : "https://cutiutamagica.eu/scenes/catalog-atelier.webp";
+    const seo = seoHead({
+      title,
+      description: guide.description,
+      path: `/cadouri/${guide.slug}`,
+      image: primaryImage,
+      imageAlt: `Selecție de cutiuțe muzicale — ${guide.label}`,
+    });
     return {
-      meta: [
-        { title },
-        { name: "description", content: guide.description },
-        { name: "robots", content: "index, follow, max-image-preview:large" },
-        { property: "og:title", content: title },
-        { property: "og:description", content: guide.description },
-        { property: "og:url", content: url },
-        { property: "og:type", content: "website" },
-        { property: "og:image", content: primaryImage },
-        { property: "og:image:alt", content: `Selecție de cutiuțe muzicale — ${guide.label}` },
-      ],
-      links: [{ rel: "canonical", href: url }],
+      ...seo,
       scripts: [
         {
           type: "application/ld+json",
@@ -60,7 +58,7 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
                     "@type": "ListItem",
                     position: index + 1,
                     name: p.name,
-                    url: `https://cutiutamagica.eu/produs/${encodeURIComponent(p.slug)}`,
+                    url: `https://cutiutamagica.eu${productPath(p.slug)}`,
                     image: p.imageUrl
                       ? p.imageUrl.startsWith("http")
                         ? p.imageUrl
@@ -85,16 +83,6 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
                     item: "https://cutiutamagica.eu/cadouri",
                   },
                   { "@type": "ListItem", position: 3, name: guide.label, item: url },
-                ],
-              },
-              {
-                "@type": "FAQPage",
-                mainEntity: [
-                  {
-                    "@type": "Question",
-                    name: guide.question,
-                    acceptedAnswer: { "@type": "Answer", text: guide.answer },
-                  },
                 ],
               },
             ],
@@ -207,10 +195,8 @@ function GiftGuidePage() {
             <ul>
               {upcoming.map((p) => (
                 <li key={p.id}>
-                  <Link to="/produs/$id" params={{ id: p.id }}>
-                    {p.name}
-                  </Link>{" "}
-                  · {p.availability === "coming_soon" ? "În curând" : "Stoc epuizat"}
+                  <Link {...productLink(p.id)}>{p.name}</Link> ·{" "}
+                  {p.availability === "coming_soon" ? "În curând" : "Stoc epuizat"}
                 </li>
               ))}
             </ul>

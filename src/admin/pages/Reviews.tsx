@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { reviewApi, reviewCountries, reviewSources, type PublicReview } from "@/lib/reviews";
+import { productPath } from "@/lib/product-url";
 type AdminReview = PublicReview & {
   email: string | null;
   origin: string;
@@ -278,7 +279,7 @@ export default function Reviews({ productSlug }: { productSlug?: string }) {
             </div>
             <a
               className="text-sm text-cyan-300"
-              href={`/produs/${review.productSlug}`}
+              href={productPath(review.productSlug)}
               target="_blank"
               rel="noreferrer"
             >

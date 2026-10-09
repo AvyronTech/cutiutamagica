@@ -36,7 +36,7 @@ export function ProductDiscovery({ product }: { product: Product }) {
       </div>
       <div className="discovery-questions">
         <h3>Răspunsuri înainte să alegi</h3>
-        <details>
+        <details name="product-faq">
           <summary>Ce melodie redă acest model?</summary>
           <p>
             {product.melody
@@ -44,19 +44,40 @@ export function ProductDiscovery({ product }: { product: Product }) {
               : "Consultă detaliile modelului și cere confirmarea melodiei înainte de comandă."}
           </p>
         </details>
-        <details>
+        <details name="product-faq">
           <summary>Cum funcționează manivela?</summary>
           <p>
             Rotești ușor manivela pentru a acționa mecanismul muzical. Sunetul continuă cât timp
             rotești; nu sunt necesare baterii sau o aplicație. Păstrează lemnul ferit de umezeală.
           </p>
         </details>
-        <details>
+        <details name="product-faq">
           <summary>Pot alege altă melodie sau alt capac?</summary>
           <p>
             Modelul vine cu melodia și ilustrația prezentate în această pagină. Compară celelalte
             cutiuțe pentru alte teme. O dedicație pe un bilețel poate face darul personal fără să
             modifice produsul.
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Cât de mare este cutiuța?</summary>
+          <p>
+            Este un obiect compact, potrivit pentru birou, bibliotecă sau vitrină. Dimensiunile
+            exacte ale acestui model sunt trecute în secțiunea „Detalii” de mai sus.
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Primesc și decorurile din fotografii?</summary>
+          <p>
+            Nu. Comanda include cutiuța aleasă. Lumânările, cărțile și celelalte elemente folosite
+            pentru atmosferă în fotografii nu fac parte din produs.
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Cum o păstrez frumoasă?</summary>
+          <p>
+            Păstreaz-o într-un loc uscat, departe de umezeală și soare puternic. Șterge lemnul cu o
+            lavetă moale și rotește manivela fără să o forțezi.
           </p>
         </details>
       </div>

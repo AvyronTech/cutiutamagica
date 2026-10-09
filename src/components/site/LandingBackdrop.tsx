@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
-import bgEmotie from "@/assets/bg-emotie.jpg";
+import bgEmotie from "@/assets/bg-emotie.webp";
 import { worldBlend } from "@/lib/landing-motion";
 const scenes = [
   { key: "story", source: "/scenes/library.webp", mobile: "/scenes/library-mobile.webp" },
@@ -24,11 +24,13 @@ export function LandingBackdrop() {
       ?.saveData;
     if (!node || !world || reduced || saveData) return;
     const layers = Array.from(node.querySelectorAll<HTMLElement>(".landing-world-image"));
+    const simplifiedMotion = matchMedia("(max-width: 767px) and (pointer: coarse)").matches;
     const markers = scenes.slice(1).map((scene, i) => ({
       index: i + 1,
       node: world.querySelector<HTMLElement>(`[data-world="${scene.key}"]`),
     }));
     const ready = new Set([0, 3, 4]);
+    const renderedOpacity: number[] = layers.map((_, index) => (index === 0 ? 1 : 0));
     let frame = 0,
       visible = false;
     const draw = () => {
@@ -44,10 +46,21 @@ export function LandingBackdrop() {
           })),
         innerHeight,
       );
+      const simplifiedIndex =
+        blend.overlay != null && blend.progress >= 0.5 ? blend.overlay : blend.base;
       layers.forEach((layer, i) => {
-        layer.style.opacity = String(
-          i === blend.base ? 1 : i === blend.overlay ? blend.progress : 0,
-        );
+        const opacity = simplifiedMotion
+          ? i === simplifiedIndex
+            ? 1
+            : 0
+          : i === blend.base
+            ? 1
+            : i === blend.overlay
+              ? blend.progress
+              : 0;
+        if (Math.abs(renderedOpacity[i] - opacity) < 0.008) return;
+        renderedOpacity[i] = opacity;
+        layer.style.opacity = String(opacity);
       });
     };
     const request = () => {
@@ -125,6 +138,8 @@ export function LandingBackdrop() {
                   alt=""
                   width={1672}
                   height={941}
+                  loading="eager"
+                  fetchPriority="high"
                   decoding="async"
                   className="hero-world"
                 />

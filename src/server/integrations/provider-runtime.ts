@@ -18,7 +18,6 @@ export type CommerceEnv = Env & {
   META_ACCESS_TOKEN?: string;
   ESTETO_API_KEY?: string;
   AVYRON_CRM_HMAC_SECRET?: string;
-  FGO_PRIVATE_KEY?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   SMARTSHIP_API_KEY?: string;

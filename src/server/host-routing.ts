@@ -2,6 +2,7 @@ export const SITE_HOSTNAME = "cutiutamagica.eu";
 export const WWW_HOSTNAME = "www.cutiutamagica.eu";
 export const API_HOSTNAME = "api.cutiutamagica.eu";
 export const APP_HOSTNAME = "app.cutiutamagica.eu";
+const PUBLIC_HOSTNAMES = new Set([SITE_HOSTNAME, WWW_HOSTNAME, API_HOSTNAME, APP_HOSTNAME]);
 
 type HostRoute =
   | { type: "pass" }
@@ -30,9 +31,14 @@ function isAppPath(pathname: string): boolean {
 }
 
 export function resolveHostRoute(url: URL, method: string): HostRoute {
-  if (url.hostname === WWW_HOSTNAME) {
+  if (
+    (url.protocol === "http:" && PUBLIC_HOSTNAMES.has(url.hostname)) ||
+    url.hostname === WWW_HOSTNAME
+  ) {
     const target = new URL(url);
-    target.hostname = SITE_HOSTNAME;
+    target.protocol = "https:";
+    target.port = "";
+    if (target.hostname === WWW_HOSTNAME) target.hostname = SITE_HOSTNAME;
     return { type: "redirect", location: target.toString() };
   }
 

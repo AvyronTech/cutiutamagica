@@ -62,13 +62,13 @@ async function recordConnectionCheck(
 export async function checkConnection(env: CommerceEnv, provider: CredentialProvider) {
   const key = await credential(env, provider);
   if (!key) throw new Error("Cheia sau tokenul nu este configurat.");
-  if (provider === "fgo" || provider === "stripe_webhook") {
+  if (provider === "oblio" || provider === "stripe_webhook") {
     await recordConnectionCheck(env, provider, "unverified");
     return {
       ok: false,
       message:
-        provider === "fgo"
-          ? "Cheia FGO este stocată. Validarea completă se face fără operații de test distructive, la prima factură emisă."
+        provider === "oblio"
+          ? "Secretul Oblio este stocat. Validarea completă se face fără emiterea unei facturi de test, la prima operație aprobată."
           : "Secretul webhook Stripe este stocat. Semnătura va fi validată la primul eveniment primit de la Stripe.",
     };
   }
@@ -78,6 +78,7 @@ export async function checkConnection(env: CommerceEnv, provider: CredentialProv
     revolut: "https://b2b.revolut.com/api/1.0/accounts",
     resend: "https://api.resend.com/domains",
     google: "https://www.googleapis.com/webmasters/v3/sites",
+    google_merchant: "https://merchantapi.googleapis.com/accounts/v1/accounts?pageSize=1",
   };
   const endpoint = endpoints[provider];
   if (!endpoint) {
@@ -92,7 +93,7 @@ export async function checkConnection(env: CommerceEnv, provider: CredentialProv
   try {
     response = await fetchWithTimeout(endpoint, {
       headers: provider === "smartship" ? { "x-api-key": key } : { authorization: `Bearer ${key}` },
-      redirect: "error",
+      redirect: "manual",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Conexiunea nu a putut fi verificată.";
@@ -180,7 +181,7 @@ export async function syncTraffic(env: CommerceEnv, source: "ga4" | "gsc") {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: JSON.stringify(body),
-    redirect: "error",
+    redirect: "manual",
   });
   if (!response.ok)
     throw new Error(

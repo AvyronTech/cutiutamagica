@@ -9,6 +9,10 @@ import { handlePublicMediaRequest } from "./server/media-public";
 import { consumeCommerceEvents, type CommerceQueueMessage } from "./server/queue/commerce-consumer";
 import { purgeExpiredChatConversations } from "./server/db/chat.repository";
 import { processScheduledBackup } from "./server/services/backup-center";
+import {
+  processBirthdayRewards,
+  processGiftCalendarReminders,
+} from "./server/services/magic-rewards";
 
 type ServerEntry = {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response> | Response;
@@ -240,6 +244,8 @@ export default {
         processOwnerReports(env),
         purgeExpiredChatConversations(env.DB),
         processScheduledBackup(env),
+        processGiftCalendarReminders(env),
+        processBirthdayRewards(env.DB),
       ]).then(() => undefined),
     );
   },

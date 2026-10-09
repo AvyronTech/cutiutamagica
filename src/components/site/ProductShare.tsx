@@ -52,6 +52,30 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
   const message = productShareMessage(name, tagline);
   const targets = productShareTargets({ id, name, tagline, image });
 
+  async function recordRewardShare(channel: string) {
+    if (!["native", "facebook", "linkedin", "pinterest", "x", "bluesky"].includes(channel)) return;
+    try {
+      const response = await fetch("/api/v1/customer/rewards/share", {
+        method: "POST",
+        credentials: "same-origin",
+        keepalive: true,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ channel, productId: id, actionId: crypto.randomUUID() }),
+      });
+      if (!response.ok) return;
+      const payload = (await response.json()) as {
+        data?: { awarded?: boolean; stars?: number; limitReached?: boolean };
+      };
+      if (payload.data?.awarded)
+        toast.success(`+${payload.data.stars} Magic Star ✦`, {
+          description: "Povestea a fost adăugată în jurnalul contului tău.",
+          duration: 2600,
+        });
+    } catch {
+      // Distribuirea rămâne funcțională chiar dacă jurnalul de fidelitate nu răspunde.
+    }
+  }
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(url);
@@ -70,6 +94,7 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
     if (navigator.share) {
       try {
         await navigator.share({ title: name, text: message, url });
+        await recordRewardShare("native");
         return;
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
@@ -111,6 +136,7 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
             rel="nofollow noopener noreferrer"
             className="product-share__quick-link"
             data-channel={target.id}
+            onClick={() => void recordRewardShare(target.id)}
             aria-label={`Distribuie pe ${target.label}`}
           >
             <ChannelIcon channel={target.id} />
@@ -156,6 +182,9 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
                         target={isAppLink ? undefined : "_blank"}
                         rel={isAppLink ? undefined : "nofollow noopener noreferrer"}
                         data-channel={target.id}
+                        onClick={() => {
+                          if (target.group === "retele") void recordRewardShare(target.id);
+                        }}
                       >
                         <ChannelIcon channel={target.id} />
                         <span>{target.label}</span>

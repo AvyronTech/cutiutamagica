@@ -12,6 +12,7 @@ import { LimitedEditionBadge } from "@/components/site/LimitedEditionBadge";
 import { notifyAddedToCart } from "@/lib/notify";
 import { productScene } from "@/lib/product-themes";
 import type { CSSProperties } from "react";
+import { productLink } from "@/lib/product-url";
 
 type Variant = "solid" | "glass";
 
@@ -39,6 +40,7 @@ export function ProductCard({
     <motion.div
       data-magic-card
       data-product-scene={theme.scene}
+      data-compact={compact || undefined}
       initial={false}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
@@ -60,13 +62,13 @@ export function ProductCard({
         <span className="product-card-scene__plane" />
         <span className="product-card-scene__orbit" />
       </div>
-      <Link to="/produs/$id" params={{ id: product.id }} className="block">
+      <Link {...productLink(product.id)} className="block">
         <div
-          className={
+          className={`product-card-themed__visual ${
             isGlass
               ? "relative aspect-square overflow-hidden bg-[radial-gradient(70%_60%_at_50%_30%,rgba(255,255,255,0.22),transparent_70%)]"
               : "relative aspect-square overflow-hidden bg-[radial-gradient(70%_60%_at_50%_30%,oklch(0.98_0.03_80/0.9),transparent_70%),linear-gradient(180deg,oklch(0.95_0.04_70),oklch(0.9_0.06_60))]"
-          }
+          }`}
         >
           <LimitedEditionBadge edition={product.limitedEdition} surface="card" />
           {!available && (
@@ -103,11 +105,11 @@ export function ProductCard({
         </div>
 
         <div
-          className={
+          className={`product-card-themed__content ${
             isGlass
               ? "px-4 pt-2 pb-3 text-center text-[color:var(--cream)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]"
               : "px-4 pt-2 pb-3 text-center"
-          }
+          }`}
         >
           <h3 className="font-display text-lg font-semibold leading-snug">
             {product.shortName || product.name}
@@ -137,7 +139,7 @@ export function ProductCard({
           </div>
         </div>
       </Link>
-      <div className="px-4 pb-4 mt-auto flex flex-col gap-2">
+      <div className="product-card-themed__actions px-4 pb-4 mt-auto flex flex-col gap-2">
         {available ? (
           <>
             {!compact && (
@@ -170,16 +172,15 @@ export function ProductCard({
                 animateIntoCart(e.currentTarget, product.image, added);
                 notifyAddedToCart(product.name, added, () => navigate({ to: "/comanda" }));
               }}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[color:var(--gold)]/60 bg-[linear-gradient(135deg,oklch(0.82_0.13_70),oklch(0.72_0.15_55))] py-2 text-sm font-semibold text-[color:var(--wood-dark)] shadow-[0_6px_18px_-8px_rgba(120,70,20,0.7)] transition hover:scale-[1.02] hover:shadow-[0_10px_24px_-8px_rgba(120,70,20,0.85)]"
             >
               <ShoppingBag className="h-4 w-4" /> Adaugă în coș
             </button>
           </>
         ) : (
           <Link
-            to="/produs/$id"
-            params={{ id: product.id }}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-md border py-2 text-sm font-medium transition ${
+            {...productLink(product.id)}
+            className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border py-2 text-sm font-medium transition ${
               isGlass
                 ? "border-white/25 bg-white/10 text-[color:var(--cream)] hover:bg-white/15"
                 : "border-[color:var(--gold)]/40 bg-[color:var(--cream)]/60 text-[color:var(--wood-dark)] hover:bg-[color:var(--cream)]"

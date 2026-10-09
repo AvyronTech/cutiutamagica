@@ -21,6 +21,7 @@ export function ProductWorld({ product, children }: { product: Product; children
   return (
     <div
       className={`product-world product-world--${theme.scene}`}
+      data-product-slug={product.id}
       style={{ "--world-accent": theme.accent } as CSSProperties}
     >
       <div className="product-world-scenery" aria-hidden>
@@ -29,6 +30,7 @@ export function ProductWorld({ product, children }: { product: Product; children
             src={product.gallery[0]?.src ?? product.image}
             alt=""
             loading="eager"
+            fetchPriority="high"
             decoding="async"
             sizes="100vw"
           />
@@ -45,7 +47,7 @@ export function ProductWorld({ product, children }: { product: Product; children
       </div>
       <div className="relative">
         <div className="product-world-intro">
-          <span>{sceneLabel[theme.scene]} · Experiență tematică</span>
+          <span>{sceneLabel[theme.scene]}</span>
           <p>{theme.occasion}</p>
           <small>
             {product.category}

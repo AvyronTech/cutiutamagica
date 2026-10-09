@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SupplierResearch from "./SupplierResearch";
+import { productPath } from "@/lib/product-url";
 
 const SLOT_GUIDE = [
   {
@@ -810,7 +811,7 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
 }
 
 export default function ProductStudio({ productId }: { productId: string }) {
-  const [tab, setTab] = useState<TabId>("media");
+  const [tab, setTab] = useState<TabId>("general");
   const [uploading, setUploading] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState("origin");
   const query = useQuery({
@@ -922,13 +923,19 @@ export default function ProductStudio({ productId }: { productId: string }) {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Catalog
           </a>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+            Mini-dashboard produs
+          </p>
           <h1 className="text-2xl font-semibold text-white">{data.product.name}</h1>
           <p className="mt-1 font-mono text-xs text-slate-500">
             {data.product.id} · v{data.product.version}
           </p>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-400">
+            Conținut, imagini, stoc, canale, documente și SEO într-un singur spațiu de lucru.
+          </p>
         </div>
         <a
-          href={`/produs/${data.product.slug}`}
+          href={productPath(data.product.slug)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#334155] px-3 py-2 text-xs text-slate-200 hover:border-cyan-400/40"

@@ -14,6 +14,8 @@ import { Toaster } from "sonner";
 import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
+import displayFontNormal from "@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-normal.woff2?url";
+import displayFontItalic from "@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-italic.woff2?url";
 import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -21,14 +23,15 @@ import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { ChatWidget } from "@/components/site/ChatWidget";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
+import { CookieConsent } from "@/components/site/CookieConsent";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
+import { isProductPath, productIdFromPathname } from "@/lib/product-url";
 
 function GrowthPageView({ pathname }: { pathname: string }) {
   useEffect(() => {
-    const productSlug = pathname.startsWith("/produs/")
-      ? decodeURIComponent(pathname.slice("/produs/".length))
-      : undefined;
+    const productSlug = productIdFromPathname(pathname);
     trackGrowthEvent("page_view", {
       productSlug,
       once: `page_view:${pathname}`,
@@ -121,13 +124,50 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Cutiuța Magică" },
       { property: "og:locale", content: "ro_RO" },
+      { property: "og:title", content: "Cutiuța Magică — cutiuțe muzicale cu poveste" },
+      {
+        property: "og:description",
+        content:
+          "Cutiuțe muzicale din lemn cu manivelă, melodii îndrăgite și daruri alese pentru amintiri care rămân.",
+      },
+      { property: "og:url", content: "https://cutiutamagica.eu/" },
+      { property: "og:image", content: DEFAULT_SOCIAL_IMAGE },
+      {
+        property: "og:image:alt",
+        content: "Cutiuțe muzicale din lemn într-un decor de poveste",
+      },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Cutiuța Magică — cutiuțe muzicale cu poveste" },
+      {
+        name: "twitter:description",
+        content:
+          "Cutiuțe muzicale din lemn cu manivelă, melodii îndrăgite și daruri alese pentru amintiri care rămân.",
+      },
+      { name: "twitter:image", content: DEFAULT_SOCIAL_IMAGE },
     ],
     links: [
+      {
+        rel: "preload",
+        href: displayFontNormal,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: displayFontItalic,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16.png" },
+      { rel: "shortcut icon", href: "/favicon.ico" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
     ],
     scripts: [
       {
@@ -138,7 +178,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@id": "https://cutiutamagica.eu/#organization",
           name: "Cutiuța Magică",
           alternateName: "Cutiuta Magica",
-          legalName: "DIGITAL ECO TECH SOLUTION SRL",
+          legalName: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
           taxID: "55055976",
           url: "https://cutiutamagica.eu",
           logo: "https://cutiutamagica.eu/icon-512.png",
@@ -165,12 +205,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           hasMerchantReturnPolicy: {
             "@type": "MerchantReturnPolicy",
             applicableCountry: "RO",
+            returnPolicyCountry: "RO",
             returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
             merchantReturnDays: 14,
             returnMethod: "https://schema.org/ReturnByMail",
             returnFees: "https://schema.org/ReturnShippingFees",
+            refundType: "https://schema.org/FullRefund",
             merchantReturnLink: "https://cutiutamagica.eu/retur",
           },
+          hasShippingService: [
+            {
+              "@type": "ShippingService",
+              "@id": "https://cutiutamagica.eu/#shipping-home",
+              name: "Curier la adresă în România",
+              description:
+                "Livrare la adresă prin curier, cu tariful afișat înainte de finalizarea comenzii.",
+              fulfillmentType: "https://schema.org/FulfillmentTypeDelivery",
+              shippingConditions: {
+                "@type": "ShippingConditions",
+                shippingDestination: { "@type": "DefinedRegion", addressCountry: "RO" },
+                shippingRate: { "@type": "MonetaryAmount", value: 25, currency: "RON" },
+              },
+            },
+            {
+              "@type": "ShippingService",
+              "@id": "https://cutiutamagica.eu/#shipping-easybox",
+              name: "Livrare SAMEDAY easybox în România",
+              description:
+                "Livrare la punctul SAMEDAY easybox ales în checkout, în limita disponibilității.",
+              fulfillmentType: "https://schema.org/FulfillmentTypeCollectionPoint",
+              shippingConditions: {
+                "@type": "ShippingConditions",
+                shippingDestination: { "@type": "DefinedRegion", addressCountry: "RO" },
+                shippingRate: { "@type": "MonetaryAmount", value: 15, currency: "RON" },
+              },
+            },
+          ],
           sameAs: [
             "https://www.facebook.com/profile.php?id=61590919580877",
             "https://www.instagram.com/cutiutamagicaofficial/",
@@ -188,11 +258,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           name: "Cutiuța Magică",
           url: "https://cutiutamagica.eu",
           inLanguage: "ro-RO",
-          potentialAction: {
-            "@type": "SearchAction",
-            target: "https://cutiutamagica.eu/produse?q={search_term_string}",
-            "query-input": "required name=search_term_string",
-          },
         }),
       },
     ],
@@ -207,6 +272,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ro">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('cutiuta:cinematic-intro:v2')==='1')document.documentElement.classList.add('story-intro-seen')}catch{}",
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -223,7 +294,7 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
   const showBack = isChrome && pathname !== "/";
-  const isProductPage = pathname.startsWith("/produs/");
+  const isProductPage = isProductPath(pathname);
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
@@ -260,27 +331,29 @@ function RootComponent() {
           {isChrome && <ContextualMessages />}
           {isChrome && <SideScrollMagic />}
           {isChrome && <ChatWidget />}
+          {isChrome && <CookieConsent />}
           {isChrome ? (
             <>
               <Toaster
                 position="top-center"
-                offset={92}
-                gap={10}
-                visibleToasts={3}
+                offset={76}
+                mobileOffset={68}
+                gap={7}
+                visibleToasts={2}
                 style={
                   {
                     "--normal-bg": "oklch(0.21 0.035 40 / 0.94)",
                     "--normal-border": "oklch(0.74 0.14 78 / 0.38)",
                     "--normal-text": "oklch(0.96 0.02 80)",
-                    "--border-radius": "16px",
+                    "--border-radius": "13px",
                   } as React.CSSProperties
                 }
                 toastOptions={{
                   classNames: {
                     toast:
                       "!backdrop-blur-xl !shadow-[0_18px_44px_-18px_oklch(0.2_0.05_40/0.75),inset_0_1px_0_oklch(0.95_0.05_85/0.12)] !font-body",
-                    title: "!font-display !text-[1.05rem] !tracking-tight",
-                    description: "!text-[oklch(0.96_0.02_80/0.72)]",
+                    title: "!font-display !text-[0.95rem] !tracking-tight",
+                    description: "!text-xs !text-[oklch(0.96_0.02_80/0.72)]",
                     actionButton:
                       "!rounded-full !bg-[linear-gradient(135deg,oklch(0.92_0.09_85),oklch(0.78_0.14_62))] !text-[oklch(0.25_0.04_40)] !font-medium",
                     icon: "!text-[oklch(0.8_0.15_78)]",

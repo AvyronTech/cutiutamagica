@@ -41,22 +41,21 @@ import { ProductPrice } from "@/components/site/ProductPrice";
 import { BrandMark } from "@/components/site/BrandMark";
 import type { EasyboxLocker } from "@/lib/easybox";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { seoHead } from "@/lib/seo-head";
+import { productLink } from "@/lib/product-url";
 
 export const Route = createFileRoute("/comanda")({
   component: OrderPage,
-  head: () => ({
-    meta: [
-      { title: "Comandă online — Cutiuța Magică" },
-      {
-        name: "description",
-        content: "Comandă în siguranță cutiuțele muzicale alese, cu livrare în România.",
-      },
-      { name: "robots", content: "noindex, nofollow" },
-      { property: "og:title", content: "Comandă online — Cutiuța Magică" },
-      { property: "og:url", content: "https://cutiutamagica.eu/comanda" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/comanda" }],
-  }),
+  head: () =>
+    seoHead({
+      title: "Comandă online | Cutiuța Magică",
+      description:
+        "Finalizează în siguranță comanda pentru cutiuțele muzicale alese și selectează metoda de livrare disponibilă în România.",
+      path: "/comanda",
+      image: "/produse/hp-keeper/1.webp",
+      imageAlt: "Cutiuță muzicală pregătită pentru comandă",
+      robots: "noindex, nofollow",
+    }),
 });
 
 type PaymentMethod = "cash_on_delivery" | "card";
@@ -139,8 +138,6 @@ function OrderPage() {
   const [promotionError, setPromotionError] = useState("");
   const [promotionExpanded, setPromotionExpanded] = useState(false);
   const [activeCheckoutStep, setActiveCheckoutStep] = useState(1);
-  const stripePaymentReady =
-    config?.payments.options.some((option) => option.id === "stripe") ?? false;
   const cartSignature = JSON.stringify(itemsDetailed.map((item) => [item.id, item.qty]));
   const activePromotion =
     appliedPromotion?.cartSignature === cartSignature ? appliedPromotion : null;
@@ -639,7 +636,7 @@ function OrderPage() {
                   <div className="checkout-mobile-savings">
                     <span>Economisești la produse</span>
                     <strong>−{money(totals.productDiscount)}</strong>
-                    <small>TVA inclus</small>
+                    <small>Preț final</small>
                   </div>
                 )}
               </details>
@@ -662,11 +659,7 @@ function OrderPage() {
               <ul inert={submissionLocked} className="checkout-cart-list mt-5 space-y-2">
                 {itemsDetailed.map((item) => (
                   <li key={item.id} className="checkout-cart-item">
-                    <Link
-                      to="/produs/$id"
-                      params={{ id: item.product.id }}
-                      className="checkout-cart-item__media"
-                    >
+                    <Link {...productLink(item.product.id)} className="checkout-cart-item__media">
                       <ProductImage
                         src={item.product.image}
                         alt={item.product.name}
@@ -677,9 +670,8 @@ function OrderPage() {
                     <div className="checkout-cart-item__body">
                       <div className="checkout-cart-item__head">
                         <Link
-                          to="/produs/$id"
-                          params={{ id: item.product.id }}
-                          className="line-clamp-1 font-display text-sm leading-tight hover:underline sm:text-base"
+                          {...productLink(item.product.id)}
+                          className="line-clamp-2 font-display text-sm leading-tight hover:underline sm:text-base"
                         >
                           {item.product.name}
                         </Link>
@@ -735,7 +727,7 @@ function OrderPage() {
                           />
                           {item.qty > 1 && (
                             <div className="text-[11px] text-muted-foreground">
-                              {money(item.product.price ?? 0)} / buc · TVA inclus
+                              {money(item.product.price ?? 0)} / buc · preț final
                             </div>
                           )}
                         </div>
@@ -760,7 +752,7 @@ function OrderPage() {
                 <ul>
                   {giftListDetailed.map((product) => (
                     <li key={product.id}>
-                      <Link to="/produs/$id" params={{ id: product.id }}>
+                      <Link {...productLink(product.id)}>
                         <ProductImage
                           src={product.image}
                           alt={product.name}
@@ -769,9 +761,7 @@ function OrderPage() {
                         />
                       </Link>
                       <div>
-                        <Link to="/produs/$id" params={{ id: product.id }}>
-                          {product.name}
-                        </Link>
+                        <Link {...productLink(product.id)}>{product.name}</Link>
                         {product.price != null ? (
                           <ProductPrice product={product} size="compact" showSavings={false} />
                         ) : (
@@ -925,7 +915,7 @@ function OrderPage() {
               )}
               <fieldset
                 disabled={submitting || submissionLocked}
-                className="space-y-5 disabled:opacity-80"
+                className="min-w-0 space-y-5 disabled:opacity-80"
               >
                 <section
                   id="checkout-step-1"
@@ -1099,7 +1089,7 @@ function OrderPage() {
                     title="SAMEDAY Easybox"
                     note={
                       !config?.shipping.easyboxEnabled
-                        ? "Disponibil după conectarea contului SAMEDAY"
+                        ? "Momentan indisponibil"
                         : activeQuote && shippingOption === "easybox"
                           ? activeQuote.price === 0
                             ? "Livrare gratuită"
@@ -1160,17 +1150,6 @@ function OrderPage() {
                       }
                     />
                   ))}
-                  {!stripePaymentReady && (
-                    <Choice
-                      name="payment-method"
-                      disabled
-                      selected={false}
-                      onChange={() => undefined}
-                      icon={<CreditCard className="h-5 w-5" />}
-                      title="Card online"
-                      note="Stripe · disponibil după activarea securizată"
-                    />
-                  )}
                   {paymentMethod === "card" && (
                     <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
                       Continui pe pagina securizată a procesatorului; datele cardului nu sunt
@@ -1288,7 +1267,7 @@ function OrderPage() {
                 <span>{money(productsAfterCode + (shippingCost ?? 0))}</span>
               </div>
               <p className="text-right text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                TVA inclus
+                Preț final
               </p>
             </div>
             {shippingCost == null && config && (
@@ -1436,8 +1415,7 @@ function CartRecommendations({
             >
               <article className="checkout-recommendation-card flex h-full overflow-hidden rounded-xl border border-[color:var(--gold)]/25 bg-card/90 shadow-sm">
                 <Link
-                  to="/produs/$id"
-                  params={{ id: product.id }}
+                  {...productLink(product.id)}
                   className="w-20 shrink-0 bg-[color:var(--gold)]/10 sm:w-24"
                   aria-label={`Vezi ${product.name}`}
                 >
@@ -1449,7 +1427,7 @@ function CartRecommendations({
                   />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col p-2.5">
-                  <Link to="/produs/$id" params={{ id: product.id }} className="hover:underline">
+                  <Link {...productLink(product.id)} className="hover:underline">
                     <h3 className="font-display text-sm leading-tight line-clamp-2">
                       {product.name}
                     </h3>
@@ -1500,7 +1478,7 @@ function ChoiceSection({
   return (
     <fieldset
       id={`checkout-step-${step}`}
-      className="rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
+      className="min-w-0 rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
     >
       <legend className="checkout-step-heading font-display text-xl sm:text-2xl">
         <span aria-hidden>{step}</span>
@@ -1509,7 +1487,7 @@ function ChoiceSection({
           <small>{subtitle}</small>
         </span>
       </legend>
-      <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">{children}</div>
+      <div className="mt-2.5 grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2">{children}</div>
     </fieldset>
   );
 }

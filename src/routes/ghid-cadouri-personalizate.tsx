@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Gift, Heart, Music, Search, Settings2 } from "lucide-react";
+import { seoHead } from "@/lib/seo-head";
 
 const URL = "https://cutiutamagica.eu/ghid-cadouri-personalizate";
 const TITLE = "Ghid cadou: cum alegi o cutiuță muzicală cu manivelă";
@@ -31,50 +32,39 @@ const faq = [
 
 export const Route = createFileRoute("/ghid-cadouri-personalizate")({
   component: GuidePage,
-  head: () => ({
-    meta: [
-      { title: `${TITLE} | Cutiuța Magică` },
-      { name: "description", content: DESC },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESC },
-      { property: "og:url", content: URL },
-      { property: "og:type", content: "article" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Article",
-          headline: TITLE,
-          description: DESC,
-          author: { "@type": "Organization", name: "Cutiuța Magică" },
-          publisher: {
-            "@type": "Organization",
-            name: "Cutiuța Magică",
-            url: "https://cutiutamagica.eu",
-          },
-          mainEntityOfPage: URL,
-          inLanguage: "ro-RO",
-          dateModified: "2026-09-05",
-        }),
-      },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: faq.map((item) => ({
-            "@type": "Question",
-            name: item.question,
-            acceptedAnswer: { "@type": "Answer", text: item.answer },
-          })),
-        }),
-      },
-    ],
-  }),
+  head: () => {
+    const seo = seoHead({
+      title: `${TITLE} | Cutiuța Magică`,
+      description: DESC,
+      path: "/ghid-cadouri-personalizate",
+      image: "/scenes/catalog-atelier.webp",
+      imageAlt: "Ghid pentru alegerea unei cutiuțe muzicale cadou",
+      type: "article",
+    });
+    return {
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: TITLE,
+            description: DESC,
+            author: { "@type": "Organization", name: "Cutiuța Magică" },
+            publisher: {
+              "@type": "Organization",
+              name: "Cutiuța Magică",
+              url: "https://cutiutamagica.eu",
+            },
+            mainEntityOfPage: URL,
+            inLanguage: "ro-RO",
+            dateModified: "2026-10-04",
+          }),
+        },
+      ],
+    };
+  },
 });
 
 function GuidePage() {

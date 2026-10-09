@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { getPublicSeller } from "@/lib/legal.functions";
+import { normalizeRomanianDisplayText } from "@/lib/romanian-text";
 export function LegalPage({
   title,
   intro,
@@ -38,19 +39,19 @@ export function SellerIdentity({
 }) {
   return (
     <address className="not-italic">
-      <strong>{seller.legal_name}</strong>
+      <strong>{normalizeRomanianDisplayText(seller.legal_name)}</strong>
       <br />
       CUI {seller.tax_id} · neplătitor de TVA
       <br />
       {seller.registered_address && (
         <>
-          Sediu social: {seller.registered_address}
+          Sediu social: {normalizeRomanianDisplayText(seller.registered_address)}
           <br />
         </>
       )}
       {seller.registration_number && (
         <>
-          Registrul Comerțului: {seller.registration_number}
+          Registrul Comerțului: {normalizeRomanianDisplayText(seller.registration_number)}
           <br />
         </>
       )}

@@ -227,6 +227,74 @@ export default function AccountVault() {
         </section>
       </div>
 
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="flex items-center gap-2 font-semibold text-white">
+          <ShieldCheck size={17} /> Autentificare clienți cu Google
+        </h2>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Introdu Client ID și Client secret din proiectul Google OAuth. Valorile sunt criptate, nu
+          se afișează după salvare și activează automat butonul „Continuă cu Google”. URI-ul de
+          redirect este https://cutiutamagica.eu/api/v1/reviewer/oauth/google/callback.
+        </p>
+        <div className="mt-4">
+          <CredentialPanel
+            providers={["customer_google_client_id", "customer_google_client_secret"]}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="flex items-center gap-2 font-semibold text-white">
+          <Link2 size={17} /> Google Search și Merchant Center
+        </h2>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Tokenul Google cu acces read-only alimentează importurile Search Console și Analytics.
+          Merchant Center folosește feedul public actualizat automat; ID-ul contului și al sursei de
+          date se completează în Platforme. Valorile sensibile de mai jos sunt criptate și nu se
+          afișează după salvare.
+        </p>
+        <div className="mt-4">
+          <CredentialPanel providers={["google", "google_merchant"]} />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-4 text-xs">
+          <a className="text-cyan-200 underline" href="/admin/traffic">
+            Proprietăți Search Console și Analytics
+          </a>
+          <a className="text-cyan-200 underline" href="/admin/platforms">
+            Cont Merchant și sursă de date
+          </a>
+          <a
+            className="text-cyan-200 underline"
+            href="/google-products.xml"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Verifică feedul Merchant
+          </a>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+        <h2 className="flex items-center gap-2 font-semibold text-white">
+          <KeyRound size={17} /> Servicii operaționale
+        </h2>
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Cheile pentru confirmări e-mail, curierat și plăți se introduc în modulele dedicate, unde
+          pot fi și verificate înainte ca opțiunea să apară clienților.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-4 text-xs">
+          <a className="text-cyan-200 underline" href="/admin/email">
+            Resend și e-mail tranzacțional
+          </a>
+          <a className="text-cyan-200 underline" href="/admin/shipping">
+            SmartShip și Easybox
+          </a>
+          <a className="text-cyan-200 underline" href="/admin/financiar">
+            Stripe și plăți
+          </a>
+        </div>
+      </section>
+
       <CredentialPanel providers={["meta"]} />
 
       <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">

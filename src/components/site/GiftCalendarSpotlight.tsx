@@ -1,5 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, BellRing, CalendarHeart, Gift, Mail, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BellRing,
+  CalendarHeart,
+  Gift,
+  Heart,
+  Mail,
+  PackageSearch,
+  Sparkles,
+  Star,
+} from "lucide-react";
 
 const reminderPreviews = [
   {
@@ -28,6 +38,12 @@ const occasions = [
   "Zile de naștere",
 ];
 
+const accountBenefits = [
+  { icon: Star, title: "Magic Stars", text: "Aduni beneficii din momentele tale." },
+  { icon: Heart, title: "Favorite aproape", text: "Revii rapid la cutiuțele care te-au ales." },
+  { icon: PackageSearch, title: "Comenzi urmărite", text: "Vezi simplu unde a ajuns povestea." },
+];
+
 export function GiftCalendarSpotlight() {
   return (
     <section className="gift-calendar" data-world="atelier" aria-labelledby="gift-calendar-title">
@@ -35,7 +51,7 @@ export function GiftCalendarSpotlight() {
         <div className="gift-calendar-copy">
           <p className="gift-calendar-kicker">
             <Sparkles size={14} aria-hidden="true" />
-            În pregătire în contul tău
+            Momentele tale, păstrate cu grijă
           </p>
           <h2 id="gift-calendar-title">
             Calendarul
@@ -56,18 +72,23 @@ export function GiftCalendarSpotlight() {
             </span>
           </div>
 
+          <div className="gift-calendar-benefits" aria-label="Beneficiile contului Magic">
+            {accountBenefits.map(({ icon: Icon, title, text }) => (
+              <span key={title}>
+                <Icon aria-hidden />
+                <span>
+                  <strong>{title}</strong>
+                  <small>{text}</small>
+                </span>
+              </span>
+            ))}
+          </div>
+
           <div className="gift-calendar-actions">
             <Link className="magic-button gift-calendar-cta" to="/cont" search={{ mod: "creare" }}>
-              Creează contul <ArrowRight size={16} />
+              Creează contul Magic <ArrowRight size={16} />
             </Link>
-            <div className="gift-calendar-welcome" aria-label="Beneficiu de bun venit planificat">
-              <strong>−10%</strong>
-              <span>la prima comandă*</span>
-            </div>
           </div>
-          <small className="gift-calendar-note">
-            *Beneficiul va deveni disponibil odată cu activarea Calendarului cadourilor.
-          </small>
         </div>
 
         <div className="gift-calendar-preview" aria-label="Exemple de notificări din calendar">

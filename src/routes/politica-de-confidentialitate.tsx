@@ -48,11 +48,20 @@ function Privacy() {
           le vadă ceilalți vizitatori.
         </p>
         <p>
-          Contul opțional păstrează numele și e-mailul pentru recenziile și cererile de
-          personalizare următoare. Parola este stocată sub formă de hash, iar sesiunea folosește un
-          cookie de autentificare cu durată de până la șapte zile. Contul afișează numai cererile
-          asociate sesiunii tale și nu oferă acces la datele altor persoane. Pentru corectarea sau
-          retragerea unei recenzii, folosește datele de contact ale magazinului.
+          Contul opțional folosește autentificare Google și păstrează identificatorul de cont,
+          numele și e-mailul confirmat de furnizor; nu primim și nu stocăm parola contului Google.
+          Sesiunea folosește un cookie securizat cu durată de până la șapte zile. Contul afișează
+          numai cererile asociate identității tale și nu oferă acces la datele altor persoane.
+          Pentru corectarea sau retragerea unei recenzii, folosește datele de contact ale
+          magazinului.
+        </p>
+        <p>
+          Dacă folosești Magic Rewards, păstrăm activitățile eligibile, stelele acordate,
+          beneficiile activate și identificatorii necesari prevenirii acordării repetate. Pentru
+          darul aniversar poți salva numai ziua și luna; nu solicităm anul nașterii. Aceste date
+          sunt folosite pentru funcționarea programului, afișarea istoricului și limitarea
+          abuzurilor și pot fi corectate ori șterse odată cu solicitarea privind contul, în limitele
+          obligațiilor legale și ale evidențelor necesare soluționării unui beneficiu deja folosit.
         </p>
       </LegalSection>
       <LegalSection title="Cereri de personalizare și imagini">
@@ -71,19 +80,18 @@ function Privacy() {
       </LegalSection>
       <LegalSection title="Serviciile care pot primi date">
         <p>
-          Cloudflare asigură infrastructura și protecția magazinului. În funcție de serviciul activ
-          și ales pentru comandă, datele necesare pot fi transmise procesatorului de plăți Stripe,
-          serviciului de curierat prin SmartShip, furnizorului de facturare FGO și serviciului de
-          e-mail Cloudflare Email Service, cu Resend disponibil numai ca soluție de rezervă.
-          Contabilitatea și autoritățile pot primi documentele impuse de lege. Furnizorii au acces
-          în limita rolului lor.
+          Cloudflare asigură infrastructura, stocarea și protecția magazinului. În funcție de
+          opțiunea pe care o alegi, datele strict necesare pot fi transmise serviciului de curierat
+          și operatorului Easybox, furnizorului de autentificare, serviciului de e-mail
+          tranzacțional sau procesatorului de plăți disponibil la momentul comenzii. Contabilitatea
+          și autoritățile pot primi documentele impuse de lege. Fiecare furnizor primește numai
+          informațiile necesare rolului său.
         </p>
         <p>
-          Introducerea unui conector în dashboard nu activează automat transferul. Integrarea
-          Revolut Business și conectările la platforme sociale necesită configurare și autorizare.
-          Transferurile în afara SEE necesită o bază legală adecvată, precum o decizie de adecvare
-          sau clauze contractuale standard și garanțiile aplicabile; detaliile pot fi solicitate la
-          contact.
+          Un serviciu opțional primește date numai când este activ și necesar pentru funcția aleasă
+          de tine. Transferurile în afara SEE necesită o bază legală adecvată, precum o decizie de
+          adecvare sau clauze contractuale standard și garanțiile aplicabile; detaliile pot fi
+          solicitate la contact.
         </p>
       </LegalSection>
       <LegalSection title="Stocare în browser și statistici">
@@ -93,10 +101,10 @@ function Privacy() {
           autentificare pot utiliza identificatori strict necesari.
         </p>
         <p>
-          Setările de import Google Analytics și Search Console din administrare citesc rapoarte ale
-          proprietăților autorizate. Ele nu instalează singure urmărire în browser. Dacă vor fi
-          activate instrumente opționale de analiză sau publicitate pentru vizitatori, alegerea și
-          retragerea consimțământului vor fi disponibile înaintea utilizării acestora.
+          Statisticile tehnice strict necesare ne ajută să protejăm magazinul și să diagnosticăm
+          erori. Orice instrument opțional de analiză sau publicitate care folosește identificatori
+          în browser este activat numai după informare și, când legea o cere, după alegerea ta; poți
+          retrage ulterior consimțământul.
         </p>
       </LegalSection>
       <LegalSection title="Păstrare și acces">
@@ -131,10 +139,10 @@ function Privacy() {
       </LegalSection>
       <LegalSection title="Automatizări și actualizări">
         <p>
-          Asistenții de cercetare a furnizorilor folosesc informații despre produse și surse
-          publice, fără a avea nevoie de datele cumpărătorilor. O semnalare automată de risc poate
-          duce la verificarea umană a unei comenzi. Poți solicita clarificări și reevaluare la
-          contact.
+          Unele operațiuni folosesc automatizări pentru organizarea comenzilor, trimiterea
+          reminderelor alese de tine și semnalarea erorilor ori a abuzurilor. O semnalare automată
+          poate duce la verificare umană; nu luăm exclusiv automat decizii care produc efecte
+          juridice semnificative asupra ta. Poți solicita clarificări și reevaluare la contact.
         </p>
         <p>
           Această pagină se actualizează la schimbarea serviciilor sau practicilor. Referință:{" "}

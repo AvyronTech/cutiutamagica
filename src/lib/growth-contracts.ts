@@ -68,13 +68,15 @@ export const financeSettingsSchema = z.object({
     .trim()
     .regex(/^acct_[a-zA-Z0-9]+$|^$/)
     .default(""),
-  fgoSeries: z.string().trim().max(30).default(""),
+  oblioSeries: z.string().trim().max(30).default(""),
   spvClientId: z.string().trim().max(200).default(""),
   // Export is local and manual. Enabling external delivery needs a separate integration.
   avyronSummaryEnabled: z.literal(false).default(false),
 });
 export const credentialProviderSchema = z.enum([
   "google_merchant",
+  "customer_google_client_id",
+  "customer_google_client_secret",
   "netopia",
   "netopia_public_key",
   "revolut_merchant",
@@ -84,7 +86,6 @@ export const credentialProviderSchema = z.enum([
   "trendyol",
   "olx",
   "okazii",
-  "fgo",
   "smartship",
   "stripe",
   "stripe_webhook",
