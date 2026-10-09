@@ -192,7 +192,7 @@
 }
 .product-quantity-control {
   display: grid;
-  grid-template-columns: 38px minmax(34px, 1fr) 38px;
+  grid-template-columns: 44px minmax(34px, 1fr) 44px;
   grid-template-rows: auto 1fr;
   align-items: center;
   min-height: 60px;
@@ -215,7 +215,8 @@
 }
 .product-quantity-control button {
   display: grid;
-  height: 36px;
+  min-width: 44px;
+  height: 44px;
   place-items: center;
   color: color-mix(in srgb, var(--world-accent) 78%, #fff);
   transition:
@@ -1725,11 +1726,11 @@
   }
   .site-header__actions > button:first-child,
   .site-header__account {
-    width: 40px !important;
-    height: 40px !important;
+    width: 44px !important;
+    height: 44px !important;
   }
   .site-header__cart {
-    height: 40px !important;
+    min-height: 44px !important;
     padding-inline: 9px !important;
   }
   .site-header__spark--three {
@@ -1752,11 +1753,11 @@
   }
   .site-header__actions > button:first-child,
   .site-header__account {
-    width: 36px !important;
-    height: 36px !important;
+    width: 44px !important;
+    height: 44px !important;
   }
   .site-header__cart {
-    height: 36px !important;
+    min-height: 44px !important;
     gap: 3px;
     padding-inline: 7px !important;
   }
@@ -3662,7 +3663,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 7px 10px;
   border: 1px solid #ffffff17;
   border-radius: 11px;
@@ -3984,7 +3985,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   right: 18px;
   z-index: 65;
   display: grid;
-  grid-template-columns: 68px minmax(0, 1fr) 30px;
+  grid-template-columns: 68px minmax(0, 1fr) 44px;
   gap: 11px;
   width: min(390px, calc(100vw - 24px));
   padding: 10px;
@@ -4069,7 +4070,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 .cart-recovery__actions > :first-child {
   display: inline-flex;
-  min-height: 30px;
+  min-height: 44px;
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
@@ -4080,7 +4081,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   font-weight: 700;
 }
 .cart-recovery__later {
-  min-height: 30px;
+  min-width: 44px;
+  min-height: 44px;
   color: rgb(255 246 231 / 0.62);
   font-size: 10px;
 }
@@ -4088,8 +4090,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border-radius: 50%;
   color: rgb(255 246 231 / 0.6);
@@ -4113,7 +4115,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   .cart-recovery {
     top: max(5.25rem, calc(env(safe-area-inset-top) + 4.4rem));
     right: 12px;
-    grid-template-columns: 58px minmax(0, 1fr) 28px;
+    grid-template-columns: 58px minmax(0, 1fr) 44px;
     gap: 9px;
     width: calc(100vw - 24px);
     border-radius: 17px;
@@ -12216,6 +12218,9 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   margin-top: 28px;
 }
 .discovery-links a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
   padding: 10px 15px;
   border-radius: 99px;
   border: 1px solid #a9865266;
@@ -13457,7 +13462,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 5px 11px 5px 6px;
   border: 1px solid rgb(133 88 48 / 0.2);
   border-radius: 999px;
@@ -13499,7 +13504,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
     left: 10px;
   }
   .page-back-link {
-    min-height: 34px;
+    min-height: 44px;
     padding-right: 9px;
     font-size: 9px;
   }
@@ -15766,6 +15771,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 .product-share__expand {
   display: flex;
   width: 100%;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -16103,7 +16109,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   }
   .product-share__native {
     grid-column: 1 / -1;
-    min-height: 38px;
+    min-height: 44px;
     flex-direction: row;
   }
   .product-share__quick-link {

@@ -196,7 +196,7 @@ export function Header() {
               title="Contul meu"
               className={
                 "site-header__account group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
-                (compact ? "h-10 w-10" : "h-11 w-11 sm:h-12 sm:w-12")
+                (compact ? "h-11 w-11" : "h-11 w-11 sm:h-12 sm:w-12")
               }
             >
               <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
@@ -214,7 +214,7 @@ export function Header() {
                 cartOpen
                   ? "border-[color:var(--gold)] bg-white/75"
                   : "border-[color:var(--gold)]/55"
-              } ${compact ? "h-10 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"}`}
+              } ${compact ? "h-11 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"}`}
             >
               <ShoppingBag
                 className={`transition-transform group-hover:scale-105 ${compact ? "h-[18px] w-[18px]" : "h-5 w-5"}`}

@@ -21,7 +21,7 @@ export function SoundToggle({ compact }: { compact: boolean }) {
         on
           ? "border-[color:var(--gold)]/80 bg-[color:var(--gold)]/20"
           : "border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55"
-      } ${compact ? "w-9 h-9" : "w-9 h-9 sm:w-11 sm:h-11"}`}
+      } h-11 w-11`}
     >
       {on ? (
         <Volume2

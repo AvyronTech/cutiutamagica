@@ -487,7 +487,7 @@ function ProductPage() {
           {available && totalQty > 0 && (
             <Link
               to="/comanda"
-              className="product-checkout-link mt-3 inline-flex items-center justify-center gap-2 border border-primary/40 px-4 py-2.5 text-sm font-medium hover:bg-primary/5"
+              className="product-checkout-link mt-3 inline-flex min-h-11 items-center justify-center gap-2 border border-primary/40 px-4 py-2.5 text-sm font-medium hover:bg-primary/5"
             >
               <Gift className="w-4 h-4" /> Finalizează comanda
             </Link>
