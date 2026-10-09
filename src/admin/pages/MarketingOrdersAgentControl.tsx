@@ -20,11 +20,32 @@ type AgentState = {
     controlPlane: string;
   };
   agent: { name: string; status: string; approval_policy: string } | null;
+  relatedAgents: Array<{
+    code: string;
+    name: string;
+    purpose: string;
+    approval_policy: string;
+    status: string;
+    updated_at: string;
+  }>;
   settings: {
     enabled: boolean;
     mode: "draft_approval" | "paused";
     controlPlane: string;
     publication: { requiresApproval: boolean; requiresVerifiedConnector: boolean };
+    contentPlaybook: {
+      version: string;
+      feedDaily: boolean;
+      storyDaily: boolean;
+      storyFramesMin: number;
+      storyFramesMax: number;
+      reelEveryDays: number;
+      tiktokEveryDays: number;
+      requireSpecificProductLink: boolean;
+      requireNativeVariants: boolean;
+      requireOriginalProductLayer: boolean;
+      measurementWindowsHours: number[];
+    };
     avyron: {
       enabled: boolean;
       control: string;
@@ -352,6 +373,81 @@ export default function MarketingOrdersAgentControl() {
           <p className="text-[11px] leading-5 text-slate-500">
             Date personale, comenzi, conversații și drepturi de publicare: blocate structural.
           </p>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Playbook de conținut și conversie</h3>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">
+              Reguli incluse în build, aplicate tuturor ciornelor create de agent.
+            </p>
+          </div>
+          <span className="w-fit rounded-full border border-violet-400/20 bg-violet-400/10 px-2.5 py-1 font-mono text-[10px] text-violet-200">
+            v{data.settings.contentPlaybook.version}
+          </span>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+            <p className="text-xs font-medium text-slate-200">Feed + Story zilnic</p>
+            <p className="mt-1 text-[10px] leading-4 text-slate-500">
+              Story în {data.settings.contentPlaybook.storyFramesMin}–
+              {data.settings.contentPlaybook.storyFramesMax} cadre, fiecare cu text propriu.
+            </p>
+          </div>
+          <div className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+            <p className="text-xs font-medium text-slate-200">Video la 3 zile</p>
+            <p className="mt-1 text-[10px] leading-4 text-slate-500">
+              Reel și TikTok native, fără watermark și cu subtitrări.
+            </p>
+          </div>
+          <div className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+            <p className="text-xs font-medium text-slate-200">Produs protejat</p>
+            <p className="mt-1 text-[10px] leading-4 text-slate-500">
+              Fundalul se poate adapta; produsul original nu se recreează.
+            </p>
+          </div>
+          <div className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+            <p className="text-xs font-medium text-slate-200">Măsurare etapizată</p>
+            <p className="mt-1 text-[10px] leading-4 text-slate-500">
+              Verificări la {data.settings.contentPlaybook.measurementWindowsHours.join(" / ")} ore.
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-emerald-200/80">
+          <span className="rounded-full bg-emerald-400/8 px-2 py-1">Link specific produsului</span>
+          <span className="rounded-full bg-emerald-400/8 px-2 py-1">Variante native</span>
+          <span className="rounded-full bg-emerald-400/8 px-2 py-1">Descrieri complete</span>
+          <span className="rounded-full bg-emerald-400/8 px-2 py-1">
+            Conversii înainte de impresii
+          </span>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-[#28364d] bg-[#111c2e]">
+        <div className="flex items-center justify-between border-b border-[#28364d] px-4 py-3">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Agenți interni sincronizați</h3>
+            <p className="mt-0.5 text-[10px] text-slate-500">
+              Folosesc același playbook; orchestratorul păstrează controlul campaniei și
+              aprobărilor.
+            </p>
+          </div>
+          <span className="text-[10px] text-slate-500">{data.relatedAgents.length} agenți</span>
+        </div>
+        <div className="grid gap-px bg-[#28364d] md:grid-cols-3">
+          {data.relatedAgents.map((relatedAgent) => (
+            <div key={relatedAgent.code} className="bg-[#111c2e] p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-medium text-slate-200">{relatedAgent.name}</p>
+                <span className="shrink-0 rounded-full bg-slate-700/50 px-2 py-0.5 text-[9px] text-slate-300">
+                  {statusLabels[relatedAgent.status] ?? relatedAgent.status}
+                </span>
+              </div>
+              <p className="mt-2 text-[10px] leading-4 text-slate-500">{relatedAgent.purpose}</p>
+            </div>
+          ))}
         </div>
       </div>
 

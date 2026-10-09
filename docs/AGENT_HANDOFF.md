@@ -1,5 +1,13 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-10 — playbook de conținut și agenți sincronizați
+
+- Skillul canonic include `references/content-conversion-playbook.md`, cu structură completă pentru feed, Story în 3–5 cadre, Reel/TikTok nativ, montaj multi-foto, descrieri lungi, link specific către produs și măsurare la 24/72/168 de ore.
+- Buildul agentului a fost ridicat la `2026.10.10.1`; manifestul, hashul și lista documentelor guvernate sunt vizibile în `/admin/ai`.
+- Dashboardul afișează politica de conținut și agenții interni sincronizați: Studio conținut, Marketing Content Agent și Analist SEO. Agentul marketing + comenzi rămâne orchestratorul, iar efectele externe rămân în coada de aprobare.
+- Migrarea append-only `0053_marketing_content_playbook.sql` aliniază scopurile și instrumentele agenților, adaugă sursa comună de cunoaștere și persistă politica playbookului în `agent.marketing_orders`.
+- AVYRON rămâne o integrare opțională pentru statistici agregate și pachete aprobate; nu primește conversații, comenzi, date personale sau drepturi de publicare.
+
 ## Sursa de adevăr
 
 - Repository: `AvyronTech/cutiutamagica`

@@ -23,6 +23,7 @@ Acționează ca manager editorial și operator comercial asistat. Platforma inte
 
 - Pentru identitatea vizuală, selecția produselor și adevărul afirmațiilor, citește [references/brand-product-truth.md](references/brand-product-truth.md).
 - Pentru calendar, formate, ore, sărbători, distribuire, engagement și moderare, citește [references/daily-social-operations.md](references/daily-social-operations.md).
+- Pentru structurarea mesajului, descrieri complete, Story-uri multi-cadru, producție video, reutilizare și măsurarea conversiei, citește [references/content-conversion-playbook.md](references/content-conversion-playbook.md).
 - Pentru DM/chat, întrebări despre magazin, colectarea datelor, comanda ramburs și confirmări, citește [references/customer-conversations-orders.md](references/customer-conversations-orders.md).
 - Pentru persistență, aprobări, Codex local, Cutiuța Magică și AVYRON OS, citește [references/platform-sync.md](references/platform-sync.md).
 
@@ -31,7 +32,7 @@ Acționează ca manager editorial și operator comercial asistat. Platforma inte
 1. Verifică fusul `Europe/Bucharest`, conexiunile și aprobările active. O etichetă de cont în UI nu dovedește că există un conector funcțional.
 2. Încarcă catalogul public, politicile active, media aprobate, ultimele 30 de materiale și Insights disponibile. Separă `confirmat`, `observat`, `inferență` și `necunoscut`.
 3. Prioritizează răspunsurile clienților și comenzile nefinalizate înaintea generării de conținut nou.
-4. Construiește un singur concept zilnic și variațiile native cerute. În politica editorială curentă creează zilnic o postare feed și un story, iar la fiecare trei zile adaugă Reel Instagram/Facebook și video TikTok nativ. Respectă distanța dintre formate și alege orele din date, nu din preferințe arbitrare.
+4. Construiește un singur concept zilnic și variațiile native cerute. În politica editorială curentă creează zilnic o postare feed și un Story complet în 3–5 cadre, iar la fiecare trei zile adaugă Reel Instagram/Facebook și video TikTok nativ. Când nu există filmare reală, folosește un montaj din cadre originale fără să animezi ori să recreezi produsul. Respectă distanța dintre formate și alege orele din date, nu din preferințe arbitrare.
 5. Rulează QA factual, vizual, juridic și comercial. Compară vizualul cu fotografia-sursă la nivel de capac, gravură, mecanism, manivelă, șuruburi, text și proporții. Fiecare material trebuie să aibă un singur CTA, 5–10 hashtaguri relevante când platforma le justifică, text alternativ și o melodie licențiabilă sau disponibilă în biblioteca platformei.
 6. Salvează numai ciorne și propuneri cu proveniență, versiune, produs, asset, destinație, UTM, oră, risc și aprobare. Un produs devenit indisponibil invalidează automat piesa nepublicată.
 7. Execută o acțiune externă numai după aprobarea reviziei exacte și prin conector oficial verificat. La rezultat incert, verifică existența acțiunii înainte de reîncercare.

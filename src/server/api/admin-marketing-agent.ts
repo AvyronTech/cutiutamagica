@@ -14,6 +14,19 @@ type AgentSettings = {
   enabled: boolean;
   controlPlane: "cutiuta_magic_platform";
   publication: { requiresApproval: true; requiresVerifiedConnector: true };
+  contentPlaybook: {
+    version: string;
+    feedDaily: true;
+    storyDaily: true;
+    storyFramesMin: number;
+    storyFramesMax: number;
+    reelEveryDays: number;
+    tiktokEveryDays: number;
+    requireSpecificProductLink: true;
+    requireNativeVariants: true;
+    requireOriginalProductLayer: true;
+    measurementWindowsHours: number[];
+  };
   avyron: {
     async: true;
     enabled: boolean;
@@ -85,12 +98,25 @@ function sameOrigin(request: Request): boolean {
 
 function defaultSettings(): AgentSettings {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     timezone: "Europe/Bucharest",
     mode: "draft_approval",
     enabled: true,
     controlPlane: "cutiuta_magic_platform",
     publication: { requiresApproval: true, requiresVerifiedConnector: true },
+    contentPlaybook: {
+      version: "2026.10.10.1",
+      feedDaily: true,
+      storyDaily: true,
+      storyFramesMin: 3,
+      storyFramesMax: 5,
+      reelEveryDays: 3,
+      tiktokEveryDays: 3,
+      requireSpecificProductLink: true,
+      requireNativeVariants: true,
+      requireOriginalProductLayer: true,
+      measurementWindowsHours: [24, 72, 168],
+    },
     avyron: {
       async: true,
       enabled: false,
@@ -116,12 +142,22 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
     return {
       ...fallback,
       ...value,
-      schemaVersion: 2,
+      schemaVersion: 3,
       controlPlane: "cutiuta_magic_platform",
       publication: {
         ...publication,
         requiresApproval: true,
         requiresVerifiedConnector: true,
+      },
+      contentPlaybook: {
+        ...fallback.contentPlaybook,
+        ...((value.contentPlaybook ?? {}) as Partial<AgentSettings["contentPlaybook"]>),
+        version: "2026.10.10.1",
+        feedDaily: true,
+        storyDaily: true,
+        requireSpecificProductLink: true,
+        requireNativeVariants: true,
+        requireOriginalProductLayer: true,
       },
       avyron: {
         ...fallback.avyron,
@@ -163,37 +199,49 @@ async function readSettings(
 
 async function getState(request: Request, env: Env): Promise<Response> {
   await authenticateAdminRequest(request, env, "marketing.agent.read");
-  const [build, settingsResult, agent, accounts, target, exchanges] = await Promise.all([
-    getMarketingOrdersAgentBuild(),
-    readSettings(env.DB),
-    env.DB.prepare(
-      `SELECT code, name, purpose, approval_policy, max_actions_per_run, status, updated_at
+  const [build, settingsResult, agent, relatedAgents, accounts, target, exchanges] =
+    await Promise.all([
+      getMarketingOrdersAgentBuild(),
+      readSettings(env.DB),
+      env.DB.prepare(
+        `SELECT code, name, purpose, approval_policy, max_actions_per_run, status, updated_at
          FROM ai_agents WHERE id = 'agent_marketing_orders'`,
-    ).first(),
-    env.DB.prepare(
-      `SELECT id, provider, account_type, label, capabilities_json, status, last_synced_at
+      ).first(),
+      env.DB.prepare(
+        `SELECT code, name, purpose, approval_policy, status, updated_at
+         FROM ai_agents
+         WHERE id IN ('agent_content', 'agent_marketing_content', 'agent_seo')
+         ORDER BY CASE id
+           WHEN 'agent_content' THEN 1
+           WHEN 'agent_marketing_content' THEN 2
+           ELSE 3
+         END`,
+      ).all(),
+      env.DB.prepare(
+        `SELECT id, provider, account_type, label, capabilities_json, status, last_synced_at
          FROM social_accounts
          WHERE provider IN ('facebook', 'instagram', 'tiktok')
          ORDER BY provider, account_type`,
-    ).all(),
-    env.DB.prepare(
-      `SELECT code, source_label, status, auth_mode, agent_exchange_endpoint_url,
+      ).all(),
+      env.DB.prepare(
+        `SELECT code, source_label, status, auth_mode, agent_exchange_endpoint_url,
                 last_healthcheck_at, last_error_message
          FROM avyron_sync_targets WHERE code = 'avyron-os'`,
-    ).first(),
-    env.DB.prepare(
-      `SELECT id, direction, exchange_type, status, payload_hash, attempts, last_error,
+      ).first(),
+      env.DB.prepare(
+        `SELECT id, direction, exchange_type, status, payload_hash, attempts, last_error,
                 CASE WHEN direction = 'inbound' THEN payload_json ELSE NULL END AS review_payload_json,
                 created_at, updated_at
          FROM agent_exchange_items
          WHERE agent_id = 'agent_marketing_orders'
          ORDER BY created_at DESC LIMIT 30`,
-    ).all<ExchangeRow>(),
-  ]);
+      ).all<ExchangeRow>(),
+    ]);
   return json({
     data: {
       build,
       agent,
+      relatedAgents: relatedAgents.results,
       settings: settingsResult.settings,
       settingsVersion: settingsResult.row?.version ?? 0,
       settingsUpdatedAt: settingsResult.row?.updated_at ?? null,
@@ -228,7 +276,7 @@ async function updateSettings(request: Request, env: Env): Promise<Response> {
   }
   const next: AgentSettings = {
     ...current.settings,
-    schemaVersion: 2,
+    schemaVersion: 3,
     enabled: parsed.data.enabled,
     mode: parsed.data.enabled ? parsed.data.mode : "paused",
     controlPlane: "cutiuta_magic_platform",
