@@ -17155,33 +17155,83 @@ body.product-lightbox-open
 
 /* Final mobile accessibility cascade — must follow every compact visual override above. */
 @media (max-width: 767px) {
+  /*
+   * On touch screens the header already exposes the primary navigation. Keep the
+   * left rail as a quiet, passive reading-progress cue instead of stacking the
+   * emblem, four links and every chapter over the page content.
+   */
   .magic-scroll-rail {
-    left: 2px;
-    width: 54px;
-    max-height: calc(100svh - 20px);
-    gap: 5px;
-    padding: 6px 4px;
-    opacity: 0.94;
+    left: 7px;
+    width: 6px;
+    height: min(34svh, 240px);
+    max-height: 240px;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    opacity: 0.72;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
     transform: translateY(-50%);
+    pointer-events: none;
+    contain: layout paint style;
   }
   .magic-hero .hero-copy {
-    padding-left: 44px;
+    padding-left: 0;
   }
   .magic-rail-emblem,
-  .magic-rail-link,
-  .magic-rail-progress button {
-    width: 44px;
-    min-width: 44px;
-    height: 44px;
-    min-height: 44px;
-  }
   .magic-rail-links,
+  .magic-rail-progress button {
+    display: none;
+  }
   .magic-rail-progress {
-    gap: 4px;
+    display: block;
+    width: 6px;
+    height: 100%;
+    gap: 0;
   }
   .magic-rail-progress .magic-scroll-line {
-    top: 22px;
-    bottom: 22px;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(211 175 112 / 0.26);
+    transform: translateX(-50%);
+  }
+  .magic-rail-progress .magic-scroll-line > div {
+    border-radius: inherit;
+    box-shadow: 0 0 7px rgb(229 183 103 / 0.72);
+  }
+  .personalization-coming-page {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+  .personalization-scene.personalization-scene--compact {
+    padding-right: 5vw;
+    padding-left: 5vw;
+  }
+  .review-carousel-heading {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+  .gift-calendar {
+    padding-right: 48px;
+    padding-left: 14px;
+  }
+  .product-detail-shell {
+    padding-left: 16px;
+  }
+  .product-discovery {
+    padding-left: 20px;
+  }
+  .product-reviews {
+    padding-left: 24px;
+  }
+  .product-related-section {
+    padding-left: 16px;
   }
   .magic-footer-contact a,
   .magic-footer-nav a {
