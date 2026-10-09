@@ -20,6 +20,7 @@ import {
   toAdminOrderStatus,
   toStoredOrderState,
 } from "@/lib/order-status";
+import { productPath } from "@/lib/product-url";
 
 type DbValue = string | number | null;
 type DbRow = Record<string, DbValue>;
@@ -368,7 +369,7 @@ export async function listAdminProducts(
     rating: row.average_rating == null ? null : numberValue(row.average_rating),
     image: "CM",
     imageUrl: stringValue(row.image_url),
-    url: `${normalizedSiteUrl}/produs/${stringValue(row.slug)}`,
+    url: `${normalizedSiteUrl}${productPath(stringValue(row.slug))}`,
     sku: stringValue(row.sku),
     mechanismType: stringValue(row.mechanism_type),
     rightsStatus: stringValue(row.rights_status),

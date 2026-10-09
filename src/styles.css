@@ -2,22 +2,36 @@
 @source "../src";
 @import "tw-animate-css";
 
-/* Self-hosted fonts — elimină lanțul de blocare fonts.googleapis.com + fonts.gstatic.com */
-@import "@fontsource/cormorant-garamond/latin-400.css";
-@import "@fontsource/cormorant-garamond/latin-ext-400.css";
-@import "@fontsource/cormorant-garamond/latin-500.css";
-@import "@fontsource/cormorant-garamond/latin-ext-500.css";
-@import "@fontsource/cormorant-garamond/latin-600.css";
-@import "@fontsource/cormorant-garamond/latin-ext-600.css";
-@import "@fontsource/cormorant-garamond/latin-700.css";
-@import "@fontsource/cormorant-garamond/latin-ext-700.css";
-@import "@fontsource/cormorant-garamond/latin-400-italic.css";
-@import "@fontsource/cormorant-garamond/latin-ext-400-italic.css";
+/* Self-hosted, WOFF2-only fonts. `fallback` prevents a late swap from moving the layout. */
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-display: fallback;
+  font-weight: 400;
+  src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-normal.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-display: fallback;
+  font-weight: 600;
+  src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-600-normal.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-display: fallback;
+  font-weight: 400;
+  src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-italic.woff2")
+    format("woff2");
+}
 
 @font-face {
   font-family: "Inter Variable";
   font-style: normal;
-  font-display: swap;
+  font-display: fallback;
   font-weight: 100 900;
   src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
     format("woff2-variations");
@@ -111,9 +125,7 @@
     linear-gradient(145deg, var(--world-deep), var(--world-mid) 58%, var(--world-deep));
 }
 .product-world[data-product-slug="hp-keeper"] .product-world-scenery {
-  background:
-    linear-gradient(110deg, #07090ce8, #25170ebd 58%, #080a0ced),
-    url("/scenes/library.webp") center top / cover;
+  background: linear-gradient(110deg, #07090ce8, #25170ebd 58%, #080a0ced);
 }
 .product-world-backdrop {
   opacity: 0.23;
@@ -503,7 +515,7 @@
 @font-face {
   font-family: "Inter Variable";
   font-style: normal;
-  font-display: swap;
+  font-display: fallback;
   font-weight: 100 900;
   src: url("@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2")
     format("woff2-variations");
@@ -1199,7 +1211,7 @@
 }
 .magic-anpc-badge,
 .magic-adr-badge,
-.magic-stripe-badge {
+.magic-payment-badge {
   height: 36px;
 }
 .magic-footer-bottom {
@@ -5256,8 +5268,13 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
     radial-gradient(ellipse at 50% 112%, #b9824d20, transparent 52%),
     linear-gradient(150deg, #211711, #0e0c0b 68%, #17110d);
   isolation: isolate;
-  animation: page-story-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: page-story-enter 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
   contain: strict;
+  transform: translateZ(0);
+  will-change: opacity, transform;
+}
+.story-intro-seen .page-story-loader[data-initial="true"] {
+  display: none;
 }
 .page-story-loader::before {
   content: "";
@@ -5277,7 +5294,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 .page-story-loader--exit {
   pointer-events: none;
-  animation: page-story-exit 360ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: page-story-exit 220ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 .page-story-loader__backdrop {
   position: absolute;
@@ -5325,8 +5342,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
     -31vw -13vh 0 -1px currentColor,
     8vw 23vh 0 -1px currentColor;
   opacity: 0.5;
-  filter: drop-shadow(0 0 5px currentColor);
-  animation: page-story-dust 2.2s ease-in-out infinite alternate;
+  text-shadow: 0 0 5px currentColor;
+  animation: page-story-dust 1.45s ease-in-out infinite alternate;
 }
 .page-story-loader__dust--one {
   left: 50%;
@@ -5353,7 +5370,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   inset: 0;
   opacity: 0;
   transition: opacity 180ms ease;
-  filter: drop-shadow(0 28px 28px #00000072);
+  transform: translateZ(0);
 }
 .page-story-loader__canvas canvas {
   display: block;
@@ -5366,11 +5383,11 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 .page-story-loader__mark {
   width: min(186px, 46vw);
   height: min(186px, 46vw);
-  filter: drop-shadow(0 24px 25px #00000080);
+  filter: drop-shadow(0 18px 18px #00000066);
   opacity: 1;
   transform: rotateX(4deg) rotateY(-6deg);
   transition: opacity 160ms ease;
-  animation: page-story-mark 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: page-story-mark 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .page-story-loader__mark.is-hidden {
   opacity: 0;
@@ -5388,9 +5405,9 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   color: var(--page-loader-accent);
   background: #17110dcf;
   box-shadow: 0 0 24px color-mix(in srgb, var(--page-loader-accent) 28%, transparent);
-  font-family: var(--font-display);
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 16px;
-  animation: page-story-symbol 1.15s 180ms ease-out both;
+  animation: page-story-symbol 620ms 80ms ease-out both;
 }
 .page-story-loader__shadow {
   position: absolute;
@@ -5411,7 +5428,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   padding: 0 12px 22px;
   text-align: center;
   text-wrap: balance;
-  animation: page-story-copy 620ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  min-height: 112px;
+  animation: page-story-copy 440ms 60ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .page-story-loader__copy > span {
   display: inline-flex;
@@ -5435,7 +5453,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   max-width: 590px;
   margin: 8px auto 4px;
   color: #fff5e5;
-  font-family: var(--font-display);
+  font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(27px, 4vw, 43px);
   font-weight: 500;
   line-height: 0.98;
@@ -5459,13 +5477,14 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   inset: 0;
   background: linear-gradient(90deg, transparent, var(--page-loader-accent) 25% 90%, #fff);
   transform-origin: left;
-  animation: page-story-progress 1.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: page-story-progress 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .page-story-loader > button {
   position: absolute;
   top: max(18px, env(safe-area-inset-top));
   right: max(18px, env(safe-area-inset-right));
-  min-height: 40px;
+  min-width: 88px;
+  min-height: 44px;
   padding: 8px 12px;
   border: 1px solid #ffffff16;
   border-radius: 999px;
@@ -5510,11 +5529,11 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 @keyframes page-story-enter {
   from {
     opacity: 0;
-    clip-path: inset(48% 0 48% round 30px);
+    transform: translate3d(0, 8px, 0) scale(1.012);
   }
   to {
     opacity: 1;
-    clip-path: inset(0 0 0 round 0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 @keyframes page-story-exit {
@@ -5524,7 +5543,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   }
   to {
     opacity: 0;
-    transform: scale(1.025);
+    transform: translate3d(0, -5px, 0) scale(1.008);
     visibility: hidden;
   }
 }
@@ -5593,6 +5612,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
     height: min(235px, 34vh);
   }
   .page-story-loader__copy {
+    min-height: 122px;
     padding-bottom: 18px;
   }
   .page-story-loader__copy h2 {
@@ -6024,7 +6044,8 @@ body::-webkit-scrollbar,
 }
 .hero-actions {
   display: flex;
-  gap: 20px;
+  column-gap: 24px;
+  row-gap: 16px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -6035,7 +6056,7 @@ body::-webkit-scrollbar,
   align-items: center;
   justify-content: center;
   gap: 12px;
-  min-height: 46px;
+  min-height: 48px;
   padding: 13px 23px;
   border-radius: 999px;
   border: 1px solid #dfbb82;
@@ -8257,9 +8278,7 @@ body::-webkit-scrollbar,
     linear-gradient(25deg, transparent 45%, #fff7 45.2%, transparent 62%);
 }
 .product-world--library .product-world-scenery {
-  background:
-    linear-gradient(#f7f0e5aa, #f7f0e5 90%),
-    url("/scenes/library.webp") center top/cover;
+  background: linear-gradient(#f7f0e5aa, #f7f0e5 90%);
 }
 .product-world--winter .product-world-horizon {
   clip-path: polygon(
@@ -13255,6 +13274,8 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
     inset 0 0 70px #dfaf5510,
     0 0 80px #dca5480b;
   opacity: 0.8;
+  contain: layout paint;
+  will-change: transform;
   animation: hero-orbit-drift 18s ease-in-out infinite alternate;
   animation-play-state: paused;
 }
@@ -14666,7 +14687,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 }
 .magic-anpc-badge,
 .magic-adr-badge,
-.magic-stripe-badge {
+.magic-payment-badge {
   display: flex;
   align-items: center;
   height: 42px;
@@ -14680,7 +14701,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 }
 .magic-anpc-badge:hover,
 .magic-adr-badge:hover,
-.magic-stripe-badge:hover {
+.magic-payment-badge:hover {
   border-color: #e3bf7a7a;
   transform: translateY(-2px);
 }
@@ -14722,32 +14743,32 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   color: #d8e4f7;
   font-size: 8px;
 }
-.magic-stripe-badge {
+.magic-payment-badge {
   width: 170px;
   gap: 9px;
   padding: 0 10px;
   color: #242338;
   background: linear-gradient(135deg, #f7f5ff, #e5e0ff);
 }
-.magic-stripe-badge > span:first-child {
+.magic-payment-badge > span:first-child {
   color: #635bff;
   font-size: 16px;
   font-weight: 800;
   letter-spacing: -0.06em;
 }
-.magic-stripe-badge > span:last-child {
+.magic-payment-badge > span:last-child {
   display: grid;
   gap: 2px;
   padding-left: 9px;
   border-left: 1px solid #635bff30;
 }
-.magic-stripe-badge strong {
+.magic-payment-badge strong {
   font-size: 8px;
   line-height: 1.1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.magic-stripe-badge small {
+.magic-payment-badge small {
   color: #57536c;
   font-size: 7px;
 }
@@ -15055,7 +15076,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   }
   .magic-anpc-badge,
   .magic-adr-badge,
-  .magic-stripe-badge {
+  .magic-payment-badge {
     width: 168px;
   }
   .magic-footer-avyron {
@@ -15475,9 +15496,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   opacity: 0.33;
 }
 .product-world--library .product-world-scenery {
-  background:
-    linear-gradient(90deg, #0b0c0ee8, #19130eb8 56%, #090b0deb),
-    url("/scenes/library.webp") center top/cover;
+  background: linear-gradient(90deg, #0b0c0ee8, #19130eb8 56%, #090b0deb);
 }
 .product-world--winter .product-world-scenery {
   background:
@@ -16943,7 +16962,7 @@ body.product-lightbox-open
 }
 .magic-anpc-badge,
 .magic-adr-badge,
-.magic-stripe-badge {
+.magic-payment-badge {
   height: 36px;
 }
 .magic-footer-bottom {
@@ -17065,9 +17084,7 @@ body.product-lightbox-open
     linear-gradient(145deg, var(--world-deep), var(--world-mid) 58%, var(--world-deep));
 }
 .product-world[data-product-slug="hp-keeper"] .product-world-scenery {
-  background:
-    linear-gradient(110deg, #07090ce8, #25170ebd 58%, #080a0ced),
-    url("/scenes/library.webp") center top / cover;
+  background: linear-gradient(110deg, #07090ce8, #25170ebd 58%, #080a0ced);
 }
 .product-world-backdrop {
   opacity: 0.23;
@@ -17127,5 +17144,58 @@ body.product-lightbox-open
   }
   .review-form-wrap {
     padding: 15px;
+  }
+}
+
+/* Final mobile accessibility cascade — must follow every compact visual override above. */
+@media (max-width: 767px) {
+  .magic-scroll-rail {
+    left: 2px;
+    width: 54px;
+    max-height: calc(100svh - 20px);
+    gap: 5px;
+    padding: 6px 4px;
+    opacity: 0.94;
+    transform: translateY(-50%);
+  }
+  .magic-hero .hero-copy {
+    padding-left: 44px;
+  }
+  .magic-rail-emblem,
+  .magic-rail-link,
+  .magic-rail-progress button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+  .magic-rail-links,
+  .magic-rail-progress {
+    gap: 4px;
+  }
+  .magic-rail-progress .magic-scroll-line {
+    top: 22px;
+    bottom: 22px;
+  }
+  .magic-footer-contact a,
+  .magic-footer-nav a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    padding-block: 9px;
+  }
+  .magic-footer-nav > div {
+    gap: 0;
+  }
+  .magic-anpc-badge,
+  .magic-adr-badge,
+  .magic-payment-badge {
+    height: 44px;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 700px) {
+  .magic-rail-progress button[data-category="true"] {
+    display: none;
   }
 }

@@ -12,6 +12,7 @@ import {
   type MessageSession,
 } from "@/lib/message-sequence";
 import { BrandMark } from "./BrandMark";
+import { isProductPath } from "@/lib/product-url";
 const storageKey = "cm:message-sequence:v2";
 let memory: MessageSession = { shown: [], muted: false };
 
@@ -46,7 +47,7 @@ export function ContextualMessages() {
         ? "home"
         : path === "/produse"
           ? "products"
-          : path.startsWith("/produs/")
+          : isProductPath(path)
             ? "product"
             : path === "/comanda"
               ? "cart"

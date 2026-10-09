@@ -11,7 +11,7 @@ describe("product share links", () => {
 
   it("uses the canonical, encoded product URL", () => {
     expect(productCanonicalUrl(input.id)).toBe(
-      "https://cutiutamagica.eu/produs/cutiuta-luna%20%26%20stele",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-cutiuta-luna-stele",
     );
   });
 

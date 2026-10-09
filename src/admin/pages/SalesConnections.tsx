@@ -148,7 +148,7 @@ export function SalesConnections() {
         <h3 className="text-lg">Facturare, curierat și plăți</h3>
         <div className="my-4 flex flex-wrap gap-4 text-sm text-amber-200">
           <a href="/admin/billing" className="underline">
-            FGO · facturare
+            Oblio · facturare
           </a>
           <a href="/admin/shipping" className="underline">
             SmartShip · curierat

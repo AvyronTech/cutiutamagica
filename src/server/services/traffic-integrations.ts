@@ -62,13 +62,13 @@ async function recordConnectionCheck(
 export async function checkConnection(env: CommerceEnv, provider: CredentialProvider) {
   const key = await credential(env, provider);
   if (!key) throw new Error("Cheia sau tokenul nu este configurat.");
-  if (provider === "fgo" || provider === "stripe_webhook") {
+  if (provider === "oblio" || provider === "stripe_webhook") {
     await recordConnectionCheck(env, provider, "unverified");
     return {
       ok: false,
       message:
-        provider === "fgo"
-          ? "Cheia FGO este stocată. Validarea completă se face fără operații de test distructive, la prima factură emisă."
+        provider === "oblio"
+          ? "Secretul Oblio este stocat. Validarea completă se face fără emiterea unei facturi de test, la prima operație aprobată."
           : "Secretul webhook Stripe este stocat. Semnătura va fi validată la primul eveniment primit de la Stripe.",
     };
   }

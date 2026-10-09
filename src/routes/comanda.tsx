@@ -42,6 +42,7 @@ import { BrandMark } from "@/components/site/BrandMark";
 import type { EasyboxLocker } from "@/lib/easybox";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { seoHead } from "@/lib/seo-head";
+import { productLink } from "@/lib/product-url";
 
 export const Route = createFileRoute("/comanda")({
   component: OrderPage,
@@ -658,11 +659,7 @@ function OrderPage() {
               <ul inert={submissionLocked} className="checkout-cart-list mt-5 space-y-2">
                 {itemsDetailed.map((item) => (
                   <li key={item.id} className="checkout-cart-item">
-                    <Link
-                      to="/produs/$id"
-                      params={{ id: item.product.id }}
-                      className="checkout-cart-item__media"
-                    >
+                    <Link {...productLink(item.product.id)} className="checkout-cart-item__media">
                       <ProductImage
                         src={item.product.image}
                         alt={item.product.name}
@@ -673,8 +670,7 @@ function OrderPage() {
                     <div className="checkout-cart-item__body">
                       <div className="checkout-cart-item__head">
                         <Link
-                          to="/produs/$id"
-                          params={{ id: item.product.id }}
+                          {...productLink(item.product.id)}
                           className="line-clamp-2 font-display text-sm leading-tight hover:underline sm:text-base"
                         >
                           {item.product.name}
@@ -756,7 +752,7 @@ function OrderPage() {
                 <ul>
                   {giftListDetailed.map((product) => (
                     <li key={product.id}>
-                      <Link to="/produs/$id" params={{ id: product.id }}>
+                      <Link {...productLink(product.id)}>
                         <ProductImage
                           src={product.image}
                           alt={product.name}
@@ -765,9 +761,7 @@ function OrderPage() {
                         />
                       </Link>
                       <div>
-                        <Link to="/produs/$id" params={{ id: product.id }}>
-                          {product.name}
-                        </Link>
+                        <Link {...productLink(product.id)}>{product.name}</Link>
                         {product.price != null ? (
                           <ProductPrice product={product} size="compact" showSavings={false} />
                         ) : (
@@ -1421,8 +1415,7 @@ function CartRecommendations({
             >
               <article className="checkout-recommendation-card flex h-full overflow-hidden rounded-xl border border-[color:var(--gold)]/25 bg-card/90 shadow-sm">
                 <Link
-                  to="/produs/$id"
-                  params={{ id: product.id }}
+                  {...productLink(product.id)}
                   className="w-20 shrink-0 bg-[color:var(--gold)]/10 sm:w-24"
                   aria-label={`Vezi ${product.name}`}
                 >
@@ -1434,7 +1427,7 @@ function CartRecommendations({
                   />
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col p-2.5">
-                  <Link to="/produs/$id" params={{ id: product.id }} className="hover:underline">
+                  <Link {...productLink(product.id)} className="hover:underline">
                     <h3 className="font-display text-sm leading-tight line-clamp-2">
                       {product.name}
                     </h3>

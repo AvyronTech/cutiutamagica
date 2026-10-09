@@ -177,6 +177,9 @@ export function Header() {
             <Link to="/produse" className="site-header__nav-link">
               Cutiuțe Muzicale
             </Link>
+            <Link to="/cadouri" className="site-header__nav-link">
+              Idei de Cadouri
+            </Link>
             <Link to="/despre-cutiuta" className="site-header__nav-link">
               Despre Cutiuță
             </Link>

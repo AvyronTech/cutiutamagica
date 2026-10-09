@@ -11,6 +11,7 @@ const navGroups = [
       { to: "/produse", label: "Cutiuțe muzicale" },
       { to: "/personalizeaza", label: "Personalizare · în curând" },
       { to: "/cadouri", label: "Idei de cadouri" },
+      { to: "/ghid-cadouri-personalizate", label: "Ghid de alegere" },
       { to: "/magic-rewards", label: "Magic Rewards ✦" },
       { to: "/despre-cutiuta", label: "Despre cutiuță" },
     ],
@@ -104,7 +105,7 @@ export function Footer() {
               href="https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/resolve-your-consumer-complaint/alternative-dispute-resolution-consumers_ro"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Comisia Europeană: soluționarea alternativă a litigiilor pentru consumatori"
+              aria-label="Soluționarea litigiilor — ADR și ECC-Net, Comisia Europeană"
               className="magic-adr-badge"
             >
               <span aria-hidden>EU</span>
@@ -113,18 +114,13 @@ export function Footer() {
                 <small>ADR și ECC-Net</small>
               </span>
             </a>
-            <a
-              href="https://stripe.com/payments"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Stripe Payments"
-              className="magic-stripe-badge"
-            >
-              <span aria-hidden>stripe</span>
+            <div aria-label="Plată ramburs la livrare" className="magic-payment-badge">
+              <span aria-hidden>RON</span>
               <span>
-                <strong>Stripe Payments</strong>
+                <strong>Plată ramburs</strong>
+                <small>La livrare</small>
               </span>
-            </a>
+            </div>
           </section>
 
           <a
@@ -134,7 +130,14 @@ export function Footer() {
             aria-label="Avyron — descoperă-ne"
             className="magic-footer-avyron"
           >
-            <img src={avyronLogo} alt="Avyron" loading="lazy" decoding="async" />
+            <img
+              src={avyronLogo}
+              alt="Avyron"
+              width={1774}
+              height={485}
+              loading="lazy"
+              decoding="async"
+            />
           </a>
         </div>
 

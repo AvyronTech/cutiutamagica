@@ -60,7 +60,7 @@ describe("floating cart access", () => {
     expect(showFloatingCart("/comanda/", 1)).toBe(false);
     expect(showFloatingCart("/admin/products", 1)).toBe(false);
     expect(showFloatingCart("/produse", 1)).toBe(true);
-    expect(showFloatingCart("/produs/hp-keeper", 1)).toBe(true);
+    expect(showFloatingCart("/produs-cutiuta-muzicala-harry-potter-hedwig", 1)).toBe(true);
   });
   it("starts opposite a left-hand chat and ignores invalid stored preferences", () => {
     expect(DEFAULT_CHAT_SIDE).toBe("left");

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
-import bgEmotie from "@/assets/bg-emotie.jpg";
+import bgEmotie from "@/assets/bg-emotie.webp";
 import { worldBlend } from "@/lib/landing-motion";
 const scenes = [
   { key: "story", source: "/scenes/library.webp", mobile: "/scenes/library-mobile.webp" },
@@ -138,6 +138,8 @@ export function LandingBackdrop() {
                   alt=""
                   width={1672}
                   height={941}
+                  loading="eager"
+                  fetchPriority="high"
                   decoding="async"
                   className="hero-world"
                 />

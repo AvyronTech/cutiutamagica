@@ -30,7 +30,6 @@ const labels: Record<CredentialProvider, string> = {
   trendyol: "Trendyol · credențiale API",
   olx: "OLX · token acces",
   okazii: "Okazii · cheie API",
-  fgo: "FGO · cheie privată API",
   smartship: "SmartShip",
   stripe: "Stripe",
   stripe_webhook: "Stripe · secret webhook",
@@ -235,7 +234,7 @@ export default function GrowthSettings({
             currencies: ["RON", "EUR"],
             revolutAccount: text("revolutAccount"),
             stripeAccount: text("stripeAccount"),
-            fgoSeries: text("fgoSeries"),
+            oblioSeries: text("oblioSeries"),
             spvClientId: text("spvClientId"),
             avyronSummaryEnabled: false,
           },
@@ -331,15 +330,15 @@ export default function GrowthSettings({
             )}
             {field("stripeAccount", "Stripe · Account ID", data.finance.stripeAccount)}
             {field(
-              "fgoSeries",
-              "Referință serie FGO (seria operațională se gestionează în Facturare)",
-              data.finance.fgoSeries,
+              "oblioSeries",
+              "Referință serie Oblio (seria operațională se gestionează în Facturare)",
+              data.finance.oblioSeries,
             )}
             {field("spvClientId", "ANAF SPV · Client ID", data.finance.spvClientId)}
             <p className="text-sm text-slate-400">
-              Monede: RON și EUR. FGO se gestionează în Facturare. SPV/e-Factura necesită autorizare
-              ANAF și certificat. Tokenurile OAuth expiră și trebuie reînnoite. Transmiterea către
-              AVYRON este dezactivată; sinteza poate fi exportată local.
+              Monede: RON și EUR. Oblio se gestionează în Facturare. SPV/e-Factura necesită
+              autorizare ANAF și certificat. Tokenurile OAuth expiră și trebuie reînnoite.
+              Transmiterea către AVYRON este dezactivată; sinteza poate fi exportată local.
             </p>
           </>
         )}

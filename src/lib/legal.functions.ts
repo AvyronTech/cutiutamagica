@@ -31,5 +31,8 @@ export function legalHead(title: string, description: string, path: string) {
     path,
     image: "/scenes/footer-atelier.webp",
     imageAlt: `${title} — informații oficiale Cutiuța Magică`,
+    // Paginile rămân publice și accesibile din footer, dar nu concurează în Search
+    // cu paginile comerciale și ghidurile editoriale.
+    robots: "noindex, follow",
   });
 }

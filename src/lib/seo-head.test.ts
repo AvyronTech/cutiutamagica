@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { DEFAULT_SOCIAL_IMAGE, seoHead } from "./seo-head";
 
 describe("seoHead", () => {
@@ -33,5 +35,19 @@ describe("seoHead", () => {
       property: "og:url",
       content: "https://cutiutamagica.eu/cont",
     });
+  });
+
+  it("lets crawlers read public noindex pages so they can follow their links", () => {
+    const head = seoHead({
+      title: "Termeni | Cutiuța Magică",
+      description: "Informații oficiale despre magazin.",
+      path: "/termeni-de-utilizare",
+      robots: "noindex, follow",
+    });
+    const robots = readFileSync(resolve("public/robots.txt"), "utf8");
+
+    expect(head.meta).toContainEqual({ name: "robots", content: "noindex, follow" });
+    expect(robots).not.toMatch(/Disallow: \/(auth|comanda|cont|personalizeaza)\b/);
+    expect(robots).toContain("Sitemap: https://cutiutamagica.eu/sitemap.xml");
   });
 });

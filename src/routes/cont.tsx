@@ -5,7 +5,10 @@ import {
   Box,
   CalendarDays,
   Camera,
+  CreditCard,
   LogOut,
+  ReceiptText,
+  Repeat2,
   ShieldCheck,
   Sparkles,
   Star,
@@ -50,6 +53,41 @@ const statusLabels: Record<PersonalizationRequestSummary["status"], string> = {
   cancelled: "Anulată",
 };
 
+type CustomerBilling = {
+  orders: Array<{
+    orderNumber: string;
+    orderStatus: string;
+    paymentStatus: string;
+    totalBani: number;
+    currency: string;
+    placedAt: string;
+  }>;
+  paymentMethods: Array<{
+    id: string;
+    provider: string;
+    displayLabel: string;
+    brand: string | null;
+    last4: string | null;
+    expiryMonth: number | null;
+    expiryYear: number | null;
+    isDefault: number;
+    status: string;
+  }>;
+  subscriptions: Array<{
+    id: string;
+    provider: string;
+    status: string;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: number;
+    label: string;
+    serviceName: string | null;
+    unitAmountBani: number;
+    currency: string;
+    intervalUnit: string;
+    intervalCount: number;
+  }>;
+};
+
 function CustomerAccount() {
   const { auth } = Route.useSearch();
   const queryClient = useQueryClient();
@@ -62,6 +100,12 @@ function CustomerAccount() {
   const requests = useQuery({
     queryKey: ["personalization-requests"],
     queryFn: () => reviewApi<PersonalizationRequestSummary[]>("/api/v1/personalization/requests"),
+    enabled: !!account.data,
+    retry: false,
+  });
+  const billing = useQuery({
+    queryKey: ["customer-billing"],
+    queryFn: () => reviewApi<CustomerBilling>("/api/v1/customer/billing"),
     enabled: !!account.data,
     retry: false,
   });
@@ -80,6 +124,7 @@ function CustomerAccount() {
       await reviewApi("/api/v1/reviewer/logout", { method: "POST" });
       queryClient.setQueryData(["reviewer"], null);
       queryClient.removeQueries({ queryKey: ["personalization-requests"] });
+      queryClient.removeQueries({ queryKey: ["customer-billing"] });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Deconectarea nu a reușit.");
     } finally {
@@ -245,6 +290,88 @@ function CustomerAccount() {
       )}
 
       <CustomerMagicCenter />
+
+      <section className="customer-requests" aria-labelledby="customer-billing-title">
+        <div className="customer-requests-heading">
+          <div>
+            <p className="catalog-eyebrow">Comenzi și facturare</p>
+            <h2 id="customer-billing-title">Centrul tău de plată</h2>
+          </div>
+          <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+            <ShieldCheck size={16} /> Datele complete ale cardului nu sunt stocate aici
+          </span>
+        </div>
+        {billing.isLoading ? (
+          <p>Se încarcă situația contului…</p>
+        ) : billing.isError ? (
+          <p className="personalization-error" role="alert">
+            Situația comenzilor nu poate fi încărcată acum.
+          </p>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-3">
+            <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
+              <ReceiptText aria-hidden />
+              <h3 className="mt-3 font-semibold">Comenzile mele</h3>
+              {billing.data?.orders.length ? (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {billing.data.orders.slice(0, 5).map((order) => (
+                    <li key={order.orderNumber} className="border-t border-slate-200 pt-3">
+                      <strong>{order.orderNumber}</strong>
+                      <span className="block text-slate-600">
+                        {(order.totalBani / 100).toLocaleString("ro-RO", {
+                          style: "currency",
+                          currency: order.currency,
+                        })}{" "}
+                        · {order.paymentStatus}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-slate-600">Nu există încă o comandă asociată.</p>
+              )}
+            </article>
+            <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
+              <CreditCard aria-hidden />
+              <h3 className="mt-3 font-semibold">Metode salvate</h3>
+              {billing.data?.paymentMethods.length ? (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {billing.data.paymentMethods.map((method) => (
+                    <li key={method.id}>
+                      <strong>{method.displayLabel}</strong>
+                      <span className="block text-slate-600">
+                        {method.brand || "Card"} {method.last4 ? `•••• ${method.last4}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-slate-600">
+                  Salvarea cardului va deveni disponibilă după conectarea procesatorului ales.
+                </p>
+              )}
+            </article>
+            <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
+              <Repeat2 aria-hidden />
+              <h3 className="mt-3 font-semibold">Plăți recurente</h3>
+              {billing.data?.subscriptions.length ? (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {billing.data.subscriptions.map((subscription) => (
+                    <li key={subscription.id}>
+                      <strong>{subscription.serviceName || subscription.label}</strong>
+                      <span className="block text-slate-600">{subscription.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-slate-600">
+                  Nu ai abonamente active. Activarea va cere consimțământ explicit.
+                </p>
+              )}
+            </article>
+          </div>
+        )}
+      </section>
 
       <section className="customer-requests" aria-labelledby="customer-requests-title">
         <div className="customer-requests-heading">

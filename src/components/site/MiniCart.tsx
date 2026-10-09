@@ -1,12 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MAX_QTY } from "@/data/products";
 import { ProductImage } from "@/components/site/ProductImage";
 import { ProductPrice } from "@/components/site/ProductPrice";
 import { useShop } from "@/store/shop";
 import { playTick, playWood } from "@/lib/sound";
+import { productLink } from "@/lib/product-url";
 
 /** One accessible cart panel shared by header and floating access. */
 export function MiniCart({
@@ -21,6 +22,7 @@ export function MiniCart({
   onRestoreFocus: () => void;
 }) {
   const { itemsDetailed, setQty, removeFromCart, totalQty, totals } = useShop();
+  const [contentReady, setContentReady] = useState(false);
 
   // Ultimele adăugate primele; intrările vechi (fără marcaj de timp) rămân la coadă.
   const items = useMemo(
@@ -29,7 +31,16 @@ export function MiniCart({
   );
 
   useEffect(() => {
-    if (open) playWood();
+    if (!open) {
+      setContentReady(false);
+      return;
+    }
+    const contentFrame = requestAnimationFrame(() => setContentReady(true));
+    const soundTimer = window.setTimeout(playWood, 0);
+    return () => {
+      cancelAnimationFrame(contentFrame);
+      window.clearTimeout(soundTimer);
+    };
   }, [open]);
 
   return (
@@ -76,7 +87,12 @@ export function MiniCart({
           <Dialog.Description className="sr-only">
             Verifică produsele și cantitățile înainte de finalizarea comenzii.
           </Dialog.Description>
-          {items.length === 0 ? (
+          {!contentReady ? (
+            <div className="px-5 pb-8 pt-4" aria-live="polite">
+              <div className="h-20 animate-pulse rounded-xl bg-[color:var(--gold)]/10" />
+              <span className="sr-only">Se deschide coșul…</span>
+            </div>
+          ) : items.length === 0 ? (
             <div className="px-5 pb-8 pt-2 text-center">
               <ShoppingBag className="mx-auto h-9 w-9 text-[color:var(--wood-dark)]/35" />
               <p className="mt-3 text-sm text-muted-foreground">Încă nu ai nicio cutiuță în coș.</p>
@@ -98,8 +114,7 @@ export function MiniCart({
                       className="flex gap-3 rounded-xl border border-[color:var(--gold)]/20 bg-white/60 p-2"
                     >
                       <Link
-                        to="/produs/$id"
-                        params={{ id: item.product.id }}
+                        {...productLink(item.product.id)}
                         onClick={onClose}
                         className="shrink-0"
                       >
@@ -112,8 +127,7 @@ export function MiniCart({
                       </Link>
                       <div className="min-w-0 flex-1">
                         <Link
-                          to="/produs/$id"
-                          params={{ id: item.product.id }}
+                          {...productLink(item.product.id)}
                           onClick={onClose}
                           className="line-clamp-2 text-sm font-medium leading-snug hover:underline"
                         >

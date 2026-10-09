@@ -20,8 +20,9 @@ import { MagicRewardsSpotlight } from "@/components/site/MagicRewardsSpotlight";
 import { getPublicMagicRewards } from "@/lib/magic-rewards.functions";
 import { collectionProducts } from "@/lib/collections";
 import { useShop } from "@/store/shop";
-import bgEmotie from "@/assets/bg-emotie.jpg";
+import bgEmotie from "@/assets/bg-emotie.webp";
 import { seoHead } from "@/lib/seo-head";
+import { productPath } from "@/lib/product-url";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -59,10 +60,10 @@ function Index() {
     itemListElement: heroProducts.map((product, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}`,
+      url: `https://cutiutamagica.eu${productPath(product.id)}`,
       item: {
         "@type": "Product",
-        "@id": `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}#product`,
+        "@id": `https://cutiutamagica.eu${productPath(product.id)}#product`,
         name: product.name,
         image: new URL(product.image, "https://cutiutamagica.eu").href,
         sku: product.sku,
@@ -75,7 +76,7 @@ function Index() {
                 price: product.price,
                 priceCurrency: "RON",
                 availability: "https://schema.org/InStock",
-                url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.id)}`,
+                url: `https://cutiutamagica.eu${productPath(product.id)}`,
               },
       },
     })),
@@ -123,7 +124,11 @@ function Index() {
                 o amintire, de lumea ta.
               </p>
               <div className="hero-actions">
-                <a href="#povesti" className="magic-button">
+                <a
+                  href="#povesti"
+                  className="magic-button"
+                  aria-label="Găsește cutiuța ta — vezi poveștile"
+                >
                   Găsește cutiuța ta
                   <ArrowUpRight size={17} />
                 </a>

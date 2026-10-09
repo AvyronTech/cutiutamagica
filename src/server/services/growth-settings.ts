@@ -51,7 +51,6 @@ const secretNames = {
   trendyol: "TRENDYOL_API_CREDENTIALS",
   olx: "OLX_ACCESS_TOKEN",
   okazii: "OKAZII_API_KEY",
-  fgo: "FGO_PRIVATE_KEY",
   smartship: "SMARTSHIP_API_KEY",
   stripe: "STRIPE_SECRET_KEY",
   stripe_webhook: "STRIPE_WEBHOOK_SECRET",

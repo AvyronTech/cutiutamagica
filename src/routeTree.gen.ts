@@ -23,6 +23,7 @@ import { Route as MagicRewardsRouteImport } from './routes/magic-rewards'
 import { Route as PersonalizeazaRouteImport } from './routes/personalizeaza'
 import { Route as PoliticaDeConfidentialitateRouteImport } from './routes/politica-de-confidentialitate'
 import { Route as PovesteRouteImport } from './routes/poveste'
+import { Route as ProdusCutiutaMuzicalaChar123slugChar125RouteImport } from './routes/produs-cutiuta-muzicala-{$slug}'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as ReturRouteImport } from './routes/retur'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -135,6 +136,12 @@ const PovesteRoute = PovesteRouteImport.update({
   path: '/poveste',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProdusCutiutaMuzicalaChar123slugChar125Route =
+  ProdusCutiutaMuzicalaChar123slugChar125RouteImport.update({
+    id: '/produs-cutiuta-muzicala-{$slug}',
+    path: '/produs-cutiuta-muzicala-{$slug}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ProduseRoute = ProduseRouteImport.update({
   id: '/produse',
   path: '/produse',
@@ -377,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
+  '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
+  '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -487,6 +496,7 @@ export interface FileRoutesById {
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
+  '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
+    | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
+    | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
@@ -653,6 +665,7 @@ export interface FileRouteTypes {
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
+    | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
@@ -710,6 +723,7 @@ export interface RootRouteChildren {
   PersonalizeazaRoute: typeof PersonalizeazaRoute
   PoliticaDeConfidentialitateRoute: typeof PoliticaDeConfidentialitateRoute
   PovesteRoute: typeof PovesteRoute
+  ProdusCutiutaMuzicalaChar123slugChar125Route: typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   ProduseRoute: typeof ProduseRoute
   ReturRoute: typeof ReturRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -817,6 +831,13 @@ declare module '@tanstack/react-router' {
       path: '/poveste'
       fullPath: '/poveste'
       preLoaderRoute: typeof PovesteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/produs-cutiuta-muzicala-{$slug}': {
+      id: '/produs-cutiuta-muzicala-{$slug}'
+      path: '/produs-cutiuta-muzicala-{$slug}'
+      fullPath: '/produs-cutiuta-muzicala-{$slug}'
+      preLoaderRoute: typeof ProdusCutiutaMuzicalaChar123slugChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/produse': {
@@ -1218,6 +1239,8 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalizeazaRoute: PersonalizeazaRoute,
   PoliticaDeConfidentialitateRoute: PoliticaDeConfidentialitateRoute,
   PovesteRoute: PovesteRoute,
+  ProdusCutiutaMuzicalaChar123slugChar125Route:
+    ProdusCutiutaMuzicalaChar123slugChar125Route,
   ProduseRoute: ProduseRoute,
   ReturRoute: ReturRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

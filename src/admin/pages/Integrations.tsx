@@ -57,7 +57,7 @@ const OPERATIONAL_PROVIDERS: Record<
       | "/admin/integrations";
   }
 > = {
-  fgo: { label: "FGO", route: "/admin/billing" },
+  oblio: { label: "Oblio", route: "/admin/billing" },
   smartship: { label: "SmartShip", route: "/admin/shipping" },
   stripe: { label: "Stripe", route: "/admin/financiar" },
   resend: { label: "Resend", route: "/admin/email" },

@@ -12,6 +12,7 @@ import { LimitedEditionBadge } from "@/components/site/LimitedEditionBadge";
 import { notifyAddedToCart } from "@/lib/notify";
 import { productScene } from "@/lib/product-themes";
 import type { CSSProperties } from "react";
+import { productLink } from "@/lib/product-url";
 
 type Variant = "solid" | "glass";
 
@@ -61,7 +62,7 @@ export function ProductCard({
         <span className="product-card-scene__plane" />
         <span className="product-card-scene__orbit" />
       </div>
-      <Link to="/produs/$id" params={{ id: product.id }} className="block">
+      <Link {...productLink(product.id)} className="block">
         <div
           className={`product-card-themed__visual ${
             isGlass
@@ -178,8 +179,7 @@ export function ProductCard({
           </>
         ) : (
           <Link
-            to="/produs/$id"
-            params={{ id: product.id }}
+            {...productLink(product.id)}
             className={`inline-flex w-full items-center justify-center gap-2 rounded-md border py-2 text-sm font-medium transition ${
               isGlass
                 ? "border-white/25 bg-white/10 text-[color:var(--cream)] hover:bg-white/15"

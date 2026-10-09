@@ -62,18 +62,6 @@ export const Route = createFileRoute("/ghid-cadouri-personalizate")({
             dateModified: "2026-10-04",
           }),
         },
-        {
-          type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: faq.map((item) => ({
-              "@type": "Question",
-              name: item.question,
-              acceptedAnswer: { "@type": "Answer", text: item.answer },
-            })),
-          }),
-        },
       ],
     };
   },

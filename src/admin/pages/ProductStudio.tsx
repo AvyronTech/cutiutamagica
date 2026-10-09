@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SupplierResearch from "./SupplierResearch";
+import { productPath } from "@/lib/product-url";
 
 const SLOT_GUIDE = [
   {
@@ -934,7 +935,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
           </p>
         </div>
         <a
-          href={`/produs/${data.product.slug}`}
+          href={productPath(data.product.slug)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#334155] px-3 py-2 text-xs text-slate-200 hover:border-cyan-400/40"

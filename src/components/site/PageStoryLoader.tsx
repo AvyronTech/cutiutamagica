@@ -3,10 +3,11 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { isPublicStoryPath, pageStoryProfile } from "@/lib/page-loading";
 import { BrandMark } from "./BrandMark";
 
-const MIN_ROUTE_VISIBLE_MS = 520;
-const INITIAL_VISIBLE_MS = 850;
-const MAX_ACTIVE_MS = 1600;
-const EXIT_MS = 280;
+const MIN_INITIAL_VISIBLE_MS = 720;
+const MIN_ROUTE_VISIBLE_MS = 380;
+const MAX_ACTIVE_MS = 1200;
+const EXIT_MS = 220;
+const INTRO_SESSION_KEY = "cutiuta:cinematic-intro:v2";
 
 type ActiveStory = {
   id: number;
@@ -16,11 +17,17 @@ type ActiveStory = {
 };
 
 type NavigatorConnection = { saveData?: boolean; effectiveType?: string };
+type OptionalIdleWindow = {
+  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
 
 export function PageStoryLoader({ initialPath }: { initialPath: string }) {
   const routeState = useRouterState({
     select: (state) => ({ status: state.status, path: state.location.pathname }),
   });
+  // Render the first cinematic frame with the document, so it can never flash in late.
+  // A tiny head script hides this SSR shell before paint when the session already saw it.
   const [active, setActive] = useState<ActiveStory | null>(() =>
     isPublicStoryPath(initialPath)
       ? { id: 1, path: initialPath, phase: "enter", initial: true }
@@ -35,11 +42,13 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
   const minimumTimer = useRef<number | undefined>(undefined);
   const maximumTimer = useRef<number | undefined>(undefined);
   const removalTimer = useRef<number | undefined>(undefined);
+  const introTimer = useRef<number | undefined>(undefined);
 
   const clearTimers = useCallback(() => {
     window.clearTimeout(minimumTimer.current);
     window.clearTimeout(maximumTimer.current);
     window.clearTimeout(removalTimer.current);
+    window.clearTimeout(introTimer.current);
   }, []);
 
   const finish = useCallback(() => {
@@ -87,10 +96,37 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
   }, [finish]);
 
   useEffect(() => {
+    if (routeState.status === "pending") start(routeState.path);
+    else resolve();
+  }, [resolve, routeState.path, routeState.status, start]);
+
+  useEffect(() => {
     const current = activeRef.current;
     if (!current?.initial) return;
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(INTRO_SESSION_KEY) === "1";
+    } catch {
+      /* A private browsing policy must not block the storefront. */
+    }
+    if (seen) {
+      activeRef.current = null;
+      setActive(null);
+      return;
+    }
+    try {
+      sessionStorage.setItem(INTRO_SESSION_KEY, "1");
+    } catch {
+      /* The animation remains safe when storage is unavailable. */
+    }
+
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    minimumTimer.current = window.setTimeout(finish, reduced ? 120 : INITIAL_VISIBLE_MS);
+    const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection;
+    const constrained = connection?.saveData || connection?.effectiveType?.includes("2g");
+    introTimer.current = window.setTimeout(
+      finish,
+      reduced ? 160 : constrained ? 420 : MIN_INITIAL_VISIBLE_MS,
+    );
     maximumTimer.current = window.setTimeout(finish, MAX_ACTIVE_MS);
     requestAnimationFrame(() => {
       setActive((story) => {
@@ -102,11 +138,6 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
     });
     return clearTimers;
   }, [clearTimers, finish]);
-
-  useEffect(() => {
-    if (routeState.status === "pending") start(routeState.path);
-    else resolve();
-  }, [resolve, routeState.path, routeState.status, start]);
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -136,7 +167,14 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
 
   useEffect(() => {
     const current = activeRef.current;
-    if (!current || current.id !== activeId || current.phase === "exit" || !host.current) return;
+    if (
+      !current ||
+      current.id !== activeId ||
+      current.initial ||
+      current.phase === "exit" ||
+      !host.current
+    )
+      return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const compact = window.matchMedia("(max-width: 720px)").matches;
     const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection;
@@ -144,22 +182,31 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
     if (reduced || compact || constrained || document.hidden) return;
     let disposed = false;
     let scene: { dispose(): void } | undefined;
-    void import("./PageStoryScene")
-      .then(({ mountPageStoryScene }) => {
-        if (disposed || !host.current) return;
-        const profile = pageStoryProfile(current.path);
-        try {
-          scene = mountPageStoryScene(host.current, profile.scene, profile.accent);
-          setSceneReady(true);
-        } catch {
-          /* The lightweight CSS/SVG scene remains complete without WebGL. */
-        }
-      })
-      .catch(() => {
-        /* A route transition never depends on its decorative 3D layer. */
-      });
+    const loadScene = () => {
+      if (disposed) return;
+      void import("./PageStoryScene")
+        .then(({ mountPageStoryScene }) => {
+          if (disposed || !host.current) return;
+          const profile = pageStoryProfile(current.path);
+          try {
+            scene = mountPageStoryScene(host.current, profile.scene, profile.accent);
+            setSceneReady(true);
+          } catch {
+            /* The lightweight CSS/SVG scene remains complete without WebGL. */
+          }
+        })
+        .catch(() => {
+          /* A route transition never depends on its decorative 3D layer. */
+        });
+    };
+    const idleWindow = window as unknown as OptionalIdleWindow;
+    const idleId = idleWindow.requestIdleCallback
+      ? idleWindow.requestIdleCallback(loadScene, { timeout: 240 })
+      : window.setTimeout(loadScene, 80);
     return () => {
       disposed = true;
+      if (idleWindow.cancelIdleCallback) idleWindow.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
       scene?.dispose();
     };
   }, [activeId]);
@@ -175,6 +222,7 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
     <div
       className={`page-story-loader page-story-loader--${active.phase}`}
       data-scene={profile.scene}
+      data-initial={active.initial ? "true" : undefined}
       style={style}
       role="status"
       aria-live="polite"
@@ -200,7 +248,7 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
       <div className="page-story-loader__progress" aria-hidden>
         <i />
       </div>
-      <button type="button" onClick={finish} aria-label="Închide animația și continuă">
+      <button type="button" onClick={finish} aria-label="Continuă — închide animația">
         Continuă <span aria-hidden>↗</span>
       </button>
     </div>

@@ -1,6 +1,7 @@
 import { handleReviews } from "./reviews";
 import { handlePersonalization } from "./personalization";
 import { handleReviewAccount } from "../review-accounts";
+import { handleCustomerBilling } from "./customer-billing";
 import { localMediaPreview } from "@/server/media-policy";
 import { handleCheckoutAdmin } from "./checkout-admin";
 import { handleStoryScene } from "./story-scene";
@@ -199,6 +200,8 @@ export async function handleApiRequest(
 
   const reviewAccountResponse = await handleReviewAccount(request, env);
   if (reviewAccountResponse) return reviewAccountResponse;
+  const customerBillingResponse = await handleCustomerBilling(request, env);
+  if (customerBillingResponse) return customerBillingResponse;
   const loyaltyResponse = await handleCustomerLoyalty(request, env);
   if (loyaltyResponse) return loyaltyResponse;
   const reviewsResponse = await handleReviews(request, env);

@@ -25,6 +25,7 @@ import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductCardCarousel } from "@/components/site/ProductCardCarousel";
 import { seoHead } from "@/lib/seo-head";
+import { productPath } from "@/lib/product-url";
 
 const CATALOG_URL = "https://cutiutamagica.eu/produse";
 const collectionIcons = { story: BookOpen, emotion: Heart, dedicated: Gift };
@@ -64,7 +65,7 @@ export const Route = createFileRoute("/produse")({
                   itemListElement: (loaderData?.catalog ?? []).map((product, index) => ({
                     "@type": "ListItem",
                     position: index + 1,
-                    url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.slug)}`,
+                    url: `https://cutiutamagica.eu${productPath(product.slug)}`,
                     name: product.name,
                     image: product.imageUrl
                       ? product.imageUrl.startsWith("http")

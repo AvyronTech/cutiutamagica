@@ -10,6 +10,7 @@ import {
 import { listPublicCatalog, type CatalogProduct } from "@/server/db/catalog.repository";
 import { digestHex } from "@/server/integrations/provider-runtime";
 import { renderGoogleMerchantFeed } from "@/lib/google-merchant-feed";
+import { productPath } from "@/lib/product-url";
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
 const channelSchema = z.enum(["google_merchant", "emag", "trendyol", "okazii", "olx", "vinted"]);
@@ -25,7 +26,7 @@ function publicSnapshot(p: CatalogProduct) {
     imageUrl: p.imageUrl,
     gallery: p.gallery,
     sku: p.sku,
-    url: `https://cutiutamagica.eu/produs/${p.slug}`,
+    url: `https://cutiutamagica.eu${productPath(p.slug)}`,
   };
 }
 async function hash(value: unknown) {

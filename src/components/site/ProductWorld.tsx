@@ -30,6 +30,7 @@ export function ProductWorld({ product, children }: { product: Product; children
             src={product.gallery[0]?.src ?? product.image}
             alt=""
             loading="eager"
+            fetchPriority="high"
             decoding="async"
             sizes="100vw"
           />

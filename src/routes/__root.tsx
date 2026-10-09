@@ -14,6 +14,8 @@ import { Toaster } from "sonner";
 import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
+import displayFontNormal from "@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-normal.woff2?url";
+import displayFontItalic from "@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-italic.woff2?url";
 import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -25,12 +27,11 @@ import { CookieConsent } from "@/components/site/CookieConsent";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
+import { isProductPath, productIdFromPathname } from "@/lib/product-url";
 
 function GrowthPageView({ pathname }: { pathname: string }) {
   useEffect(() => {
-    const productSlug = pathname.startsWith("/produs/")
-      ? decodeURIComponent(pathname.slice("/produs/".length))
-      : undefined;
+    const productSlug = productIdFromPathname(pathname);
     trackGrowthEvent("page_view", {
       productSlug,
       once: `page_view:${pathname}`,
@@ -145,6 +146,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: DEFAULT_SOCIAL_IMAGE },
     ],
     links: [
+      {
+        rel: "preload",
+        href: displayFontNormal,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: displayFontItalic,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -190,12 +205,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           hasMerchantReturnPolicy: {
             "@type": "MerchantReturnPolicy",
             applicableCountry: "RO",
+            returnPolicyCountry: "RO",
             returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
             merchantReturnDays: 14,
             returnMethod: "https://schema.org/ReturnByMail",
             returnFees: "https://schema.org/ReturnShippingFees",
+            refundType: "https://schema.org/FullRefund",
             merchantReturnLink: "https://cutiutamagica.eu/retur",
           },
+          hasShippingService: [
+            {
+              "@type": "ShippingService",
+              "@id": "https://cutiutamagica.eu/#shipping-home",
+              name: "Curier la adresă în România",
+              description:
+                "Livrare la adresă prin curier, cu tariful afișat înainte de finalizarea comenzii.",
+              fulfillmentType: "https://schema.org/FulfillmentTypeDelivery",
+              shippingConditions: {
+                "@type": "ShippingConditions",
+                shippingDestination: { "@type": "DefinedRegion", addressCountry: "RO" },
+                shippingRate: { "@type": "MonetaryAmount", value: 25, currency: "RON" },
+              },
+            },
+            {
+              "@type": "ShippingService",
+              "@id": "https://cutiutamagica.eu/#shipping-easybox",
+              name: "Livrare SAMEDAY easybox în România",
+              description:
+                "Livrare la punctul SAMEDAY easybox ales în checkout, în limita disponibilității.",
+              fulfillmentType: "https://schema.org/FulfillmentTypeCollectionPoint",
+              shippingConditions: {
+                "@type": "ShippingConditions",
+                shippingDestination: { "@type": "DefinedRegion", addressCountry: "RO" },
+                shippingRate: { "@type": "MonetaryAmount", value: 15, currency: "RON" },
+              },
+            },
+          ],
           sameAs: [
             "https://www.facebook.com/profile.php?id=61590919580877",
             "https://www.instagram.com/cutiutamagicaofficial/",
@@ -213,11 +258,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           name: "Cutiuța Magică",
           url: "https://cutiutamagica.eu",
           inLanguage: "ro-RO",
-          potentialAction: {
-            "@type": "SearchAction",
-            target: "https://cutiutamagica.eu/produse?q={search_term_string}",
-            "query-input": "required name=search_term_string",
-          },
         }),
       },
     ],
@@ -232,6 +272,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ro">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('cutiuta:cinematic-intro:v2')==='1')document.documentElement.classList.add('story-intro-seen')}catch{}",
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -248,7 +294,7 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
   const showBack = isChrome && pathname !== "/";
-  const isProductPage = pathname.startsWith("/produs/");
+  const isProductPage = isProductPath(pathname);
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">

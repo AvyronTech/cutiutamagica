@@ -8,7 +8,7 @@ type SeoHeadOptions = {
   image?: string;
   imageAlt?: string;
   type?: "website" | "article" | "product";
-  robots?: "index, follow, max-image-preview:large" | "noindex, nofollow";
+  robots?: "index, follow, max-image-preview:large" | "noindex, follow" | "noindex, nofollow";
 };
 
 function absoluteUrl(value: string): string {

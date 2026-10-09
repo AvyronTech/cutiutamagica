@@ -5,7 +5,7 @@ import { z } from "zod";
 import { assertPermission, requireAdminAuth } from "@/lib/admin-auth";
 import { getBusinessHubData } from "@/server/db/business-hub.repository";
 import { getAdminCommerceOperations } from "@/server/db/commerce-operations.repository";
-import { issueFgoInvoiceForOrder } from "@/server/services/commerce-operations.service";
+import { issueInvoiceForOrder } from "@/server/services/commerce-operations.service";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 import { credentialStatuses, credential } from "@/server/services/growth-settings";
 import { ADMIN_ORDER_STATUSES } from "@/lib/admin-contracts";
@@ -309,12 +309,12 @@ export const getCommerceOperations = createServerFn({ method: "GET" })
 
 const invoiceOrderInput = z.object({ orderId: z.string().uuid() });
 
-export const issueFgoInvoice = createServerFn({ method: "POST" })
+export const issueInvoice = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator(invoiceOrderInput)
   .handler(async ({ context, data }) => {
     assertPermission(context.admin, "orders.write");
-    return issueFgoInvoiceForOrder(env as CommerceEnv, data.orderId, {
+    return issueInvoiceForOrder(env as CommerceEnv, data.orderId, {
       id: context.admin.id,
       email: context.admin.email,
     });

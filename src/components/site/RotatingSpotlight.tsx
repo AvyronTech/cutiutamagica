@@ -11,6 +11,7 @@ import { useShop } from "@/store/shop";
 import { animateIntoCart } from "@/lib/cart-flight";
 import { notifyAddedToCart } from "@/lib/notify";
 import { isAvailable } from "@/data/products";
+import { productLink } from "@/lib/product-url";
 
 function SpotlightCard({ product }: { product: Product }) {
   const { addToCart, products } = useShop();
@@ -21,8 +22,7 @@ function SpotlightCard({ product }: { product: Product }) {
   return (
     <article className="spotlight-card" data-magic-card>
       <Link
-        to="/produs/$id"
-        params={{ id: product.id }}
+        {...productLink(product.id)}
         className="spotlight-card__media"
         aria-label={`Descoperă ${product.name}`}
       >
@@ -39,9 +39,7 @@ function SpotlightCard({ product }: { product: Product }) {
       </Link>
       <div className="spotlight-card__copy">
         <h3>
-          <Link to="/produs/$id" params={{ id: product.id }}>
-            {product.shortName || product.name}
-          </Link>
+          <Link {...productLink(product.id)}>{product.shortName || product.name}</Link>
         </h3>
         <p>{product.tagline}</p>
         <div className="spotlight-card__meta">
@@ -64,7 +62,7 @@ function SpotlightCard({ product }: { product: Product }) {
               <ShoppingBag aria-hidden /> Adaugă în coș
             </button>
           )}
-          <Link className="spotlight-card__link" to="/produs/$id" params={{ id: product.id }}>
+          <Link className="spotlight-card__link" {...productLink(product.id)}>
             Vezi cutiuța <ArrowUpRight aria-hidden />
           </Link>
         </div>

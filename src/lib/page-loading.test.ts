@@ -5,7 +5,7 @@ describe("page story loading profiles", () => {
   it.each([
     ["/", "home"],
     ["/produse", "catalog"],
-    ["/produs/hp-keeper", "product"],
+    ["/produs-cutiuta-muzicala-harry-potter-hedwig", "product"],
     ["/comanda", "checkout"],
     ["/personalizeaza", "personalize"],
     ["/livrare", "delivery"],

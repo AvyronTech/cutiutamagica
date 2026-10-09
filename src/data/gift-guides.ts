@@ -870,4 +870,4 @@ export const giftGuideGroups = (["Ocazii", "Pentru cine", "Pasiuni"] as const).m
   label,
   guides: giftGuides.filter((guide) => guide.group === label),
 }));
-export const DISCOVERY_UPDATED = "2026-10-03";
+export const DISCOVERY_UPDATED = "2026-10-09";

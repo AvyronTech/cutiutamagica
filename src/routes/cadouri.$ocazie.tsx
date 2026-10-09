@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { useEffect } from "react";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { seoHead } from "@/lib/seo-head";
+import { productLink, productPath } from "@/lib/product-url";
 
 export const Route = createFileRoute("/cadouri/$ocazie")({
   loader: async ({ params }) => {
@@ -57,7 +58,7 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
                     "@type": "ListItem",
                     position: index + 1,
                     name: p.name,
-                    url: `https://cutiutamagica.eu/produs/${encodeURIComponent(p.slug)}`,
+                    url: `https://cutiutamagica.eu${productPath(p.slug)}`,
                     image: p.imageUrl
                       ? p.imageUrl.startsWith("http")
                         ? p.imageUrl
@@ -82,16 +83,6 @@ export const Route = createFileRoute("/cadouri/$ocazie")({
                     item: "https://cutiutamagica.eu/cadouri",
                   },
                   { "@type": "ListItem", position: 3, name: guide.label, item: url },
-                ],
-              },
-              {
-                "@type": "FAQPage",
-                mainEntity: [
-                  {
-                    "@type": "Question",
-                    name: guide.question,
-                    acceptedAnswer: { "@type": "Answer", text: guide.answer },
-                  },
                 ],
               },
             ],
@@ -204,10 +195,8 @@ function GiftGuidePage() {
             <ul>
               {upcoming.map((p) => (
                 <li key={p.id}>
-                  <Link to="/produs/$id" params={{ id: p.id }}>
-                    {p.name}
-                  </Link>{" "}
-                  · {p.availability === "coming_soon" ? "În curând" : "Stoc epuizat"}
+                  <Link {...productLink(p.id)}>{p.name}</Link> ·{" "}
+                  {p.availability === "coming_soon" ? "În curând" : "Stoc epuizat"}
                 </li>
               ))}
             </ul>

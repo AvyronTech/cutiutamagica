@@ -108,7 +108,7 @@ describe("growth and commerce integration", () => {
       .prepare(
         `INSERT INTO growth_event_daily(event_day,event_name,product_slug,path,event_count)
          VALUES('2026-10-04','page_view','','/',1),
-               ('2026-10-04','product_view','hp-keeper','/produs/hp-keeper',1)`,
+               ('2026-10-04','product_view','hp-keeper','/produs-cutiuta-muzicala-harry-potter-hedwig',1)`,
       )
       .run();
     expect(
@@ -159,21 +159,21 @@ describe("growth and commerce integration", () => {
     sql.exec("UPDATE integration_credentials SET provider='stripe'");
     await expect(credential(env, "stripe")).rejects.toThrow();
   });
-  it("moves FGO onboarding to ready for test without exposing its key", async () => {
+  it("keeps Oblio onboarding inactive while storing its secret encrypted", async () => {
     const { db, sql, actor } = database();
     const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("b".repeat(32)) } as CommerceEnv;
-    await storeCredential(env, "fgo", "fgo-private-test-value", actor);
-    expect(await credential(env, "fgo")).toBe("fgo-private-test-value");
+    await storeCredential(env, "oblio", "oblio-private-test-value", actor);
+    expect(await credential(env, "oblio")).toBe("oblio-private-test-value");
     expect(
       sql
         .prepare(
-          "SELECT status FROM provider_configurations WHERE provider='fgo' AND environment='production'",
+          "SELECT status FROM provider_configurations WHERE provider='oblio' AND environment='production'",
         )
         .get(),
     ).toMatchObject({ status: "ready_for_test" });
     expect(
       JSON.stringify(sql.prepare("SELECT * FROM integration_credentials").all()),
-    ).not.toContain("fgo-private-test-value");
+    ).not.toContain("oblio-private-test-value");
   });
   it("deduplicates monthly reports and excludes customer identity", async () => {
     const { db, actor } = database();

@@ -116,6 +116,36 @@ async function createReviewerSession(request: Request, env: Env, account: Review
   return reviewJson({ data: account }, 200, { "set-cookie": cookie(request, value) });
 }
 
+async function ensureCommerceCustomer(env: Env, account: Reviewer) {
+  const now = new Date().toISOString();
+  const normalizedEmail = account.email.trim().toLowerCase();
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT OR IGNORE INTO customers(
+         id,account_subject,email,email_normalized,full_name,customer_type,status,
+         metadata_json,created_at,updated_at
+       ) VALUES(?1,?2,?3,?4,?5,'registered','active',?6,?7,?7)`,
+    ).bind(
+      `customer-account-${account.id}`,
+      account.id,
+      account.email,
+      normalizedEmail,
+      account.displayName,
+      JSON.stringify({ source: "customer_oauth" }),
+      now,
+    ),
+    env.DB.prepare(
+      `UPDATE review_accounts
+       SET customer_id=COALESCE(
+         customer_id,
+         (SELECT id FROM customers WHERE account_subject=?1 LIMIT 1),
+         (SELECT id FROM customers WHERE email_normalized=?2 LIMIT 1)
+       )
+       WHERE id=?1`,
+    ).bind(account.id, normalizedEmail),
+  ]);
+}
+
 async function startGoogleOAuth(request: Request, env: CustomerOAuthEnv) {
   const credentials = await googleOAuthCredentials(env);
   if (!credentials) return customerRedirect(request, "neconfigurat");
@@ -235,6 +265,7 @@ async function finishGoogleOAuth(request: Request, env: CustomerOAuthEnv) {
     }
     account = { id: accountId, displayName, email: profile.data.email };
   }
+  await ensureCommerceCustomer(env, account);
   const response = await createReviewerSession(request, env, account);
   const headers = new Headers(response.headers);
   headers.append("set-cookie", oauthCookie(request, "", 0));

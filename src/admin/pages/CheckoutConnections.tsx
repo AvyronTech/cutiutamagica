@@ -93,7 +93,6 @@ export function CheckoutConnections() {
           "revolut_merchant_webhook",
           "netopia",
           "netopia_public_key",
-          "fgo",
           "oblio",
           "smartship",
         ]}
@@ -227,8 +226,7 @@ export function CheckoutConnections() {
                 className={input}
               >
                 <option value="none">Neconfigurat</option>
-                <option value="fgo">FGO</option>
-                <option value="oblio">Oblio · pregătire integrare</option>
+                <option value="oblio">Oblio · configurare necesară</option>
               </select>
             </label>
             <label className="text-sm">
@@ -261,8 +259,9 @@ export function CheckoutConnections() {
           </div>
           <p className="text-xs text-slate-400">
             Salvarea pregătește integrarea; nu emite facturi, nu creează conturi și nu inițiază
-            plăți. FGO are fluxul de emitere în Facturare; Oblio necesită adaptorul de emitere.
-            Adresa expeditorului, greutatea, dimensiunile și pragul gratuității sunt în{" "}
+            plăți. Oblio are adaptorul de emitere pregătit, dar rămâne inactiv până la configurarea
+            și verificarea explicită a contului. Adresa expeditorului, greutatea, dimensiunile și
+            pragul gratuității sunt în{" "}
             <a className="underline" href="/admin/shipping">
               Curierat · SmartShip
             </a>
