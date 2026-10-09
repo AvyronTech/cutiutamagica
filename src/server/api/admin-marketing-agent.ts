@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
+import { readAdminSessionToken } from "@/lib/admin-password-auth-service";
 import {
   getMarketingOrdersAgentBuild,
   getMarketingOrdersSkillPackage,
@@ -184,6 +185,19 @@ function statusCode(error: unknown): number {
     return Number((error as { statusCode: unknown }).statusCode) || 500;
   }
   return 500;
+}
+
+function missingAdminSession(request: Request): Response | null {
+  if (readAdminSessionToken(request)) return null;
+  return json(
+    {
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Autentificarea este necesară.",
+      },
+    },
+    { status: 401 },
+  );
 }
 
 async function readSettings(
@@ -811,6 +825,10 @@ export async function handleAdminMarketingAgentApi(
       );
     }
     if (path === base) {
+      if (request.method === "GET" || request.method === "PATCH") {
+        const unauthorized = missingAdminSession(request);
+        if (unauthorized) return unauthorized;
+      }
       if (request.method === "GET") return getState(request, env);
       if (request.method === "PATCH") return updateSettings(request, env);
       return json(
@@ -819,16 +837,24 @@ export async function handleAdminMarketingAgentApi(
       );
     }
     if (path === `${base}/exports`) {
-      if (request.method === "POST") return createExport(request, env);
+      if (request.method === "POST") {
+        const unauthorized = missingAdminSession(request);
+        if (unauthorized) return unauthorized;
+        return createExport(request, env);
+      }
       return json(
         { error: { code: "METHOD_NOT_ALLOWED" } },
         { status: 405, headers: { allow: "POST" } },
       );
     }
     if (decisionMatch && request.method === "POST") {
+      const unauthorized = missingAdminSession(request);
+      if (unauthorized) return unauthorized;
       return decideExchange(request, env, decisionMatch[1]);
     }
     if (dispatchMatch && request.method === "POST") {
+      const unauthorized = missingAdminSession(request);
+      if (unauthorized) return unauthorized;
       return dispatchExchange(request, env, dispatchMatch[1]);
     }
     return json(
