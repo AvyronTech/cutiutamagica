@@ -112,7 +112,9 @@ export function ChatWidget() {
         } catch {
           /* Private browsing can block persistence. */
         }
-        setSide(preferredChatSide(stored, data.position));
+        // Poziția inițială este o regulă de interfață a site-ului. Păstrăm doar
+        // alegerea explicită a vizitatorului, nu configurații vechi din D1.
+        setSide(preferredChatSide(stored, DEFAULT_CHAT_SIDE));
         try {
           const savedPosition = parseChatPosition(localStorage.getItem(CHAT_POSITION_KEY));
           if (savedPosition) {

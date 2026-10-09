@@ -3,10 +3,11 @@ import { useSyncExternalStore } from "react";
 export type WidgetSide = "left" | "right";
 export type ChatBubblePosition = { x: number; y: number };
 type ChatPlacement = { side: WidgetSide; open: boolean };
-export const DEFAULT_CHAT_SIDE: WidgetSide = "left";
-// O cheie nouă ignoră pozițiile vechi și pornește bula sub progresul din stânga.
-export const CHAT_SIDE_KEY = "cutiuta:chat-side:left-bottom-v3";
-export const CHAT_POSITION_KEY = "cutiuta:chat-position:v2";
+export const DEFAULT_CHAT_SIDE: WidgetSide = "right";
+// Cheile noi retrag o singură dată amplasările vechi; mutările făcute după
+// acest release rămân salvate explicit pentru vizitator.
+export const CHAT_SIDE_KEY = "cutiuta:chat-side:right-top-v4";
+export const CHAT_POSITION_KEY = "cutiuta:chat-position:right-top-v3";
 export const CHAT_BUBBLE_SIZE = 44;
 export const CHAT_VIEWPORT_MARGIN = 12;
 

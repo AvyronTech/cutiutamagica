@@ -4729,7 +4729,6 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
       .page-back-dock,
       .magic-scroll-rail,
       .context-message,
-      .chat-widget,
       .floating-contacts,
       .floating-cart-button
     ) {
@@ -12018,7 +12017,6 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   body:has(.customer-account-page)
     :is(
       .magic-scroll-rail,
-      .chat-widget,
       .floating-contacts,
       .floating-cart-button,
       .context-message
@@ -12493,11 +12491,11 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 }
 @media (max-width: 767px) {
   body:has(.personalization-page)
-    :is(.chat-widget, .floating-contacts, .floating-cart-button, .context-message) {
+    :is(.floating-contacts, .floating-cart-button, .context-message) {
     display: none !important;
   }
   body:has(.gift-guide-page)
-    :is(.magic-scroll-rail, .chat-widget, .floating-contacts, .floating-cart-button) {
+    :is(.magic-scroll-rail, .floating-contacts, .floating-cart-button) {
     display: none !important;
   }
   .gift-guide-page > nav {
@@ -17259,5 +17257,43 @@ body.product-lightbox-open
 @media (max-width: 767px) and (max-height: 700px) {
   .magic-rail-progress button[data-category="true"] {
     display: none;
+  }
+}
+
+/* Poziția inițială a chatului este stabilă pe toate paginile publice.
+ * Coordonatele inline păstrează prioritatea când vizitatorul mută bula. */
+.chat-widget .chat-bubble {
+  top: max(88px, calc(env(safe-area-inset-top) + 76px));
+  bottom: auto;
+}
+.chat-widget[data-side="left"] .chat-bubble {
+  top: max(88px, calc(env(safe-area-inset-top) + 76px));
+  right: auto;
+  bottom: auto;
+  left: max(18px, calc(env(safe-area-inset-left) + 12px));
+}
+.chat-widget[data-side="right"] .chat-bubble {
+  top: max(88px, calc(env(safe-area-inset-top) + 76px));
+  right: max(18px, calc(env(safe-area-inset-right) + 12px));
+  bottom: auto;
+  left: auto;
+}
+
+@media (max-width: 767px) {
+  .chat-widget .chat-bubble {
+    top: max(76px, calc(env(safe-area-inset-top) + 68px));
+    bottom: auto;
+  }
+  .chat-widget[data-side="left"] .chat-bubble {
+    top: max(76px, calc(env(safe-area-inset-top) + 68px));
+    right: auto;
+    bottom: auto;
+    left: max(12px, env(safe-area-inset-left));
+  }
+  .chat-widget[data-side="right"] .chat-bubble {
+    top: max(76px, calc(env(safe-area-inset-top) + 68px));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: auto;
+    left: auto;
   }
 }
