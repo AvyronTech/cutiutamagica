@@ -1,5 +1,19 @@
 import { productLimitedEdition, type Product } from "@/data/products";
 import type { CatalogProduct } from "@/server/db/catalog.repository";
+
+const localProductPhotos: Record<string, string> = {
+  "hp-keeper": "/produse/hp-keeper/card.webp",
+  "got-winter": "/produse/got-winter/card.webp",
+  sunshine: "/produse/sunshine/card.webp",
+  kitten: "/produse/kitten/card.webp",
+  halloween: "/produse/halloween/card.webp",
+  "hp-always": "/produse/archive/hp-always.webp",
+  pirates: "/produse/archive/pirates.webp",
+  "lotr-rings": "/produse/archive/lotr-rings.webp",
+  "starwars-dad": "/produse/archive/starwars-dad.webp",
+  fairy: "/produse/archive/fairy.webp",
+};
+export const localProductPhoto = (slug: string) => localProductPhotos[slug] ?? null;
 /** The dashboard is authoritative. Local editorial content is imported once by migration. */
 export function catalogProducts(catalog: CatalogProduct[]): Product[] {
   return catalog.map((row) => ({
@@ -15,7 +29,7 @@ export function catalogProducts(catalog: CatalogProduct[]): Product[] {
     gtin: row.gtin ?? undefined,
     mpn: row.mpn ?? undefined,
     melody: row.melody ?? undefined,
-    image: row.imageUrl || "/icon-512.png",
+    image: row.imageUrl || localProductPhoto(row.slug) || "/icon-512.png",
     gallery: row.gallery,
     tagline: row.tagline,
     description: row.description || row.shortDescription,

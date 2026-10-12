@@ -23,6 +23,7 @@ import {
 import { handleAdminMediaApi } from "@/server/api/admin-media";
 import { handleAdminProductExperienceApi } from "@/server/api/admin-product-experience";
 import { handleAdminProductApi } from "@/server/api/admin-product";
+import { handleProductTechnicalSheet } from "@/server/api/product-technical-sheet";
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
 import { handleAdminMarketingAgentApi } from "@/server/api/admin-marketing-agent";
 import { handleAdminAiStudioApi } from "@/server/api/admin-ai-studio";
@@ -239,6 +240,9 @@ export async function handleApiRequest(
 
   const adminProductResponse = await handleAdminProductApi(request, env);
   if (adminProductResponse) return adminProductResponse;
+
+  const technicalSheetResponse = await handleProductTechnicalSheet(request, env);
+  if (technicalSheetResponse) return technicalSheetResponse;
 
   const adminAvyronResponse = await handleAdminAvyronSyncApi(request, env);
   if (adminAvyronResponse) return adminAvyronResponse;

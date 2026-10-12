@@ -320,6 +320,7 @@ export async function listAdminProducts(
       p.version,
       COALESCE(pc.missing_fields_count, 0) AS missing_fields_count,
       pv.sku,
+      pv.ean_gtin,
       COALESCE((
         SELECT COALESCE(pm.source_url, '/media/' || pm.id)
         FROM product_media pm
@@ -371,6 +372,7 @@ export async function listAdminProducts(
     imageUrl: stringValue(row.image_url),
     url: `${normalizedSiteUrl}${productPath(stringValue(row.slug))}`,
     sku: stringValue(row.sku),
+    eanGtin: row.ean_gtin == null ? null : stringValue(row.ean_gtin),
     mechanismType: stringValue(row.mechanism_type),
     rightsStatus: stringValue(row.rights_status),
     missingFieldsCount: numberValue(row.missing_fields_count),

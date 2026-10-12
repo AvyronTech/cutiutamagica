@@ -2,6 +2,7 @@ import { readProductDiscovery } from "@/lib/product-discovery";
 import { ProductSalesChannels } from "./ProductSalesChannels";
 import { ProductScenePanel } from "./ProductScenePanel";
 import { ProductInventory } from "./ProductInventory";
+import { ProductTechnicalSheet } from "./ProductTechnicalSheet";
 import { AudioClipUpload } from "./AudioClipUpload";
 import { ProductInterestPanel } from "./ProductInterestPanel";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -21,6 +22,7 @@ import {
   Search,
   Send,
   ShieldCheck,
+  Barcode,
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -73,6 +75,7 @@ const SLOT_GUIDE = [
 ] as const;
 
 type TabId =
+  | "technical"
   | "general"
   | "media"
   | "documents"
@@ -465,16 +468,6 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
           seoTitle: data.product.seo_title ?? "",
           seoDescription: data.product.seo_description ?? "",
           searchTerms: data.product.search_terms ?? "",
-          variant: data.variant
-            ? {
-                id: data.variant.id,
-                expectedVersion: data.variant.version,
-                eanGtin: String(form.get("eanGtin") ?? ""),
-                mpn: String(form.get("mpn") ?? ""),
-                cost: form.get("cost") ? Number(form.get("cost")) : null,
-                identifierSource: form.get("identifierSource"),
-              }
-            : undefined,
         }),
       });
       await onChanged();
@@ -581,43 +574,6 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
           type="number"
           min="1"
           defaultValue={p.weight_g ?? ""}
-          className={inputClass}
-        />
-      </Field>
-      <Field label="SKU (read-only)">
-        <input value={data.variant?.sku ?? ""} readOnly className={`${inputClass} opacity-70`} />
-      </Field>
-      <Field label="GTIN / EAN">
-        <input
-          name="eanGtin"
-          inputMode="numeric"
-          pattern="[0-9]{8,14}"
-          defaultValue={data.variant?.ean_gtin ?? ""}
-          placeholder="8–14 cifre"
-          className={inputClass}
-        />
-      </Field>
-      <Field label="Sursa GTIN / EAN">
-        <select
-          name="identifierSource"
-          defaultValue={data.variant?.identifier_source ?? "supplier"}
-          className={inputClass}
-        >
-          <option value="gs1">GS1</option>
-          <option value="manufacturer">Producător</option>
-          <option value="supplier">Furnizor</option>
-        </select>
-      </Field>
-      <Field label="MPN / cod producător">
-        <input name="mpn" defaultValue={data.variant?.mpn ?? ""} className={inputClass} />
-      </Field>
-      <Field label="Cost unitar (RON)">
-        <input
-          name="cost"
-          type="number"
-          min="0"
-          step="0.01"
-          defaultValue={data.variant?.cost_bani == null ? "" : data.variant.cost_bani / 100}
           className={inputClass}
         />
       </Field>
@@ -811,7 +767,7 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
 }
 
 export default function ProductStudio({ productId }: { productId: string }) {
-  const [tab, setTab] = useState<TabId>("general");
+  const [tab, setTab] = useState<TabId>("technical");
   const [uploading, setUploading] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState("origin");
   const query = useQuery({
@@ -902,6 +858,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
   const documentAssets = data.media.filter((asset) => asset.media_type === "document");
 
   const tabs: Array<{ id: TabId; label: string; icon: typeof Library }> = [
+    { id: "technical", label: "Fișă tehnică", icon: Barcode },
     { id: "general", label: "General", icon: Search },
     { id: "media", label: "Media 01–06", icon: Library },
     { id: "documents", label: "Documente", icon: FileText },
@@ -967,10 +924,20 @@ export default function ProductStudio({ productId }: { productId: string }) {
         <>
           <GeneralForm data={data} onChanged={() => query.refetch()} />
           <ProductScenePanel productId={productId} />
-          <ProductSalesChannels productId={productId} />
-          <ProductInventory productId={productId} onChanged={() => query.refetch()} />
           <ProductInterestPanel productId={productId} />
         </>
+      )}
+      {tab === "technical" && (
+        <div className="space-y-5">
+          <ProductTechnicalSheet
+            productId={productId}
+            onSaved={() => query.refetch()}
+            onOpenGeneral={() => setTab("general")}
+            onOpenSuppliers={() => setTab("suppliers")}
+          />
+          <ProductInventory productId={productId} onChanged={() => query.refetch()} />
+          <ProductSalesChannels productId={productId} />
+        </div>
       )}
       <a
         href={`/admin/reviews?product=${encodeURIComponent(data.product.slug)}`}

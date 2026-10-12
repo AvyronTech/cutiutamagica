@@ -14,11 +14,16 @@ import { handleAdminInventory } from "./api/admin-inventory";
 import { handleProductInterest } from "./api/product-interest";
 import { handleAdminMediaApi } from "./api/admin-media";
 import { handleAdminProductApi } from "./api/admin-product";
+import { handleProductTechnicalSheet } from "./api/product-technical-sheet";
 import { getPublicProductExperience } from "./api/product-experience";
 import { encodeAudioClip } from "@/lib/audio-clip";
 import { giftGuides } from "@/data/gift-guides";
 vi.mock("@/lib/admin-auth", () => ({
-  authenticateAdminRequest: vi.fn(async () => ({ id: "test-admin", email: "test@example.test" })),
+  authenticateAdminRequest: vi.fn(async () => ({
+    id: "test-admin",
+    email: "test@example.test",
+    permissions: ["catalog.read", "catalog.write", "orders.read"],
+  })),
 }));
 let sqlite: DatabaseSync;
 class Statement {
@@ -135,6 +140,117 @@ beforeEach(() => {
 });
 afterEach(() => sqlite.close());
 describe("storefront and dashboard share one catalog", () => {
+  it("restores untouched collection placements after a late seed without changing admin choices", () => {
+    sqlite.exec(
+      "UPDATE products SET landing_collection='story',landing_order=0 WHERE slug IN ('sunshine','kitten','halloween','starwars-dad')",
+    );
+    sqlite.exec(
+      "UPDATE products SET name='Cutiuta Muzicala You Are My Sunshine cu Manivela',tagline='Uneori, cele mai frumoase amintiri incap intr-o cutiuta.' WHERE slug='sunshine'",
+    );
+    sqlite.exec(
+      "INSERT INTO audit_log(id,action,entity_type,entity_id) SELECT 'admin-kitten-placement','product.update','product',id FROM products WHERE slug='kitten'",
+    );
+    const backfill = readFileSync(
+      resolve(migrations, "0057_reconcile_storefront_collections.sql"),
+      "utf8",
+    );
+    sqlite.exec(backfill);
+    const placements = sqlite
+      .prepare(
+        "SELECT slug,landing_collection,landing_order FROM products WHERE slug IN ('sunshine','kitten','halloween','starwars-dad') ORDER BY slug",
+      )
+      .all();
+    expect(placements).toEqual([
+      { slug: "halloween", landing_collection: "dedicated", landing_order: 3 },
+      { slug: "kitten", landing_collection: "story", landing_order: 0 },
+      { slug: "starwars-dad", landing_collection: "dedicated", landing_order: 9 },
+      { slug: "sunshine", landing_collection: "emotion", landing_order: 4 },
+    ]);
+    expect(sqlite.prepare("SELECT name,tagline FROM products WHERE slug='sunshine'").get()).toEqual(
+      {
+        name: "Cutiuță Muzicală „You Are My Sunshine” cu Manivelă",
+        tagline: "Uneori, cele mai frumoase amintiri încap într-o cutiuță.",
+      },
+    );
+    sqlite.exec(backfill);
+    expect(
+      sqlite
+        .prepare(
+          "SELECT slug,landing_collection,landing_order FROM products WHERE slug IN ('sunshine','kitten','halloween','starwars-dad') ORDER BY slug",
+        )
+        .all(),
+    ).toEqual(placements);
+  });
+  it("saves an EAN with provenance, preserves verification on unchanged saves and rejects stale edits", async () => {
+    const env = bindings();
+    const id = productId();
+    const path = `/api/v1/admin/products/${id}/technical-sheet`;
+    const initial = (
+      (await (await handleProductTechnicalSheet(
+        new Request(`https://test.local${path}`),
+        env,
+      ))!.json()) as { data: { variant: { id: string; version: number } } }
+    ).data;
+    const body = {
+      variantId: initial.variant.id,
+      expectedVersion: initial.variant.version,
+      eanGtin: "4006381333931",
+      mpn: "MB-01",
+      cost: 23.5,
+      identifierSource: "supplier",
+      sourceReference: "Document furnizor 1",
+    };
+    expect(
+      (await handleProductTechnicalSheet(patch(path, { ...body, eanGtin: "4006381333932" }), env))!
+        .status,
+    ).toBe(400);
+    expect((await handleProductTechnicalSheet(patch(path, body), env))!.status).toBe(200);
+    const source = sqlite
+      .prepare(
+        "SELECT identifier_value,source_reference,verification_status FROM product_identifier_sources WHERE variant_id=?",
+      )
+      .get(body.variantId)!;
+    expect(source).toMatchObject({
+      identifier_value: body.eanGtin,
+      source_reference: body.sourceReference,
+      verification_status: "pending",
+    });
+    const otherId = productId("halloween");
+    const otherVariant = sqlite
+      .prepare("SELECT id,version FROM product_variants WHERE product_id=?")
+      .get(otherId)!;
+    expect(
+      (await handleProductTechnicalSheet(
+        patch(`/api/v1/admin/products/${otherId}/technical-sheet`, {
+          ...body,
+          variantId: otherVariant.id,
+          expectedVersion: otherVariant.version,
+        }),
+        env,
+      ))!.status,
+    ).toBe(409);
+    sqlite
+      .prepare(
+        "UPDATE product_identifier_sources SET verification_status='verified' WHERE variant_id=?",
+      )
+      .run(body.variantId);
+    expect(
+      (await handleProductTechnicalSheet(
+        patch(path, { ...body, expectedVersion: body.expectedVersion + 1 }),
+        env,
+      ))!.status,
+    ).toBe(200);
+    expect(
+      sqlite
+        .prepare("SELECT verification_status FROM product_identifier_sources WHERE variant_id=?")
+        .get(body.variantId)!.verification_status,
+    ).toBe("verified");
+    expect((await handleProductTechnicalSheet(patch(path, body), env))!.status).toBe(409);
+    expect(
+      sqlite.prepare("SELECT ean_gtin FROM product_variants WHERE id=?").get(body.variantId)!
+        .ean_gtin,
+    ).toBe(body.eanGtin);
+  });
   it("moves the default chat left without changing its messages or enabled state", () => {
     const row = sqlite
       .prepare("SELECT position,enabled,welcome_message FROM chat_settings WHERE id='default'")
@@ -161,7 +277,7 @@ describe("storefront and dashboard share one catalog", () => {
       sqlite.prepare("SELECT seo_title FROM products WHERE slug='hp-keeper'").get()!.seo_title,
     ).toBe("Colecția noastră · titlu personalizat");
   });
-  it("shows exactly five available products in the three collections and five upcoming products", async () => {
+  it("keeps all existing products in themed collections, with available products first", async () => {
     const products = catalogProducts(await catalog());
     expect(products).toHaveLength(10);
     for (const product of products) {
@@ -179,13 +295,17 @@ describe("storefront and dashboard share one catalog", () => {
     expect(collectionProducts(products, "story").map((p) => p.id)).toEqual([
       "hp-keeper",
       "got-winter",
+      "lotr-rings",
+      "hp-always",
+      "fairy",
+      "pirates",
     ]);
     expect(collectionProducts(products, "emotion").map((p) => p.id)).toEqual(["sunshine"]);
     expect(
       collectionProducts(products, "dedicated")
         .map((p) => p.id)
         .sort(),
-    ).toEqual(["halloween", "kitten"]);
+    ).toEqual(["halloween", "kitten", "starwars-dad"]);
     expect(products.filter((p) => !isAvailable(p))).toHaveLength(5);
     for (const p of products)
       for (const image of p.gallery)

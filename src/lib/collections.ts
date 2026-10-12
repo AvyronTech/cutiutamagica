@@ -9,5 +9,8 @@ export const collectionFor = (product: Product): Collection =>
       : "story");
 export const collectionProducts = (products: Product[], collection: Collection) =>
   products
-    .filter((p) => isAvailable(p) && collectionFor(p) === collection)
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    .filter((p) => collectionFor(p) === collection)
+    .sort(
+      (a, b) =>
+        Number(isAvailable(b)) - Number(isAvailable(a)) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+    );

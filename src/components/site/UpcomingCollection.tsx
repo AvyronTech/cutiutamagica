@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import AutoScroll from "embla-carousel-auto-scroll";
 import { useReducedMotion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
@@ -11,61 +10,51 @@ import { productLink } from "@/lib/product-url";
 
 export function UpcomingCollection({ products }: { products: Product[] }) {
   const reduced = useReducedMotion();
-  const plugin = useMemo(
-    () =>
-      AutoScroll({
-        speed: 0.48,
-        playOnInit: false,
-        stopOnInteraction: false,
-        stopOnMouseEnter: true,
-        stopOnFocusIn: true,
-      }),
-    [],
-  );
-  const [ref, api] = useEmblaCarousel(
-    { loop: products.length > 1, align: "start", dragFree: true },
-    [plugin],
-  );
+  const [ref, api] = useEmblaCarousel({ loop: false, align: "start", duration: 18 });
   const [paused, setPaused] = useState(false);
   const [cooldown, setCooldown] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [interacting, setInteracting] = useState(false);
+  const [selected, setSelected] = useState(0);
   const cooldownTimer = useRef<number | undefined>(undefined);
+  const playing =
+    !reduced && !paused && !cooldown && visible && !interacting && products.length > 1;
+  const update = useCallback(() => setSelected(api?.selectedScrollSnap() ?? 0), [api]);
   useEffect(() => {
     if (!api) return;
-    const update = () => setPlaying(plugin.isPlaying());
-    api.on("autoScroll:play", update).on("autoScroll:stop", update);
-    const node = api.rootNode();
-    let visible = false;
-    const sync = () => {
-      if (
-        visible &&
-        !document.hidden &&
-        !reduced &&
-        !paused &&
-        !cooldown &&
-        !node.matches(":hover") &&
-        !node.contains(document.activeElement) &&
-        products.length > 1
-      )
-        plugin.play();
-      else plugin.stop();
+    update();
+    api.on("select", update).on("reInit", update);
+    return () => {
+      api.off("select", update).off("reInit", update);
     };
+  }, [api, update]);
+  useEffect(() => {
+    if (!api) return;
+    const node = api.rootNode();
+    let inView = false;
+    const sync = () => setVisible(inView && !document.hidden);
     const observer = new IntersectionObserver(
       ([entry]) => {
-        visible = entry.isIntersecting;
+        inView = entry.isIntersecting;
         sync();
       },
-      { threshold: 0.15 },
+      { threshold: 0.3 },
     );
     observer.observe(node);
     document.addEventListener("visibilitychange", sync);
     return () => {
       observer.disconnect();
       document.removeEventListener("visibilitychange", sync);
-      plugin.stop();
-      api.off("autoScroll:play", update).off("autoScroll:stop", update);
     };
-  }, [api, cooldown, paused, plugin, products.length, reduced]);
+  }, [api]);
+  useEffect(() => {
+    if (!api || !playing) return;
+    const timer = window.setTimeout(() => {
+      if (api.canScrollNext()) api.scrollNext();
+      else api.scrollTo(0);
+    }, 5200);
+    return () => window.clearTimeout(timer);
+  }, [api, playing, selected]);
   useEffect(
     () => () => {
       if (cooldownTimer.current) window.clearTimeout(cooldownTimer.current);
@@ -77,8 +66,12 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
     setCooldown(true);
     if (cooldownTimer.current) window.clearTimeout(cooldownTimer.current);
     cooldownTimer.current = window.setTimeout(() => setCooldown(false), 6000);
-    if (direction === "previous") api?.scrollPrev();
-    else api?.scrollNext();
+    if (!api) return;
+    if (direction === "previous") {
+      if (api.canScrollPrev()) api.scrollPrev();
+      else api.scrollTo(api.scrollSnapList().length - 1);
+    } else if (api.canScrollNext()) api.scrollNext();
+    else api.scrollTo(0);
   };
   if (!products.length) return null;
   return (
@@ -108,6 +101,13 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
         role="region"
         aria-roledescription="carusel"
         aria-label="Cutiuțe viitoare"
+        onPointerEnter={() => setInteracting(true)}
+        onPointerLeave={() => setInteracting(false)}
+        onFocusCapture={() => setInteracting(true)}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+            setInteracting(false);
+        }}
       >
         <div className="upcoming-track">
           {products.map((p) => (
@@ -144,11 +144,9 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
           onClick={() => {
             if (playing) {
               setPaused(true);
-              plugin.stop();
             } else {
               setPaused(false);
               setCooldown(false);
-              if (!reduced) plugin.play();
             }
           }}
           aria-label={playing ? "Oprește derularea automată" : "Pornește derularea automată"}
