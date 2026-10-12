@@ -28,6 +28,21 @@ type AgentSettings = {
     requireOriginalProductLayer: true;
     measurementWindowsHours: number[];
   };
+  connectorContract: {
+    metricoolBrandId: "7230540";
+    ownerEmail: "cutiutamagicaofficial@gmail.com";
+    website: "https://cutiutamagica.eu";
+    facebookPageId: "1154774271054604";
+    instagramHandle: "cutiutamagicaofficial";
+    tiktokHandle: "cutiua.magic";
+    gscProperty: "sc-domain:cutiutamagica.eu";
+    timezone: "Europe/Bucharest";
+  };
+  monitoring: {
+    enabled: boolean;
+    intervalMinutes: number;
+    staleAfterHours: number;
+  };
   avyron: {
     async: true;
     enabled: boolean;
@@ -57,10 +72,28 @@ type ExchangeRow = {
   updated_at: string;
 };
 
+const expectedConnectorContract: AgentSettings["connectorContract"] = {
+  metricoolBrandId: "7230540",
+  ownerEmail: "cutiutamagicaofficial@gmail.com",
+  website: "https://cutiutamagica.eu",
+  facebookPageId: "1154774271054604",
+  instagramHandle: "cutiutamagicaofficial",
+  tiktokHandle: "cutiua.magic",
+  gscProperty: "sc-domain:cutiutamagica.eu",
+  timezone: "Europe/Bucharest",
+};
+
+const monitoringSettingsSchema = z.object({
+  enabled: z.boolean(),
+  intervalMinutes: z.number().int().min(15).max(1_440),
+  staleAfterHours: z.number().int().min(1).max(168),
+});
+
 const updateSettingsSchema = z.object({
   expectedVersion: z.number().int().positive(),
   enabled: z.boolean(),
   mode: z.enum(["draft_approval", "paused"]),
+  monitoring: monitoringSettingsSchema,
   avyron: z.object({
     enabled: z.boolean(),
     shareAggregatedStats: z.boolean(),
@@ -99,7 +132,7 @@ function sameOrigin(request: Request): boolean {
 
 function defaultSettings(): AgentSettings {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     timezone: "Europe/Bucharest",
     mode: "draft_approval",
     enabled: true,
@@ -117,6 +150,12 @@ function defaultSettings(): AgentSettings {
       requireNativeVariants: true,
       requireOriginalProductLayer: true,
       measurementWindowsHours: [24, 72, 168],
+    },
+    connectorContract: expectedConnectorContract,
+    monitoring: {
+      enabled: true,
+      intervalMinutes: 60,
+      staleAfterHours: 26,
     },
     avyron: {
       async: true,
@@ -140,10 +179,11 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
     const value = JSON.parse(row.value_json) as Record<string, unknown>;
     const avyron = (value.avyron ?? {}) as Record<string, unknown>;
     const publication = (value.publication ?? {}) as Record<string, unknown>;
+    const monitoring = monitoringSettingsSchema.safeParse(value.monitoring);
     return {
       ...fallback,
       ...value,
-      schemaVersion: 3,
+      schemaVersion: 4,
       controlPlane: "cutiuta_magic_platform",
       publication: {
         ...publication,
@@ -160,6 +200,8 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
         requireNativeVariants: true,
         requireOriginalProductLayer: true,
       },
+      connectorContract: expectedConnectorContract,
+      monitoring: monitoring.success ? monitoring.data : fallback.monitoring,
       avyron: {
         ...fallback.avyron,
         ...avyron,
@@ -213,16 +255,27 @@ async function readSettings(
 
 async function getState(request: Request, env: Env): Promise<Response> {
   await authenticateAdminRequest(request, env, "marketing.agent.read");
-  const [build, settingsResult, agent, relatedAgents, accounts, target, exchanges] =
-    await Promise.all([
-      getMarketingOrdersAgentBuild(),
-      readSettings(env.DB),
-      env.DB.prepare(
-        `SELECT code, name, purpose, approval_policy, max_actions_per_run, status, updated_at
+  const [
+    build,
+    settingsResult,
+    agent,
+    relatedAgents,
+    accounts,
+    target,
+    exchanges,
+    flowStats,
+    accountConnections,
+    gscImports,
+    googleCredential,
+  ] = await Promise.all([
+    getMarketingOrdersAgentBuild(),
+    readSettings(env.DB),
+    env.DB.prepare(
+      `SELECT code, name, purpose, approval_policy, max_actions_per_run, status, updated_at
          FROM ai_agents WHERE id = 'agent_marketing_orders'`,
-      ).first(),
-      env.DB.prepare(
-        `SELECT code, name, purpose, approval_policy, status, updated_at
+    ).first(),
+    env.DB.prepare(
+      `SELECT code, name, purpose, approval_policy, status, updated_at
          FROM ai_agents
          WHERE id IN ('agent_content', 'agent_marketing_content', 'agent_seo')
          ORDER BY CASE id
@@ -230,27 +283,65 @@ async function getState(request: Request, env: Env): Promise<Response> {
            WHEN 'agent_marketing_content' THEN 2
            ELSE 3
          END`,
-      ).all(),
-      env.DB.prepare(
-        `SELECT id, provider, account_type, label, capabilities_json, status, last_synced_at
+    ).all(),
+    env.DB.prepare(
+      `SELECT id, provider, account_type, label, capabilities_json, status, last_synced_at
          FROM social_accounts
          WHERE provider IN ('facebook', 'instagram', 'tiktok')
          ORDER BY provider, account_type`,
-      ).all(),
-      env.DB.prepare(
-        `SELECT code, source_label, status, auth_mode, agent_exchange_endpoint_url,
+    ).all(),
+    env.DB.prepare(
+      `SELECT code, source_label, status, auth_mode, agent_exchange_endpoint_url,
                 last_healthcheck_at, last_error_message
          FROM avyron_sync_targets WHERE code = 'avyron-os'`,
-      ).first(),
-      env.DB.prepare(
-        `SELECT id, direction, exchange_type, status, payload_hash, attempts, last_error,
+    ).first(),
+    env.DB.prepare(
+      `SELECT id, direction, exchange_type, status, payload_hash, attempts, last_error,
                 CASE WHEN direction = 'inbound' THEN payload_json ELSE NULL END AS review_payload_json,
                 created_at, updated_at
          FROM agent_exchange_items
          WHERE agent_id = 'agent_marketing_orders'
          ORDER BY created_at DESC LIMIT 30`,
-      ).all<ExchangeRow>(),
-    ]);
+    ).all<ExchangeRow>(),
+    aggregatedStatistics(env.DB),
+    env.DB.prepare(
+      `SELECT provider, label, auth_method, status, scopes_json, last_verified_at,
+                expires_at, updated_at
+           FROM account_connections
+           WHERE owner = 'cutiuta_magica'
+           ORDER BY provider, label`,
+    ).all(),
+    env.DB.prepare(
+      `WITH latest_days AS (
+         SELECT property_id, MAX(day) AS latest_day
+         FROM traffic_daily_metrics
+         WHERE source = 'gsc'
+         GROUP BY property_id
+       )
+       SELECT metrics.property_id,
+              MAX(metrics.imported_at) AS last_imported_at,
+              latest_days.latest_day,
+              SUM(CASE WHEN metrics.metric = 'clicks' THEN metrics.value ELSE 0 END) AS clicks,
+              SUM(CASE WHEN metrics.metric = 'impressions' THEN metrics.value ELSE 0 END) AS impressions
+       FROM latest_days
+       JOIN traffic_daily_metrics AS metrics
+         ON metrics.source = 'gsc'
+        AND metrics.property_id = latest_days.property_id
+        AND metrics.day = latest_days.latest_day
+       GROUP BY metrics.property_id, latest_days.latest_day
+           ORDER BY last_imported_at DESC
+           LIMIT 10`,
+    ).all(),
+    env.DB.prepare(
+      `SELECT checked_at, check_status
+           FROM integration_credentials
+           WHERE provider = 'google'`,
+    ).first(),
+  ]);
+  const gscProperty = settingsResult.settings.connectorContract.gscProperty;
+  const gscImport = gscImports.results.find(
+    (row) => (row as { property_id?: string }).property_id === gscProperty,
+  );
   return json({
     data: {
       build,
@@ -260,6 +351,15 @@ async function getState(request: Request, env: Env): Promise<Response> {
       settingsVersion: settingsResult.row?.version ?? 0,
       settingsUpdatedAt: settingsResult.row?.updated_at ?? null,
       socialAccounts: accounts.results,
+      flowStats,
+      monitoring: {
+        expected: settingsResult.settings.connectorContract,
+        accountConnections: accountConnections.results,
+        gsc: {
+          credential: googleCredential,
+          latestImport: gscImport ?? null,
+        },
+      },
       avyronTarget: target,
       exchanges: exchanges.results.map(({ review_payload_json, ...exchange }) => ({
         ...exchange,
@@ -290,11 +390,13 @@ async function updateSettings(request: Request, env: Env): Promise<Response> {
   }
   const next: AgentSettings = {
     ...current.settings,
-    schemaVersion: 3,
+    schemaVersion: 4,
     enabled: parsed.data.enabled,
     mode: parsed.data.enabled ? parsed.data.mode : "paused",
     controlPlane: "cutiuta_magic_platform",
     publication: { requiresApproval: true, requiresVerifiedConnector: true },
+    connectorContract: expectedConnectorContract,
+    monitoring: parsed.data.monitoring,
     avyron: {
       ...current.settings.avyron,
       ...parsed.data.avyron,

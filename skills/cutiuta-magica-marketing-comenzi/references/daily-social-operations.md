@@ -51,7 +51,7 @@ Păstrează cel puțin 90 de minute între formatele principale și mută gradua
 
 - folosește Metricool pentru Facebook Page, Instagram și TikTok cât timp identitatea brandului este verificată, formatul este suportat și limita planului permite publicarea;
 - planul Free are o limită lunară de publicări. Citește contorul real din cont înainte de programare și nu presupune numărul rămas numai din calendarul local;
-- când limita este epuizată sau formatul cere funcții native, folosește numai profilul Chrome dedicat Cutiuța Magică, verificat vizual înaintea fiecărei sesiuni. Nu reutiliza profilul ori filele AVYRON;
+- când limita este epuizată sau formatul cere funcții native, folosește numai profilul Opera dedicat Cutiuța Magică, verificat vizual înaintea fiecărei sesiuni. Nu reutiliza profilul ori filele AVYRON;
 - Facebook Page și profilul Facebook sunt destinații distincte. Pagina poate folosi Metricool sau browserul nativ; profilul autorizat se publică numai nativ, cu o versiune personală distinctă și după verificarea numelui/identității contului;
 - pentru Instagram Notes, muzică, stickere interactive și alte funcții indisponibile prin conector, folosește fluxul nativ numai dacă acea funcție este vizibilă pe cont;
 - pentru TikTok alege sunetul din biblioteca disponibilă legitim în cont la momentul publicării; nu încărca aceeași piesă cu watermark din alt canal;

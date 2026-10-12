@@ -3,12 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
+  Bot,
   CheckCircle2,
   Cloud,
+  Database,
   Fingerprint,
+  Globe2,
+  Link2,
   LockKeyhole,
   RefreshCw,
   ShieldCheck,
+  ShoppingCart,
 } from "lucide-react";
 
 type AgentState = {
@@ -46,6 +51,21 @@ type AgentState = {
       requireOriginalProductLayer: boolean;
       measurementWindowsHours: number[];
     };
+    connectorContract: {
+      metricoolBrandId: string;
+      ownerEmail: string;
+      website: string;
+      facebookPageId: string;
+      instagramHandle: string;
+      tiktokHandle: string;
+      gscProperty: string;
+      timezone: string;
+    };
+    monitoring: {
+      enabled: boolean;
+      intervalMinutes: number;
+      staleAfterHours: number;
+    };
     avyron: {
       enabled: boolean;
       control: string;
@@ -66,6 +86,34 @@ type AgentState = {
     label: string;
     status: string;
   }>;
+  flowStats: {
+    social: Record<string, number | null>;
+    approvals: Record<string, number | null>;
+    agentRuns: Record<string, number | null>;
+    catalog: Record<string, number | null>;
+    orders: Record<string, number | null>;
+  };
+  monitoring: {
+    expected: AgentState["settings"]["connectorContract"];
+    accountConnections: Array<{
+      provider: string;
+      label: string;
+      auth_method: string;
+      status: string;
+      last_verified_at: string | null;
+      updated_at: string;
+    }>;
+    gsc: {
+      credential: { checked_at: string | null; check_status: string } | null;
+      latestImport: {
+        property_id: string;
+        last_imported_at: string;
+        latest_day: string;
+        clicks: number;
+        impressions: number;
+      } | null;
+    };
+  };
   avyronTarget: { status: string; auth_mode: string; last_error_message?: string | null } | null;
   exchanges: Array<{
     id: string;
@@ -82,6 +130,7 @@ type AgentState = {
 type EditableSettings = {
   enabled: boolean;
   mode: "draft_approval" | "paused";
+  monitoring: AgentState["settings"]["monitoring"];
   avyron: {
     enabled: boolean;
     shareAggregatedStats: boolean;
@@ -104,7 +153,24 @@ const statusLabels: Record<string, string> = {
   received: "Primit",
   rejected: "Respins",
   failed: "Eșuat",
+  expired: "Expirat",
+  revoked: "Revocat",
+  degraded: "Degradat",
+  verified: "Verificat",
+  unverified: "Neverificat",
 };
+
+function count(value: number | null | undefined): number {
+  return Number.isFinite(Number(value)) ? Number(value) : 0;
+}
+
+function formatMoment(value: string | null | undefined): string {
+  return value
+    ? new Intl.DateTimeFormat("ro-RO", { dateStyle: "medium", timeStyle: "short" }).format(
+        new Date(value),
+      )
+    : "fără verificare";
+}
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -154,6 +220,7 @@ export default function MarketingOrdersAgentControl() {
     queryKey: ["admin", "marketing-orders-agent"],
     queryFn: () => api<AgentState>("/api/v1/admin/marketing-agent"),
     staleTime: 20_000,
+    refetchInterval: 60_000,
   });
   const [form, setForm] = useState<EditableSettings | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -163,6 +230,7 @@ export default function MarketingOrdersAgentControl() {
     setForm({
       enabled: query.data.settings.enabled,
       mode: query.data.settings.mode,
+      monitoring: query.data.settings.monitoring,
       avyron: {
         enabled: query.data.settings.avyron.enabled,
         shareAggregatedStats: query.data.settings.avyron.shareAggregatedStats,
@@ -245,6 +313,38 @@ export default function MarketingOrdersAgentControl() {
 
   const data = query.data;
   const activeSocial = data.socialAccounts.filter((account) => account.status === "active").length;
+  const flow = [
+    {
+      label: "Catalog comandabil",
+      value: count(data.flowStats.catalog.active),
+      detail: "produse active",
+      icon: Database,
+    },
+    {
+      label: "Rulări agent",
+      value: count(data.flowStats.agentRuns.completed),
+      detail: `${count(data.flowStats.agentRuns.failed)} eșuate`,
+      icon: Bot,
+    },
+    {
+      label: "Aprobări",
+      value: count(data.flowStats.approvals.pending),
+      detail: "în așteptare",
+      icon: ShieldCheck,
+    },
+    {
+      label: "Conținut publicat",
+      value: count(data.flowStats.social.published),
+      detail: `${count(data.flowStats.social.planned)} planificate`,
+      icon: Globe2,
+    },
+    {
+      label: "Comenzi deschise",
+      value: count(data.flowStats.orders.open),
+      detail: `${count(data.flowStats.orders.total)} total`,
+      icon: ShoppingCart,
+    },
+  ];
 
   return (
     <section className="space-y-4 rounded-xl border border-cyan-400/20 bg-[#0b1524] p-4 shadow-[0_20px_80px_rgba(0,0,0,.22)] md:p-5">
@@ -298,6 +398,35 @@ export default function MarketingOrdersAgentControl() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-[#28364d] bg-[#0d1727] p-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Flux operațional monitorizat</h3>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Catalog → agent → aprobare → publicare confirmată → comandă. Configurarea singură nu
+              este tratată drept conexiune activă.
+            </p>
+          </div>
+          <span className="text-[10px] text-cyan-300">
+            verificare la {form.monitoring.intervalMinutes} min · prag{" "}
+            {form.monitoring.staleAfterHours} h
+          </span>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {flow.map((step) => (
+            <article
+              key={step.label}
+              className="rounded-lg border border-[#28364d] bg-[#111c2e] p-3"
+            >
+              <step.icon className="h-4 w-4 text-cyan-300" />
+              <p className="mt-3 text-xl font-semibold text-white">{step.value}</p>
+              <p className="text-xs font-medium text-slate-200">{step.label}</p>
+              <p className="mt-0.5 text-[10px] text-slate-500">{step.detail}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="space-y-3 rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
           <h3 className="text-sm font-semibold text-white">Politica operațională</h3>
@@ -309,6 +438,56 @@ export default function MarketingOrdersAgentControl() {
             label="Agent disponibil pentru ciorne și răspunsuri propuse"
             description="Activarea nu permite publicare, unfollow, mesaje sau comenzi fără regulile de aprobare."
           />
+          <Toggle
+            checked={form.monitoring.enabled}
+            onChange={(enabled) =>
+              setForm({ ...form, monitoring: { ...form.monitoring, enabled } })
+            }
+            label="Monitorizare automată a fluxului"
+            description="Semnalează conexiuni neverificate și date expirate; nu publică și nu trimite date extern."
+          />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="text-xs text-slate-400">
+              Interval monitorizare (minute)
+              <input
+                type="number"
+                min={15}
+                max={1440}
+                value={form.monitoring.intervalMinutes}
+                disabled={!form.monitoring.enabled}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    monitoring: {
+                      ...form.monitoring,
+                      intervalMinutes: Number(event.target.value),
+                    },
+                  })
+                }
+                className="mt-1.5 w-full rounded-lg border border-[#33445f] bg-[#0d1727] px-3 py-2 text-sm text-white disabled:opacity-50"
+              />
+            </label>
+            <label className="text-xs text-slate-400">
+              Alertă după (ore)
+              <input
+                type="number"
+                min={1}
+                max={168}
+                value={form.monitoring.staleAfterHours}
+                disabled={!form.monitoring.enabled}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    monitoring: {
+                      ...form.monitoring,
+                      staleAfterHours: Number(event.target.value),
+                    },
+                  })
+                }
+                className="mt-1.5 w-full rounded-lg border border-[#33445f] bg-[#0d1727] px-3 py-2 text-sm text-white disabled:opacity-50"
+              />
+            </label>
+          </div>
           <label className="block text-xs text-slate-400">
             Mod de lucru
             <select
@@ -448,6 +627,70 @@ export default function MarketingOrdersAgentControl() {
               <p className="mt-2 text-[10px] leading-4 text-slate-500">{relatedAgent.purpose}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-[#28364d] bg-[#111c2e]">
+        <div className="flex items-center justify-between border-b border-[#28364d] px-4 py-3">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Conectori și prospețimea datelor</h3>
+            <p className="mt-0.5 text-[10px] text-slate-500">
+              Metricool {data.monitoring.expected.metricoolBrandId} ·{" "}
+              {data.monitoring.expected.ownerEmail} · TikTok @
+              {data.monitoring.expected.tiktokHandle}
+            </p>
+          </div>
+          <Link2 className="h-4 w-4 text-cyan-300" />
+        </div>
+        <div className="grid gap-3 p-4 lg:grid-cols-2">
+          <article className="rounded-lg border border-[#28364d] bg-[#0d1727] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-white">Google Search Console</p>
+                <p className="mt-1 font-mono text-[10px] text-cyan-200">
+                  {data.monitoring.expected.gscProperty}
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-700/50 px-2 py-1 text-[10px] text-slate-300">
+                {statusLabels[data.monitoring.gsc.credential?.check_status ?? "unverified"]}
+              </span>
+            </div>
+            <p className="mt-3 text-[11px] leading-5 text-slate-500">
+              Ultimul import intern:{" "}
+              {formatMoment(data.monitoring.gsc.latestImport?.last_imported_at)}
+              {data.monitoring.gsc.latestImport
+                ? ` · zi ${data.monitoring.gsc.latestImport.latest_day} · ${count(data.monitoring.gsc.latestImport.clicks)} clickuri · ${count(data.monitoring.gsc.latestImport.impressions)} afișări`
+                : ""}
+            </p>
+          </article>
+          {data.monitoring.accountConnections.length === 0 ? (
+            <article className="rounded-lg border border-amber-400/20 bg-amber-400/8 p-4 text-xs leading-5 text-amber-100/80">
+              Inventarul intern nu are încă referințe de conectare. Migrarea 0054 le adaugă drept
+              „necesită conectare”; activarea cere verificare live repetabilă.
+            </article>
+          ) : (
+            data.monitoring.accountConnections.map((connection) => (
+              <article
+                key={`${connection.provider}:${connection.label}`}
+                className="rounded-lg border border-[#28364d] bg-[#0d1727] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-white">{connection.label}</p>
+                    <p className="mt-1 text-[10px] text-slate-500">
+                      {connection.provider} · {connection.auth_method}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-slate-700/50 px-2 py-1 text-[10px] text-slate-300">
+                    {statusLabels[connection.status] ?? connection.status}
+                  </span>
+                </div>
+                <p className="mt-3 text-[11px] text-slate-500">
+                  Ultima verificare: {formatMoment(connection.last_verified_at)}
+                </p>
+              </article>
+            ))
+          )}
         </div>
       </div>
 

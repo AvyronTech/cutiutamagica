@@ -158,3 +158,13 @@ Descrierea pull requestului trebuie să includă:
 - Deploy production: Workerul `cutiuta-magica-store` a fost publicat pe domeniile configurate, versiunea `d23721c3-f14b-4940-877b-c681a8f3722e`. Paginile principale, produsul, Magic Rewards, personalizarea noindex, adminul noindex, sitemapul, robots, manifestul, faviconul și imaginea Open Graph au răspuns live cu 200.
 - Verificare vizuală live: landingul și catalogul au fost verificate pe desktop și la 390 × 844 px; imaginile, navigarea, notificările, bara de progres și consimțământul se încarcă și se adaptează fără depășire vizibilă.
 - GitHub: commitul local de release este pregătit, dar pushul către `AvyronTech/cutiutamagica` a fost oprit de verificarea de siguranță deoarece include 88 de fișiere și imaginile de campanie; este necesară confirmarea explicită a administratorului pentru acest payload și această destinație.
+
+## Handoff 2026-10-12 — Metricool Web și monitorizarea agentului
+
+- Identitate verificată în browser: Metricool brand `7230540`, proprietar `cutiutamagicaofficial@gmail.com`, fus `Europe/Bucharest`, Facebook Page Cutiuța Magică, Instagram `cutiutamagicaofficial` și TikTok personal `cutiua.magic`. Planul Free afișa 6 din 20 de postări folosite în luna curentă.
+- Website: trackerul Metricool pentru `cutiutamagica.eu` este integrat în frontend numai după consimțământul existent pentru categoria „Experiență”; nu există un al doilea banner și nu se încarcă pe rutele administrative.
+- Agent intern: `agent_marketing_orders` rămâne orchestratorul existent. Dashboardul afișează fluxul catalog → agent → aprobare → publicare → comandă, conectorii, GSC și prospețimea datelor.
+- Monitorizare: cronul existent rulează o verificare internă fără apeluri externe, creează rulări auditate și notificări deduplicate pentru conectori neverificați, GSC neverificat/expirat și operațiuni eșuate.
+- Migrare nouă, append-only: `0054_marketing_agent_connector_monitoring.sql`; adaugă referințe fără secrete pentru Metricool, Metricool Web, GSC și profilul Opera, păstrate `setup_required` până la verificarea backend/live repetabilă.
+- Separare: Opera este executorul nativ pentru Cutiuța Magică; profilurile și filele AVYRON nu sunt fallback. AVYRON rămâne numai schimb asincron aprobat de statistici agregate și pachete de skill.
+- Activare rămasă: după push/deploy și migrarea remote aprobate, se reia „Verify” în Metricool Web și se confirmă prima vizită. Tokenul GSC readonly trebuie salvat criptat în Seiful de conturi înaintea importului backend. Nu s-au făcut push, deploy sau migrare remote în acest handoff.

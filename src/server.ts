@@ -9,6 +9,7 @@ import { handlePublicMediaRequest } from "./server/media-public";
 import { consumeCommerceEvents, type CommerceQueueMessage } from "./server/queue/commerce-consumer";
 import { purgeExpiredChatConversations } from "./server/db/chat.repository";
 import { processScheduledBackup } from "./server/services/backup-center";
+import { processMarketingAgentMonitoring } from "./server/services/marketing-agent-monitor";
 import {
   processBirthdayRewards,
   processGiftCalendarReminders,
@@ -246,6 +247,7 @@ export default {
         processScheduledBackup(env),
         processGiftCalendarReminders(env),
         processBirthdayRewards(env.DB),
+        processMarketingAgentMonitoring(env.DB),
       ]).then(() => undefined),
     );
   },

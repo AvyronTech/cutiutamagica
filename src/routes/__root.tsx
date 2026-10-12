@@ -24,6 +24,7 @@ import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { ChatWidget } from "@/components/site/ChatWidget";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
 import { CookieConsent } from "@/components/site/CookieConsent";
+import { MetricoolTracker } from "@/components/site/MetricoolTracker";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
@@ -331,6 +332,7 @@ function RootComponent() {
           {isChrome && <ContextualMessages />}
           {isChrome && <SideScrollMagic />}
           {isChrome && <ChatWidget />}
+          {isChrome && <MetricoolTracker pathname={pathname} />}
           {isChrome && <CookieConsent />}
           {isChrome ? (
             <>

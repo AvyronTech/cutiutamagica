@@ -5,7 +5,7 @@ import contentConversionPlaybook from "../../../skills/cutiuta-magica-marketing-
 import dailySocialOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/daily-social-operations.md?raw";
 import platformSync from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-sync.md?raw";
 
-export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.10.1";
+export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.12.1";
 
 const documents = [
   { path: "SKILL.md", content: skill },

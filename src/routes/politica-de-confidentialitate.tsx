@@ -106,6 +106,12 @@ function Privacy() {
           în browser este activat numai după informare și, când legea o cere, după alegerea ta; poți
           retrage ulterior consimțământul.
         </p>
+        <p>
+          Pentru analiza opțională a traficului folosim Metricool. Scriptul său este încărcat numai
+          dacă accepți categoria „Experiență”; fără această alegere, magazinul funcționează normal,
+          iar trackerul nu este încărcat. Rapoartele sunt folosite agregat pentru a înțelege
+          paginile vizitate și eficiența campaniilor.
+        </p>
       </LegalSection>
       <LegalSection title="Păstrare și acces">
         <p>
