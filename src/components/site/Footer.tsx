@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { BrandMark } from "./BrandMark";
 import { FooterScene } from "./FooterScene";
 import avyronLogo from "@/assets/avyron-logo.jpg";
@@ -37,6 +37,27 @@ const navGroups = [
 
 export function Footer() {
   const year = new Date().getFullYear();
+  const isCheckout = useLocation({ select: (location) => location.pathname === "/comanda" });
+
+  if (isCheckout) {
+    return (
+      <footer className="magic-footer magic-footer--checkout text-[color:var(--cream)]">
+        <div className="magic-footer-details">
+          <FooterTrustBadges />
+          <nav className="magic-footer-checkout-links" aria-label="Informații pentru comandă">
+            <Link to="/livrare">Livrare</Link>
+            <Link to="/retur">Retur și garanție</Link>
+            <Link to="/termeni-de-utilizare">Termeni</Link>
+            <Link to="/politica-de-confidentialitate">Confidențialitate</Link>
+          </nav>
+          <div className="magic-footer-bottom">
+            <p>© {year} Cutiuța Magică</p>
+          </div>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="magic-footer text-[color:var(--cream)]">
       <FooterScene />
@@ -86,49 +107,7 @@ export function Footer() {
         </div>
 
         <div className="magic-footer-trust">
-          <section aria-label="Protecția consumatorului" className="magic-footer-consumer">
-            <a
-              href="https://reclamatiisal.anpc.ro"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="ANPC: Soluționarea alternativă a litigiilor"
-              className="magic-anpc-badge"
-            >
-              <img
-                src="/anpc-sal.webp"
-                alt="ANPC: Soluționarea alternativă a litigiilor"
-                width={234}
-                height={58}
-                loading="lazy"
-                decoding="async"
-              />
-            </a>
-            <a
-              href="https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/resolve-your-consumer-complaint/alternative-dispute-resolution-consumers_ro"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Soluționarea litigiilor — ADR și ECC-Net, Comisia Europeană"
-              className="magic-adr-badge"
-            >
-              <span aria-hidden>EU</span>
-              <span>
-                <strong>Soluționarea litigiilor</strong>
-                <small>ADR și ECC-Net</small>
-              </span>
-            </a>
-            <a
-              href="https://stripe.com/payments"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Stripe Payments"
-              className="magic-stripe-badge"
-            >
-              <span aria-hidden>stripe</span>
-              <span>
-                <strong>Stripe Payments</strong>
-              </span>
-            </a>
-          </section>
+          <FooterTrustBadges />
 
           <a
             href="https://avyron.ro"
@@ -154,5 +133,53 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterTrustBadges() {
+  return (
+    <section aria-label="Protecția consumatorului" className="magic-footer-consumer">
+      <a
+        href="https://reclamatiisal.anpc.ro"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="ANPC: Soluționarea alternativă a litigiilor"
+        className="magic-anpc-badge"
+      >
+        <img
+          src="/anpc-sal.webp"
+          alt="ANPC: Soluționarea alternativă a litigiilor"
+          width={234}
+          height={58}
+          loading="lazy"
+          decoding="async"
+        />
+      </a>
+      <a
+        href="https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/resolve-your-consumer-complaint/alternative-dispute-resolution-consumers_ro"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Soluționarea litigiilor — ADR și ECC-Net, Comisia Europeană"
+        className="magic-adr-badge"
+      >
+        <span aria-hidden>EU</span>
+        <span>
+          <strong>Soluționarea litigiilor</strong>
+          <small>ADR și ECC-Net</small>
+        </span>
+      </a>
+      <a
+        href="https://stripe.com/payments"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Stripe Payments"
+        className="magic-stripe-badge"
+      >
+        <span aria-hidden>stripe</span>
+        <span>
+          <strong>Stripe Payments</strong>
+        </span>
+      </a>
+    </section>
   );
 }
