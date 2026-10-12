@@ -12015,12 +12015,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 
 @media (max-width: 640px) {
   body:has(.customer-account-page)
-    :is(
-      .magic-scroll-rail,
-      .floating-contacts,
-      .floating-cart-button,
-      .context-message
-    ) {
+    :is(.magic-scroll-rail, .floating-contacts, .floating-cart-button, .context-message) {
     display: none !important;
   }
   .personalization-scene {
@@ -12490,12 +12485,10 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   outline-offset: 4px;
 }
 @media (max-width: 767px) {
-  body:has(.personalization-page)
-    :is(.floating-contacts, .floating-cart-button, .context-message) {
+  body:has(.personalization-page) :is(.floating-contacts, .floating-cart-button, .context-message) {
     display: none !important;
   }
-  body:has(.gift-guide-page)
-    :is(.magic-scroll-rail, .floating-contacts, .floating-cart-button) {
+  body:has(.gift-guide-page) :is(.magic-scroll-rail, .floating-contacts, .floating-cart-button) {
     display: none !important;
   }
   .gift-guide-page > nav {
@@ -17465,7 +17458,13 @@ body.product-lightbox-open
 }
 .hero-world-veil {
   background:
-    linear-gradient(90deg, rgb(7 12 19 / 0.84) 0%, rgb(8 12 18 / 0.66) 36%, rgb(7 11 16 / 0.34) 66%, rgb(5 8 12 / 0.64) 100%),
+    linear-gradient(
+      90deg,
+      rgb(7 12 19 / 0.84) 0%,
+      rgb(8 12 18 / 0.66) 36%,
+      rgb(7 11 16 / 0.34) 66%,
+      rgb(5 8 12 / 0.64) 100%
+    ),
     linear-gradient(0deg, rgb(13 10 8 / 0.75), transparent 42%);
 }
 .hero-world-lantern {
@@ -17474,7 +17473,10 @@ body.product-lightbox-open
 .hero-photo {
   border-radius: 28px;
   border-color: rgb(226 185 115 / 0.65);
-  box-shadow: 0 30px 72px rgb(0 0 0 / 0.45), 0 0 0 5px rgb(104 68 39 / 0.26), inset 0 1px rgb(255 244 218 / 0.38);
+  box-shadow:
+    0 30px 72px rgb(0 0 0 / 0.45),
+    0 0 0 5px rgb(104 68 39 / 0.26),
+    inset 0 1px rgb(255 244 218 / 0.38);
 }
 .hero-magic-glint {
   opacity: 0.48;
@@ -17485,7 +17487,9 @@ body.product-lightbox-open
   border: 1px solid rgb(145 100 56 / 0.35);
   border-radius: 13px;
   background: linear-gradient(135deg, rgb(255 250 239 / 0.95), rgb(239 224 200 / 0.82));
-  box-shadow: inset 0 1px rgb(255 255 255 / 0.78), 0 6px 18px -15px rgb(77 43 22 / 0.55);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.78),
+    0 6px 18px -15px rgb(77 43 22 / 0.55);
 }
 .product-price__current {
   font-weight: 600;
@@ -17501,7 +17505,9 @@ body.product-lightbox-open
 .product-price--light {
   border-color: rgb(239 207 150 / 0.42);
   background: linear-gradient(135deg, rgb(22 25 31 / 0.78), rgb(52 35 23 / 0.66));
-  box-shadow: inset 0 1px rgb(255 246 220 / 0.12), 0 12px 24px -16px rgb(0 0 0 / 0.9);
+  box-shadow:
+    inset 0 1px rgb(255 246 220 / 0.12),
+    0 12px 24px -16px rgb(0 0 0 / 0.9);
   backdrop-filter: blur(9px);
 }
 .product-price--light .product-price__label {
@@ -17527,16 +17533,23 @@ body.product-lightbox-open
   border-radius: 16px;
   color: #fff8e9;
   background: linear-gradient(125deg, #624126, #39251a 57%, #241a19);
-  box-shadow: inset 0 1px rgb(255 240 209 / 0.28), 0 15px 28px -16px rgb(65 33 17 / 0.7);
+  box-shadow:
+    inset 0 1px rgb(255 240 209 / 0.28),
+    0 15px 28px -16px rgb(65 33 17 / 0.7);
   font-family: var(--font-body);
   font-weight: 650;
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
 }
 .cart-checkout-action:hover,
 .checkout-submit-action:hover:not(:disabled) {
   transform: translateY(-2px);
   border-color: rgb(255 223 169 / 0.85);
-  box-shadow: inset 0 1px rgb(255 240 209 / 0.4), 0 19px 30px -15px rgb(65 33 17 / 0.78);
+  box-shadow:
+    inset 0 1px rgb(255 240 209 / 0.4),
+    0 19px 30px -15px rgb(65 33 17 / 0.78);
 }
 .cart-checkout-action:focus-visible,
 .cart-continue-action:focus-visible,
@@ -17568,10 +17581,14 @@ body.product-lightbox-open
   border-radius: 14px;
   color: #54341f;
   background: linear-gradient(145deg, #fff9ee, #ead7ba);
-  box-shadow: inset 0 1px #fff, 0 5px 14px -11px rgb(59 35 17 / 0.6);
+  box-shadow:
+    inset 0 1px #fff,
+    0 5px 14px -11px rgb(59 35 17 / 0.6);
   font-size: 0.875rem;
   font-weight: 650;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 .cart-continue-action:hover {
   border-color: #9d6e3d;
@@ -17612,7 +17629,9 @@ body.product-lightbox-open
 .checkout-whisper-toast {
   border-color: rgb(243 207 151 / 0.4);
   background: linear-gradient(135deg, rgb(62 48 40 / 0.72), rgb(18 24 30 / 0.62));
-  box-shadow: inset 0 1px rgb(255 255 255 / 0.22), 0 16px 35px -16px rgb(0 0 0 / 0.68);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.22),
+    0 16px 35px -16px rgb(0 0 0 / 0.68);
   -webkit-backdrop-filter: blur(20px) saturate(145%);
   backdrop-filter: blur(20px) saturate(145%);
 }
@@ -17642,7 +17661,7 @@ body.product-lightbox-open
 }
 .checkout-page::before {
   opacity: 0.085;
-  background: url('/scenes/music-box-world.webp') center top / cover no-repeat;
+  background: url("/scenes/music-box-world.webp") center top / cover no-repeat;
   mask-image: linear-gradient(to bottom, black, rgb(0 0 0 / 0.68) 72%, transparent);
 }
 .checkout-starfield,
@@ -17656,7 +17675,9 @@ body.product-lightbox-open
 .checkout-summary {
   border-color: rgb(156 110 62 / 0.3);
   background: rgb(255 250 243 / 0.9);
-  box-shadow: 0 20px 36px -29px rgb(67 39 19 / 0.55), inset 0 1px #fff;
+  box-shadow:
+    0 20px 36px -29px rgb(67 39 19 / 0.55),
+    inset 0 1px #fff;
 }
 
 @media (min-width: 1361px) {
@@ -17699,20 +17720,32 @@ body.product-lightbox-open
     object-position: 32% 50%;
   }
   .hero-world-veil {
-    background: linear-gradient(90deg, rgb(6 11 18 / 0.78), rgb(6 11 18 / 0.57)), linear-gradient(0deg, rgb(7 10 15 / 0.72), transparent 54%);
+    background:
+      linear-gradient(90deg, rgb(6 11 18 / 0.78), rgb(6 11 18 / 0.57)),
+      linear-gradient(0deg, rgb(7 10 15 / 0.72), transparent 54%);
   }
-  .checkout-submit-action__icon { display: none; }
+  .checkout-submit-action__icon {
+    display: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .cart-checkout-action,
-  .checkout-submit-action { transition: none; }
+  .checkout-submit-action {
+    transition: none;
+  }
   .cart-checkout-action:hover,
-  .checkout-submit-action:hover:not(:disabled) { transform: none; }
+  .checkout-submit-action:hover:not(:disabled) {
+    transform: none;
+  }
 }
 @media (prefers-reduced-transparency: reduce) {
   .context-message--magic,
   .magic-cart-toast,
-  .checkout-whisper-toast { background: #30251f; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .checkout-whisper-toast {
+    background: #30251f;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 .product-price__label {
@@ -17737,5 +17770,40 @@ body.product-lightbox-open
 @media (min-width: 1024px) {
   .checkout-submit-action.hidden {
     display: flex;
+  }
+}
+/* Shared administrative surface, scoped away from the public storefront. */
+.admin-workspace {
+  font-family: "Inter Variable", Inter, system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04";
+  -webkit-font-smoothing: antialiased;
+}
+.admin-workspace h1,
+.admin-workspace h2,
+.admin-workspace h3,
+.admin-workspace h4 {
+  font-family: "Inter Variable", Inter, system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+.admin-workspace .glass-card {
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: linear-gradient(145deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 2%));
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 6%),
+    0 18px 48px rgb(0 0 0 / 12%);
+}
+.admin-workspace :is(input, select, textarea, button, a):focus-visible {
+  outline: 2px solid #f4ce9f;
+  outline-offset: 2px;
+}
+.admin-workspace :is(input, select, textarea) {
+  font-size: max(16px, 1em);
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-workspace *,
+  .admin-workspace *::before,
+  .admin-workspace *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -81,14 +81,9 @@ export async function issueInvoiceForOrder(
   const settings = checkoutSettingsSchema.parse(
     settingsRow ? JSON.parse(settingsRow.value_json) : {},
   );
-  if (
-    settings.invoiceProvider !== "oblio" ||
-    !settings.oblioEmail ||
-    !settings.invoiceTaxId ||
-    !settings.invoiceSeries
-  ) {
+  if (settings.invoiceProvider !== "oblio" || !settings.oblioEmail || !value(entity, "tax_id")) {
     throw new ProviderError(
-      "Completează emailul Oblio, CIF-ul și seria, apoi selectează Oblio în configurarea internă.",
+      "Configurează contul Oblio și confirmă profilul juridic și seria de facturi.",
       "OBLIO_SETTINGS_INCOMPLETE",
       409,
     );
@@ -108,7 +103,7 @@ export async function issueInvoiceForOrder(
     const result = await emitOblioInvoice(env, {
       orderId,
       accountEmail: settings.oblioEmail,
-      taxId: settings.invoiceTaxId,
+      taxId: value(entity, "tax_id"),
       series: value(series, "prefix"),
       currency: value(order, "currency") || "RON",
       customer: {

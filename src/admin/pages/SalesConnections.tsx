@@ -1,4 +1,3 @@
-import { CheckoutConnections } from "./CheckoutConnections";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -144,43 +143,6 @@ export function SalesConnections() {
         </p>
       </div>
       <CredentialPanel providers={["google_merchant", "emag", "trendyol", "olx", "okazii"]} />
-      <div className="border-t border-slate-700 pt-5">
-        <h3 className="text-lg">Facturare, curierat și plăți</h3>
-        <div className="my-4 flex flex-wrap gap-4 text-sm text-amber-200">
-          <a href="/admin/billing" className="underline">
-            Oblio · facturare
-          </a>
-          <a href="/admin/shipping" className="underline">
-            SmartShip · curierat
-          </a>
-          <a href="/admin/financiar" className="underline">
-            Finanțe și conturi
-          </a>
-        </div>
-        <CheckoutConnections />
-        <div className="mt-4 flex flex-wrap gap-4 text-sm">
-          <a
-            href="https://dashboard.stripe.com/settings"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-200 underline"
-          >
-            Configurează firma și contul de încasare în Stripe ↗
-          </a>
-          <a
-            href="https://admin.netopia-payments.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-200 underline"
-          >
-            Configurare NETOPIA ↗
-          </a>
-        </div>
-        <p className="mt-3 text-xs text-slate-400">
-          Datele cardului firmei se introduc doar în portalul securizat al furnizorului care le
-          solicită. Acest dashboard nu colectează numărul cardului sau CVV.
-        </p>
-      </div>
     </section>
   );
 }

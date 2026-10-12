@@ -242,7 +242,7 @@ export default function Settings() {
             <Share2 className="h-5 w-5 text-pink-400" /> Conturi sociale
           </h2>
           <div className="space-y-3">
-            {(Object.keys(form.social) as Array<keyof typeof form.social>).map((network) => (
+            {(["instagram", "facebook", "tiktok"] as const).map((network) => (
               <label key={network} className="block text-xs capitalize text-slate-400">
                 {network}
                 <input

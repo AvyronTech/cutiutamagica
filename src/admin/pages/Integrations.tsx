@@ -10,7 +10,6 @@ import {
   Plug,
   RefreshCw,
   ShoppingBag,
-  Truck,
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,7 +28,6 @@ const PORTALS: Record<string, string> = {
   facebook: "https://business.facebook.com",
   instagram: "https://business.facebook.com",
   tiktok: "https://business.tiktok.com",
-  pinterest: "https://business.pinterest.com",
   whatsapp: "https://business.whatsapp.com",
   esteto: "https://marketplace.esteto.ro",
   avyron_crm: "https://avyron.ro",
@@ -60,6 +58,7 @@ const OPERATIONAL_PROVIDERS: Record<
   oblio: { label: "Oblio", route: "/admin/billing" },
   smartship: { label: "SmartShip", route: "/admin/shipping" },
   stripe: { label: "Stripe", route: "/admin/financiar" },
+  revolut_merchant: { label: "Revolut Pay", route: "/admin/financiar" },
   resend: { label: "Resend", route: "/admin/email" },
   esteto: { label: "Esteto Marketplace", route: "/admin/integrations" },
   avyron_crm: { label: "CRM intern · AVYRON", route: "/admin/integrations" },
@@ -328,7 +327,19 @@ export default function Integrations() {
   });
   const data = integrationsQuery.data;
   const operationalProviders = (operationsQuery.data?.providers ?? []).filter(
-    (provider) => provider.environment === "production",
+    (provider) =>
+      provider.environment === "production" &&
+      ["oblio", "smartship", "stripe", "revolut_merchant", "resend"].includes(provider.provider) &&
+      ["invoicing", "shipping", "payments", "email"].includes(provider.capability),
+  );
+  const channels = (data?.channels ?? []).filter(
+    (channel) => !["pinterest", "youtube"].includes(channel.code),
+  );
+  const connectedChannels = channels.filter((channel) =>
+    ["active", "connected"].includes(channel.status),
+  );
+  const plannedChannels = channels.filter(
+    (channel) => !["active", "connected"].includes(channel.status),
   );
 
   return (
@@ -353,22 +364,11 @@ export default function Integrations() {
         </button>
       </div>
 
-      <SalesConnections />
       {integrationsQuery.isError && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
           Starea integrărilor nu a putut fi citită din D1.
         </div>
       )}
-
-      <EstetoConnector
-        account={data?.accounts.find((account) => account.provider === "esteto")}
-        onSaved={() => integrationsQuery.refetch()}
-      />
-
-      <AvyronCrmConnector
-        account={data?.accounts.find((account) => account.provider === "avyron_crm")}
-        onSaved={() => integrationsQuery.refetch()}
-      />
 
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">
@@ -437,52 +437,72 @@ export default function Integrations() {
           <p className="py-10 text-center text-sm text-slate-500">Se încarcă...</p>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {(data?.channels ?? []).map((channel) => (
+            {connectedChannels.map((channel) => (
               <ChannelCard key={channel.id} channel={channel} />
             ))}
           </div>
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">
-          <Plug className="h-5 w-5 text-amber-400" /> Conturi API
-        </h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {(data?.accounts ?? []).map((account) => (
-            <div key={account.id} className="glass-card rounded-xl p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-white">{account.label}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {account.provider} · {account.environment}
-                  </p>
+      <details className="rounded-2xl border border-white/10 bg-white/[.035] p-4 md:p-5">
+        <summary className="cursor-pointer text-sm font-semibold text-white">
+          Canale și conturi opționale · {plannedChannels.length} de configurat
+        </summary>
+        <p className="mt-2 text-xs leading-5 text-slate-300">
+          Configurează un canal doar când începi să îl folosești. Serviciile pentru comenzi,
+          facturi, plăți și livrare au ecrane dedicate mai sus.
+        </p>
+        <div className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {plannedChannels.map((channel) => (
+              <ChannelCard key={channel.id} channel={channel} />
+            ))}
+          </div>
+          <SalesConnections />
+          <EstetoConnector
+            account={data?.accounts.find((account) => account.provider === "esteto")}
+            onSaved={() => integrationsQuery.refetch()}
+          />
+          <AvyronCrmConnector
+            account={data?.accounts.find((account) => account.provider === "avyron_crm")}
+            onSaved={() => integrationsQuery.refetch()}
+          />
+        </div>
+      </details>
+
+      <details className="rounded-2xl border border-white/10 bg-white/[.035] p-4 md:p-5">
+        <summary className="cursor-pointer text-sm font-semibold text-white">
+          Diagnostic conexiuni și curierat
+        </summary>
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          {(data?.accounts ?? [])
+            .filter((account) => !["pinterest", "youtube"].includes(account.provider))
+            .map((account) => (
+              <div key={account.id} className="glass-card rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{account.label}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {account.provider} · {account.environment}
+                    </p>
+                  </div>
+                  <StatusPill status={account.status} />
                 </div>
-                <StatusPill status={account.status} />
+                {account.lastErrorMessage && (
+                  <p className="mt-3 text-xs text-red-300">
+                    {account.lastErrorCode}: {account.lastErrorMessage}
+                  </p>
+                )}
+                {!account.lastSuccessAt && (
+                  <p className="mt-3 text-xs text-slate-500">
+                    Nu a existat încă nicio sincronizare reușită.
+                  </p>
+                )}
               </div>
-              {account.lastErrorMessage && (
-                <p className="mt-3 text-xs text-red-300">
-                  {account.lastErrorCode}: {account.lastErrorMessage}
-                </p>
-              )}
-              {!account.lastSuccessAt && (
-                <p className="mt-3 text-xs text-slate-500">
-                  Nu a existat încă nicio sincronizare reușită.
-                </p>
-              )}
-            </div>
-          ))}
+            ))}
           {!integrationsQuery.isLoading && (data?.accounts.length ?? 0) === 0 && (
             <p className="text-sm text-slate-500">Nu sunt definite conturi API.</p>
           )}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-white">
-          <Truck className="h-5 w-5 text-emerald-400" /> Curierat
-        </h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {(data?.shippingMethods ?? []).map((method) => (
             <div key={method.id} className="glass-card rounded-xl p-4">
               <div className="flex items-start justify-between gap-2">
@@ -497,13 +517,7 @@ export default function Integrations() {
             </div>
           ))}
         </div>
-      </section>
-
-      <p className="text-xs text-slate-500">
-        OLX rămâne pe import manual până la acces oficial. eMAG și feed-urile sociale au modelele
-        pregătite, dar sunt marcate corect drept neconfigurate până la adăugarea secretelor și
-        validarea în sandbox.
-      </p>
+      </details>
     </div>
   );
 }

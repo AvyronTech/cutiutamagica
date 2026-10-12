@@ -3,6 +3,7 @@ import EmailHub from "@/admin/pages/EmailHub";
 import GrowthSettings from "@/admin/pages/GrowthSettings";
 export const Route = createFileRoute("/_authenticated/admin/email")({
   component: EmailPage,
+  head: () => ({ meta: [{ title: "Admin · E-mail | Cutiuța Magică" }] }),
 });
 
 function EmailPage() {

@@ -9,16 +9,19 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  FileText,
+  Mail,
   Package,
   PackageCheck,
   ShoppingBag,
   ShoppingCart,
+  ShieldCheck,
   Sparkles,
   TrendingUp,
   Truck,
   Wallet,
 } from "lucide-react";
-import { getAdminDashboard } from "@/lib/admin.functions";
+import { getAdminBusinessHub, getAdminDashboard } from "@/lib/admin.functions";
 
 const channelColors: Record<string, string> = {
   website: "bg-violet-400",
@@ -47,10 +50,16 @@ function formatDate(now: Date) {
 
 export default function Dashboard() {
   const fetchDashboard = useServerFn(getAdminDashboard);
+  const fetchBusinessHub = useServerFn(getAdminBusinessHub);
   const [now, setNow] = useState(() => new Date());
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "dashboard"],
     queryFn: () => fetchDashboard(),
+    staleTime: 30_000,
+  });
+  const hubQuery = useQuery({
+    queryKey: ["admin", "business-hub"],
+    queryFn: () => fetchBusinessHub(),
     staleTime: 30_000,
   });
 
@@ -88,6 +97,45 @@ export default function Dashboard() {
   ];
   const channels = data?.channels ?? [];
   const totalChannelOrders = channels.reduce((sum, channel) => sum + channel.validOrdersCount, 0);
+  const metric = (area: "shipping" | "billing" | "notifications" | "ai", label: string) =>
+    hubQuery.data?.metrics[area].find((item) => item.label === label)?.value;
+  const workflow = [
+    {
+      label: "Comenzi",
+      detail: "Confirmare și pregătire",
+      path: "/admin/orders",
+      value: stats?.ordersOpen,
+      icon: ShoppingCart,
+    },
+    {
+      label: "Livrare",
+      detail: "Comenzi fără expediere",
+      path: "/admin/shipping",
+      value: metric("shipping", "Fără livrare"),
+      icon: Truck,
+    },
+    {
+      label: "Facturi",
+      detail: "Documente de procesat",
+      path: "/admin/billing",
+      value: metric("billing", "De procesat"),
+      icon: FileText,
+    },
+    {
+      label: "E-mail",
+      detail: "Livrări eșuate",
+      path: "/admin/email",
+      value: metric("notifications", "Livrări eșuate"),
+      icon: Mail,
+    },
+    {
+      label: "Aprobări",
+      detail: "Propuneri în așteptare",
+      path: "/admin/ai",
+      value: metric("ai", "Aprobări"),
+      icon: ShieldCheck,
+    },
+  ];
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -122,6 +170,39 @@ export default function Dashboard() {
           Datele operaționale nu au putut fi încărcate. Verifică autentificarea și conexiunea D1.
         </div>
       )}
+
+      <section
+        aria-label="Fluxul magazinului"
+        className="rounded-2xl border border-white/10 bg-white/[.045] p-4 md:p-5"
+      >
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-base font-semibold text-white">Fluxul magazinului</h2>
+            <p className="mt-1 text-xs text-slate-300">
+              De la comandă la livrare și confirmarea pe e-mail.
+            </p>
+          </div>
+          <span className="text-[11px] text-slate-400">Indicatori din sistemul intern</span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {workflow.map(({ label, detail, path, value, icon: Icon }) => (
+            <Link
+              key={label}
+              to={path}
+              className="group flex min-w-0 items-start justify-between gap-2 rounded-xl border border-white/10 bg-[#0e1a2b] p-3 transition hover:border-amber-200/30 hover:bg-[#152238] focus-visible:outline-2 focus-visible:outline-amber-200"
+            >
+              <div className="min-w-0">
+                <Icon className="mb-3 h-4 w-4 text-amber-200" />
+                <p className="text-sm font-semibold text-white">{label}</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-300">{detail}</p>
+              </div>
+              <span className="rounded-lg border border-white/10 bg-white/[.06] px-2 py-1 text-sm font-semibold tabular-nums text-white">
+                {value ?? "—"}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <section aria-label="Indicatori esențiali" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
