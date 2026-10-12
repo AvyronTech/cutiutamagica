@@ -4704,7 +4704,6 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   body:has(.checkout-page)
     :is(
       .site-header,
-      .magic-footer,
       .page-back-dock,
       .magic-scroll-rail,
       .context-message,
@@ -17901,5 +17900,53 @@ body.product-lightbox-open
   .upcoming-card {
     flex-basis: 100%;
     max-width: none;
+  }
+}
+
+/* Checkout keeps the payment banner and essential help in a quiet, compact footer. */
+.magic-footer--checkout .magic-footer-details {
+  width: min(900px, calc(100% - 32px));
+  padding: 20px 0 14px;
+  border-top: 0;
+}
+.magic-footer--checkout .magic-footer-consumer {
+  justify-content: center;
+  max-width: none;
+}
+.magic-footer-checkout-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  margin-top: 17px;
+}
+.magic-footer-checkout-links a {
+  color: #d1c3b1;
+  font-size: 11px;
+  text-underline-offset: 3px;
+}
+.magic-footer-checkout-links a:hover,
+.magic-footer-checkout-links a:focus-visible {
+  color: #f1d19b;
+  text-decoration: underline;
+}
+.magic-footer--checkout .magic-footer-bottom {
+  justify-content: center;
+  margin-top: 13px;
+  padding-top: 10px;
+  text-align: center;
+}
+@media (max-width: 639px) {
+  .magic-footer--checkout .magic-footer-details {
+    padding: 16px 0 max(16px, env(safe-area-inset-bottom));
+  }
+  .magic-footer--checkout .magic-footer-consumer {
+    gap: 8px;
+  }
+  .magic-footer-checkout-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+    text-align: center;
   }
 }
