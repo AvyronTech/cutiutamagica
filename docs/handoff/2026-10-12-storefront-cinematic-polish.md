@@ -3,7 +3,7 @@
 ## Scop și rute
 
 - Acasă: fundal cinematografic inspirat din mecanismul real, cu contrast păstrat pentru fotografiile produselor; eliminarea orbitelor decorative care concurau cu cutiuțele.
-- Identitate: simbol nou al cutiuței cu lemn, capac, pieptene, cilindru și manivelă; ilustrație universală originală numai pe capac. Folosit de componenta comună BrandMark, inclusiv în upbar, footer, încărcări, notificări și checkout. Faviconul și iconițele PWA sunt aliniate la același simbol.
+- Identitate: simbol nou al cutiuței cu lemn, capac, pieptene, cilindru și manivelă; ilustrație universală originală numai pe capac. Folosit de componenta comună BrandMark, inclusiv în upbar, footer, încărcări, notificări și checkout, precum și în teaserul public de personalizare. Faviconul și iconițele PWA sunt aliniate la același simbol.
 - Catalog, produs, coș: prețuri integrate în suprafețe de lemn/pergament și sticlă, cu contrast și diacritice mai clare. Butoane refăcute pentru finalizare și continuarea cumpărăturilor.
 - Checkout: CTA mai explicit, cu formularea legală „Comandă cu obligație de plată”; cardul este vizibil ca opțiune în pregătire până când API-ul confirmă Stripe. La activare, opțiunea reală vine din configurația serverului.
 - Notificări: maximum două mesaje contextuale pe vizită, interval minim 45 secunde, afișare 2,8 secunde; toastul de coș 2,6 secunde. Suprafețe translucide cu suport pentru reducerea transparenței.
@@ -12,7 +12,7 @@
 
 ## Fișiere și resurse
 
-- Componente/rute: `src/components/site/BrandMark.tsx`, `ContextualMessages.tsx`, `LandingBackdrop.tsx`, `MiniCart.tsx`, `Footer.tsx`, `src/routes/index.tsx`, `comanda.tsx`, `__root.tsx`.
+- Componente/rute: `src/components/site/BrandMark.tsx`, `ContextualMessages.tsx`, `LandingBackdrop.tsx`, `MiniCart.tsx`, `Footer.tsx`, `PersonalizationSpotlight.tsx`, `src/routes/index.tsx`, `comanda.tsx`, `personalizeaza.tsx`, `__root.tsx`.
 - Stil și mesaje: `src/styles.css`, `src/lib/message-sequence.ts`, `src/lib/message-sequence.test.ts`, `src/lib/notify.ts`.
 - Simbol master: `design/brand/music-box-universal-master.png`; variantă publică optimizată: `public/brand/music-box-universal.webp` (155 KiB).
 - Fundaluri responsive: `public/scenes/music-box-world.webp` (39 KiB) și `music-box-world-mobile.webp` (16 KiB).
@@ -35,7 +35,7 @@ Am folosit skillul `imagegen` în modul built-in, cu fotografiile reale `box-fai
 - `npm run build`: trecut. Avertismentul existent de mărime a unor pachete nu este introdus de aceste resurse.
 - `npm run cf:types:check`: trecut.
 - `npm run cf:deploy:dry`: trecut, fără deploy.
-- Browser local la 1440 px și 390 px: home, catalog, pagină de produs, coș și checkout. Nicio depășire orizontală; CTA desktop este ascuns corect pe mobil. `/cont` și accesul protejat `/admin` au fost verificate la 390 px; dashboardul autentificat necesită o sesiune de administrator.
+- Browser local la 1440 px și 390 px: home, catalog, pagină de produs, coș, teaserul de personalizare și checkout. Nicio depășire orizontală; CTA desktop este ascuns corect pe mobil. `/cont` și accesul protejat `/admin` au fost verificate la 390 px; dashboardul autentificat necesită o sesiune de administrator.
 - Consola checkout după reload: fără erori sau avertismente. Accesul `/admin` redirecționează corect spre `/auth`.
 - Urmărire de performanță în previzualizarea locală la 390 px: LCP 817 ms, elementul LCP fiind noua imagine `music-box-world-mobile.webp`; CLS 0,00. Acestea sunt valori locale, fără date reale de utilizatori sau throttling.
 

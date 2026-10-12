@@ -10,7 +10,7 @@ export const Route = createFileRoute("/personalizeaza")({
       description:
         "Pregătim un atelier pentru cutiuțe muzicale personalizate cu melodie, finisaj și imagine aleasă pentru povestea ta.",
       path: "/personalizeaza",
-      image: "/scenes/personalization-box-v2.webp",
+      image: "/brand/music-box-universal.webp",
       imageAlt: "Atelierul de personalizare Cutiuța Magică, în pregătire",
       robots: "noindex, nofollow",
     }),
