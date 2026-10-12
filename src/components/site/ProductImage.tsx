@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { productImageFallback } from "@/lib/product-image-source";
 
 /**
  * Fotografiile de produs livrate în cea mai bună variantă pe care o acceptă browserul.
@@ -26,23 +27,6 @@ type Props = {
 const hasOptimizedVariants = (src: string) =>
   /^\/produse\/(hp-keeper|got-winter|sunshine|kitten|halloween)\//.test(src) &&
   src.endsWith(".webp");
-
-// Fotografii reale ale produselor, folosite numai când fișierul public din R2 lipsește.
-const localMediaFallbacks: Record<string, string> = {
-  media_hp_keeper_hero: "/produse/hp-keeper/card.webp",
-  media_halloween_hero: "/produse/halloween/card.webp",
-  media_hp_always_hero: "/produse/archive/hp-always.webp",
-  media_pirates_hero: "/produse/archive/pirates.webp",
-  media_kitten_hero: "/produse/kitten/card.webp",
-  media_starwars_dad_hero: "/produse/archive/starwars-dad.webp",
-  media_lotr_rings_hero: "/produse/archive/lotr-rings.webp",
-  media_fairy_hero: "/produse/archive/fairy.webp",
-};
-
-function productImageFallback(src: string): string | null {
-  const mediaId = /^\/media\/([a-zA-Z0-9_-]+)$/.exec(src)?.[1];
-  return mediaId ? (localMediaFallbacks[mediaId] ?? null) : null;
-}
 
 export function ProductImage({
   src,

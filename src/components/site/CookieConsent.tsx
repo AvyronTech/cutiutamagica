@@ -48,10 +48,10 @@ export function CookieConsent() {
         <Sparkles />
       </div>
       <div className="cookie-story__copy">
-        <p>O alegere mică</p>
-        <h2 id="cookie-story-title">Păstrăm magia simplă.</h2>
+        <p>Alegerea ta</p>
+        <h2 id="cookie-story-title">Cookie-uri, pe scurt.</h2>
         <span>
-          Folosim mici semne digitale ca povestea să curgă firesc. Tu alegi cât păstrăm aproape.
+          Cele necesare funcționării sunt mereu active. Pentru experiență și marketing, alegi tu.
         </span>
 
         {settingsOpen && (
@@ -63,7 +63,7 @@ export function CookieConsent() {
               <small>Mereu active</small>
             </div>
             <label>
-              <span>Experiență</span>
+              <span>Experiență și analiză</span>
               <input
                 type="checkbox"
                 checked={experience}
@@ -71,7 +71,7 @@ export function CookieConsent() {
               />
             </label>
             <label>
-              <span>Inspirație</span>
+              <span>Marketing</span>
               <input
                 type="checkbox"
                 checked={marketing}
@@ -87,7 +87,14 @@ export function CookieConsent() {
             className="cookie-story__accept"
             onClick={() => choose({ necessary: true, experience: true, marketing: true })}
           >
-            <Check aria-hidden /> Acceptă și continuă
+            <Check aria-hidden /> Acceptă toate
+          </button>
+          <button
+            type="button"
+            className="cookie-story__necessary"
+            onClick={() => choose({ necessary: true, experience: false, marketing: false })}
+          >
+            Doar necesare
           </button>
           <button
             type="button"

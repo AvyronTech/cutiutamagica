@@ -762,7 +762,10 @@ export async function handleAdminAiStudioApi(request: Request, env: Env): Promis
       {
         error: {
           code: code === 401 ? "AI_RUNNER_AUTH_FAILED" : "AI_STUDIO_REQUEST_FAILED",
-          message: error instanceof Error ? error.message : "Operația AI a eșuat.",
+          message:
+            code < 500 && error instanceof Error
+              ? error.message
+              : "Operația AI nu este disponibilă momentan. Încearcă din nou.",
         },
       },
       { status: code },

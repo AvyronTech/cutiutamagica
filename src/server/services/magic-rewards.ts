@@ -1,6 +1,16 @@
 import { sendEmail } from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
+export class CustomerRewardError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "CustomerRewardError";
+  }
+}
+
 type Program = {
   enabled: number;
   redemption_threshold: number;
@@ -149,7 +159,7 @@ async function program(db: D1Database): Promise<Program> {
   const row = await db
     .prepare("SELECT * FROM magic_rewards_program WHERE code='magic_stars'")
     .first<Program>();
-  if (!row) throw new Error("Programul Magic Stars nu este configurat.");
+  if (!row) throw new CustomerRewardError("Beneficiul nu este disponibil momentan.", 503);
   return row;
 }
 
@@ -333,7 +343,7 @@ export async function saveCustomerBirthday(
 ) {
   const probe = new Date(Date.UTC(2024, birthday.month - 1, birthday.day));
   if (probe.getUTCMonth() !== birthday.month - 1 || probe.getUTCDate() !== birthday.day)
-    throw new Error("Data aniversării nu este validă.");
+    throw new CustomerRewardError("Data aniversării nu este validă.", 400);
   await db
     .prepare(
       `UPDATE review_accounts SET birth_month=?2,birth_day=?3
@@ -502,13 +512,16 @@ export async function saveGiftProfile(
 
 export async function redeemMagicStars(db: D1Database, accountId: string) {
   const cfg = await program(db);
-  if (!cfg.enabled) throw new Error("Programul Magic Stars nu este activ.");
+  if (!cfg.enabled) throw new CustomerRewardError("Beneficiul nu este disponibil momentan.", 409);
   const balance = await db
     .prepare("SELECT available_stars FROM magic_star_accounts WHERE review_account_id=?1")
     .bind(accountId)
     .first<{ available_stars: number }>();
   if ((balance?.available_stars ?? 0) < cfg.redemption_threshold)
-    throw new Error(`Ai nevoie de ${cfg.redemption_threshold} stele pentru acest beneficiu.`);
+    throw new CustomerRewardError(
+      `Ai nevoie de ${cfg.redemption_threshold} stele pentru acest beneficiu.`,
+      409,
+    );
   const code = `STEA-${crypto.randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
   const ledgerId = crypto.randomUUID();
   const promotionCodeId = crypto.randomUUID();

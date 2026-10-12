@@ -25,10 +25,10 @@ describe("contextual message sequence", () => {
     expect(nextStorefrontMessage(messages, session, "home", 7, 100)).toBeUndefined();
     expect(nextStorefrontMessage(messages, session, "home", 60, 0)?.id).toBe("first");
     expect(
-      nextStorefrontMessage(messages, { shown: ["first"], muted: false }, "home", 26, 0)?.id,
-    ).toBe("second");
+      nextStorefrontMessage(messages, { shown: ["first"], muted: false }, "home", 26, 0),
+    ).toBeUndefined();
   });
-  it("does not repeat messages after refresh or show more than three across pages", () => {
+  it("does not repeat messages after refresh or show more than one across pages", () => {
     const session = readMessageSession('{"shown":["first","second","third"],"muted":false}');
     expect(
       nextStorefrontMessage([message("fourth", 8)], session, "home", 120, 100),
@@ -57,7 +57,7 @@ describe("contextual message sequence", () => {
     for (const input of [null, "bad", '{"shown":{}}', '{"shown":[],"muted":"false"}'])
       expect(readMessageSession(input)).toEqual({ shown: [], muted: false });
     expect(readMessageSession('{"shown":[12,"a","b","c","d"],"muted":true}')).toEqual({
-      shown: ["a", "b"],
+      shown: ["a"],
       muted: true,
     });
   });

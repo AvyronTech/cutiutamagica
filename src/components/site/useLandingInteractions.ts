@@ -1,6 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import { useReducedMotion } from "framer-motion";
 import { isIntentionalPress } from "@/lib/landing-motion";
+import { currentVisualEffectsTier } from "@/lib/visual-performance";
 
 export function useLandingInteractions(root: RefObject<HTMLDivElement | null>) {
   const reduced = useReducedMotion();
@@ -9,6 +10,7 @@ export function useLandingInteractions(root: RefObject<HTMLDivElement | null>) {
     const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
       ?.saveData;
     if (!node || reduced || saveData) return;
+    const richEffects = currentVisualEffectsTier() === "full";
     const revealNodes = Array.from(node.querySelectorAll<HTMLElement>("[data-reveal]"));
     const reveal = new IntersectionObserver(
       (entries) => {
@@ -128,11 +130,13 @@ export function useLandingInteractions(root: RefObject<HTMLDivElement | null>) {
         });
       down = null;
     };
-    node.addEventListener("pointermove", move, { passive: true });
-    node.addEventListener("pointerleave", clearCard);
-    node.addEventListener("pointerdown", press, { passive: true });
-    node.addEventListener("pointercancel", cancel);
-    node.addEventListener("click", click);
+    if (richEffects) {
+      node.addEventListener("pointermove", move, { passive: true });
+      node.addEventListener("pointerleave", clearCard);
+      node.addEventListener("pointerdown", press, { passive: true });
+      node.addEventListener("pointercancel", cancel);
+      node.addEventListener("click", click);
+    }
     return () => {
       reveal.disconnect();
       heroObserver.disconnect();
@@ -145,11 +149,13 @@ export function useLandingInteractions(root: RefObject<HTMLDivElement | null>) {
         effect.getAnimations().forEach((a) => a.cancel());
         effect.remove();
       });
-      node.removeEventListener("pointermove", move);
-      node.removeEventListener("pointerleave", clearCard);
-      node.removeEventListener("pointerdown", press);
-      node.removeEventListener("pointercancel", cancel);
-      node.removeEventListener("click", click);
+      if (richEffects) {
+        node.removeEventListener("pointermove", move);
+        node.removeEventListener("pointerleave", clearCard);
+        node.removeEventListener("pointerdown", press);
+        node.removeEventListener("pointercancel", cancel);
+        node.removeEventListener("click", click);
+      }
     };
   }, [root, reduced]);
 }

@@ -7,6 +7,7 @@ import type { Product } from "@/data/products";
 import { ProductImage } from "./ProductImage";
 import { ProductInterest } from "./ProductInterest";
 import { productLink } from "@/lib/product-url";
+import { currentVisualEffectsTier } from "@/lib/visual-performance";
 
 export function UpcomingCollection({ products }: { products: Product[] }) {
   const reduced = useReducedMotion();
@@ -16,9 +17,17 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
   const [visible, setVisible] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const [selected, setSelected] = useState(0);
+  const [richEffects, setRichEffects] = useState(true);
   const cooldownTimer = useRef<number | undefined>(undefined);
   const playing =
-    !reduced && !paused && !cooldown && visible && !interacting && products.length > 1;
+    richEffects &&
+    !reduced &&
+    !paused &&
+    !cooldown &&
+    visible &&
+    !interacting &&
+    products.length > 1;
+  useEffect(() => setRichEffects(currentVisualEffectsTier() === "full"), []);
   const update = useCallback(() => setSelected(api?.selectedScrollSnap() ?? 0), [api]);
   useEffect(() => {
     if (!api) return;
@@ -150,7 +159,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
             }
           }}
           aria-label={playing ? "Oprește derularea automată" : "Pornește derularea automată"}
-          disabled={!!reduced || products.length <= 1}
+          disabled={!!reduced || !richEffects || products.length <= 1}
         >
           {playing ? <Pause size={16} /> : <Play size={16} />}
         </button>

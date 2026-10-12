@@ -24,6 +24,7 @@ function compactMessage(value: string, limit = 96) {
 
 export function ContextualMessages() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const messageEligible = path === "/" || path === "/produse" || isProductPath(path);
   const query = useQuery({
     queryKey: ["storefront-messages"],
     queryFn: async ({ signal }) => {
@@ -33,9 +34,11 @@ export function ContextualMessages() {
     },
     staleTime: 300000,
     retry: false,
+    enabled: messageEligible,
   });
   useEffect(() => {
     if (!query.data?.length) return;
+    if (window.matchMedia("(max-width: 767px)").matches) return;
     try {
       const saved = sessionStorage.getItem(storageKey);
       if (saved) memory = readMessageSession(saved);
@@ -49,9 +52,7 @@ export function ContextualMessages() {
           ? "products"
           : isProductPath(path)
             ? "product"
-            : path === "/comanda"
-              ? "cart"
-              : null;
+            : null;
     if (!placement || memory.muted || memory.shown.length >= MESSAGE_SESSION_LIMIT) return;
     let active: string | number | undefined,
       elapsed = 0,
@@ -93,6 +94,7 @@ export function ContextualMessages() {
         delta = Math.min(1000, now - last);
       last = now;
       const obstructed =
+        !!document.querySelector(".cookie-story") ||
         !!document.querySelector(
           '[role="dialog"], [aria-modal="true"], [aria-label="Chat Cutiuța Magică"]',
         ) ||
@@ -115,6 +117,8 @@ export function ContextualMessages() {
         active !== undefined ||
         now < nextAt ||
         now - lastInteraction < 2500 ||
+        elapsed < 15 ||
+        scrollY < innerHeight * 0.35 ||
         document.querySelector("[data-sonner-toast]") ||
         (placement !== "home" && pageCount >= 1)
       )
@@ -174,7 +178,7 @@ export function ContextualMessages() {
           </aside>
         ),
         {
-          duration: 2800,
+          duration: 2400,
           position: "top-center",
           onAutoClose: () => finish(),
           onDismiss: (t) => {

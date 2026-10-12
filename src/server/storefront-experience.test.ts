@@ -307,6 +307,13 @@ describe("storefront and dashboard share one catalog", () => {
         .sort(),
     ).toEqual(["halloween", "kitten", "starwars-dad"]);
     expect(products.filter((p) => !isAvailable(p))).toHaveLength(5);
+    expect(products.find((p) => p.id === "hp-always")?.image).toBe(
+      "/produse/archive/hp-always.webp",
+    );
+    for (const product of products) {
+      expect(product.image).not.toMatch(/^\/media\/media_/);
+      for (const image of product.gallery) expect(image.src).not.toMatch(/^\/media\/media_/);
+    }
     for (const p of products)
       for (const image of p.gallery)
         if (image.src.startsWith("/produse/"))

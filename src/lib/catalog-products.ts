@@ -1,5 +1,6 @@
 import { productLimitedEdition, type Product } from "@/data/products";
 import type { CatalogProduct } from "@/server/db/catalog.repository";
+import { stableProductImageSource } from "@/lib/product-image-source";
 
 const localProductPhotos: Record<string, string> = {
   "hp-keeper": "/produse/hp-keeper/card.webp",
@@ -29,8 +30,11 @@ export function catalogProducts(catalog: CatalogProduct[]): Product[] {
     gtin: row.gtin ?? undefined,
     mpn: row.mpn ?? undefined,
     melody: row.melody ?? undefined,
-    image: row.imageUrl || localProductPhoto(row.slug) || "/icon-512.png",
-    gallery: row.gallery,
+    image: stableProductImageSource(row.imageUrl || localProductPhoto(row.slug) || "/icon-512.png"),
+    gallery: row.gallery.map((photo) => ({
+      ...photo,
+      src: stableProductImageSource(photo.src),
+    })),
     tagline: row.tagline,
     description: row.description || row.shortDescription,
     story: row.story,

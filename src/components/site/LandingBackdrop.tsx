@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
 import bgEmotie from "@/assets/bg-emotie.webp";
 import { worldBlend } from "@/lib/landing-motion";
+import { currentVisualEffectsTier } from "@/lib/visual-performance";
 const scenes = [
   {
     key: "story",
@@ -28,7 +29,9 @@ export function LandingBackdrop() {
       ?.saveData;
     if (!node || !world || reduced || saveData) return;
     const layers = Array.from(node.querySelectorAll<HTMLElement>(".landing-world-image"));
-    const simplifiedMotion = matchMedia("(max-width: 767px) and (pointer: coarse)").matches;
+    const simplifiedMotion =
+      currentVisualEffectsTier() !== "full" ||
+      matchMedia("(max-width: 767px) and (pointer: coarse)").matches;
     const markers = scenes.slice(1).map((scene, i) => ({
       index: i + 1,
       node: world.querySelector<HTMLElement>(`[data-world="${scene.key}"]`),

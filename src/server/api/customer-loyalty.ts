@@ -2,6 +2,7 @@ import { z } from "zod";
 import { boundedJson } from "./bounded-json";
 import { currentReviewer, reviewJson } from "../review-accounts";
 import {
+  CustomerRewardError,
   awardMagicRewardActivity,
   awardMagicStarsForShare,
   magicRewardsDashboard,
@@ -62,7 +63,8 @@ const shareSchema = z.object({
 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || origin !== new URL(request.url).origin) throw new Error("Origine nepermisă.");
+  if (!origin || origin !== new URL(request.url).origin)
+    throw new CustomerRewardError("Cerere nepermisă.", 403);
 }
 
 export async function handleCustomerLoyalty(request: Request, env: Env): Promise<Response | null> {
@@ -127,9 +129,20 @@ export async function handleCustomerLoyalty(request: Request, env: Env): Promise
     }
     return reviewJson({ error: { message: "Pagina nu există." } }, 404);
   } catch (error) {
-    const status = error instanceof z.ZodError ? 400 : 409;
+    const status =
+      error instanceof z.ZodError ? 400 : error instanceof CustomerRewardError ? error.status : 500;
+    if (status === 500) console.error("customer.loyalty_failed", error);
     return reviewJson(
-      { error: { message: error instanceof Error ? error.message : "Operația nu a reușit." } },
+      {
+        error: {
+          message:
+            error instanceof CustomerRewardError
+              ? error.message
+              : error instanceof z.ZodError
+                ? "Verifică datele introduse."
+                : "Operația nu este disponibilă momentan. Încearcă din nou.",
+        },
+      },
       status,
     );
   }

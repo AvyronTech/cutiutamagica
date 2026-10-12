@@ -1,5 +1,5 @@
 import type { StorefrontMessage } from "./storefront-messages";
-export const MESSAGE_SESSION_LIMIT = 2;
+export const MESSAGE_SESSION_LIMIT = 1;
 export const MESSAGE_GAP_MS = 45_000;
 export type MessageSession = { shown: string[]; muted: boolean };
 export function readMessageSession(value: string | null): MessageSession {
