@@ -10,6 +10,7 @@ import { notifyAddedToCart } from "@/lib/notify";
 import { LimitedEditionBadge } from "./LimitedEditionBadge";
 import { productLink } from "@/lib/product-url";
 import { currentVisualEffectsTier, type VisualEffectsTier } from "@/lib/visual-performance";
+import { isAvailable } from "@/data/products";
 
 const ROTATION_INTERVAL_MS = 2500;
 const productImagePreloadSource = (src: string) =>
@@ -21,7 +22,10 @@ const productImagePreloadSource = (src: string) =>
 export function HeroProductRotator({ products }: { products: Product[] }) {
   const { addToCart } = useShop();
   const navigate = useNavigate();
-  const items = useMemo(() => products.filter((product) => product.image).slice(0, 6), [products]);
+  const items = useMemo(
+    () => products.filter((product) => isAvailable(product) && product.image).slice(0, 6),
+    [products],
+  );
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -90,30 +94,31 @@ export function HeroProductRotator({ products }: { products: Product[] }) {
               height={800}
             />
           </Link>
-          <LimitedEditionBadge edition={active.limitedEdition} surface="hero" />
-          <div className="hero-photo-caption">
-            <span>
-              <small>Cutiuța din cadru</small>
-              {active.shortName || active.category}
-            </span>
-            <span className="hero-photo-actions">
-              <Link {...productLink(active.id)}>
-                Vezi cutiuța <ArrowUpRight size={14} aria-hidden />
-              </Link>
-              <button
-                type="button"
-                onClick={(event) => {
-                  const added = addToCart(active.id, 1);
-                  animateIntoCart(event.currentTarget, active.image, added);
-                  notifyAddedToCart(active.name, added, () => navigate({ to: "/comanda" }));
-                }}
-              >
-                <ShoppingBag size={14} aria-hidden /> Adaugă
-              </button>
-            </span>
-          </div>
         </motion.div>
       </AnimatePresence>
+
+      <LimitedEditionBadge edition={active.limitedEdition} surface="hero" />
+      <div className="hero-photo-caption">
+        <span>
+          <small>Cutiuța din cadru</small>
+          {active.shortName || active.category}
+        </span>
+        <span className="hero-photo-actions">
+          <Link {...productLink(active.id)}>
+            Vezi cutiuța <ArrowUpRight size={14} aria-hidden />
+          </Link>
+          <button
+            type="button"
+            onClick={(event) => {
+              const added = addToCart(active.id, 1);
+              animateIntoCart(event.currentTarget, active.image, added);
+              notifyAddedToCart(active.name, added, () => navigate({ to: "/comanda" }));
+            }}
+          >
+            <ShoppingBag size={14} aria-hidden /> Adaugă
+          </button>
+        </span>
+      </div>
 
       {items.length > 1 && effectsTier !== "minimal" && (
         <div className="hero-rotation-controls">

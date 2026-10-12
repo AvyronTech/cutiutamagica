@@ -12,8 +12,7 @@ const navGroups = [
       { to: "/personalizeaza", label: "Personalizare · în curând" },
       { to: "/cadouri", label: "Idei de cadouri" },
       { to: "/ghid-cadouri-personalizate", label: "Ghid de alegere" },
-      { to: "/magic-rewards", label: "Magic Rewards ✦" },
-      { to: "/despre-cutiuta", label: "Despre cutiuță" },
+      { to: "/magic-rewards", label: "Magic Rewards" },
     ],
   },
   {
@@ -28,9 +27,10 @@ const navGroups = [
   {
     title: "Informații",
     items: [
+      { to: "/despre-cutiuta", label: "Despre cutiuță" },
       { to: "/termeni-de-utilizare", label: "Termeni de utilizare" },
-      { to: "/politica-de-confidentialitate", label: "Politica de Confidențialitate" },
-      { to: "/despre-noi", label: "Despre Noi" },
+      { to: "/politica-de-confidentialitate", label: "Politica de confidențialitate" },
+      { to: "/despre-noi", label: "Despre noi" },
     ],
   },
 ] as const;
@@ -42,12 +42,14 @@ export function Footer() {
       <FooterScene />
       <div className="magic-footer-invitation">
         <BrandMark className="magic-footer-box" />
-        <span>O melodie poate spune atât de mult.</span>
-        <h2>
-          Alege amintirea pe care
-          <br />
-          <em>o vei dărui.</em>
-        </h2>
+        <div className="magic-footer-invitation-copy">
+          <span>O melodie poate spune atât de mult.</span>
+          <h2>
+            Alege amintirea pe care
+            <br />
+            <em>o vei dărui.</em>
+          </h2>
+        </div>
         <Link to="/produse" className="magic-footer-cta">
           Găsește cutiuța potrivită <span aria-hidden>↗</span>
         </Link>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SceneAtmosphere } from "./SceneAtmosphere";
 import type { FooterDepthScene } from "./footer-depth-scene";
+import { currentVisualEffectsTier } from "@/lib/visual-performance";
 
 /** Decorative layers load near the footer; links and copy never move with the scene. */
 export function FooterScene() {
@@ -13,15 +14,21 @@ export function FooterScene() {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection;
+    const effectsTier = currentVisualEffectsTier();
     let disposed = false,
       visible = false,
       loading = false;
     let scene: FooterDepthScene | undefined;
     const sync = () => {
-      const animate = visible && !document.hidden && !reduced.matches && !connection?.saveData;
+      const animate =
+        visible &&
+        !document.hidden &&
+        !reduced.matches &&
+        !connection?.saveData &&
+        effectsTier !== "minimal";
       setActive(animate);
       if (scene) scene.setActive(animate);
-      if (!animate || scene || loading) return;
+      if (!animate || effectsTier !== "full" || scene || loading) return;
       loading = true;
       void import("./footer-depth-scene")
         .then(({ mountFooterDepthScene }) => {
