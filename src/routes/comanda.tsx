@@ -1151,18 +1151,6 @@ function OrderPage() {
                       }
                     />
                   ))}
-                  {config && !config.payments.options.some((option) => option.id === "stripe") && (
-                    <Choice
-                      name="payment-method"
-                      disabled
-                      preview
-                      selected={false}
-                      onChange={() => undefined}
-                      icon={<CreditCard className="h-5 w-5" />}
-                      title="Card online"
-                      note="În pregătire · disponibil după activarea Stripe"
-                    />
-                  )}
                   {paymentMethod === "card" && (
                     <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
                       Continui pe pagina securizată a procesatorului; datele cardului nu sunt
@@ -1229,16 +1217,11 @@ function OrderPage() {
                 <span className="checkout-submit-action__copy">
                   <strong>
                     {submitting
-                      ? "Se procesează…"
+                      ? "Se trimite comanda…"
                       : paymentMethod === "card"
-                        ? "Continuă către plata securizată"
-                        : "Comandă cu obligație de plată"}
+                        ? "Comandă și plătește online"
+                        : "Comandă și achită la livrare"}
                   </strong>
-                  <small>
-                    {paymentMethod === "card"
-                      ? "Plată pe pagina procesatorului"
-                      : "Achită la livrare · fără plată acum"}
-                  </small>
                 </span>
                 <ArrowRight size={20} aria-hidden />
               </button>
@@ -1323,23 +1306,17 @@ function OrderPage() {
                 disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
                 aria-label={
                   paymentMethod === "card"
-                    ? "Continuă către plata securizată"
-                    : "Comandă cu obligație de plată; achiți la livrare"
+                    ? "Comandă și plătește online"
+                    : "Comandă și achită la livrare"
                 }
                 className="checkout-submit-action checkout-mobile-submit ml-auto min-h-11 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? (
-                  "Se procesează..."
+                  "Se trimite comanda…"
                 ) : paymentMethod === "card" ? (
-                  <>
-                    <strong>Continuă la plată</strong>
-                    <small>pe pagina securizată</small>
-                  </>
+                  <strong>Comandă și plătește online</strong>
                 ) : (
-                  <>
-                    <strong>Comandă cu obligație de plată</strong>
-                    <small>Achită la livrare</small>
-                  </>
+                  <strong>Comandă și achită la livrare</strong>
                 )}
               </button>
             </div>
@@ -1520,7 +1497,6 @@ function ChoiceSection({
 
 function Choice({
   disabled,
-  preview,
   selected,
   onChange,
   icon,
@@ -1529,7 +1505,6 @@ function Choice({
   name,
 }: {
   disabled?: boolean;
-  preview?: boolean;
   name: string;
   selected: boolean;
   onChange: () => void;
@@ -1539,7 +1514,7 @@ function Choice({
 }) {
   return (
     <label
-      className={`flex min-h-14 items-center gap-2.5 rounded-xl border p-3 ${preview ? "checkout-card-preview" : ""} ${disabled && !preview ? "cursor-not-allowed opacity-55" : disabled ? "cursor-not-allowed" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
+      className={`flex min-h-14 items-center gap-2.5 rounded-xl border p-3 ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
     >
       <input
         type="radio"

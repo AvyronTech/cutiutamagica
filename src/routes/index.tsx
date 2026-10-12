@@ -238,7 +238,7 @@ function Index() {
               ],
               [
                 "Cum pot plăti?",
-                "În checkout vezi metodele active pentru comanda ta și totalul înainte de confirmare. Plata cu cardul va fi afișată ca disponibilă după activarea procesatorului.",
+                "În pagina de comandă vezi metodele de plată disponibile și costurile înainte să confirmi. Pentru ramburs, achiți coletul la livrare.",
               ],
             ].map(([q, a]) => (
               <details key={q}>
