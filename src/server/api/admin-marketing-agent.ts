@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
+import { readAdminSessionToken } from "@/lib/admin-password-auth-service";
 import {
   getMarketingOrdersAgentBuild,
   getMarketingOrdersSkillPackage,
@@ -14,6 +15,34 @@ type AgentSettings = {
   enabled: boolean;
   controlPlane: "cutiuta_magic_platform";
   publication: { requiresApproval: true; requiresVerifiedConnector: true };
+  contentPlaybook: {
+    version: string;
+    feedDaily: true;
+    storyDaily: true;
+    storyFramesMin: number;
+    storyFramesMax: number;
+    reelEveryDays: number;
+    tiktokEveryDays: number;
+    requireSpecificProductLink: true;
+    requireNativeVariants: true;
+    requireOriginalProductLayer: true;
+    measurementWindowsHours: number[];
+  };
+  connectorContract: {
+    metricoolBrandId: "7230540";
+    ownerEmail: "cutiutamagicaofficial@gmail.com";
+    website: "https://cutiutamagica.eu";
+    facebookPageId: "1154774271054604";
+    instagramHandle: "cutiutamagicaofficial";
+    tiktokHandle: "cutiua.magic";
+    gscProperty: "sc-domain:cutiutamagica.eu";
+    timezone: "Europe/Bucharest";
+  };
+  monitoring: {
+    enabled: boolean;
+    intervalMinutes: number;
+    staleAfterHours: number;
+  };
   avyron: {
     async: true;
     enabled: boolean;
@@ -43,10 +72,28 @@ type ExchangeRow = {
   updated_at: string;
 };
 
+const expectedConnectorContract: AgentSettings["connectorContract"] = {
+  metricoolBrandId: "7230540",
+  ownerEmail: "cutiutamagicaofficial@gmail.com",
+  website: "https://cutiutamagica.eu",
+  facebookPageId: "1154774271054604",
+  instagramHandle: "cutiutamagicaofficial",
+  tiktokHandle: "cutiua.magic",
+  gscProperty: "sc-domain:cutiutamagica.eu",
+  timezone: "Europe/Bucharest",
+};
+
+const monitoringSettingsSchema = z.object({
+  enabled: z.boolean(),
+  intervalMinutes: z.number().int().min(15).max(1_440),
+  staleAfterHours: z.number().int().min(1).max(168),
+});
+
 const updateSettingsSchema = z.object({
   expectedVersion: z.number().int().positive(),
   enabled: z.boolean(),
   mode: z.enum(["draft_approval", "paused"]),
+  monitoring: monitoringSettingsSchema,
   avyron: z.object({
     enabled: z.boolean(),
     shareAggregatedStats: z.boolean(),
@@ -85,12 +132,31 @@ function sameOrigin(request: Request): boolean {
 
 function defaultSettings(): AgentSettings {
   return {
-    schemaVersion: 2,
+    schemaVersion: 4,
     timezone: "Europe/Bucharest",
     mode: "draft_approval",
     enabled: true,
     controlPlane: "cutiuta_magic_platform",
     publication: { requiresApproval: true, requiresVerifiedConnector: true },
+    contentPlaybook: {
+      version: "2026.10.10.1",
+      feedDaily: true,
+      storyDaily: true,
+      storyFramesMin: 3,
+      storyFramesMax: 5,
+      reelEveryDays: 3,
+      tiktokEveryDays: 3,
+      requireSpecificProductLink: true,
+      requireNativeVariants: true,
+      requireOriginalProductLayer: true,
+      measurementWindowsHours: [24, 72, 168],
+    },
+    connectorContract: expectedConnectorContract,
+    monitoring: {
+      enabled: true,
+      intervalMinutes: 60,
+      staleAfterHours: 26,
+    },
     avyron: {
       async: true,
       enabled: false,
@@ -113,16 +179,29 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
     const value = JSON.parse(row.value_json) as Record<string, unknown>;
     const avyron = (value.avyron ?? {}) as Record<string, unknown>;
     const publication = (value.publication ?? {}) as Record<string, unknown>;
+    const monitoring = monitoringSettingsSchema.safeParse(value.monitoring);
     return {
       ...fallback,
       ...value,
-      schemaVersion: 2,
+      schemaVersion: 4,
       controlPlane: "cutiuta_magic_platform",
       publication: {
         ...publication,
         requiresApproval: true,
         requiresVerifiedConnector: true,
       },
+      contentPlaybook: {
+        ...fallback.contentPlaybook,
+        ...((value.contentPlaybook ?? {}) as Partial<AgentSettings["contentPlaybook"]>),
+        version: "2026.10.10.1",
+        feedDaily: true,
+        storyDaily: true,
+        requireSpecificProductLink: true,
+        requireNativeVariants: true,
+        requireOriginalProductLayer: true,
+      },
+      connectorContract: expectedConnectorContract,
+      monitoring: monitoring.success ? monitoring.data : fallback.monitoring,
       avyron: {
         ...fallback.avyron,
         ...avyron,
@@ -150,6 +229,19 @@ function statusCode(error: unknown): number {
   return 500;
 }
 
+function missingAdminSession(request: Request): Response | null {
+  if (readAdminSessionToken(request)) return null;
+  return json(
+    {
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Autentificarea este necesară.",
+      },
+    },
+    { status: 401 },
+  );
+}
+
 async function readSettings(
   db: D1Database,
 ): Promise<{ settings: AgentSettings; row: SettingsRow | null }> {
@@ -163,13 +255,35 @@ async function readSettings(
 
 async function getState(request: Request, env: Env): Promise<Response> {
   await authenticateAdminRequest(request, env, "marketing.agent.read");
-  const [build, settingsResult, agent, accounts, target, exchanges] = await Promise.all([
+  const [
+    build,
+    settingsResult,
+    agent,
+    relatedAgents,
+    accounts,
+    target,
+    exchanges,
+    flowStats,
+    accountConnections,
+    gscImports,
+    googleCredential,
+  ] = await Promise.all([
     getMarketingOrdersAgentBuild(),
     readSettings(env.DB),
     env.DB.prepare(
       `SELECT code, name, purpose, approval_policy, max_actions_per_run, status, updated_at
          FROM ai_agents WHERE id = 'agent_marketing_orders'`,
     ).first(),
+    env.DB.prepare(
+      `SELECT code, name, purpose, approval_policy, status, updated_at
+         FROM ai_agents
+         WHERE id IN ('agent_content', 'agent_marketing_content', 'agent_seo')
+         ORDER BY CASE id
+           WHEN 'agent_content' THEN 1
+           WHEN 'agent_marketing_content' THEN 2
+           ELSE 3
+         END`,
+    ).all(),
     env.DB.prepare(
       `SELECT id, provider, account_type, label, capabilities_json, status, last_synced_at
          FROM social_accounts
@@ -189,15 +303,63 @@ async function getState(request: Request, env: Env): Promise<Response> {
          WHERE agent_id = 'agent_marketing_orders'
          ORDER BY created_at DESC LIMIT 30`,
     ).all<ExchangeRow>(),
+    aggregatedStatistics(env.DB),
+    env.DB.prepare(
+      `SELECT provider, label, auth_method, status, scopes_json, last_verified_at,
+                expires_at, updated_at
+           FROM account_connections
+           WHERE owner = 'cutiuta_magica'
+           ORDER BY provider, label`,
+    ).all(),
+    env.DB.prepare(
+      `WITH latest_days AS (
+         SELECT property_id, MAX(day) AS latest_day
+         FROM traffic_daily_metrics
+         WHERE source = 'gsc'
+         GROUP BY property_id
+       )
+       SELECT metrics.property_id,
+              MAX(metrics.imported_at) AS last_imported_at,
+              latest_days.latest_day,
+              SUM(CASE WHEN metrics.metric = 'clicks' THEN metrics.value ELSE 0 END) AS clicks,
+              SUM(CASE WHEN metrics.metric = 'impressions' THEN metrics.value ELSE 0 END) AS impressions
+       FROM latest_days
+       JOIN traffic_daily_metrics AS metrics
+         ON metrics.source = 'gsc'
+        AND metrics.property_id = latest_days.property_id
+        AND metrics.day = latest_days.latest_day
+       GROUP BY metrics.property_id, latest_days.latest_day
+           ORDER BY last_imported_at DESC
+           LIMIT 10`,
+    ).all(),
+    env.DB.prepare(
+      `SELECT checked_at, check_status
+           FROM integration_credentials
+           WHERE provider = 'google'`,
+    ).first(),
   ]);
+  const gscProperty = settingsResult.settings.connectorContract.gscProperty;
+  const gscImport = gscImports.results.find(
+    (row) => (row as { property_id?: string }).property_id === gscProperty,
+  );
   return json({
     data: {
       build,
       agent,
+      relatedAgents: relatedAgents.results,
       settings: settingsResult.settings,
       settingsVersion: settingsResult.row?.version ?? 0,
       settingsUpdatedAt: settingsResult.row?.updated_at ?? null,
       socialAccounts: accounts.results,
+      flowStats,
+      monitoring: {
+        expected: settingsResult.settings.connectorContract,
+        accountConnections: accountConnections.results,
+        gsc: {
+          credential: googleCredential,
+          latestImport: gscImport ?? null,
+        },
+      },
       avyronTarget: target,
       exchanges: exchanges.results.map(({ review_payload_json, ...exchange }) => ({
         ...exchange,
@@ -228,11 +390,13 @@ async function updateSettings(request: Request, env: Env): Promise<Response> {
   }
   const next: AgentSettings = {
     ...current.settings,
-    schemaVersion: 2,
+    schemaVersion: 4,
     enabled: parsed.data.enabled,
     mode: parsed.data.enabled ? parsed.data.mode : "paused",
     controlPlane: "cutiuta_magic_platform",
     publication: { requiresApproval: true, requiresVerifiedConnector: true },
+    connectorContract: expectedConnectorContract,
+    monitoring: parsed.data.monitoring,
     avyron: {
       ...current.settings.avyron,
       ...parsed.data.avyron,
@@ -763,6 +927,10 @@ export async function handleAdminMarketingAgentApi(
       );
     }
     if (path === base) {
+      if (request.method === "GET" || request.method === "PATCH") {
+        const unauthorized = missingAdminSession(request);
+        if (unauthorized) return unauthorized;
+      }
       if (request.method === "GET") return getState(request, env);
       if (request.method === "PATCH") return updateSettings(request, env);
       return json(
@@ -771,16 +939,24 @@ export async function handleAdminMarketingAgentApi(
       );
     }
     if (path === `${base}/exports`) {
-      if (request.method === "POST") return createExport(request, env);
+      if (request.method === "POST") {
+        const unauthorized = missingAdminSession(request);
+        if (unauthorized) return unauthorized;
+        return createExport(request, env);
+      }
       return json(
         { error: { code: "METHOD_NOT_ALLOWED" } },
         { status: 405, headers: { allow: "POST" } },
       );
     }
     if (decisionMatch && request.method === "POST") {
+      const unauthorized = missingAdminSession(request);
+      if (unauthorized) return unauthorized;
       return decideExchange(request, env, decisionMatch[1]);
     }
     if (dispatchMatch && request.method === "POST") {
+      const unauthorized = missingAdminSession(request);
+      if (unauthorized) return unauthorized;
       return dispatchExchange(request, env, dispatchMatch[1]);
     }
     return json(

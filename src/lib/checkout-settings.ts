@@ -14,7 +14,7 @@ export const checkoutSettingsSchema = z.object({
   netopia: payment,
   netopiaPosSignature: z.string().trim().max(100).default(""),
   netopiaActiveKey: z.string().trim().max(100).default(""),
-  invoiceProvider: z.enum(["none", "fgo", "oblio"]).default("none"),
+  invoiceProvider: z.enum(["none", "oblio"]).default("none"),
   oblioEmail: z.union([z.literal(""), z.string().email().max(254)]).default(""),
   invoiceSeries: z.string().trim().max(30).default(""),
   invoiceTaxId: z.string().trim().max(30).default(""),

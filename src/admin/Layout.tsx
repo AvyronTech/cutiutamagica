@@ -50,40 +50,76 @@ import {
   DatabaseBackup,
   ShieldCheck,
   WandSparkles,
+  Stars,
+  Boxes,
+  ChevronDown,
 } from "lucide-react";
 import { logoutAdminAccount } from "@/lib/admin-auth.functions";
 
-const navItems = [
-  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
-  { path: "/admin/personalizations", label: "Personalizări", icon: WandSparkles },
-  { path: "/admin/products", label: "Produse", icon: ShoppingBag },
-  { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
-  { path: "/admin/promotions", label: "Promoții", icon: Target },
-  { path: "/admin/referrals", label: "Referral", icon: UserRoundPlus },
-  { path: "/admin/suppliers", label: "Aprovizionare", icon: Search },
-  { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
-  { path: "/admin/shipping", label: "Livrare", icon: Truck },
-  { path: "/admin/billing", label: "Facturare", icon: FileText },
-  { path: "/admin/returns", label: "Retururi", icon: RotateCcw },
-  { path: "/admin/financiar", label: "Financiar", icon: Wallet },
-  { path: "/admin/platforms", label: "Platforme", icon: Store },
-  { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
-  { path: "/admin/posts", label: "Postări", icon: Send },
-  { path: "/admin/customers", label: "Clienți", icon: Users },
-  { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
-  { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
-  { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
-  { path: "/admin/traffic", label: "Trafic", icon: TrendingUp },
-  { path: "/admin/notifications", label: "Notificări", icon: BellRing },
-  { path: "/admin/ai", label: "Agenți AI", icon: Bot },
-  { path: "/admin/statistics", label: "Statistici", icon: BarChart3 },
-  { path: "/admin/integrations", label: "Conectori", icon: Plug },
-  { path: "/admin/accounts", label: "Conturi și dispozitive", icon: ShieldCheck },
-  { path: "/admin/backups", label: "Backup", icon: DatabaseBackup },
-  { path: "/admin/qr-generator", label: "Coduri QR", icon: QrCode },
-  { path: "/admin/settings", label: "Setări", icon: Settings },
+type NavItem = { path: string; label: string; icon: typeof LayoutDashboard };
+
+const navGroups: Array<{ label: string; items: NavItem[] }> = [
+  {
+    label: "Principal",
+    items: [{ path: "/admin", label: "Prezentare generală", icon: LayoutDashboard }],
+  },
+  {
+    label: "Comerț",
+    items: [
+      { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
+      { path: "/admin/products", label: "Produse", icon: ShoppingBag },
+      { path: "/admin/personalizations", label: "Personalizări", icon: WandSparkles },
+    ],
+  },
+  {
+    label: "Social Media Agent",
+    items: [
+      { path: "/admin/ai", label: "Agent Codex", icon: Bot },
+      { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
+      { path: "/admin/posts", label: "Postări", icon: Send },
+    ],
+  },
+  {
+    label: "Operațiuni",
+    items: [
+      { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
+      { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
+      { path: "/admin/suppliers", label: "Aprovizionare", icon: Boxes },
+      { path: "/admin/billing", label: "Facturare", icon: FileText },
+      { path: "/admin/shipping", label: "Livrare", icon: Truck },
+      { path: "/admin/financiar", label: "Financiar", icon: Wallet },
+      { path: "/admin/returns", label: "Retururi", icon: RotateCcw },
+      { path: "/admin/platforms", label: "Canale de vânzare", icon: Store },
+    ],
+  },
+  {
+    label: "Clienți și creștere",
+    items: [
+      { path: "/admin/customers", label: "Clienți", icon: Users },
+      { path: "/admin/rewards", label: "Magic Rewards", icon: Stars },
+      { path: "/admin/referrals", label: "Recomandări", icon: UserRoundPlus },
+      { path: "/admin/promotions", label: "Promoții", icon: Target },
+      { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
+      { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
+      { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
+    ],
+  },
+  {
+    label: "Analiză și control",
+    items: [
+      { path: "/admin/statistics", label: "Statistici", icon: BarChart3 },
+      { path: "/admin/traffic", label: "Trafic", icon: TrendingUp },
+      { path: "/admin/notifications", label: "Notificări", icon: BellRing },
+      { path: "/admin/integrations", label: "Integrări", icon: Plug },
+      { path: "/admin/accounts", label: "Conturi și dispozitive", icon: ShieldCheck },
+      { path: "/admin/backups", label: "Backup", icon: DatabaseBackup },
+      { path: "/admin/qr-generator", label: "Coduri QR", icon: QrCode },
+      { path: "/admin/settings", label: "Setări", icon: Settings },
+    ],
+  },
 ];
+
+const navItems = navGroups.flatMap((group) => group.items);
 
 const quickActions = [
   { label: "Comenzi", icon: Plus, path: "/admin/orders", color: "bg-purple-600" },
@@ -116,6 +152,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [fabOpen, setFabOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [navSearch, setNavSearch] = useState("");
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
+    "Clienți și creștere": true,
+    "Analiză și control": true,
+  });
   const [soundEnabled, setSoundEnabled] = useState(false);
   const previousUnread = useRef(0);
   const location = useRouterState({ select: (s) => s.location });
@@ -260,7 +301,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="overflow-hidden">
               <h1 className="text-sm font-bold text-white whitespace-nowrap">Cutiuța Magică</h1>
               <p className="text-[10px] text-purple-300 whitespace-nowrap font-medium">
-                Admin Premium Control Panel
+                Centru intern de operare
               </p>
             </div>
           </div>
@@ -276,25 +317,59 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
+          {navGroups.map((group) => {
+            const hasActiveItem = group.items.some(
+              (item) =>
+                location.pathname === item.path ||
+                (item.path !== "/admin" && location.pathname.startsWith(`${item.path}/`)),
+            );
+            const collapsed = collapsedGroups[group.label] && !hasActiveItem;
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
-                  isActive
-                    ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
-                    : "text-slate-400 hover:text-white hover:bg-[#1E293B]"
-                }`}
-              >
-                <Icon
-                  className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-purple-400" : "group-hover:text-white"}`}
-                />
-                <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
-              </Link>
+              <section key={group.label} className="mb-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCollapsedGroups((current) => ({
+                      ...current,
+                      [group.label]: !current[group.label],
+                    }))
+                  }
+                  className="mb-1 flex w-full items-center justify-between px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 transition hover:text-slate-400"
+                  aria-expanded={!collapsed}
+                >
+                  {group.label}
+                  <ChevronDown className={`h-3 w-3 transition ${collapsed ? "-rotate-90" : ""}`} />
+                </button>
+                {!collapsed && (
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const isActive =
+                        location.pathname === item.path ||
+                        (item.path !== "/admin" && location.pathname.startsWith(`${item.path}/`));
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          className={`group flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all duration-200 ${
+                            isActive
+                              ? "border-purple-500/30 bg-purple-600/20 text-purple-200"
+                              : "border-transparent text-slate-400 hover:bg-[#1E293B] hover:text-white"
+                          }`}
+                        >
+                          <Icon
+                            className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-purple-400" : "group-hover:text-white"}`}
+                          />
+                          <span className="whitespace-nowrap text-[13px] font-medium">
+                            {item.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
             );
           })}
         </nav>
@@ -307,7 +382,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              <p className="text-xs text-slate-500">v2.1 • Premium</p>
+              <p className="text-xs text-slate-500">Centru operațional</p>
             </div>
           </div>
         </div>
@@ -328,6 +403,38 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Menu className="w-5 h-5" />
               </button>
             )}
+            <div className="relative hidden lg:block">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <input
+                type="search"
+                value={navSearch}
+                onChange={(event) => setNavSearch(event.target.value)}
+                placeholder="Caută o secțiune…"
+                className="w-64 rounded-lg border border-[#26344a] bg-[#111b2d] py-2 pl-9 pr-3 text-xs text-slate-200 outline-none transition focus:border-purple-500/50"
+              />
+              {navSearch.trim() && (
+                <div className="absolute left-0 top-11 z-50 w-72 overflow-hidden rounded-xl border border-[#334155] bg-[#101a2b] p-1.5 shadow-2xl">
+                  {navItems
+                    .filter((item) =>
+                      item.label
+                        .toLocaleLowerCase("ro-RO")
+                        .includes(navSearch.toLocaleLowerCase("ro-RO")),
+                    )
+                    .slice(0, 7)
+                    .map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setNavSearch("")}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-[#1E293B] hover:text-white"
+                      >
+                        <item.icon className="h-4 w-4 text-purple-400" />
+                        {item.label}
+                      </Link>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
             <PwaInstallButton />

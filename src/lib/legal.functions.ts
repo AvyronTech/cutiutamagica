@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
+import { seoHead } from "./seo-head";
 export const getPublicSeller = createServerFn({ method: "GET" }).handler(async () => {
   const row = await env.DB.prepare(
     "SELECT legal_name,tax_id,registered_address,registration_number,public_email,public_phone FROM legal_entities WHERE id='legal_entity_main'",
@@ -13,7 +14,7 @@ export const getPublicSeller = createServerFn({ method: "GET" }).handler(async (
   }>();
   return (
     row ?? {
-      legal_name: "DIGITAL ECO TECH SOLUTION SRL",
+      legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
       tax_id: "55055976",
       registered_address: null,
       registration_number: null,
@@ -24,14 +25,14 @@ export const getPublicSeller = createServerFn({ method: "GET" }).handler(async (
 });
 
 export function legalHead(title: string, description: string, path: string) {
-  return {
-    meta: [
-      { title: `${title} | Cutiuța Magică` },
-      { name: "description", content: description },
-      { property: "og:title", content: `${title} | Cutiuța Magică` },
-      { property: "og:description", content: description },
-      { property: "og:url", content: `https://cutiutamagica.eu${path}` },
-    ],
-    links: [{ rel: "canonical", href: `https://cutiutamagica.eu${path}` }],
-  };
+  return seoHead({
+    title: `${title} | Cutiuța Magică`,
+    description,
+    path,
+    image: "/scenes/footer-atelier.webp",
+    imageAlt: `${title} — informații oficiale Cutiuța Magică`,
+    // Paginile rămân publice și accesibile din footer, dar nu concurează în Search
+    // cu paginile comerciale și ghidurile editoriale.
+    robots: "noindex, follow",
+  });
 }

@@ -97,7 +97,7 @@ export function ProductDeliveryEstimate() {
           onClick={() => easyboxEnabled && setMode("easybox")}
         >
           <MapPin /> Easybox
-          {!easyboxEnabled && <small>la activare</small>}
+          {!easyboxEnabled && <small>indisponibil</small>}
         </button>
       </div>
       <p className="product-delivery-promise__cutoff">

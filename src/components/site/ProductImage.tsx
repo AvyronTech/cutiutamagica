@@ -3,7 +3,6 @@
  *
  * Pentru pozele din `public/produse` există trei fișiere pe imagine:
  *   nume.avif      — AVIF, cel mai mic la aceeași calitate
- *   nume@2x.avif   — aceeași imagine la 1,75×, pentru ecrane retina
  *   nume.webp      — rezerva pentru browserele fără AVIF
  * Restul surselor (media din admin, R2) sunt randate ca `<img>` simplu.
  */
@@ -58,7 +57,7 @@ export function ProductImage({
   const base = src.slice(0, -".webp".length);
   return (
     <picture className="contents">
-      <source type="image/avif" srcSet={`${base}.avif 1x, ${base}@2x.avif 2x`} sizes={sizes} />
+      <source type="image/avif" srcSet={`${base}.avif`} sizes={sizes} />
       <source type="image/webp" srcSet={src} sizes={sizes} />
       {img}
     </picture>

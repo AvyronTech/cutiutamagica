@@ -201,9 +201,9 @@ export function ProductAudioUnavailable({ melody }: { melody?: string }) {
       </span>
       <div className="melody-content">
         <p className="scene-eyebrow">Test drive-ul cutiuței</p>
-        <span className="melody-content__cta">Fragmentul de 12 sec. este în pregătire</span>
+        <span className="melody-content__cta">Audiția nu este disponibilă momentan</span>
         <strong>{melody || "Melodia acestei cutiuțe"}</strong>
-        <small>Playerul se activează după publicarea înregistrării aprobate.</small>
+        <small>Poți verifica melodia din descrierea produsului înainte de comandă.</small>
       </div>
     </div>
   );

@@ -129,7 +129,7 @@ export default function EmailHub() {
     const value = (name: string) => String(form.get(name) || "");
     settingsMutation.mutate({
       data: {
-        provider: "cloudflare_email",
+        provider: value("provider") as "cloudflare_email" | "resend",
         senderName: value("senderName"),
         defaultFromEmail: value("defaultFromEmail"),
         ordersFromEmail: value("ordersFromEmail"),
@@ -221,6 +221,16 @@ export default function EmailHub() {
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-1.5 text-sm text-slate-300">
+            Transport principal
+            <select className={input} name="provider" defaultValue={data.settings.provider}>
+              <option value="cloudflare_email">Cloudflare Email Sending</option>
+              <option value="resend">Resend</option>
+            </select>
+            <span className="block text-xs text-slate-500">
+              Dacă transportul principal eșuează, sistemul încearcă automat alternativa configurată.
+            </span>
+          </label>
           <Field label="Nume expeditor" name="senderName" defaultValue={data.settings.senderName} />
           <Field
             label="Adresă generală de expediere"

@@ -9,38 +9,13 @@ import {
 } from "@/lib/sales-channels";
 import { listPublicCatalog, type CatalogProduct } from "@/server/db/catalog.repository";
 import { digestHex } from "@/server/integrations/provider-runtime";
+import { renderGoogleMerchantFeed } from "@/lib/google-merchant-feed";
+import { productPath } from "@/lib/product-url";
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
 const channelSchema = z.enum(["google_merchant", "emag", "trendyol", "okazii", "olx", "vinted"]);
-const escapeXml = (v: unknown) =>
-  String(v ?? "").replace(
-    /[<>&"']/g,
-    (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[c]!,
-  );
 export function googleCatalogFeed(products: CatalogProduct[]) {
-  const eligible = products.filter(
-    (p) => p.price != null && p.price > 0 && p.imageUrl && p.name && p.description,
-  );
-  return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel><title>Cutiuța Magică</title><link>https://cutiutamagica.eu</link><description>Cutiuțe muzicale cu manivelă</description>${eligible
-    .map((p) => {
-      const item: Record<string, unknown> = {
-        id: p.sku || p.slug,
-        title: p.name,
-        description: p.description,
-        link: `https://cutiutamagica.eu/produs/${p.slug}`,
-        image_link: p.imageUrl!.startsWith("https://")
-          ? p.imageUrl
-          : `https://cutiutamagica.eu${p.imageUrl}`,
-        availability: p.availability === "available" ? "in_stock" : "out_of_stock",
-        price: `${p.price!.toFixed(2)} RON`,
-        condition: "new",
-        product_type: p.category,
-      };
-      return `<item>${Object.entries(item)
-        .map(([k, v]) => `<g:${k}>${escapeXml(v)}</g:${k}>`)
-        .join("")}</item>`;
-    })
-    .join("")}</channel></rss>`;
+  return renderGoogleMerchantFeed(products);
 }
 function publicSnapshot(p: CatalogProduct) {
   return {
@@ -51,7 +26,7 @@ function publicSnapshot(p: CatalogProduct) {
     imageUrl: p.imageUrl,
     gallery: p.gallery,
     sku: p.sku,
-    url: `https://cutiutamagica.eu/produs/${p.slug}`,
+    url: `https://cutiutamagica.eu${productPath(p.slug)}`,
   };
 }
 async function hash(value: unknown) {

@@ -24,6 +24,8 @@ import { collectionFor } from "@/lib/collections";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductCardCarousel } from "@/components/site/ProductCardCarousel";
+import { seoHead } from "@/lib/seo-head";
+import { productPath } from "@/lib/product-url";
 
 const CATALOG_URL = "https://cutiutamagica.eu/produse";
 const collectionIcons = { story: BookOpen, emotion: Heart, dedicated: Gift };
@@ -32,84 +34,70 @@ export const Route = createFileRoute("/produse")({
   validateSearch: validateCatalogSearch,
   component: ProductsPage,
   loader: () => getStorePricing(),
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: "Cutiuțe muzicale cu manivelă din lemn | Cutiuța Magică" },
-      {
-        name: "description",
-        content:
-          "Descoperă cutiuțe muzicale din lemn cu manivelă și mecanism mecanic clasic, potrivite pentru cadou, aniversări și fanii poveștilor îndrăgite.",
-      },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "Cutiuțe muzicale cu manivelă | Cutiuța Magică" },
-      {
-        property: "og:description",
-        content:
-          "Catalog de cutiuțe muzicale cadou, cu fotografii ale produselor și melodii tematice.",
-      },
-      { property: "og:url", content: CATALOG_URL },
-      { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://cutiutamagica.eu/scenes/catalog-atelier.webp" },
-      { property: "og:image:width", content: "1672" },
-      { property: "og:image:height", content: "941" },
-      {
-        property: "og:image:alt",
-        content: "Cutiuțe muzicale într-un decor de lectură, colecție și daruri",
-      },
-    ],
-    links: [{ rel: "canonical", href: CATALOG_URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: safeJsonLd({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "CollectionPage",
-              "@id": `${CATALOG_URL}#page`,
-              name: "Cutiuțe muzicale cu manivelă",
-              url: CATALOG_URL,
-              inLanguage: "ro-RO",
-              isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
-              primaryImageOfPage: "https://cutiutamagica.eu/scenes/catalog-atelier.webp",
-              mainEntity: {
-                "@type": "ItemList",
-                numberOfItems: loaderData?.catalog.length ?? 0,
-                itemListElement: (loaderData?.catalog ?? []).map((product, index) => ({
-                  "@type": "ListItem",
-                  position: index + 1,
-                  url: `https://cutiutamagica.eu/produs/${encodeURIComponent(product.slug)}`,
-                  name: product.name,
-                  image: product.imageUrl
-                    ? product.imageUrl.startsWith("http")
-                      ? product.imageUrl
-                      : `https://cutiutamagica.eu${product.imageUrl}`
-                    : undefined,
-                })),
+  head: ({ loaderData }) => {
+    const seo = seoHead({
+      title: "Cutiuțe muzicale cu manivelă din lemn | Cutiuța Magică",
+      description:
+        "Descoperă cutiuțe muzicale din lemn cu manivelă și mecanism mecanic clasic, potrivite pentru cadou, aniversări și fanii poveștilor îndrăgite.",
+      path: "/produse",
+      image: "/scenes/catalog-atelier.webp",
+      imageAlt: "Cutiuțe muzicale într-un decor de lectură, colecție și daruri",
+    });
+    return {
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: safeJsonLd({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "CollectionPage",
+                "@id": `${CATALOG_URL}#page`,
+                name: "Cutiuțe muzicale cu manivelă",
+                url: CATALOG_URL,
+                inLanguage: "ro-RO",
+                isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+                primaryImageOfPage: "https://cutiutamagica.eu/scenes/catalog-atelier.webp",
+                mainEntity: {
+                  "@type": "ItemList",
+                  numberOfItems: loaderData?.catalog.length ?? 0,
+                  itemListElement: (loaderData?.catalog ?? []).map((product, index) => ({
+                    "@type": "ListItem",
+                    position: index + 1,
+                    url: `https://cutiutamagica.eu${productPath(product.slug)}`,
+                    name: product.name,
+                    image: product.imageUrl
+                      ? product.imageUrl.startsWith("http")
+                        ? product.imageUrl
+                        : `https://cutiutamagica.eu${product.imageUrl}`
+                      : undefined,
+                  })),
+                },
               },
-            },
-            {
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                {
-                  "@type": "ListItem",
-                  position: 1,
-                  name: "Acasă",
-                  item: "https://cutiutamagica.eu/",
-                },
-                {
-                  "@type": "ListItem",
-                  position: 2,
-                  name: "Cutiuțe muzicale",
-                  item: CATALOG_URL,
-                },
-              ],
-            },
-          ],
-        }).replace(/</g, "\\u003c"),
-      },
-    ],
-  }),
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Acasă",
+                    item: "https://cutiutamagica.eu/",
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Cutiuțe muzicale",
+                    item: CATALOG_URL,
+                  },
+                ],
+              },
+            ],
+          }).replace(/</g, "\\u003c"),
+        },
+      ],
+    };
+  },
 });
 
 function ProductsPage() {

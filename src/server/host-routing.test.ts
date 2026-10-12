@@ -3,6 +3,20 @@ import { describe, expect, it } from "vitest";
 import { resolveHostRoute } from "./host-routing";
 
 describe("hostname routing", () => {
+  it("redirects every HTTP request to the same HTTPS URL", () => {
+    expect(resolveHostRoute(new URL("http://cutiutamagica.eu/produse?q=magic"), "GET")).toEqual({
+      type: "redirect",
+      location: "https://cutiutamagica.eu/produse?q=magic",
+    });
+    expect(resolveHostRoute(new URL("http://api.cutiutamagica.eu/v1/health"), "POST")).toEqual({
+      type: "redirect",
+      location: "https://api.cutiutamagica.eu/v1/health",
+    });
+    expect(resolveHostRoute(new URL("http://127.0.0.1:4173/produse"), "GET")).toEqual({
+      type: "pass",
+    });
+  });
+
   it("redirects www to the canonical storefront", () => {
     expect(
       resolveHostRoute(new URL("https://www.cutiutamagica.eu/produse?q=magic"), "GET"),

@@ -12,8 +12,15 @@ import {
   type MessageSession,
 } from "@/lib/message-sequence";
 import { BrandMark } from "./BrandMark";
+import { isProductPath } from "@/lib/product-url";
 const storageKey = "cm:message-sequence:v2";
 let memory: MessageSession = { shown: [], muted: false };
+
+function compactMessage(value: string, limit = 96) {
+  const text = value.trim();
+  if (text.length <= limit) return text;
+  return `${text.slice(0, limit).replace(/\s+\S*$/, "")}…`;
+}
 
 export function ContextualMessages() {
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -40,7 +47,7 @@ export function ContextualMessages() {
         ? "home"
         : path === "/produse"
           ? "products"
-          : path.startsWith("/produs/")
+          : isProductPath(path)
             ? "product"
             : path === "/comanda"
               ? "cart"
@@ -135,8 +142,8 @@ export function ContextualMessages() {
               <span className="context-message-eyebrow">
                 Un strop de magie <span aria-hidden="true">✧</span>
               </span>
-              <strong>{message.title}</strong>
-              <p>{message.message}</p>
+              <strong>{compactMessage(message.title, 46)}</strong>
+              <p>{compactMessage(message.message)}</p>
               <Link
                 to={message.link}
                 onClick={() => {
@@ -167,8 +174,8 @@ export function ContextualMessages() {
           </aside>
         ),
         {
-          duration: 5000,
-          position: "bottom-left",
+          duration: 4200,
+          position: "top-center",
           onAutoClose: () => finish(),
           onDismiss: (t) => {
             if (!programmaticDismissals.delete(t.id)) finish(true);

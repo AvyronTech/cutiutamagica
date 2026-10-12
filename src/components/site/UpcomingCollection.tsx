@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
 import type { Product } from "@/data/products";
 import { ProductImage } from "./ProductImage";
 import { ProductInterest } from "./ProductInterest";
+import { productLink } from "@/lib/product-url";
 
 export function UpcomingCollection({ products }: { products: Product[] }) {
   const reduced = useReducedMotion();
@@ -111,7 +112,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
         <div className="upcoming-track">
           {products.map((p) => (
             <article key={p.id} className="upcoming-card" data-magic-card>
-              <Link to="/produs/$id" params={{ id: p.id }} className="upcoming-image">
+              <Link {...productLink(p.id)} className="upcoming-image">
                 <ProductImage src={p.image} alt={p.name} sizes="(max-width: 640px) 78vw, 300px" />
                 <span>
                   {p.availability === "out_of_stock" ? "Revine în colecție" : "În curând"}
@@ -120,9 +121,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
               <div className="upcoming-copy">
                 <p className="scene-eyebrow">{p.category}</p>
                 <h3>
-                  <Link to="/produs/$id" params={{ id: p.id }}>
-                    {p.shortName || p.name}
-                  </Link>
+                  <Link {...productLink(p.id)}>{p.shortName || p.name}</Link>
                 </h3>
                 <p>{p.tagline}</p>
                 {p.releaseNote && <p className="release-note">{p.releaseNote}</p>}

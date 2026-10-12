@@ -145,7 +145,7 @@ export function isPublicStoryPath(pathname: string) {
 export function pageStoryProfile(pathname: string): PageStoryProfile {
   if (pathname === "/") return profiles.home;
   if (pathname === "/produse") return profiles.catalog;
-  if (pathname.startsWith("/produs/")) return profiles.product;
+  if (isProductPath(pathname)) return profiles.product;
   if (pathname === "/comanda") return profiles.checkout;
   if (pathname === "/personalizeaza") return profiles.personalize;
   if (pathname === "/livrare") return profiles.delivery;
@@ -160,3 +160,4 @@ export function pageStoryProfile(pathname: string): PageStoryProfile {
     return profiles.legal;
   return profiles.home;
 }
+import { isProductPath } from "@/lib/product-url";

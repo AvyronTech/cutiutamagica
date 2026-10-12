@@ -81,7 +81,7 @@ async function smartShipFetch(
   );
   return fetchWithTimeout(`https://api.smartship.ro${path}`, {
     ...init,
-    redirect: "error",
+    redirect: "manual",
     headers: {
       accept: "application/json",
       "content-type": "application/json",

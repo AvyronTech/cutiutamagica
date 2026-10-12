@@ -220,7 +220,7 @@ export function ConnectSection() {
         target="_blank"
         rel="noopener noreferrer"
         className="group flex items-center gap-4 mt-12 max-w-3xl mx-auto rounded-full border border-[color:var(--gold)]/25 bg-[oklch(0.22_0.04_45)]/70 backdrop-blur-sm text-[color:var(--cream)] pl-4 pr-4 py-3 shadow-[0_10px_30px_-20px_oklch(0.55_0.18_55/0.5)] hover:border-[color:var(--gold)]/50 transition-colors"
-        aria-label="Discută parteneriat B2B pe WhatsApp"
+        aria-label="Parteneriate B2B — discută pe WhatsApp"
       >
         <span className="flex items-center justify-center w-8 h-8 rounded-full shrink-0 border border-[color:var(--gold)]/30 bg-[oklch(0.18_0.03_40)]">
           <Handshake className="w-4 h-4 text-[color:var(--gold)]" />

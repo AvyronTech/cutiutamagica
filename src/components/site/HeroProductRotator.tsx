@@ -8,6 +8,7 @@ import { useShop } from "@/store/shop";
 import { animateIntoCart } from "@/lib/cart-flight";
 import { notifyAddedToCart } from "@/lib/notify";
 import { LimitedEditionBadge } from "./LimitedEditionBadge";
+import { productLink } from "@/lib/product-url";
 
 const ROTATION_INTERVAL_MS = 2500;
 const productImagePreloadSource = (src: string) =>
@@ -71,8 +72,7 @@ export function HeroProductRotator({ products }: { products: Product[] }) {
           transition={{ duration: reduced ? 0 : 0.62, ease: [0.22, 1, 0.36, 1] }}
         >
           <Link
-            to="/produs/$id"
-            params={{ id: active.id }}
+            {...productLink(active.id)}
             aria-label={`Descoperă ${active.name}`}
             className="hero-product-link"
           >
@@ -93,7 +93,7 @@ export function HeroProductRotator({ products }: { products: Product[] }) {
               {active.shortName || active.category}
             </span>
             <span className="hero-photo-actions">
-              <Link to="/produs/$id" params={{ id: active.id }}>
+              <Link {...productLink(active.id)}>
                 Vezi cutiuța <ArrowUpRight size={14} aria-hidden />
               </Link>
               <button

@@ -130,12 +130,12 @@ export function SalesConnections() {
       <div className="rounded-lg bg-slate-900 p-4 text-sm">
         <h3 className="font-semibold">Google Merchant · catalog actualizat automat</h3>
         <a
-          href="/api/v1/catalog/google.xml"
+          href="/google-products.xml"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-2 block break-all text-amber-200 underline"
         >
-          https://cutiutamagica.eu/api/v1/catalog/google.xml
+          https://cutiutamagica.eu/google-products.xml
         </a>
         <p className="mt-2 text-slate-400">
           Folosește adresa după publicarea acestei versiuni. Produsele fără preț sau fotografie
@@ -148,7 +148,7 @@ export function SalesConnections() {
         <h3 className="text-lg">Facturare, curierat și plăți</h3>
         <div className="my-4 flex flex-wrap gap-4 text-sm text-amber-200">
           <a href="/admin/billing" className="underline">
-            FGO · facturare
+            Oblio · facturare
           </a>
           <a href="/admin/shipping" className="underline">
             SmartShip · curierat

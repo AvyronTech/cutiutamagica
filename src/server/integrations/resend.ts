@@ -60,8 +60,8 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
   const environment = env.APP_ENV === "production" ? "production" : "sandbox";
   if (await wasAlreadySent(env, input.idempotencyKey)) return;
 
-  let cloudflareFailure: Error | null = null;
-  if (env.EMAIL) {
+  const cloudflare = async () => {
+    if (!env.EMAIL) throw new Error("Cloudflare Email Sending nu este configurat.");
     try {
       const configuredSender = fromAddress(settings, input.channel ?? "default");
       const sender = ["contact@cutiutamagica.eu", "comenzi@cutiutamagica.eu"].includes(
@@ -96,10 +96,9 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
         responseCode: 202,
         responseSummary: { messageId: result.messageId },
       });
-      return;
+      return true;
     } catch (error) {
       const detail = emailError(error);
-      cloudflareFailure = error instanceof Error ? error : new Error(detail.message);
       await logProviderOperation(env.DB, {
         provider: "cloudflare_email",
         operationType: "email.send",
@@ -112,52 +111,65 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
         errorCode: detail.code,
         errorMessage: detail.message,
       });
+      throw error instanceof Error ? error : new Error(detail.message);
+    }
+  };
+
+  const resend = async () => {
+    const apiKey = await credential(env, "resend");
+    requiredSecret(apiKey ?? undefined, "RESEND_API_KEY");
+    const response = await fetchWithTimeout("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+        "idempotency-key": input.idempotencyKey,
+      },
+      body: JSON.stringify({
+        from: `${settings.senderName} <${fromAddress(settings, input.channel ?? "default")}>`,
+        to: [input.to],
+        reply_to: settings.replyToEmail,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        tags: [{ name: "category", value: input.entityType }],
+      }),
+    });
+    const result = (await response.json().catch(() => null)) as {
+      id?: string;
+      message?: string;
+    } | null;
+    await logProviderOperation(env.DB, {
+      provider: "resend",
+      operationType: "email.send",
+      entityType: input.entityType,
+      entityId: input.entityId,
+      idempotencyKey: input.idempotencyKey,
+      environment,
+      status: response.ok && result?.id ? "succeeded" : "failed",
+      externalId: result?.id ?? null,
+      responseCode: response.status,
+      responseSummary: result?.id ? { emailId: result.id } : {},
+      errorCode: response.ok ? null : "RESEND_SEND_FAILED",
+      errorMessage: response.ok ? null : result?.message || `HTTP ${response.status}`,
+    });
+    if (!response.ok || !result?.id)
+      throw new Error(`Resend HTTP ${response.status}: trimitere neconfirmată`);
+  };
+
+  const attempts = settings.provider === "resend" ? [resend, cloudflare] : [cloudflare, resend];
+  let lastError: unknown;
+  for (const attempt of attempts) {
+    try {
+      await attempt();
+      return;
+    } catch (error) {
+      lastError = error;
     }
   }
-
-  const fallbackKey = await credential(env, "resend");
-  if (!fallbackKey) {
-    if (cloudflareFailure) throw cloudflareFailure;
-    requiredSecret(undefined, "Cloudflare Email Sending sau RESEND_API_KEY");
-  }
-  const apiKey = fallbackKey as string;
-  const response = await fetchWithTimeout("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json",
-      "idempotency-key": input.idempotencyKey,
-    },
-    body: JSON.stringify({
-      from: `${settings.senderName} <${fromAddress(settings, input.channel ?? "default")}>`,
-      to: [input.to],
-      reply_to: settings.replyToEmail,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      tags: [{ name: "category", value: input.entityType }],
-    }),
-  });
-  const result = (await response.json().catch(() => null)) as {
-    id?: string;
-    message?: string;
-  } | null;
-  await logProviderOperation(env.DB, {
-    provider: "resend",
-    operationType: "email.send",
-    entityType: input.entityType,
-    entityId: input.entityId,
-    idempotencyKey: input.idempotencyKey,
-    environment,
-    status: response.ok && result?.id ? "succeeded" : "failed",
-    externalId: result?.id ?? null,
-    responseCode: response.status,
-    responseSummary: result?.id ? { emailId: result.id } : {},
-    errorCode: response.ok ? null : "RESEND_SEND_FAILED",
-    errorMessage: response.ok ? null : result?.message || `HTTP ${response.status}`,
-  });
-  if (!response.ok || !result?.id)
-    throw new Error(`Resend HTTP ${response.status}: trimitere neconfirmată`);
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Niciun transport e-mail nu este configurat.");
 }
 
 export async function sendOrderConfirmation(env: CommerceEnv, orderId: string): Promise<void> {

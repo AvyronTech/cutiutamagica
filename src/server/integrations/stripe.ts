@@ -42,7 +42,7 @@ export async function createStripeCheckoutSession(
   params.set("payment_intent_data[metadata][order_id]", input.orderId);
   const response = await fetchWithTimeout("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
-    redirect: "error",
+    redirect: "manual",
     headers: {
       authorization: `Bearer ${key}`,
       "content-type": "application/x-www-form-urlencoded",

@@ -1,19 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Box,
   CalendarDays,
   Camera,
-  KeyRound,
+  CreditCard,
   LogOut,
+  ReceiptText,
+  Repeat2,
   ShieldCheck,
   Sparkles,
   Star,
   UserRound,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import {
   formatPersonalizationPrice,
   personalizationMelodies,
@@ -21,28 +22,26 @@ import {
   type PersonalizationRequestSummary,
 } from "@/lib/personalization";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
-import { loginAdminAccount } from "@/lib/admin-auth.functions";
+import { CustomerMagicCenter } from "@/components/site/CustomerMagicCenter";
+import { seoHead } from "@/lib/seo-head";
 
 export const Route = createFileRoute("/cont")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { mod?: "creare"; tip?: "admin"; auth?: "neconfigurat" | "eroare" } => ({
+  ): { mod?: "creare"; auth?: "neconfigurat" | "eroare" } => ({
     ...(search.mod === "creare" ? { mod: "creare" as const } : {}),
-    ...(search.tip === "admin" ? { tip: "admin" as const } : {}),
     ...(search.auth === "neconfigurat" || search.auth === "eroare" ? { auth: search.auth } : {}),
   }),
   component: CustomerAccount,
-  head: () => ({
-    meta: [
-      { title: "Contul meu | Cutiuța Magică" },
-      {
-        name: "description",
-        content: "Contul tău Cutiuța Magică pentru cereri de personalizare și recenzii.",
-      },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/cont" }],
-  }),
+  head: () =>
+    seoHead({
+      title: "Contul meu | Cutiuța Magică",
+      description:
+        "Spațiul tău Cutiuța Magică pentru comenzi, Magic Stars, calendarul cadourilor, recenzii și preferințe.",
+      path: "/cont",
+      imageAlt: "Contul Cutiuța Magică pentru comenzi și beneficii",
+      robots: "noindex, nofollow",
+    }),
 });
 
 const statusLabels: Record<PersonalizationRequestSummary["status"], string> = {
@@ -54,10 +53,44 @@ const statusLabels: Record<PersonalizationRequestSummary["status"], string> = {
   cancelled: "Anulată",
 };
 
+type CustomerBilling = {
+  orders: Array<{
+    orderNumber: string;
+    orderStatus: string;
+    paymentStatus: string;
+    totalBani: number;
+    currency: string;
+    placedAt: string;
+  }>;
+  paymentMethods: Array<{
+    id: string;
+    provider: string;
+    displayLabel: string;
+    brand: string | null;
+    last4: string | null;
+    expiryMonth: number | null;
+    expiryYear: number | null;
+    isDefault: number;
+    status: string;
+  }>;
+  subscriptions: Array<{
+    id: string;
+    provider: string;
+    status: string;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: number;
+    label: string;
+    serviceName: string | null;
+    unitAmountBani: number;
+    currency: string;
+    intervalUnit: string;
+    intervalCount: number;
+  }>;
+};
+
 function CustomerAccount() {
-  const { tip, auth } = Route.useSearch();
+  const { auth } = Route.useSearch();
   const queryClient = useQueryClient();
-  const loginAdmin = useServerFn(loginAdminAccount);
   const account = useQuery({
     queryKey: ["reviewer"],
     queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
@@ -70,36 +103,20 @@ function CustomerAccount() {
     enabled: !!account.data,
     retry: false,
   });
+  const billing = useQuery({
+    queryKey: ["customer-billing"],
+    queryFn: () => reviewApi<CustomerBilling>("/api/v1/customer/billing"),
+    enabled: !!account.data,
+    retry: false,
+  });
   const providers = useQuery({
     queryKey: ["reviewer-auth-providers"],
     queryFn: () => reviewApi<{ google: { enabled: boolean } }>("/api/v1/reviewer/providers"),
     retry: false,
     staleTime: 60_000,
   });
-  const [authSurface, setAuthSurface] = useState<"customer" | "admin">(
-    tip === "admin" ? "admin" : "customer",
-  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  async function authenticateAdmin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setBusy(true);
-    setError("");
-    try {
-      await loginAdmin({
-        data: {
-          email: String(form.get("email") ?? ""),
-          password: String(form.get("password") ?? ""),
-        },
-      });
-      window.location.assign("/admin");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Datele nu au putut fi verificate.");
-      setBusy(false);
-    }
-  }
 
   async function logout() {
     setBusy(true);
@@ -107,6 +124,7 @@ function CustomerAccount() {
       await reviewApi("/api/v1/reviewer/logout", { method: "POST" });
       queryClient.setQueryData(["reviewer"], null);
       queryClient.removeQueries({ queryKey: ["personalization-requests"] });
+      queryClient.removeQueries({ queryKey: ["customer-billing"] });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Deconectarea nu a reușit.");
     } finally {
@@ -122,7 +140,7 @@ function CustomerAccount() {
     const googleReady = providers.data?.google.enabled === true;
     const customerAuthMessage =
       auth === "neconfigurat"
-        ? "Autentificarea Google nu este încă activată. Te rugăm să revii după configurare."
+        ? "Conectarea nu este disponibilă momentan. Poți continua cumpărăturile fără cont."
         : auth === "eroare"
           ? "Autentificarea Google nu a putut fi finalizată. Încearcă din nou."
           : "";
@@ -153,7 +171,7 @@ function CustomerAccount() {
               </span>
               <div>
                 <strong>Magic Stars ✦</strong>
-                <small>Comenzi, recomandări și review-uri foto pot aduce beneficii.</small>
+                <small>Contul, comenzile, recenziile aprobate și distribuirile adună stele.</small>
               </div>
             </article>
             <article>
@@ -187,116 +205,62 @@ function CustomerAccount() {
           className="customer-auth-card customer-auth-card--dimensional"
           aria-labelledby="customer-auth-title"
         >
-          <div className="customer-auth-modes">
-            <button
-              type="button"
-              aria-pressed={authSurface === "customer"}
-              onClick={() => {
-                setAuthSurface("customer");
-                setError("");
-              }}
-            >
-              Cont client
-            </button>
-            <button
-              type="button"
-              aria-pressed={authSurface === "admin"}
-              onClick={() => {
-                setAuthSurface("admin");
-                setError("");
-              }}
-            >
-              Administrator
-            </button>
-          </div>
-          {authSurface === "customer" ? (
-            <div className="customer-oauth-panel">
-              <div className="customer-auth-icon" aria-hidden>
-                <UserRound />
-              </div>
-              <p className="customer-auth-kicker">Logare și înregistrare</p>
-              <h2 id="customer-auth-title">Un singur pas, cu Google</h2>
-              <p>
-                Dacă e prima vizită, contul se creează automat. Dacă ai revenit, intri direct în
-                poveștile tale.
-              </p>
-              <a
-                className="customer-google-button"
-                href={googleReady ? "/api/v1/reviewer/oauth/google" : undefined}
-                aria-disabled={!googleReady}
-                onClick={(event) => {
-                  if (!googleReady) event.preventDefault();
-                }}
-              >
+          <div className="customer-oauth-panel">
+            <div className="customer-auth-icon" aria-hidden>
+              <UserRound />
+            </div>
+            <p className="customer-auth-kicker">Logare și înregistrare</p>
+            <h2 id="customer-auth-title">
+              {providers.isLoading
+                ? "Verificăm accesul securizat…"
+                : googleReady
+                  ? "Un singur pas, cu Google"
+                  : "Conturile Magic se deschid în curând"}
+            </h2>
+            <p>
+              {googleReady
+                ? "Dacă e prima vizită, contul se creează automat. Dacă ai revenit, intri direct în poveștile tale."
+                : "Până atunci poți descoperi colecția și poți finaliza orice comandă rapid, fără cont."}
+            </p>
+            {providers.isLoading ? (
+              <span className="customer-google-button" aria-busy="true">
+                <span aria-hidden>✦</span>
+                Se verifică accesul…
+              </span>
+            ) : googleReady ? (
+              <a className="customer-google-button" href="/api/v1/reviewer/oauth/google">
                 <span aria-hidden>G</span>
-                {providers.isLoading
-                  ? "Verificăm conexiunea…"
-                  : googleReady
-                    ? "Continuă cu Google"
-                    : "Conectare Google în curs de activare"}
+                Continuă cu Google
                 <ArrowRight size={16} />
               </a>
-              {customerAuthMessage && (
-                <p className="personalization-error" role="alert">
-                  {customerAuthMessage}
-                </p>
-              )}
-              <div className="customer-auth-assurance">
-                <ShieldCheck aria-hidden />
-                <span>
-                  Nu îți cerem o parolă nouă. Folosim doar identitatea, numele și adresa confirmată
-                  de Google.
-                </span>
-              </div>
-              <p className="customer-auth-legal">
-                Continuând, accepți crearea contului și confirmi că ai citit{" "}
-                <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
-              </p>
-            </div>
-          ) : (
-            <div className="customer-admin-panel">
-              <div className="customer-auth-icon" aria-hidden>
-                <KeyRound />
-              </div>
-              <p className="customer-auth-kicker">Acces administrativ</p>
-              <h2 id="customer-auth-title">Intră în administrare</h2>
-              <p>Folosește e-mailul și parola contului administrativ.</p>
-              <form onSubmit={authenticateAdmin}>
-                <label>
-                  E-mail
-                  <input
-                    name="email"
-                    required
-                    type="email"
-                    maxLength={254}
-                    autoComplete="username"
-                  />
-                </label>
-                <label>
-                  Parolă
-                  <input
-                    name="password"
-                    required
-                    type="password"
-                    maxLength={128}
-                    autoComplete="current-password"
-                  />
-                </label>
-                {error && (
-                  <p className="personalization-error" role="alert">
-                    {error}
-                  </p>
-                )}
-                <button className="magic-button" disabled={busy}>
-                  {busy ? "Se verifică…" : "Intră în administrare"}
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-              <Link className="customer-admin-dedicated" to="/auth">
-                Deschide pagina dedicată administratorilor
+            ) : (
+              <Link className="customer-google-button" to="/produse">
+                <span aria-hidden>✦</span>
+                Descoperă cutiuțele
+                <ArrowRight size={16} />
               </Link>
-            </div>
-          )}
+            )}
+            {customerAuthMessage && (
+              <p className="personalization-error" role="alert">
+                {customerAuthMessage}
+              </p>
+            )}
+            {googleReady && (
+              <>
+                <div className="customer-auth-assurance">
+                  <ShieldCheck aria-hidden />
+                  <span>
+                    Nu îți cerem o parolă nouă. Folosim doar identitatea, numele și adresa
+                    confirmată de Google.
+                  </span>
+                </div>
+                <p className="customer-auth-legal">
+                  Continuând, accepți crearea contului și confirmi că ai citit{" "}
+                  <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
+                </p>
+              </>
+            )}
+          </div>
         </section>
       </div>
     );
@@ -319,21 +283,94 @@ function CustomerAccount() {
         </button>
       </header>
 
-      <section className="customer-rewards-card" aria-labelledby="customer-rewards-title">
-        <div className="customer-rewards-card__star" aria-hidden>
-          <Star />
+      {error && (
+        <p className="personalization-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <CustomerMagicCenter />
+
+      <section className="customer-requests" aria-labelledby="customer-billing-title">
+        <div className="customer-requests-heading">
+          <div>
+            <p className="catalog-eyebrow">Comenzi și facturare</p>
+            <h2 id="customer-billing-title">Centrul tău de plată</h2>
+          </div>
+          <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+            <ShieldCheck size={16} /> Datele complete ale cardului nu sunt stocate aici
+          </span>
         </div>
-        <div>
-          <p className="catalog-eyebrow">Magic Rewards · în pregătire</p>
-          <h2 id="customer-rewards-title">Magic Stars ✦</h2>
-          <p>
-            O comandă, un review cu fotografie sau o recomandare pot deveni câte o stea — simplu,
-            după confirmarea momentului.
+        {billing.isLoading ? (
+          <p>Se încarcă situația contului…</p>
+        ) : billing.isError ? (
+          <p className="personalization-error" role="alert">
+            Situația comenzilor nu poate fi încărcată acum.
           </p>
-        </div>
-        <Link className="magic-button magic-button--outline" to="/magic-rewards">
-          Descoperă programul <ArrowRight size={16} />
-        </Link>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-3">
+            <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
+              <ReceiptText aria-hidden />
+              <h3 className="mt-3 font-semibold">Comenzile mele</h3>
+              {billing.data?.orders.length ? (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {billing.data.orders.slice(0, 5).map((order) => (
+                    <li key={order.orderNumber} className="border-t border-slate-200 pt-3">
+                      <strong>{order.orderNumber}</strong>
+                      <span className="block text-slate-600">
+                        {(order.totalBani / 100).toLocaleString("ro-RO", {
+                          style: "currency",
+                          currency: order.currency,
+                        })}{" "}
+                        · {order.paymentStatus}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-slate-600">Nu există încă o comandă asociată.</p>
+              )}
+            </article>
+            <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
+              <CreditCard aria-hidden />
+              <h3 className="mt-3 font-semibold">Metode salvate</h3>
+              {billing.data?.paymentMethods.length ? (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {billing.data.paymentMethods.map((method) => (
+                    <li key={method.id}>
+                      <strong>{method.displayLabel}</strong>
+                      <span className="block text-slate-600">
+                        {method.brand || "Card"} {method.last4 ? `•••• ${method.last4}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-slate-600">
+                  Salvarea cardului va deveni disponibilă după conectarea procesatorului ales.
+                </p>
+              )}
+            </article>
+            <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
+              <Repeat2 aria-hidden />
+              <h3 className="mt-3 font-semibold">Plăți recurente</h3>
+              {billing.data?.subscriptions.length ? (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {billing.data.subscriptions.map((subscription) => (
+                    <li key={subscription.id}>
+                      <strong>{subscription.serviceName || subscription.label}</strong>
+                      <span className="block text-slate-600">{subscription.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-slate-600">
+                  Nu ai abonamente active. Activarea va cere consimțământ explicit.
+                </p>
+              )}
+            </article>
+          </div>
+        )}
       </section>
 
       <section className="customer-requests" aria-labelledby="customer-requests-title">

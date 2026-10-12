@@ -40,6 +40,8 @@ export function activity(
 }
 const secretNames = {
   google_merchant: "GOOGLE_MERCHANT_ACCESS_TOKEN",
+  customer_google_client_id: "CUSTOMER_GOOGLE_CLIENT_ID",
+  customer_google_client_secret: "CUSTOMER_GOOGLE_CLIENT_SECRET",
   netopia: "NETOPIA_API_KEY",
   netopia_public_key: "NETOPIA_PUBLIC_KEY",
   revolut_merchant: "REVOLUT_MERCHANT_SECRET_KEY",
@@ -49,7 +51,6 @@ const secretNames = {
   trendyol: "TRENDYOL_API_CREDENTIALS",
   olx: "OLX_ACCESS_TOKEN",
   okazii: "OKAZII_API_KEY",
-  fgo: "FGO_PRIVATE_KEY",
   smartship: "SMARTSHIP_API_KEY",
   stripe: "STRIPE_SECRET_KEY",
   stripe_webhook: "STRIPE_WEBHOOK_SECRET",

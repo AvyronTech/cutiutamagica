@@ -257,16 +257,21 @@ describe("storefront and dashboard share one catalog", () => {
     expect(products.every((p) => p.discovery?.guides.length)).toBe(true);
     const { renderSitemap } = await import("@/lib/seo-sitemap");
     const sitemap = renderSitemap(products);
-    expect(sitemap.match(/<url>/g)).toHaveLength(12 + giftGuides.length + products.length);
+    expect(sitemap.match(/<url>/g)).toHaveLength(9 + giftGuides.length + products.length);
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/despre-noi</loc>");
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/magic-rewards</loc>");
-    expect(sitemap).toContain("<loc>https://cutiutamagica.eu/personalizeaza</loc>");
+    expect(sitemap).not.toContain("<loc>https://cutiutamagica.eu/personalizeaza</loc>");
+    expect(sitemap).not.toContain("<loc>https://cutiutamagica.eu/termeni-de-utilizare</loc>");
+    expect(sitemap).not.toContain(
+      "<loc>https://cutiutamagica.eu/politica-de-confidentialitate</loc>",
+    );
     expect(sitemap).toContain("<loc>https://cutiutamagica.eu/livrare</loc>");
     for (const guide of giftGuides)
       expect(sitemap).toContain(`<loc>https://cutiutamagica.eu/cadouri/${guide.slug}</loc>`);
-    for (const p of products) expect(sitemap).toContain(`/produs/${p.slug}</loc>`);
+    const { productPath } = await import("@/lib/product-url");
+    for (const p of products) expect(sitemap).toContain(`${productPath(p.slug)}</loc>`);
     expect(sitemap).toContain("<image:loc>");
-    expect(sitemap).not.toMatch(/\/(admin|comanda|auth|api)\b/);
+    expect(sitemap).not.toMatch(/\/(admin|comanda|cont|personalizeaza|auth|api)\b/);
   });
   it("honors administrator text, category, media and visibility changes", async () => {
     sqlite.exec(
@@ -778,14 +783,14 @@ describe("product worlds, public messages and sales workbench", () => {
     });
     expect((await handleSalesWorkbench(crossOrigin, env))!.status).toBe(403);
   });
-  it("exports real public prices and availability, escapes XML and never fabricates identifiers", async () => {
+  it("exports only orderable products, escapes XML and declares absent identifiers", async () => {
     const products = await catalog();
     products[0] = { ...products[0], name: 'A <B> & "C"', description: "A & B" };
     const xml = googleCatalogFeed(products);
     expect(xml).toContain("A &lt;B&gt; &amp; &quot;C&quot;");
     expect(xml).toContain("<g:availability>in_stock</g:availability>");
-    expect(xml).toContain("<g:availability>out_of_stock</g:availability>");
-    expect(xml).not.toContain("identifier_exists");
+    expect(xml).not.toContain("<g:availability>out_of_stock</g:availability>");
+    expect(xml).toContain("<g:identifier_exists>no</g:identifier_exists>");
     expect(xml).not.toContain("admin");
     expect(googleCatalogFeed([{ ...products[0], price: null }])).not.toContain("<item>");
   });

@@ -1,4 +1,5 @@
-import { emitFgoInvoice } from "@/server/integrations/fgo";
+import { emitOblioInvoice } from "@/server/integrations/oblio";
+import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import {
   digestHex,
   fetchWithTimeout,
@@ -18,7 +19,7 @@ function amount(row: DbRow, key: string): number {
   return typeof row[key] === "number" ? row[key] : Number(row[key] ?? 0);
 }
 
-export async function issueFgoInvoiceForOrder(
+export async function issueInvoiceForOrder(
   env: CommerceEnv,
   orderId: string,
   admin: { id: string; email: string },
@@ -58,7 +59,7 @@ export async function issueFgoInvoiceForOrder(
     throw new ProviderError("Comanda nu există sau este anulată.", "ORDER_NOT_INVOICEABLE", 404);
   if (!series) {
     throw new ProviderError(
-      "Activează în admin seria FGO confirmată înainte de emitere.",
+      "Activează în admin seria Oblio confirmată înainte de emitere.",
       "INVOICE_SERIES_NOT_ACTIVE",
       409,
     );
@@ -74,10 +75,28 @@ export async function issueFgoInvoiceForOrder(
     throw new ProviderError("Comanda nu conține linii facturabile.", "ORDER_ITEMS_MISSING", 409);
   }
 
+  const settingsRow = await env.DB.prepare(
+    "SELECT value_json FROM operational_settings WHERE key='commerce.checkout'",
+  ).first<{ value_json: string }>();
+  const settings = checkoutSettingsSchema.parse(
+    settingsRow ? JSON.parse(settingsRow.value_json) : {},
+  );
+  if (
+    settings.invoiceProvider !== "oblio" ||
+    !settings.oblioEmail ||
+    !settings.invoiceTaxId ||
+    !settings.invoiceSeries
+  ) {
+    throw new ProviderError(
+      "Completează emailul Oblio, CIF-ul și seria, apoi selectează Oblio în configurarea internă.",
+      "OBLIO_SETTINGS_INCOMPLETE",
+      409,
+    );
+  }
   const environment = env.APP_ENV === "production" ? "production" : "sandbox";
   const idempotencyKey = `invoice/${orderId}/v1`;
   await logProviderOperation(env.DB, {
-    provider: "fgo",
+    provider: "oblio",
     operationType: "invoice.issue",
     entityType: "order",
     entityId: orderId,
@@ -86,8 +105,10 @@ export async function issueFgoInvoiceForOrder(
     status: "processing",
   });
   try {
-    const result = await emitFgoInvoice(env, {
+    const result = await emitOblioInvoice(env, {
       orderId,
+      accountEmail: settings.oblioEmail,
+      taxId: settings.invoiceTaxId,
       series: value(series, "prefix"),
       currency: value(order, "currency") || "RON",
       customer: {
@@ -109,6 +130,8 @@ export async function issueFgoInvoiceForOrder(
           quantity: amount(line, "quantity"),
           unitPrice: amount(line, "line_total_bani") / Math.max(1, amount(line, "quantity")) / 100,
           vatRate: amount(line, "tax_rate_bps") / 100,
+          itemType: (value(line, "item_type") === "service" ? "service" : "product") as
+            "service" | "product",
         })),
         ...(amount(order, "shipping_bani") > 0
           ? [
@@ -118,6 +141,7 @@ export async function issueFgoInvoiceForOrder(
                 quantity: 1,
                 unitPrice: amount(order, "shipping_bani") / 100,
                 vatRate: 0,
+                itemType: "service" as const,
               },
             ]
           : []),
@@ -126,15 +150,15 @@ export async function issueFgoInvoiceForOrder(
     const verifiedAt = new Date().toISOString();
     await env.DB.batch([
       env.DB.prepare(
-        "UPDATE integration_credentials SET checked_at=?1,check_status='verified' WHERE provider='fgo'",
+        "UPDATE integration_credentials SET checked_at=?1,check_status='verified' WHERE provider='oblio'",
       ).bind(verifiedAt),
       env.DB.prepare(
         `UPDATE provider_configurations SET status='active',last_healthcheck_at=?1,
-         last_error_code=NULL,last_error_message=NULL,updated_at=?1 WHERE provider='fgo'`,
+         last_error_code=NULL,last_error_message=NULL,updated_at=?1 WHERE provider='oblio'`,
       ).bind(verifiedAt),
       env.DB.prepare(
         `UPDATE connector_secret_refs SET status='configured',last_verified_at=?1,updated_at=?1
-         WHERE provider='fgo'`,
+         WHERE provider='oblio'`,
       ).bind(verifiedAt),
     ]);
     const invoiceId = crypto.randomUUID();
@@ -147,7 +171,7 @@ export async function issueFgoInvoiceForOrder(
           currency, subtotal_bani, tax_bani, total_bani, issuer_snapshot_json,
           customer_snapshot_json, issued_at, external_provider, external_id, created_at, updated_at
         ) VALUES (?1, ?2, ?3, ?4, ?5, 'invoice', 'issued', ?6, ?7, ?8, ?9, ?10, ?11,
-          ?12, 'fgo', ?13, ?12, ?12)`,
+          ?12, 'oblio', ?13, ?12, ?12)`,
       ).bind(
         invoiceId,
         orderId,
@@ -185,7 +209,7 @@ export async function issueFgoInvoiceForOrder(
         admin.id,
         admin.email,
         invoiceId,
-        JSON.stringify({ invoiceNumber, provider: "fgo" }),
+        JSON.stringify({ invoiceNumber, provider: "oblio" }),
         JSON.stringify({ orderId, pdfUrl: result.pdfUrl }),
         nowIso,
       ),
@@ -234,14 +258,14 @@ export async function issueFgoInvoiceForOrder(
         );
         const declaredSize = Number(response.headers.get("content-length") ?? 0);
         if (!response.ok || (declaredSize > 0 && declaredSize > 10_000_000)) {
-          throw new Error(`PDF FGO indisponibil (${response.status}).`);
+          throw new Error(`PDF Oblio indisponibil (${response.status}).`);
         }
         const bytes = await response.arrayBuffer();
         if (
           bytes.byteLength > 10_000_000 ||
           new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-"
         ) {
-          throw new Error("Fișierul FGO nu este un PDF valid.");
+          throw new Error("Fișierul Oblio nu este un PDF valid.");
         }
         const documentId = crypto.randomUUID();
         const r2Key = `invoices/${nowIso.slice(0, 4)}/${invoiceId}.pdf`;
@@ -272,7 +296,7 @@ export async function issueFgoInvoiceForOrder(
       }
     }
     await logProviderOperation(env.DB, {
-      provider: "fgo",
+      provider: "oblio",
       operationType: "invoice.issue",
       entityType: "order",
       entityId: orderId,
@@ -281,35 +305,40 @@ export async function issueFgoInvoiceForOrder(
       status: "succeeded",
       externalId: invoiceNumber,
       responseCode: 200,
-      responseSummary: { invoiceNumber, pdfUrl: result.pdfUrl, paymentUrl: result.paymentUrl },
+      responseSummary: { invoiceNumber, pdfUrl: result.pdfUrl },
     });
     return { invoiceId, invoiceNumber, pdfUrl: result.pdfUrl };
   } catch (error) {
     if (
       error instanceof ProviderError &&
-      ["FGO_INVOICE_FAILED", "PROVIDER_TIMEOUT", "PROVIDER_NETWORK_ERROR"].includes(error.code)
+      [
+        "OBLIO_AUTH_FAILED",
+        "OBLIO_INVOICE_FAILED",
+        "PROVIDER_TIMEOUT",
+        "PROVIDER_NETWORK_ERROR",
+      ].includes(error.code)
     ) {
       const failedAt = new Date().toISOString();
       await env.DB.batch([
         env.DB.prepare(
-          "UPDATE integration_credentials SET checked_at=?1,check_status='failed' WHERE provider='fgo'",
+          "UPDATE integration_credentials SET checked_at=?1,check_status='failed' WHERE provider='oblio'",
         ).bind(failedAt),
         env.DB.prepare(
           `UPDATE provider_configurations SET status='degraded',last_healthcheck_at=?1,
-           last_error_code=?2,last_error_message=?3,updated_at=?1 WHERE provider='fgo'`,
+           last_error_code=?2,last_error_message=?3,updated_at=?1 WHERE provider='oblio'`,
         ).bind(failedAt, error.code, error.message.slice(0, 500)),
       ]);
     }
     await logProviderOperation(env.DB, {
-      provider: "fgo",
+      provider: "oblio",
       operationType: "invoice.issue",
       entityType: "order",
       entityId: orderId,
       idempotencyKey,
       environment,
       status: "failed",
-      errorCode: error instanceof ProviderError ? error.code : "FGO_UNKNOWN_ERROR",
-      errorMessage: error instanceof Error ? error.message : "Unknown FGO error",
+      errorCode: error instanceof ProviderError ? error.code : "OBLIO_UNKNOWN_ERROR",
+      errorMessage: error instanceof Error ? error.message : "Unknown Oblio error",
     });
     throw error;
   }

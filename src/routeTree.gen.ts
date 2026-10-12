@@ -23,6 +23,7 @@ import { Route as MagicRewardsRouteImport } from './routes/magic-rewards'
 import { Route as PersonalizeazaRouteImport } from './routes/personalizeaza'
 import { Route as PoliticaDeConfidentialitateRouteImport } from './routes/politica-de-confidentialitate'
 import { Route as PovesteRouteImport } from './routes/poveste'
+import { Route as ProdusCutiutaMuzicalaChar123slugChar125RouteImport } from './routes/produs-cutiuta-muzicala-{$slug}'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as ReturRouteImport } from './routes/retur'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -55,11 +56,13 @@ import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin/referrals'
 import { Route as AuthenticatedAdminReturnsRouteImport } from './routes/_authenticated/admin/returns'
 import { Route as AuthenticatedAdminReviewsRouteImport } from './routes/_authenticated/admin/reviews'
+import { Route as AuthenticatedAdminRewardsRouteImport } from './routes/_authenticated/admin/rewards'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminShippingRouteImport } from './routes/_authenticated/admin/shipping'
 import { Route as AuthenticatedAdminStatisticsRouteImport } from './routes/_authenticated/admin/statistics'
 import { Route as AuthenticatedAdminSuppliersRouteImport } from './routes/_authenticated/admin/suppliers'
 import { Route as AuthenticatedAdminTrafficRouteImport } from './routes/_authenticated/admin/traffic'
+import { Route as AuthenticatedAdminProductsIndexRouteImport } from './routes/_authenticated/admin/products.index'
 import { Route as AuthenticatedAdminProductsIdRouteImport } from './routes/_authenticated/admin/products.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -133,6 +136,12 @@ const PovesteRoute = PovesteRouteImport.update({
   path: '/poveste',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProdusCutiutaMuzicalaChar123slugChar125Route =
+  ProdusCutiutaMuzicalaChar123slugChar125RouteImport.update({
+    id: '/produs-cutiuta-muzicala-{$slug}',
+    path: '/produs-cutiuta-muzicala-{$slug}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ProduseRoute = ProduseRouteImport.update({
   id: '/produse',
   path: '/produse',
@@ -312,6 +321,12 @@ const AuthenticatedAdminReviewsRoute =
     path: '/reviews',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminRewardsRoute =
+  AuthenticatedAdminRewardsRouteImport.update({
+    id: '/rewards',
+    path: '/rewards',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -342,6 +357,12 @@ const AuthenticatedAdminTrafficRoute =
     path: '/traffic',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminProductsIndexRoute =
+  AuthenticatedAdminProductsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminProductsRoute,
+  } as any)
 const AuthenticatedAdminProductsIdRoute =
   AuthenticatedAdminProductsIdRouteImport.update({
     id: '/$id',
@@ -363,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
+  '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -394,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/reviews': typeof AuthenticatedAdminReviewsRoute
+  '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -401,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/admin/traffic': typeof AuthenticatedAdminTrafficRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
+  '/admin/products/': typeof AuthenticatedAdminProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -416,6 +440,7 @@ export interface FileRoutesByTo {
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
+  '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -440,12 +465,12 @@ export interface FileRoutesByTo {
   '/admin/personalizations': typeof AuthenticatedAdminPersonalizationsRoute
   '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
-  '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/reviews': typeof AuthenticatedAdminReviewsRoute
+  '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -453,6 +478,7 @@ export interface FileRoutesByTo {
   '/admin/traffic': typeof AuthenticatedAdminTrafficRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
+  '/admin/products': typeof AuthenticatedAdminProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -470,6 +496,7 @@ export interface FileRoutesById {
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
   '/poveste': typeof PovesteRoute
+  '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -501,6 +528,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/_authenticated/admin/reviews': typeof AuthenticatedAdminReviewsRoute
+  '/_authenticated/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/_authenticated/admin/statistics': typeof AuthenticatedAdminStatisticsRoute
@@ -508,6 +536,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/traffic': typeof AuthenticatedAdminTrafficRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
+  '/_authenticated/admin/products/': typeof AuthenticatedAdminProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -525,6 +554,7 @@ export interface FileRouteTypes {
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
+    | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
@@ -556,6 +586,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/returns'
     | '/admin/reviews'
+    | '/admin/rewards'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
@@ -563,6 +594,7 @@ export interface FileRouteTypes {
     | '/admin/traffic'
     | '/admin/'
     | '/admin/products/$id'
+    | '/admin/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -578,6 +610,7 @@ export interface FileRouteTypes {
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
+    | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
@@ -602,12 +635,12 @@ export interface FileRouteTypes {
     | '/admin/personalizations'
     | '/admin/platforms'
     | '/admin/posts'
-    | '/admin/products'
     | '/admin/promotions'
     | '/admin/qr-generator'
     | '/admin/referrals'
     | '/admin/returns'
     | '/admin/reviews'
+    | '/admin/rewards'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/statistics'
@@ -615,6 +648,7 @@ export interface FileRouteTypes {
     | '/admin/traffic'
     | '/admin'
     | '/admin/products/$id'
+    | '/admin/products'
   id:
     | '__root__'
     | '/'
@@ -631,6 +665,7 @@ export interface FileRouteTypes {
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
     | '/poveste'
+    | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
     | '/sitemap.xml'
@@ -662,6 +697,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/returns'
     | '/_authenticated/admin/reviews'
+    | '/_authenticated/admin/rewards'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/shipping'
     | '/_authenticated/admin/statistics'
@@ -669,6 +705,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/traffic'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/products/$id'
+    | '/_authenticated/admin/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -686,6 +723,7 @@ export interface RootRouteChildren {
   PersonalizeazaRoute: typeof PersonalizeazaRoute
   PoliticaDeConfidentialitateRoute: typeof PoliticaDeConfidentialitateRoute
   PovesteRoute: typeof PovesteRoute
+  ProdusCutiutaMuzicalaChar123slugChar125Route: typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   ProduseRoute: typeof ProduseRoute
   ReturRoute: typeof ReturRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -793,6 +831,13 @@ declare module '@tanstack/react-router' {
       path: '/poveste'
       fullPath: '/poveste'
       preLoaderRoute: typeof PovesteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/produs-cutiuta-muzicala-{$slug}': {
+      id: '/produs-cutiuta-muzicala-{$slug}'
+      path: '/produs-cutiuta-muzicala-{$slug}'
+      fullPath: '/produs-cutiuta-muzicala-{$slug}'
+      preLoaderRoute: typeof ProdusCutiutaMuzicalaChar123slugChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/produse': {
@@ -1019,6 +1064,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReviewsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/rewards': {
+      id: '/_authenticated/admin/rewards'
+      path: '/rewards'
+      fullPath: '/admin/rewards'
+      preLoaderRoute: typeof AuthenticatedAdminRewardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -1054,6 +1106,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTrafficRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/products/': {
+      id: '/_authenticated/admin/products/'
+      path: '/'
+      fullPath: '/admin/products/'
+      preLoaderRoute: typeof AuthenticatedAdminProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminProductsRoute
+    }
     '/_authenticated/admin/products/$id': {
       id: '/_authenticated/admin/products/$id'
       path: '/$id'
@@ -1066,11 +1125,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminProductsRouteChildren {
   AuthenticatedAdminProductsIdRoute: typeof AuthenticatedAdminProductsIdRoute
+  AuthenticatedAdminProductsIndexRoute: typeof AuthenticatedAdminProductsIndexRoute
 }
 
 const AuthenticatedAdminProductsRouteChildren: AuthenticatedAdminProductsRouteChildren =
   {
     AuthenticatedAdminProductsIdRoute: AuthenticatedAdminProductsIdRoute,
+    AuthenticatedAdminProductsIndexRoute: AuthenticatedAdminProductsIndexRoute,
   }
 
 const AuthenticatedAdminProductsRouteWithChildren =
@@ -1102,6 +1163,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminReturnsRoute: typeof AuthenticatedAdminReturnsRoute
   AuthenticatedAdminReviewsRoute: typeof AuthenticatedAdminReviewsRoute
+  AuthenticatedAdminRewardsRoute: typeof AuthenticatedAdminRewardsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminShippingRoute: typeof AuthenticatedAdminShippingRoute
   AuthenticatedAdminStatisticsRoute: typeof AuthenticatedAdminStatisticsRoute
@@ -1137,6 +1199,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
     AuthenticatedAdminReturnsRoute: AuthenticatedAdminReturnsRoute,
     AuthenticatedAdminReviewsRoute: AuthenticatedAdminReviewsRoute,
+    AuthenticatedAdminRewardsRoute: AuthenticatedAdminRewardsRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminShippingRoute: AuthenticatedAdminShippingRoute,
     AuthenticatedAdminStatisticsRoute: AuthenticatedAdminStatisticsRoute,
@@ -1176,6 +1239,8 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalizeazaRoute: PersonalizeazaRoute,
   PoliticaDeConfidentialitateRoute: PoliticaDeConfidentialitateRoute,
   PovesteRoute: PovesteRoute,
+  ProdusCutiutaMuzicalaChar123slugChar125Route:
+    ProdusCutiutaMuzicalaChar123slugChar125Route,
   ProduseRoute: ProduseRoute,
   ReturRoute: ReturRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

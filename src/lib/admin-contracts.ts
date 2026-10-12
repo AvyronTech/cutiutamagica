@@ -56,6 +56,8 @@ export interface AdminProduct {
   rightsStatus: string;
   missingFieldsCount: number;
   listingCount: number;
+  storefrontState: "available" | "coming_soon" | "out_of_stock";
+  releaseNote: string;
   updatedAt: string;
   version: number;
 }

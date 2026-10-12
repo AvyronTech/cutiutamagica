@@ -1,3 +1,5 @@
+import { isProductPath } from "@/lib/product-url";
+
 // Brand contact helpers — centralized so messages stay consistent.
 export const WA_PHONE = "40734605742"; // RO prefix, no leading 0
 export const PHONE_TEL = "+40734605742";
@@ -9,7 +11,7 @@ export function waLink(message: string) {
 
 /** Pre-written, context-aware WhatsApp opener based on the current route. */
 export function messageForPath(pathname: string): string {
-  if (pathname.startsWith("/produs/"))
+  if (isProductPath(pathname))
     return "Bună! Sunt interesat(ă) de cutiuța muzicală pe care tocmai o privesc pe site. Îmi puteți spune dacă e disponibilă și în cât timp ajunge?";
   if (pathname.startsWith("/produse"))
     return "Bună! Vreau să comand o cutiuță muzicală și aș avea nevoie de o recomandare. Mă puteți ghida prin modele?";

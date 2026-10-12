@@ -43,20 +43,32 @@ export function HeroWorld({ children }: { children: ReactNode }) {
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection;
     if (connection?.saveData) return;
+    // Keep the continuous scene on small touch screens, without tying a parallax write to every frame.
+    if (matchMedia("(max-width: 767px) and (pointer: coarse)").matches) return;
     const bridge = node.querySelector<HTMLElement>(".hero-story-bridge");
     let frame = 0,
       visible = false;
+    let lastDepth = "",
+      lastThreadOffset = "";
     const draw = () => {
       frame = 0;
       if (!visible || document.hidden) return;
       const y = Math.max(0, Math.min(1, -node.getBoundingClientRect().top / innerHeight));
-      node.style.setProperty("--hero-depth", `${(y * 18).toFixed(2)}px`);
+      const depth = `${(y * 18).toFixed(1)}px`;
+      if (depth !== lastDepth) {
+        lastDepth = depth;
+        node.style.setProperty("--hero-depth", depth);
+      }
       if (bridge) {
         const p = Math.max(
           0,
           Math.min(1, (innerHeight * 0.8 - bridge.getBoundingClientRect().top) / 280),
         );
-        node.style.setProperty("--thread-offset", String(1 - p));
+        const threadOffset = (1 - p).toFixed(3);
+        if (threadOffset !== lastThreadOffset) {
+          lastThreadOffset = threadOffset;
+          node.style.setProperty("--thread-offset", threadOffset);
+        }
       }
     };
     const request = () => {

@@ -3,73 +3,67 @@ import { useEffect } from "react";
 import { giftGuideGroups, giftGuides } from "@/data/gift-guides";
 import { safeJsonLd } from "@/lib/product-discovery";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { seoHead } from "@/lib/seo-head";
 export const Route = createFileRoute("/cadouri/")({
   component: GiftHub,
-  head: () => ({
-    meta: [
-      { title: "Idei de cadouri cu poveste și cutiuțe muzicale | Cutiuța Magică" },
-      {
-        name: "description",
-        content:
-          "Ghiduri de cadouri după ocazie, persoană și pasiune: aniversări, cuplu, părinți, colegi, iubitori de pisici, Harry Potter și fantasy.",
-      },
-      { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "Idei de cadouri cu poveste | Cutiuța Magică" },
-      {
-        property: "og:description",
-        content:
-          "Alege o cutiuță muzicală după ocazie, destinatar, melodie și pasiunea care face cadoul personal.",
-      },
-      { property: "og:url", content: "https://cutiutamagica.eu/cadouri" },
-      { property: "og:image", content: "https://cutiutamagica.eu/scenes/catalog-atelier.webp" },
-    ],
-    links: [{ rel: "canonical", href: "https://cutiutamagica.eu/cadouri" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: safeJsonLd({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "CollectionPage",
-              "@id": "https://cutiutamagica.eu/cadouri#page",
-              name: "Idei de cadouri cu poveste",
-              url: "https://cutiutamagica.eu/cadouri",
-              inLanguage: "ro-RO",
-              isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
-              mainEntity: {
-                "@type": "ItemList",
-                numberOfItems: giftGuides.length,
-                itemListElement: giftGuides.map((guide, index) => ({
-                  "@type": "ListItem",
-                  position: index + 1,
-                  name: guide.title,
-                  url: `https://cutiutamagica.eu/cadouri/${guide.slug}`,
-                })),
+  head: () => {
+    const seo = seoHead({
+      title: "Idei de cadouri cu poveste și cutiuțe muzicale | Cutiuța Magică",
+      description:
+        "Ghiduri de cadouri după ocazie, persoană și pasiune: aniversări, cuplu, părinți, colegi, iubitori de pisici, Harry Potter și fantasy.",
+      path: "/cadouri",
+      image: "/scenes/catalog-atelier.webp",
+      imageAlt: "Selecție de cutiuțe muzicale pentru cadouri cu poveste",
+    });
+    return {
+      ...seo,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: safeJsonLd({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "CollectionPage",
+                "@id": "https://cutiutamagica.eu/cadouri#page",
+                name: "Idei de cadouri cu poveste",
+                url: "https://cutiutamagica.eu/cadouri",
+                inLanguage: "ro-RO",
+                isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
+                mainEntity: {
+                  "@type": "ItemList",
+                  numberOfItems: giftGuides.length,
+                  itemListElement: giftGuides.map((guide, index) => ({
+                    "@type": "ListItem",
+                    position: index + 1,
+                    name: guide.title,
+                    url: `https://cutiutamagica.eu/cadouri/${guide.slug}`,
+                  })),
+                },
               },
-            },
-            {
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                {
-                  "@type": "ListItem",
-                  position: 1,
-                  name: "Acasă",
-                  item: "https://cutiutamagica.eu/",
-                },
-                {
-                  "@type": "ListItem",
-                  position: 2,
-                  name: "Idei de cadouri",
-                  item: "https://cutiutamagica.eu/cadouri",
-                },
-              ],
-            },
-          ],
-        }),
-      },
-    ],
-  }),
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Acasă",
+                    item: "https://cutiutamagica.eu/",
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Idei de cadouri",
+                    item: "https://cutiutamagica.eu/cadouri",
+                  },
+                ],
+              },
+            ],
+          }),
+        },
+      ],
+    };
+  },
 });
 function GiftHub() {
   useEffect(() => {

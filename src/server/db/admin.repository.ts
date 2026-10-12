@@ -20,6 +20,7 @@ import {
   toAdminOrderStatus,
   toStoredOrderState,
 } from "@/lib/order-status";
+import { productPath } from "@/lib/product-url";
 
 type DbValue = string | number | null;
 type DbRow = Record<string, DbValue>;
@@ -162,6 +163,148 @@ export async function listAdminOrders(db: D1Database, limit = 200): Promise<Admi
   return result.results.map(mapOrder);
 }
 
+export interface CreateAdminOrderInput {
+  channelCode: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  productId: string;
+  quantity: number;
+  shippingBani: number;
+  externalOrderId?: string;
+  internalNote?: string;
+  actorId: string;
+  requestId: string;
+}
+
+function normalizeAdminPhone(value: string): string {
+  const compact = value.replace(/[\s().-]/g, "");
+  if (/^0\d{9}$/.test(compact)) return `+40${compact.slice(1)}`;
+  if (/^40\d{9}$/.test(compact)) return `+${compact}`;
+  if (/^\+[1-9]\d{7,14}$/.test(compact)) return compact;
+  throw new Error("PHONE_INVALID");
+}
+
+export async function createAdminOrder(
+  db: D1Database,
+  input: CreateAdminOrderInput,
+): Promise<AdminOrder> {
+  const catalog = await db
+    .prepare(
+      `SELECT p.id AS product_id,p.name,p.tax_rate_bps,pv.id AS variant_id,pv.sku,pv.name AS variant_name,
+        sc.id AS channel_id,sc.name AS channel_name,
+        (SELECT pli.price_bani FROM price_list_items pli
+          JOIN price_lists pl ON pl.id=pli.price_list_id
+          WHERE pli.variant_id=pv.id AND pl.status='active' AND pli.min_quantity=1
+          ORDER BY CASE
+            WHEN pl.channel_id=(SELECT id FROM sales_channels WHERE code=?1) THEN 0
+            WHEN pl.channel_id='channel_website' THEN 1
+            ELSE 2
+          END,
+            pl.priority DESC LIMIT 1) AS price_bani
+       FROM products p
+       JOIN product_variants pv ON pv.product_id=p.id AND pv.status='active'
+       JOIN sales_channels sc ON sc.code=?1
+       WHERE p.id=?2 AND p.product_type='music_box' AND p.status='active'
+       ORDER BY pv.sort_order,pv.created_at LIMIT 1`,
+    )
+    .bind(input.channelCode, input.productId)
+    .first<DbRow>();
+  if (!catalog) throw new Error("ORDER_PRODUCT_OR_CHANNEL_NOT_FOUND");
+  const unitPriceBani = numberValue(catalog.price_bani);
+  if (unitPriceBani <= 0) throw new Error("ORDER_PRODUCT_PRICE_MISSING");
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const orderId = crypto.randomUUID();
+  const orderNumber = `CM-${nowIso.slice(0, 10).replaceAll("-", "")}-${orderId.replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+  const quantity = input.quantity;
+  const subtotalBani = unitPriceBani * quantity;
+  const totalBani = subtotalBani + input.shippingBani;
+  const phone = normalizeAdminPhone(input.customerPhone);
+  const orderItemId = crypto.randomUUID();
+
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO orders(
+          id,order_number,public_token,idempotency_key,channel_id,external_order_id,
+          order_status,payment_status,fulfillment_status,currency,subtotal_bani,shipping_bani,
+          total_bani,customer_name,customer_email,customer_phone_e164,internal_note,placed_at,created_at,updated_at
+        ) VALUES(?1,?2,?3,?4,?5,?6,'pending','unpaid','unfulfilled','RON',?7,?8,?9,?10,?11,?12,?13,?14,?14,?14)`,
+      )
+      .bind(
+        orderId,
+        orderNumber,
+        crypto.randomUUID(),
+        `admin:${input.requestId}`,
+        stringValue(catalog.channel_id),
+        input.externalOrderId || null,
+        subtotalBani,
+        input.shippingBani,
+        totalBani,
+        input.customerName,
+        input.customerEmail || null,
+        phone,
+        input.internalNote || null,
+        nowIso,
+      ),
+    db
+      .prepare(
+        `INSERT INTO order_items(
+          id,order_id,product_id,variant_id,sku,product_name,variant_name,quantity,
+          unit_price_bani,tax_rate_bps,line_subtotal_bani,line_total_bani
+        ) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)`,
+      )
+      .bind(
+        orderItemId,
+        orderId,
+        stringValue(catalog.product_id),
+        stringValue(catalog.variant_id),
+        stringValue(catalog.sku),
+        stringValue(catalog.name),
+        stringValue(catalog.variant_name),
+        quantity,
+        unitPriceBani,
+        numberValue(catalog.tax_rate_bps),
+        subtotalBani,
+      ),
+    db
+      .prepare(
+        `INSERT INTO order_events(id,order_id,event_type,to_status,actor_type,actor_id,message,metadata_json,created_at)
+         VALUES(?1,?2,'order.created','pending/unfulfilled','admin',?3,'Comandă adăugată manual din dashboard',?4,?5)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        orderId,
+        input.actorId,
+        JSON.stringify({ requestId: input.requestId, channelCode: input.channelCode }),
+        nowIso,
+      ),
+    db
+      .prepare(
+        `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,request_id,channel_id,after_json,metadata_json,created_at)
+         VALUES(?1,?2,?2,'order.manual.create','order',?3,?4,?5,?6,'{}',?7)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        input.actorId,
+        orderId,
+        input.requestId,
+        stringValue(catalog.channel_id),
+        JSON.stringify({ orderNumber, totalBani, channelCode: input.channelCode }),
+        nowIso,
+      ),
+  ]);
+
+  const created = await db
+    .prepare(`${ORDER_SELECT} WHERE vo.id=?1 LIMIT 1`)
+    .bind(orderId)
+    .first<DbRow>();
+  if (!created) throw new Error("ORDER_NOT_FOUND");
+  return mapOrder(created);
+}
+
 export async function listAdminProducts(
   db: D1Database,
   publicSiteUrl: string,
@@ -172,6 +315,8 @@ export async function listAdminProducts(
     SELECT
       ap.*,
       p.short_description,
+      p.storefront_state,
+      p.release_note,
       p.version,
       COALESCE(pc.missing_fields_count, 0) AS missing_fields_count,
       pv.sku,
@@ -192,8 +337,8 @@ export async function listAdminProducts(
       ), 0) AS units_sold,
       (
         SELECT AVG(CAST(r.rating AS REAL))
-        FROM reviews r
-        WHERE r.product_id = ap.id AND r.status = 'published'
+        FROM product_reviews r
+        WHERE r.product_id = ap.id AND r.status = 'approved'
       ) AS average_rating
     FROM v_admin_product_catalog ap
     JOIN products p ON p.id = ap.id
@@ -224,15 +369,83 @@ export async function listAdminProducts(
     rating: row.average_rating == null ? null : numberValue(row.average_rating),
     image: "CM",
     imageUrl: stringValue(row.image_url),
-    url: `${normalizedSiteUrl}/produs/${stringValue(row.slug)}`,
+    url: `${normalizedSiteUrl}${productPath(stringValue(row.slug))}`,
     sku: stringValue(row.sku),
     mechanismType: stringValue(row.mechanism_type),
     rightsStatus: stringValue(row.rights_status),
     missingFieldsCount: numberValue(row.missing_fields_count),
     listingCount: numberValue(row.listing_count),
+    storefrontState: (stringValue(row.storefront_state) ||
+      "coming_soon") as AdminProduct["storefrontState"],
+    releaseNote: stringValue(row.release_note),
     updatedAt: stringValue(row.updated_at),
     version: numberValue(row.version),
   }));
+}
+
+export interface CreateAdminProductInput {
+  name: string;
+  slug: string;
+  sku: string;
+  category: string;
+  priceBani: number;
+  actorId: string;
+  requestId: string;
+}
+
+export async function createAdminProduct(
+  db: D1Database,
+  input: CreateAdminProductInput,
+): Promise<{ id: string }> {
+  const productId = crypto.randomUUID();
+  const variantId = crypto.randomUUID();
+  const nowIso = new Date().toISOString();
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO products(
+          id,slug,status,name,short_name,category,storefront_state,release_note,rights_status,
+          tax_class,tax_rate_bps,created_at,updated_at
+        ) VALUES(?1,?2,'draft',?3,?3,?4,'coming_soon','În pregătire','review_required','review_required',0,?5,?5)`,
+      )
+      .bind(productId, input.slug, input.name, input.category, nowIso),
+    db
+      .prepare(
+        `INSERT INTO product_variants(
+          id,product_id,sku,name,status,inventory_policy,attributes_json,created_at,updated_at
+        ) VALUES(?1,?2,?3,'Standard','active','deny','{"mechanism":"manual_crank"}',?4,?4)`,
+      )
+      .bind(variantId, productId, input.sku, nowIso),
+    db
+      .prepare(
+        `INSERT INTO inventory_levels(
+          id,variant_id,location_id,on_hand_quantity,reserved_quantity,safety_stock_quantity,updated_at
+        ) VALUES(?1,?2,'location_main',0,0,0,?3)`,
+      )
+      .bind(crypto.randomUUID(), variantId, nowIso),
+    db
+      .prepare(
+        `INSERT INTO price_list_items(
+          id,price_list_id,variant_id,price_bani,min_quantity,created_at,updated_at
+        ) VALUES(?1,'price_list_website_ron',?2,?3,1,?4,?4)`,
+      )
+      .bind(crypto.randomUUID(), variantId, input.priceBani, nowIso),
+    db
+      .prepare(
+        `INSERT INTO audit_log(
+          id,actor_admin_user_id,actor_label,action,entity_type,entity_id,request_id,after_json,metadata_json,created_at
+        ) VALUES(?1,?2,?2,'product.draft.create','product',?3,?4,?5,'{}',?6)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        input.actorId,
+        productId,
+        input.requestId,
+        JSON.stringify({ name: input.name, slug: input.slug, sku: input.sku }),
+        nowIso,
+      ),
+  ]);
+  return { id: productId };
 }
 
 export interface UpdateProductStatusInput {

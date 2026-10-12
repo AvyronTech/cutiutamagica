@@ -60,13 +60,13 @@ describe("floating cart access", () => {
     expect(showFloatingCart("/comanda/", 1)).toBe(false);
     expect(showFloatingCart("/admin/products", 1)).toBe(false);
     expect(showFloatingCart("/produse", 1)).toBe(true);
-    expect(showFloatingCart("/produs/hp-keeper", 1)).toBe(true);
+    expect(showFloatingCart("/produs-cutiuta-muzicala-harry-potter-hedwig", 1)).toBe(true);
   });
-  it("starts opposite a left-hand chat and ignores invalid stored preferences", () => {
-    expect(DEFAULT_CHAT_SIDE).toBe("left");
+  it("starts opposite a right-hand chat and ignores invalid stored preferences", () => {
+    expect(DEFAULT_CHAT_SIDE).toBe("right");
     expect(CHAT_SIDE_KEY).not.toBe("cutiuta:chat-side");
-    expect(preferredChatSide(null, DEFAULT_CHAT_SIDE)).toBe("left");
-    expect(preferredChatSide("invalid", DEFAULT_CHAT_SIDE)).toBe("left");
+    expect(preferredChatSide(null, DEFAULT_CHAT_SIDE)).toBe("right");
+    expect(preferredChatSide("invalid", DEFAULT_CHAT_SIDE)).toBe("right");
     expect(oppositeSide(preferredChatSide("right", DEFAULT_CHAT_SIDE))).toBe("left");
   });
   it("follows the opposite edge when the visitor moves the chat", () => {

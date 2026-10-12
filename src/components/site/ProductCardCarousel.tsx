@@ -9,10 +9,12 @@ export function ProductCardCarousel({
   products,
   ariaLabel,
   renderMeta,
+  compact = false,
 }: {
   products: Product[];
   ariaLabel: string;
   renderMeta?: (product: Product) => ReactNode;
+  compact?: boolean;
 }) {
   const reduced = useReducedMotion();
   const root = useRef<HTMLDivElement>(null);
@@ -39,24 +41,27 @@ export function ProductCardCarousel({
 
   useEffect(() => {
     if (!api || reduced || products.length < 2) return;
-    const timer = window.setInterval(() => {
-      const node = root.current;
-      if (
-        !node ||
-        document.hidden ||
-        node.matches(":hover") ||
-        node.contains(document.activeElement)
-      )
-        return;
-      api.scrollNext();
-    }, 6500);
+    const timer = window.setInterval(
+      () => {
+        const node = root.current;
+        if (
+          !node ||
+          document.hidden ||
+          node.matches(":hover") ||
+          node.contains(document.activeElement)
+        )
+          return;
+        api.scrollNext();
+      },
+      compact ? 4600 : 6500,
+    );
     return () => window.clearInterval(timer);
-  }, [api, products.length, reduced]);
+  }, [api, compact, products.length, reduced]);
 
   if (!products.length) return null;
 
   return (
-    <div ref={root} className="product-card-rail">
+    <div ref={root} className="product-card-rail" data-compact={compact || undefined}>
       <div className="product-card-rail__controls">
         <span aria-live="polite">
           {selected + 1} / {snapCount}
@@ -79,7 +84,7 @@ export function ProductCardCarousel({
           {products.map((product, index) => (
             <div className="product-card-rail__slide" key={product.id}>
               {renderMeta?.(product)}
-              <ProductCard product={product} index={index} variant="solid" />
+              <ProductCard product={product} index={index} variant="solid" compact={compact} />
             </div>
           ))}
         </div>

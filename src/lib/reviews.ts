@@ -58,6 +58,7 @@ export type PublicReview = {
   countryCode: ReviewCountry | null;
   source: ReviewSource;
   sourceUrl: string | null;
+  photoUrl: string | null;
 };
 export type ReviewList = {
   reviews: PublicReview[];

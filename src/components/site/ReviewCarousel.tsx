@@ -3,14 +3,31 @@ import { Link } from "@tanstack/react-router";
 import useEmblaCarousel from "embla-carousel-react";
 import AutoScroll from "embla-carousel-auto-scroll";
 import { useReducedMotion } from "framer-motion";
-import { ArrowUpRight, BadgeCheck, MessageCircleHeart } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { ReviewList } from "@/lib/reviews";
 import { ReviewCard } from "./ReviewCard";
+
+const storyPrompts = [
+  ["Pentru primul vostru dans", "O melodie care știe deja drumul spre amintirea potrivită."],
+  [
+    "Pentru prietenul cu universul lui",
+    "Un detaliu mic, ales exact din povestea pe care o iubește.",
+  ],
+  ["Pentru dor", "Când nu găsești fraza, lași manivela să spună ce simți."],
+  ["Pentru o aniversare", "Un cadou compact, cu un moment mare ascuns înăuntru."],
+  ["Pentru copilul din noi", "Melodia aceea pe care o recunoști înainte de primul refren."],
+  ["Pentru mulțumesc", "Un gest simplu care rămâne pe birou și revine la viață."],
+  ["Pentru cineva departe", "O cutiuță care scurtează puțin distanța, de fiecare dată."],
+  ["Pentru colecționar", "Lemn, mecanism și universul preferat într-un obiect mic."],
+  ["Pentru surprize fără motiv", "Cele mai frumoase cadouri nu așteaptă mereu o dată în calendar."],
+  ["Pentru povestea voastră", "Alegi tema. Melodia face restul."],
+] as const;
 
 export function ReviewCarousel({ data }: { data: ReviewList }) {
   const section = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const averageLabel = data.average?.toFixed(1) ?? "—";
+  const carouselSize = data.reviews.length || storyPrompts.length;
   const autoScroll = useMemo(
     () =>
       AutoScroll({
@@ -24,13 +41,13 @@ export function ReviewCarousel({ data }: { data: ReviewList }) {
     [],
   );
   const [viewport, api] = useEmblaCarousel(
-    { loop: data.reviews.length > 2, align: "start", dragFree: true },
+    { loop: carouselSize > 2, align: "start", dragFree: true },
     [autoScroll],
   );
 
   useEffect(() => {
     const node = section.current;
-    if (!node || !api || data.reviews.length < 2 || reducedMotion) {
+    if (!node || !api || carouselSize < 2 || reducedMotion) {
       autoScroll.stop();
       return;
     }
@@ -53,7 +70,7 @@ export function ReviewCarousel({ data }: { data: ReviewList }) {
       document.removeEventListener("visibilitychange", sync);
       autoScroll.stop();
     };
-  }, [api, autoScroll, data.reviews.length, reducedMotion]);
+  }, [api, autoScroll, carouselSize, reducedMotion]);
 
   if (!data.reviews.length) {
     return (
@@ -73,22 +90,30 @@ export function ReviewCarousel({ data }: { data: ReviewList }) {
             </h2>
           </div>
           <p>
-            Publicăm aici numai recenzii aprobate, asociate cutiuței și sursei lor.
+            Până sosesc ecourile clienților, îți lăsăm câteva idei de dăruit. Recenziile vor apărea
+            aici numai după verificare.
             <Link to="/produse">
               Descoperă colecția <ArrowUpRight aria-hidden />
             </Link>
           </p>
         </div>
-        <div className="review-empty-proof" aria-label="Cum sunt publicate recenziile">
-          <span>
-            <MessageCircleHeart aria-hidden /> Părere trimisă
-          </span>
-          <i aria-hidden />
-          <span>
-            <BadgeCheck aria-hidden /> Sursă verificată
-          </span>
-          <i aria-hidden />
-          <span>Produs identificat</span>
+        <div
+          ref={viewport}
+          className="review-viewport review-viewport--prompts"
+          role="region"
+          aria-roledescription="carusel"
+          aria-label="Idei de dăruit, nu recenzii de client"
+        >
+          <div className="review-track">
+            {storyPrompts.map(([title, text]) => (
+              <article className="review-slide review-prompt" key={title}>
+                <span aria-hidden>✦</span>
+                <small>Inspirație de poveste</small>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
     );

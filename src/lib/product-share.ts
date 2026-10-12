@@ -13,7 +13,7 @@ type ProductShareInput = {
 };
 
 export function productCanonicalUrl(productId: string) {
-  return `https://cutiutamagica.eu/produs/${encodeURIComponent(productId)}`;
+  return `https://cutiutamagica.eu${productPath(productId)}`;
 }
 
 export function productShareMessage(name: string, tagline: string) {
@@ -90,3 +90,4 @@ export function productShareTargets({
     },
   ];
 }
+import { productPath } from "@/lib/product-url";

@@ -1,9 +1,9 @@
 {
-  "name": "Cutiuța Magică Admin",
-  "short_name": "Cutiuța Admin",
-  "description": "Administrarea magazinului Cutiuța Magică",
-  "id": "/admin",
-  "start_url": "/admin?source=pwa",
+  "name": "Cutiuța Magică",
+  "short_name": "Cutiuța Magică",
+  "description": "Cutiuțe muzicale din lemn cu manivelă, melodii și cadouri cu poveste.",
+  "id": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
@@ -15,19 +15,19 @@
   "prefer_related_applications": false,
   "shortcuts": [
     {
-      "name": "Comenzi",
-      "short_name": "Comenzi",
-      "url": "/admin/orders?source=pwa"
+      "name": "Descoperă colecția",
+      "short_name": "Colecția",
+      "url": "/produse?source=pwa"
     },
     {
-      "name": "Produse",
-      "short_name": "Produse",
-      "url": "/admin/products?source=pwa"
+      "name": "Idei de cadouri",
+      "short_name": "Cadouri",
+      "url": "/cadouri?source=pwa"
     },
     {
-      "name": "Chat clienți",
-      "short_name": "Chat",
-      "url": "/admin/chat?source=pwa"
+      "name": "Contul meu",
+      "short_name": "Cont",
+      "url": "/cont?source=pwa"
     }
   ],
   "icons": [

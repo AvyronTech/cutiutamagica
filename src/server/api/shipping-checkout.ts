@@ -131,17 +131,6 @@ export async function handleShippingCheckout(
       !(await credential(env, "smartship"))
     )
       return json({ error: { message: "Estimarea livrării nu este disponibilă momentan." } }, 409);
-    if (
-      !policy.sender_name ||
-      !policy.sender_address ||
-      !policy.sender_phone ||
-      !policy.sender_city_id ||
-      Number(policy.default_weight_g) <= 0 ||
-      Number(policy.default_length_cm) <= 0 ||
-      Number(policy.default_width_cm) <= 0 ||
-      Number(policy.default_height_cm) <= 0
-    )
-      throw new Error("SENDER_INCOMPLETE");
     const rateKey = `shipping:rate:${await digestHex("SHA-256", request.headers.get("cf-connecting-ip") ?? "local")}:${new Date().toISOString().slice(0, 16)}`;
     const count = Number((await env.CACHE.get(rateKey)) ?? 0);
     if (count >= 6)
@@ -178,39 +167,75 @@ export async function handleShippingCheckout(
         "EASYBOX_COD_UNAVAILABLE",
         409,
       );
-    const destination = selectedLocker ?? customer;
-    const cityId = await resolveSmartShipCity(env, destination.county, destination.city);
     const qty = input.data.items.reduce((sum, item) => sum + item.quantity, 0);
-    const quotes = await quoteSmartShip(env, {
-      sender: {
-        name: String(policy.sender_name),
-        address: String(policy.sender_address),
-        email: String(policy.sender_email || ""),
-        phone: String(policy.sender_phone),
-        cityId: Number(policy.sender_city_id),
-        country: "RO",
-        sector: Number(policy.sender_sector || 0),
-      },
-      recipient: {
-        name: customer.name,
-        address: selectedLocker?.address ?? customer.address,
-        email: customer.email,
-        phone: customer.phone,
-        cityId,
-        country: "RO",
-        sector: /^0[1-6]\d{4}$/.test(customer.postalCode) ? Number(customer.postalCode[1]) : 0,
-      },
-      content: {
-        packageContent: "Cutiuțe muzicale",
-        parcels: 1,
-        weightKg: (Number(policy.default_weight_g) * qty) / 1000,
-        lengthCm: Number(policy.default_length_cm),
-        widthCm: Number(policy.default_width_cm),
-        heightCm: Number(policy.default_height_cm) * qty,
-        cashOnDeliveryRon: input.data.paymentMethod === "cash_on_delivery" ? total / 100 : 0,
-        lockerId: selectedLocker?.id,
-      },
-    });
+    let quotes: Array<{
+      courierId: number;
+      courierName: string;
+      costRon: number;
+      deliveryDate: string | null;
+      ownContract: boolean;
+    }>;
+    if (Number(policy.use_live_quotes) === 1) {
+      if (
+        !policy.sender_name ||
+        !policy.sender_address ||
+        !policy.sender_phone ||
+        !policy.sender_city_id ||
+        Number(policy.default_weight_g) <= 0 ||
+        Number(policy.default_length_cm) <= 0 ||
+        Number(policy.default_width_cm) <= 0 ||
+        Number(policy.default_height_cm) <= 0
+      )
+        throw new Error("SENDER_INCOMPLETE");
+      const destination = selectedLocker ?? customer;
+      const cityId = await resolveSmartShipCity(env, destination.county, destination.city);
+      quotes = await quoteSmartShip(env, {
+        sender: {
+          name: String(policy.sender_name),
+          address: String(policy.sender_address),
+          email: String(policy.sender_email || ""),
+          phone: String(policy.sender_phone),
+          cityId: Number(policy.sender_city_id),
+          country: "RO",
+          sector: Number(policy.sender_sector || 0),
+        },
+        recipient: {
+          name: customer.name,
+          address: selectedLocker?.address ?? customer.address,
+          email: customer.email,
+          phone: customer.phone,
+          cityId,
+          country: "RO",
+          sector: /^0[1-6]\d{4}$/.test(customer.postalCode) ? Number(customer.postalCode[1]) : 0,
+        },
+        content: {
+          packageContent: "Cutiuțe muzicale",
+          parcels: 1,
+          weightKg: (Number(policy.default_weight_g) * qty) / 1000,
+          lengthCm: Number(policy.default_length_cm),
+          widthCm: Number(policy.default_width_cm),
+          heightCm: Number(policy.default_height_cm) * qty,
+          cashOnDeliveryRon: input.data.paymentMethod === "cash_on_delivery" ? total / 100 : 0,
+          lockerId: selectedLocker?.id,
+        },
+      });
+    } else if (selectedLocker && policy.locker_price_bani != null) {
+      quotes = [
+        {
+          courierId: 0,
+          courierName: "SAMEDAY Easybox",
+          costRon: Number(policy.locker_price_bani) / 100,
+          deliveryDate: "1–2 zile lucrătoare",
+          ownContract: true,
+        },
+      ];
+    } else {
+      throw new ProviderError(
+        "Tariful de livrare nu este configurat pentru opțiunea aleasă.",
+        "SHIPPING_PRICE_MISSING",
+        409,
+      );
+    }
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
     const hash = await shippingFingerprint(input.data, total);
     const free = policy.free_over_bani != null && total >= Number(policy.free_over_bani);

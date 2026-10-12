@@ -18,7 +18,9 @@ const input = "w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 
 const button =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50";
 const labels: Record<CredentialProvider, string> = {
-  google_merchant: "Google Merchant · token OAuth separat",
+  google_merchant: "Google Merchant Center · token OAuth",
+  customer_google_client_id: "Cont client Google · Client ID OAuth",
+  customer_google_client_secret: "Cont client Google · Client secret OAuth",
   netopia: "NETOPIA · cheie API",
   netopia_public_key: "NETOPIA · cheie publică verificare IPN",
   revolut_merchant: "Revolut Merchant · cheie secretă (plăți)",
@@ -28,14 +30,13 @@ const labels: Record<CredentialProvider, string> = {
   trendyol: "Trendyol · credențiale API",
   olx: "OLX · token acces",
   okazii: "Okazii · cheie API",
-  fgo: "FGO · cheie privată API",
   smartship: "SmartShip",
   stripe: "Stripe",
   stripe_webhook: "Stripe · secret webhook",
   revolut: "Revolut Business (token OAuth)",
   resend: "Resend",
   brave: "Brave Search",
-  google: "Google (token OAuth readonly)",
+  google: "Google Analytics și Search Console · token OAuth read-only",
   meta: "Meta (token de acces)",
   esteto: "Esteto Marketplace · cod API",
   avyron_crm: "CRM intern · secret HMAC",
@@ -233,7 +234,7 @@ export default function GrowthSettings({
             currencies: ["RON", "EUR"],
             revolutAccount: text("revolutAccount"),
             stripeAccount: text("stripeAccount"),
-            fgoSeries: text("fgoSeries"),
+            oblioSeries: text("oblioSeries"),
             spvClientId: text("spvClientId"),
             avyronSummaryEnabled: false,
           },
@@ -329,15 +330,15 @@ export default function GrowthSettings({
             )}
             {field("stripeAccount", "Stripe · Account ID", data.finance.stripeAccount)}
             {field(
-              "fgoSeries",
-              "Referință serie FGO (seria operațională se gestionează în Facturare)",
-              data.finance.fgoSeries,
+              "oblioSeries",
+              "Referință serie Oblio (seria operațională se gestionează în Facturare)",
+              data.finance.oblioSeries,
             )}
             {field("spvClientId", "ANAF SPV · Client ID", data.finance.spvClientId)}
             <p className="text-sm text-slate-400">
-              Monede: RON și EUR. FGO se gestionează în Facturare. SPV/e-Factura necesită autorizare
-              ANAF și certificat. Tokenurile OAuth expiră și trebuie reînnoite. Transmiterea către
-              AVYRON este dezactivată; sinteza poate fi exportată local.
+              Monede: RON și EUR. Oblio se gestionează în Facturare. SPV/e-Factura necesită
+              autorizare ANAF și certificat. Tokenurile OAuth expiră și trebuie reînnoite.
+              Transmiterea către AVYRON este dezactivată; sinteza poate fi exportată local.
             </p>
           </>
         )}

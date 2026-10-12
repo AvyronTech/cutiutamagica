@@ -8,16 +8,16 @@ export const Route = createFileRoute("/_authenticated/admin/ai")({
     <div className="space-y-6">
       <OperationsPage
         area="ai"
-        title="Agenți AI"
-        description="Agenți pentru SEO, piață, conținut și operațiuni, cu surse controlate, costuri măsurate și aprobare umană."
+        title="Social Media Agent"
+        description="Spațiul agentului care transformă catalogul și întrebările reale în pachete complete pentru feed, Story, Reel și TikTok, cu surse controlate, măsurare și aprobare umană."
         icon={Bot}
         capabilities={[
           "Surse cu nivel de încredere și revalidare",
-          "Instrumente permise explicit per agent",
-          "Buget și limită de acțiuni per rulare",
+          "Playbook comun pentru conținut și conversie",
+          "Agenți interni sincronizați pe roluri",
           "Aprobări pentru orice acțiune externă",
         ]}
-        activationNote="Agenții sunt intenționat în starea configurare necesară până la alegerea modelului, bugetului și surselor. Nu există auto-învățare necontrolată."
+        activationNote="Agentul lucrează în mod schiță și aprobare. Publicarea externă rămâne blocată până când un administrator aprobă explicit și conectorul este verificat."
       />
       <MarketingOrdersAgentControl />
     </div>
