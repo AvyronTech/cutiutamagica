@@ -1,6 +1,6 @@
 import { ReviewCarousel } from "@/components/site/ReviewCarousel";
 import { getPublicReviews } from "@/lib/reviews.functions";
-import { HeroWorld, HeroStoryBridge, HeroMechanismHalo } from "@/components/site/HeroWorld";
+import { HeroWorld, HeroStoryBridge } from "@/components/site/HeroWorld";
 import { SceneAtmosphere } from "@/components/site/SceneAtmosphere";
 import { BrandMark } from "@/components/site/BrandMark";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -98,16 +98,8 @@ function Index() {
         >
           <SceneAtmosphere />
           <div className="hero-magic-ambience" aria-hidden>
-            <span className="hero-magic-orbit" />
-            <span className="hero-magic-staff">
-              <i />
-              <i />
-              <i />
-              <i />
-            </span>
             <span className="hero-magic-glint hero-magic-glint--one">✦</span>
             <span className="hero-magic-glint hero-magic-glint--two">✧</span>
-            <span className="hero-magic-glint hero-magic-glint--three">·</span>
           </div>
           <div className="magic-hero-inner">
             <div className="hero-copy">
@@ -138,7 +130,6 @@ function Index() {
               </p>
             </div>
             <div className="hero-object">
-              <HeroMechanismHalo />
               <span className="hero-object-kicker">O mică lume, gata să fie descoperită</span>
               {heroProducts.length ? (
                 <HeroProductRotator products={heroProducts} />
@@ -247,7 +238,7 @@ function Index() {
               ],
               [
                 "Cum pot plăti?",
-                "În checkout alegi metoda disponibilă: ramburs la curier, cu verificarea coletului acolo unde serviciul este disponibil, sau online cu cardul prin pagina securizată a procesatorului. Totalul este afișat înainte de confirmare.",
+                "În checkout vezi metodele active pentru comanda ta și totalul înainte de confirmare. Plata cu cardul va fi afișată ca disponibilă după activarea procesatorului.",
               ],
             ].map(([q, a]) => (
               <details key={q}>

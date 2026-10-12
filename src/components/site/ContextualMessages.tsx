@@ -174,7 +174,7 @@ export function ContextualMessages() {
           </aside>
         ),
         {
-          duration: 4200,
+          duration: 2800,
           position: "top-center",
           onAutoClose: () => finish(),
           onDismiss: (t) => {

@@ -3,7 +3,11 @@ import { useReducedMotion } from "framer-motion";
 import bgEmotie from "@/assets/bg-emotie.webp";
 import { worldBlend } from "@/lib/landing-motion";
 const scenes = [
-  { key: "story", source: "/scenes/library.webp", mobile: "/scenes/library-mobile.webp" },
+  {
+    key: "story",
+    source: "/scenes/music-box-world.webp",
+    mobile: "/scenes/music-box-world-mobile.webp",
+  },
   { key: "emotion", source: bgEmotie },
   { key: "dedicated", source: "/scenes/dedicated.webp" },
   { key: "personalize" },

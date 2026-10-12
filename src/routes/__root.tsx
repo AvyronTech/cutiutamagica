@@ -14,8 +14,6 @@ import { Toaster } from "sonner";
 import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
-import displayFontNormal from "@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-normal.woff2?url";
-import displayFontItalic from "@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-italic.woff2?url";
 import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -147,20 +145,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: DEFAULT_SOCIAL_IMAGE },
     ],
     links: [
-      {
-        rel: "preload",
-        href: displayFontNormal,
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
-      {
-        rel: "preload",
-        href: displayFontItalic,
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -271,7 +255,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ro">
+    <html lang="ro" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -341,10 +325,11 @@ function RootComponent() {
                 offset={76}
                 mobileOffset={68}
                 gap={7}
-                visibleToasts={2}
+                visibleToasts={1}
+                duration={2800}
                 style={
                   {
-                    "--normal-bg": "oklch(0.21 0.035 40 / 0.94)",
+                    "--normal-bg": "oklch(0.21 0.035 40 / 0.58)",
                     "--normal-border": "oklch(0.74 0.14 78 / 0.38)",
                     "--normal-text": "oklch(0.96 0.02 80)",
                     "--border-radius": "13px",

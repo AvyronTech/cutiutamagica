@@ -57,7 +57,7 @@ describe("contextual message sequence", () => {
     for (const input of [null, "bad", '{"shown":{}}', '{"shown":[],"muted":"false"}'])
       expect(readMessageSession(input)).toEqual({ shown: [], muted: false });
     expect(readMessageSession('{"shown":[12,"a","b","c","d"],"muted":true}')).toEqual({
-      shown: ["a", "b", "c"],
+      shown: ["a", "b"],
       muted: true,
     });
   });

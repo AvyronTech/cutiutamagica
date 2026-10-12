@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AutoScroll from "embla-carousel-auto-scroll";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   Bookmark,
   CreditCard,
@@ -1150,6 +1151,18 @@ function OrderPage() {
                       }
                     />
                   ))}
+                  {config && !config.payments.options.some((option) => option.id === "stripe") && (
+                    <Choice
+                      name="payment-method"
+                      disabled
+                      preview
+                      selected={false}
+                      onChange={() => undefined}
+                      icon={<CreditCard className="h-5 w-5" />}
+                      title="Card online"
+                      note="În pregătire · disponibil după activarea Stripe"
+                    />
+                  )}
                   {paymentMethod === "card" && (
                     <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
                       Continui pe pagina securizată a procesatorului; datele cardului nu sunt
@@ -1208,13 +1221,26 @@ function OrderPage() {
               <button
                 disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
                 type="submit"
-                className="wood-grain hidden w-full rounded-xl py-3.5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50 lg:block"
+                className="checkout-submit-action hidden w-full disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
               >
-                {submitting
-                  ? "Se procesează..."
-                  : paymentMethod === "card"
-                    ? "Continuă către plata securizată"
-                    : "Comandă cu obligație de plată"}
+                <span className="checkout-submit-action__icon">
+                  <ShieldCheck size={20} aria-hidden />
+                </span>
+                <span className="checkout-submit-action__copy">
+                  <strong>
+                    {submitting
+                      ? "Se procesează…"
+                      : paymentMethod === "card"
+                        ? "Continuă către plata securizată"
+                        : "Comandă cu obligație de plată"}
+                  </strong>
+                  <small>
+                    {paymentMethod === "card"
+                      ? "Plată pe pagina procesatorului"
+                      : "Achită la livrare · fără plată acum"}
+                  </small>
+                </span>
+                <ArrowRight size={20} aria-hidden />
               </button>
             </form>
           </div>
@@ -1300,7 +1326,7 @@ function OrderPage() {
                     ? "Continuă către plata securizată"
                     : "Comandă cu obligație de plată; achiți la livrare"
                 }
-                className="wood-grain checkout-mobile-submit ml-auto min-h-11 flex-1 rounded-full px-4 text-sm font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50"
+                className="checkout-submit-action checkout-mobile-submit ml-auto min-h-11 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? (
                   "Se procesează..."
@@ -1311,8 +1337,8 @@ function OrderPage() {
                   </>
                 ) : (
                   <>
-                    <strong>Plasează comanda</strong>
-                    <small>cu obligație de plată · achiți la livrare</small>
+                    <strong>Comandă cu obligație de plată</strong>
+                    <small>Achită la livrare</small>
                   </>
                 )}
               </button>
@@ -1494,6 +1520,7 @@ function ChoiceSection({
 
 function Choice({
   disabled,
+  preview,
   selected,
   onChange,
   icon,
@@ -1502,6 +1529,7 @@ function Choice({
   name,
 }: {
   disabled?: boolean;
+  preview?: boolean;
   name: string;
   selected: boolean;
   onChange: () => void;
@@ -1511,7 +1539,7 @@ function Choice({
 }) {
   return (
     <label
-      className={`flex min-h-14 items-center gap-2.5 rounded-xl border p-3 ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
+      className={`flex min-h-14 items-center gap-2.5 rounded-xl border p-3 ${preview ? "checkout-card-preview" : ""} ${disabled && !preview ? "cursor-not-allowed opacity-55" : disabled ? "cursor-not-allowed" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
     >
       <input
         type="radio"

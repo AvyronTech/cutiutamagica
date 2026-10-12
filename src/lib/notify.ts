@@ -66,7 +66,7 @@ export function notifyAddedToCart(productName: string, qty: number, onViewCart?:
         ),
         createElement("span", { className: "magic-cart-timer", "aria-hidden": true }),
       ),
-    { duration: 3500 },
+    { duration: 2600 },
   );
 }
 

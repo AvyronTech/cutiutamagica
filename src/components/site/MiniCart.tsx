@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { ArrowRight, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { MAX_QTY } from "@/data/products";
 import { ProductImage } from "@/components/site/ProductImage";
@@ -198,18 +198,14 @@ export function MiniCart({
                 <p className="mt-1 text-xs text-muted-foreground">
                   Preț final pentru produse. Livrarea este afișată înainte să trimiți comanda.
                 </p>
-                <Link
-                  to="/comanda"
-                  onClick={onClose}
-                  className="wood-grain mt-3 flex min-h-12 items-center justify-center rounded-full text-[color:var(--cream)] shadow-warm transition hover:opacity-95"
-                >
-                  Finalizează comanda
+                <Link to="/comanda" onClick={onClose} className="cart-checkout-action mt-3">
+                  <span className="cart-checkout-action__icon">
+                    <ShoppingBag size={17} aria-hidden />
+                  </span>
+                  <span>Finalizează comanda</span>
+                  <ArrowRight size={17} aria-hidden />
                 </Link>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="mt-2 w-full py-2 text-center text-sm text-muted-foreground hover:text-[color:var(--wood-dark)]"
-                >
+                <button type="button" onClick={onClose} className="cart-continue-action mt-2">
                   Continuă cumpărăturile
                 </button>
               </div>
