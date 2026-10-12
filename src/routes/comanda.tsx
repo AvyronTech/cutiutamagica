@@ -3,12 +3,13 @@ import { CheckoutDelivery, type DeliveryOffer } from "@/components/site/Checkout
 import { EasyboxPicker } from "@/components/site/EasyboxPicker";
 import { PaymentRecovery } from "@/components/site/PaymentRecovery";
 import { pendingPaymentKey, openSecureCheckout, type PendingPayment } from "@/lib/checkout-client";
-import { notifyAddedToCart, notifyCheckoutDelivery, notifyCheckoutSecurity } from "@/lib/notify";
+import { notifyAddedToCart } from "@/lib/notify";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AutoScroll from "embla-carousel-auto-scroll";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   Bookmark,
   CreditCard,
@@ -108,6 +109,7 @@ function OrderPage() {
     clearCart,
     totals,
   } = useShop();
+  const hasItems = totalQty > 0;
   const idempotencyKey = useRef<string | null>(null);
   const submissionBody = useRef<string | null>(null);
   const checkoutFinished = useRef(false);
@@ -194,19 +196,6 @@ function OrderPage() {
     [cartProductIds, products],
   );
   const [configFailed, setConfigFailed] = useState(false);
-  const checkoutHintsShown = useRef(false);
-
-  useEffect(() => {
-    if (totalQty < 1 || checkoutHintsShown.current) return;
-    checkoutHintsShown.current = true;
-    const deliveryHint = window.setTimeout(notifyCheckoutDelivery, 700);
-    const securityHint = window.setTimeout(notifyCheckoutSecurity, 2400);
-    return () => {
-      window.clearTimeout(deliveryHint);
-      window.clearTimeout(securityHint);
-    };
-  }, [totalQty]);
-
   useEffect(() => {
     if (confirmation || pendingPayment) checkoutFinished.current = true;
   }, [confirmation, pendingPayment]);
@@ -264,10 +253,11 @@ function OrderPage() {
   }, []);
 
   useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
+    if (hasItems) loadConfig();
+  }, [hasItems, loadConfig]);
 
   useEffect(() => {
+    if (!hasItems) return;
     fetch("/api/v1/reviewer", { credentials: "same-origin" })
       .then(async (response) => {
         if (!response.ok) return null;
@@ -284,9 +274,10 @@ function OrderPage() {
         }));
       })
       .catch(() => undefined);
-  }, []);
+  }, [hasItems]);
 
   useEffect(() => {
+    if (!hasItems) return;
     const sections = [1, 2, 3]
       .map((step) => document.getElementById(`checkout-step-${step}`))
       .filter((section): section is HTMLElement => Boolean(section));
@@ -311,7 +302,7 @@ function OrderPage() {
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [recovering]);
+  }, [hasItems, recovering]);
 
   useEffect(() => {
     if (shippingOption === "easybox" && !config?.shipping.easyboxEnabled) {
@@ -375,7 +366,11 @@ function OrderPage() {
     return (
       <div className="checkout-page">
         <CheckoutAtmosphere />
-        <CheckoutMobileHeader totalQty={totalQty} />
+        <CheckoutMobileHeader
+          totalQty={totalQty}
+          title="Coșul tău"
+          subtitle="Pregătim produsele alese"
+        />
         <div
           role="status"
           className="relative z-[1] mx-auto max-w-xl px-4 py-24 text-center text-muted-foreground"
@@ -388,7 +383,11 @@ function OrderPage() {
     return (
       <div className="checkout-page">
         <CheckoutAtmosphere />
-        <CheckoutMobileHeader totalQty={totalQty} />
+        <CheckoutMobileHeader
+          totalQty={totalQty}
+          title="Plată securizată"
+          subtitle="Verificăm starea comenzii"
+        />
         <div className="relative z-[1]">
           <PaymentRecovery
             pending={pendingPayment}
@@ -424,7 +423,11 @@ function OrderPage() {
     return (
       <div className="checkout-page checkout-confirmation-page">
         <CheckoutAtmosphere />
-        <CheckoutMobileHeader totalQty={0} />
+        <CheckoutMobileHeader
+          totalQty={0}
+          title="Comandă înregistrată"
+          subtitle="Detaliile sunt mai jos"
+        />
         <div className="relative z-[1] mx-auto max-w-xl px-4 py-20 text-center">
           <div className="wood-grain mx-auto flex h-16 w-16 items-center justify-center rounded-full text-[color:var(--gold)]">
             <Check className="h-8 w-8" />
@@ -559,22 +562,27 @@ function OrderPage() {
     <div className="checkout-page">
       <CheckoutAtmosphere />
       <CheckoutMobileHeader totalQty={totalQty} />
-      <div className="checkout-shell relative z-[1] mx-auto max-w-5xl px-4 pb-28 pt-16 sm:pt-20 lg:pb-16">
+      <div
+        className={`checkout-shell relative z-[1] mx-auto max-w-5xl px-4 pb-28 pt-16 sm:pt-20 lg:pb-16${hasItems ? "" : " checkout-shell--empty"}`}
+      >
         <div className="checkout-layout grid gap-6 lg:grid-cols-[minmax(0,640px)_320px] lg:items-start lg:justify-center">
           <div className="min-w-0">
             <p className="checkout-kicker">Coșul tău · un ultim gest</p>
             <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem]">
-              Finalizează comanda
+              {totalQty > 0 ? "Finalizează comanda" : "Coșul tău"}
             </h1>
             <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              {totalQty} {totalQty === 1 ? "cutiuță aleasă" : "cutiuțe alese"}. Verifică detaliile,
-              apoi noi pregătim povestea pentru drum. Finalizezi ca invitat, fără să creezi cont.
+              {totalQty > 0
+                ? `${totalQty} ${totalQty === 1 ? "cutiuță aleasă" : "cutiuțe alese"}. Verifică detaliile, apoi noi pregătim povestea pentru drum. Finalizezi ca invitat, fără să creezi cont.`
+                : "Alege o cutiuță muzicală pentru a începe comanda."}
             </p>
-            <div className="checkout-assurances" aria-label="Avantajele comenzii">
-              <span>✓ finalizare fără cont</span>
-              <span>✦ verificare înainte de expediere</span>
-              <span>♩ mecanism manual, fără baterii</span>
-            </div>
+            {totalQty > 0 && (
+              <div className="checkout-assurances" aria-label="Avantajele comenzii">
+                <span>✓ finalizare fără cont</span>
+                <span>✦ verificare înainte de expediere</span>
+                <span>♩ mecanism manual, fără baterii</span>
+              </div>
+            )}
             {itemsDetailed.length > 0 && (
               <div className="checkout-delivery-early" role="status">
                 <PackageCheck className="h-4 w-4 shrink-0" aria-hidden />
@@ -793,7 +801,7 @@ function OrderPage() {
               </section>
             )}
 
-            {promotion && (
+            {totalQty > 0 && promotion && (
               <div className="checkout-volume-offer mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/10 p-3.5 text-left backdrop-blur-sm">
                 <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--gold)]" />
                 <p className="text-sm leading-relaxed">
@@ -813,74 +821,76 @@ function OrderPage() {
               </div>
             )}
 
-            <section className="checkout-promotion mt-4 rounded-xl border border-[color:var(--gold)]/25 bg-card/85 p-3.5 backdrop-blur-sm">
-              <button
-                type="button"
-                className="checkout-promotion-toggle"
-                aria-expanded={promotionExpanded || Boolean(activePromotion)}
-                onClick={() => setPromotionExpanded((current) => !current)}
-              >
-                <span>
-                  <TicketPercent className="h-4 w-4" aria-hidden />
-                  {activePromotion ? `${activePromotion.code} aplicat` : "Ai un cod promoțional?"}
-                </span>
-                <span aria-hidden>{promotionExpanded || activePromotion ? "−" : "+"}</span>
-              </button>
-              {(promotionExpanded || activePromotion) &&
-                (activePromotion ? (
-                  <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-800 dark:text-emerald-200">
-                    <span>
-                      <strong>{activePromotion.code}</strong> · −{money(activePromotion.discount)}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label="Elimină codul promoțional"
-                      onClick={() => {
-                        setAppliedPromotion(null);
-                        setPromotionCode("");
-                        setPromotionError("");
-                        setQuote(null);
-                      }}
-                      className="grid h-9 w-9 place-items-center rounded-full hover:bg-emerald-500/10"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={applyPromotion} className="mt-3 flex gap-2">
-                    <input
-                      value={promotionCode}
-                      onChange={(event) => {
-                        setPromotionCode(event.target.value.toUpperCase());
-                        setPromotionError("");
-                      }}
-                      minLength={4}
-                      maxLength={40}
-                      autoComplete="off"
-                      placeholder="Ex. MAGIC-AB12CD34"
-                      aria-label="Cod promoțional"
-                      className="min-w-0 flex-1 rounded-lg border border-border bg-background/75 px-3 py-2.5 text-sm uppercase tracking-[0.08em] outline-none focus:border-[color:var(--gold)]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={promotionBusy || !promotionCode.trim() || totalQty === 0}
-                      className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
-                    >
-                      {promotionBusy ? "Verificăm…" : "Aplică"}
-                    </button>
-                  </form>
-                ))}
-              {(promotionExpanded || activePromotion) && promotionError && (
-                <p role="alert" className="mt-2 text-xs text-amber-700 dark:text-amber-200">
-                  {promotionError}
-                </p>
-              )}
-              {(promotionExpanded || activePromotion) && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Codurile de recomandare apar numai după ce o comandă a fost livrată.
-                </p>
-              )}
-            </section>
+            {totalQty > 0 && (
+              <section className="checkout-promotion mt-4 rounded-xl border border-[color:var(--gold)]/25 bg-card/85 p-3.5 backdrop-blur-sm">
+                <button
+                  type="button"
+                  className="checkout-promotion-toggle"
+                  aria-expanded={promotionExpanded || Boolean(activePromotion)}
+                  onClick={() => setPromotionExpanded((current) => !current)}
+                >
+                  <span>
+                    <TicketPercent className="h-4 w-4" aria-hidden />
+                    {activePromotion ? `${activePromotion.code} aplicat` : "Ai un cod promoțional?"}
+                  </span>
+                  <span aria-hidden>{promotionExpanded || activePromotion ? "−" : "+"}</span>
+                </button>
+                {(promotionExpanded || activePromotion) &&
+                  (activePromotion ? (
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-800 dark:text-emerald-200">
+                      <span>
+                        <strong>{activePromotion.code}</strong> · −{money(activePromotion.discount)}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Elimină codul promoțional"
+                        onClick={() => {
+                          setAppliedPromotion(null);
+                          setPromotionCode("");
+                          setPromotionError("");
+                          setQuote(null);
+                        }}
+                        className="grid h-9 w-9 place-items-center rounded-full hover:bg-emerald-500/10"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={applyPromotion} className="mt-3 flex gap-2">
+                      <input
+                        value={promotionCode}
+                        onChange={(event) => {
+                          setPromotionCode(event.target.value.toUpperCase());
+                          setPromotionError("");
+                        }}
+                        minLength={4}
+                        maxLength={40}
+                        autoComplete="off"
+                        placeholder="Ex. MAGIC-AB12CD34"
+                        aria-label="Cod promoțional"
+                        className="min-w-0 flex-1 rounded-lg border border-border bg-background/75 px-3 py-2.5 text-sm uppercase tracking-[0.08em] outline-none focus:border-[color:var(--gold)]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={promotionBusy || !promotionCode.trim() || totalQty === 0}
+                        className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                      >
+                        {promotionBusy ? "Verificăm…" : "Aplică"}
+                      </button>
+                    </form>
+                  ))}
+                {(promotionExpanded || activePromotion) && promotionError && (
+                  <p role="alert" className="mt-2 text-xs text-amber-700 dark:text-amber-200">
+                    {promotionError}
+                  </p>
+                )}
+                {(promotionExpanded || activePromotion) && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Codurile de recomandare apar numai după ce o comandă a fost livrată.
+                  </p>
+                )}
+              </section>
+            )}
 
             {!submissionLocked && recommendations.length > 0 && (
               <CartRecommendations
@@ -892,391 +902,411 @@ function OrderPage() {
               />
             )}
 
-            <nav className="checkout-mobile-steps" aria-label="Pașii finalizării comenzii">
-              <span aria-current={activeCheckoutStep === 1 ? "step" : undefined}>
-                <b>1</b>Date
-              </span>
-              <i aria-hidden />
-              <span aria-current={activeCheckoutStep === 2 ? "step" : undefined}>
-                <b>2</b>Livrare
-              </span>
-              <i aria-hidden />
-              <span aria-current={activeCheckoutStep === 3 ? "step" : undefined}>
-                <b>3</b>Plată
-              </span>
-            </nav>
+            {totalQty > 0 && (
+              <>
+                <nav className="checkout-mobile-steps" aria-label="Pașii finalizării comenzii">
+                  <span aria-current={activeCheckoutStep === 1 ? "step" : undefined}>
+                    <b>1</b>Date
+                  </span>
+                  <i aria-hidden />
+                  <span aria-current={activeCheckoutStep === 2 ? "step" : undefined}>
+                    <b>2</b>Livrare
+                  </span>
+                  <i aria-hidden />
+                  <span aria-current={activeCheckoutStep === 3 ? "step" : undefined}>
+                    <b>3</b>Plată
+                  </span>
+                </nav>
 
-            <form id="checkout-form" onSubmit={submit} className="checkout-form mt-7 space-y-5">
-              {submissionLocked && (
-                <p role="status" className="rounded-xl border border-amber-500/30 p-4 text-sm">
-                  Păstrăm datele comenzii cât timp verificăm trimiterea. Reîncearcă pentru a primi
-                  confirmarea aceleiași comenzi.
-                </p>
-              )}
-              <fieldset
-                disabled={submitting || submissionLocked}
-                className="min-w-0 space-y-5 disabled:opacity-80"
-              >
-                <section
-                  id="checkout-step-1"
-                  className="checkout-contact rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
-                >
-                  <h2 className="checkout-step-heading font-display text-xl sm:text-2xl">
-                    <span aria-hidden>1</span>
-                    <span>
-                      Date
-                      <small>Doar informațiile necesare livrării</small>
-                    </span>
-                  </h2>
-                  <div className="mt-3 grid gap-x-3 gap-y-2.5 sm:grid-cols-2">
-                    <label className="block text-xs font-medium text-muted-foreground">
-                      Nume complet
-                      <input
-                        required
-                        minLength={2}
-                        maxLength={120}
-                        autoComplete="name"
-                        aria-label="Nume complet"
-                        value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        placeholder="Nume complet"
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="block text-xs font-medium text-muted-foreground">
-                      E-mail
-                      <input
-                        required
-                        type="email"
-                        autoComplete="email"
-                        aria-label="E-mail"
-                        value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
-                        placeholder="E-mail"
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="block text-xs font-medium text-muted-foreground">
-                      Telefon (pentru curier)
-                      <input
-                        required
-                        type="tel"
-                        minLength={8}
-                        maxLength={30}
-                        autoComplete="tel"
-                        inputMode="tel"
-                        aria-label="Telefon"
-                        value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        placeholder="Telefon"
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="block text-xs font-medium text-muted-foreground">
-                      Județ
-                      <input
-                        required
-                        autoComplete="address-level1"
-                        aria-label="Județ"
-                        value={form.county}
-                        onChange={(e) => setForm({ ...form, county: e.target.value })}
-                        placeholder="Județ"
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="block text-xs font-medium text-muted-foreground">
-                      Localitate
-                      <input
-                        required
-                        autoComplete="address-level2"
-                        aria-label="Localitate"
-                        value={form.city}
-                        onChange={(e) => setForm({ ...form, city: e.target.value })}
-                        placeholder="Localitate"
-                        className={inputClass}
-                      />
-                    </label>
-                    <label className="block text-xs font-medium text-muted-foreground sm:col-span-2">
-                      Adresă
-                      <input
-                        required
-                        minLength={5}
-                        maxLength={300}
-                        autoComplete="street-address"
-                        aria-label="Adresă"
-                        value={form.address}
-                        onChange={(e) => setForm({ ...form, address: e.target.value })}
-                        placeholder="Adresă (stradă, nr, bl, ap)"
-                        className={inputClass}
-                      />
-                    </label>
-                    <details
-                      className="checkout-optional-fields sm:col-span-2"
-                      open={
-                        paymentMethod === "card" && paymentProvider === "revolut_pay"
-                          ? true
-                          : undefined
-                      }
-                    >
-                      <summary>Detalii opționale: cod poștal sau mesaj cadou</summary>
-                      <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
-                        <label className="block text-xs font-medium text-muted-foreground">
-                          {paymentMethod === "card" && paymentProvider === "revolut_pay"
-                            ? "Cod poștal"
-                            : "Cod poștal (opțional)"}
-                          <input
-                            required={paymentMethod === "card" && paymentProvider === "revolut_pay"}
-                            pattern="[0-9]{6}"
-                            maxLength={6}
-                            inputMode="numeric"
-                            autoComplete="postal-code"
-                            aria-label="Cod poștal"
-                            value={form.postalCode}
-                            onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
-                            placeholder="Cod poștal"
-                            className={inputClass}
-                          />
-                        </label>
-                        <label className="block text-xs font-medium text-muted-foreground">
-                          Mesaj cadou (opțional)
-                          <textarea
-                            aria-label="Mesaj cadou sau observații"
-                            value={form.notes}
-                            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                            placeholder="Mesaj cadou sau observații"
-                            rows={2}
-                            className={inputClass}
-                          />
-                        </label>
-                      </div>
-                    </details>
-                  </div>
-                </section>
-
-                <ChoiceSection
-                  step={2}
-                  title="Livrare"
-                  subtitle="Alegi cum ajunge povestea la tine"
-                >
-                  <Choice
-                    name="shipping-method"
-                    selected={shippingOption === "home_delivery" && !activeQuote}
-                    onChange={() => {
-                      setShippingOption("home_delivery");
-                      setQuote(null);
-                    }}
-                    icon={<PackageCheck className="h-5 w-5" />}
-                    title="Curier la adresă"
-                    note={
-                      shippingCost == null
-                        ? "Îți confirmăm costul înainte de expediere"
-                        : activeQuote
-                          ? "Tarif standard"
-                          : shippingCost === 0
-                            ? "Livrare gratuită"
-                            : money(shippingCost)
-                    }
-                  />
-                  <Choice
-                    name="shipping-method"
-                    disabled={!config?.shipping.easyboxEnabled}
-                    selected={shippingOption === "easybox"}
-                    onChange={() => {
-                      setShippingOption("easybox");
-                      setQuote(null);
-                    }}
-                    icon={<MapPin className="h-5 w-5" />}
-                    title="SAMEDAY Easybox"
-                    note={
-                      !config?.shipping.easyboxEnabled
-                        ? "Momentan indisponibil"
-                        : activeQuote && shippingOption === "easybox"
-                          ? activeQuote.price === 0
-                            ? "Livrare gratuită"
-                            : money(activeQuote.price)
-                          : easyboxLocker
-                            ? "Confirmă tariful punctului ales"
-                            : "Alege punctul pe hartă"
-                    }
-                  />
-                  {shippingOption === "easybox" && config?.shipping.easyboxEnabled && (
-                    <EasyboxPicker
-                      selected={easyboxLocker}
-                      searchHint={[form.city, form.county].filter(Boolean).join(", ")}
-                      onSelect={(locker) => {
-                        setEasyboxLocker(locker);
-                        setQuote(null);
-                      }}
-                    />
-                  )}
-                  {(config?.shipping.liveQuotesEnabled ||
-                    (shippingOption === "easybox" && Boolean(easyboxLocker))) && (
-                    <CheckoutDelivery
-                      key={deliveryContext}
-                      request={deliveryRequest}
-                      selected={activeQuote?.id}
-                      onSelect={(offer) => setQuote({ offer, context: deliveryContext })}
-                    />
-                  )}
-                </ChoiceSection>
-
-                <ChoiceSection step={3} title="Plată" subtitle="Metoda și momentul plății, clar">
-                  <Choice
-                    name="payment-method"
-                    selected={paymentMethod === "cash_on_delivery"}
-                    onChange={() => setPaymentMethod("cash_on_delivery")}
-                    icon={<PackageCheck className="h-5 w-5" />}
-                    title="Ramburs"
-                    note="Achită coletul la predare"
-                  />
-                  {config?.payments.options.map((option) => (
-                    <Choice
-                      key={option.id}
-                      name="payment-method"
-                      disabled={shippingCost == null && !config?.shipping.liveQuotesEnabled}
-                      selected={paymentMethod === "card" && paymentProvider === option.id}
-                      onChange={() => {
-                        setPaymentMethod("card");
-                        setPaymentProvider(option.id);
-                      }}
-                      icon={<CreditCard className="h-5 w-5" />}
-                      title={option.label}
-                      note={
-                        shippingCost == null
-                          ? config?.shipping.liveQuotesEnabled
-                            ? "Alege curierul pentru a confirma totalul"
-                            : "Disponibil după confirmarea costului de livrare"
-                          : option.description
-                      }
-                    />
-                  ))}
-                  {paymentMethod === "card" && (
-                    <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
-                      Continui pe pagina securizată a procesatorului; datele cardului nu sunt
-                      introduse sau stocate pe acest site.
+                <form id="checkout-form" onSubmit={submit} className="checkout-form mt-7 space-y-5">
+                  {submissionLocked && (
+                    <p role="status" className="rounded-xl border border-amber-500/30 p-4 text-sm">
+                      Păstrăm datele comenzii cât timp verificăm trimiterea. Reîncearcă pentru a
+                      primi confirmarea aceleiași comenzi.
                     </p>
                   )}
-                </ChoiceSection>
-
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card/90 p-3.5 text-xs leading-relaxed sm:text-sm">
-                  <input
-                    required
-                    type="checkbox"
-                    checked={consent}
-                    onChange={(e) => setConsent(e.target.checked)}
-                    className="mt-0.5 h-5 w-5 shrink-0 accent-[color:var(--wood-dark)]"
-                  />
-                  <span>
-                    {config?.policies.checkoutConsentText ??
-                      "Confirm datele comenzii și accept condițiile comerciale."}{" "}
-                    <Link to="/retur" className="underline">
-                      Politica de retur și garanție
-                    </Link>{" "}
-                    și{" "}
-                    <Link to="/termeni-de-utilizare" className="underline">
-                      Termenii de utilizare
-                    </Link>{" "}
-                    fac parte din informarea precontractuală. Datele sunt prelucrate conform{" "}
-                    <Link to="/politica-de-confidentialitate" className="underline">
-                      Politicii de confidențialitate
-                    </Link>
-                    .
-                  </span>
-                </label>
-                <input
-                  name="website"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  tabIndex={-1}
-                  autoComplete="off"
-                  aria-hidden
-                  className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
-                />
-              </fieldset>
-              {configFailed && (
-                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-                  <p>Nu am putut încărca opțiunile de plată și livrare.</p>
-                  <button
-                    type="button"
-                    onClick={loadConfig}
-                    className="mt-2 inline-flex min-h-10 items-center rounded-full border border-amber-600/40 px-4 text-sm font-medium"
+                  <fieldset
+                    disabled={submitting || submissionLocked}
+                    className="min-w-0 space-y-5 disabled:opacity-80"
                   >
-                    Încearcă din nou
+                    <section
+                      id="checkout-step-1"
+                      className="checkout-contact rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
+                    >
+                      <h2 className="checkout-step-heading font-display text-xl sm:text-2xl">
+                        <span aria-hidden>1</span>
+                        <span>
+                          Date
+                          <small>Doar informațiile necesare livrării</small>
+                        </span>
+                      </h2>
+                      <div className="mt-3 grid gap-x-3 gap-y-2.5 sm:grid-cols-2">
+                        <label className="block text-xs font-medium text-muted-foreground">
+                          Nume complet
+                          <input
+                            required
+                            minLength={2}
+                            maxLength={120}
+                            autoComplete="name"
+                            aria-label="Nume complet"
+                            value={form.name}
+                            onChange={(e) => setForm({ ...form, name: e.target.value })}
+                            placeholder="Nume complet"
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="block text-xs font-medium text-muted-foreground">
+                          E-mail
+                          <input
+                            required
+                            type="email"
+                            autoComplete="email"
+                            aria-label="E-mail"
+                            value={form.email}
+                            onChange={(e) => setForm({ ...form, email: e.target.value })}
+                            placeholder="E-mail"
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="block text-xs font-medium text-muted-foreground">
+                          Telefon (pentru curier)
+                          <input
+                            required
+                            type="tel"
+                            minLength={8}
+                            maxLength={30}
+                            autoComplete="tel"
+                            inputMode="tel"
+                            aria-label="Telefon"
+                            value={form.phone}
+                            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                            placeholder="Telefon"
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="block text-xs font-medium text-muted-foreground">
+                          Județ
+                          <input
+                            required
+                            autoComplete="address-level1"
+                            aria-label="Județ"
+                            value={form.county}
+                            onChange={(e) => setForm({ ...form, county: e.target.value })}
+                            placeholder="Județ"
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="block text-xs font-medium text-muted-foreground">
+                          Localitate
+                          <input
+                            required
+                            autoComplete="address-level2"
+                            aria-label="Localitate"
+                            value={form.city}
+                            onChange={(e) => setForm({ ...form, city: e.target.value })}
+                            placeholder="Localitate"
+                            className={inputClass}
+                          />
+                        </label>
+                        <label className="block text-xs font-medium text-muted-foreground sm:col-span-2">
+                          Adresă
+                          <input
+                            required
+                            minLength={5}
+                            maxLength={300}
+                            autoComplete="street-address"
+                            aria-label="Adresă"
+                            value={form.address}
+                            onChange={(e) => setForm({ ...form, address: e.target.value })}
+                            placeholder="Adresă (stradă, nr, bl, ap)"
+                            className={inputClass}
+                          />
+                        </label>
+                        <details
+                          className="checkout-optional-fields sm:col-span-2"
+                          open={
+                            paymentMethod === "card" && paymentProvider === "revolut_pay"
+                              ? true
+                              : undefined
+                          }
+                        >
+                          <summary>Detalii opționale: cod poștal sau mesaj cadou</summary>
+                          <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+                            <label className="block text-xs font-medium text-muted-foreground">
+                              {paymentMethod === "card" && paymentProvider === "revolut_pay"
+                                ? "Cod poștal"
+                                : "Cod poștal (opțional)"}
+                              <input
+                                required={
+                                  paymentMethod === "card" && paymentProvider === "revolut_pay"
+                                }
+                                pattern="[0-9]{6}"
+                                maxLength={6}
+                                inputMode="numeric"
+                                autoComplete="postal-code"
+                                aria-label="Cod poștal"
+                                value={form.postalCode}
+                                onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+                                placeholder="Cod poștal"
+                                className={inputClass}
+                              />
+                            </label>
+                            <label className="block text-xs font-medium text-muted-foreground">
+                              Mesaj cadou (opțional)
+                              <textarea
+                                aria-label="Mesaj cadou sau observații"
+                                value={form.notes}
+                                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                                placeholder="Mesaj cadou sau observații"
+                                rows={2}
+                                className={inputClass}
+                              />
+                            </label>
+                          </div>
+                        </details>
+                      </div>
+                    </section>
+
+                    <ChoiceSection
+                      step={2}
+                      title="Livrare"
+                      subtitle="Alegi cum ajunge povestea la tine"
+                    >
+                      <Choice
+                        name="shipping-method"
+                        selected={shippingOption === "home_delivery" && !activeQuote}
+                        onChange={() => {
+                          setShippingOption("home_delivery");
+                          setQuote(null);
+                        }}
+                        icon={<PackageCheck className="h-5 w-5" />}
+                        title="Curier la adresă"
+                        note={
+                          shippingCost == null
+                            ? "Îți confirmăm costul înainte de expediere"
+                            : activeQuote
+                              ? "Tarif standard"
+                              : shippingCost === 0
+                                ? "Livrare gratuită"
+                                : money(shippingCost)
+                        }
+                      />
+                      <Choice
+                        name="shipping-method"
+                        disabled={!config?.shipping.easyboxEnabled}
+                        selected={shippingOption === "easybox"}
+                        onChange={() => {
+                          setShippingOption("easybox");
+                          setQuote(null);
+                        }}
+                        icon={<MapPin className="h-5 w-5" />}
+                        title="SAMEDAY Easybox"
+                        note={
+                          !config?.shipping.easyboxEnabled
+                            ? "Momentan indisponibil"
+                            : activeQuote && shippingOption === "easybox"
+                              ? activeQuote.price === 0
+                                ? "Livrare gratuită"
+                                : money(activeQuote.price)
+                              : easyboxLocker
+                                ? "Confirmă tariful punctului ales"
+                                : "Alege punctul pe hartă"
+                        }
+                      />
+                      {shippingOption === "easybox" && config?.shipping.easyboxEnabled && (
+                        <EasyboxPicker
+                          selected={easyboxLocker}
+                          searchHint={[form.city, form.county].filter(Boolean).join(", ")}
+                          onSelect={(locker) => {
+                            setEasyboxLocker(locker);
+                            setQuote(null);
+                          }}
+                        />
+                      )}
+                      {(config?.shipping.liveQuotesEnabled ||
+                        (shippingOption === "easybox" && Boolean(easyboxLocker))) && (
+                        <CheckoutDelivery
+                          key={deliveryContext}
+                          request={deliveryRequest}
+                          selected={activeQuote?.id}
+                          onSelect={(offer) => setQuote({ offer, context: deliveryContext })}
+                        />
+                      )}
+                    </ChoiceSection>
+
+                    <ChoiceSection
+                      step={3}
+                      title="Plată"
+                      subtitle="Metoda și momentul plății, clar"
+                    >
+                      <Choice
+                        name="payment-method"
+                        selected={paymentMethod === "cash_on_delivery"}
+                        onChange={() => setPaymentMethod("cash_on_delivery")}
+                        icon={<PackageCheck className="h-5 w-5" />}
+                        title="Ramburs"
+                        note="Achită coletul la predare"
+                      />
+                      {config?.payments.options.map((option) => (
+                        <Choice
+                          key={option.id}
+                          name="payment-method"
+                          disabled={shippingCost == null && !config?.shipping.liveQuotesEnabled}
+                          selected={paymentMethod === "card" && paymentProvider === option.id}
+                          onChange={() => {
+                            setPaymentMethod("card");
+                            setPaymentProvider(option.id);
+                          }}
+                          icon={<CreditCard className="h-5 w-5" />}
+                          title={option.label}
+                          note={
+                            shippingCost == null
+                              ? config?.shipping.liveQuotesEnabled
+                                ? "Alege curierul pentru a confirma totalul"
+                                : "Disponibil după confirmarea costului de livrare"
+                              : option.description
+                          }
+                        />
+                      ))}
+                      {paymentMethod === "card" && (
+                        <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
+                          Continui pe pagina securizată a procesatorului; datele cardului nu sunt
+                          introduse sau stocate pe acest site.
+                        </p>
+                      )}
+                    </ChoiceSection>
+
+                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card/90 p-3.5 text-xs leading-relaxed sm:text-sm">
+                      <input
+                        required
+                        type="checkbox"
+                        checked={consent}
+                        onChange={(e) => setConsent(e.target.checked)}
+                        className="mt-0.5 h-5 w-5 shrink-0 accent-[color:var(--wood-dark)]"
+                      />
+                      <span>
+                        {config?.policies.checkoutConsentText ??
+                          "Confirm datele comenzii și accept condițiile comerciale."}{" "}
+                        <Link to="/retur" className="underline">
+                          Politica de retur și garanție
+                        </Link>{" "}
+                        și{" "}
+                        <Link to="/termeni-de-utilizare" className="underline">
+                          Termenii de utilizare
+                        </Link>{" "}
+                        fac parte din informarea precontractuală. Datele sunt prelucrate conform{" "}
+                        <Link to="/politica-de-confidentialitate" className="underline">
+                          Politicii de confidențialitate
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                    <input
+                      name="website"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden
+                      className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
+                    />
+                  </fieldset>
+                  {configFailed && (
+                    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+                      <p>Nu am putut încărca opțiunile de plată și livrare.</p>
+                      <button
+                        type="button"
+                        onClick={loadConfig}
+                        className="mt-2 inline-flex min-h-10 items-center rounded-full border border-amber-600/40 px-4 text-sm font-medium"
+                      >
+                        Încearcă din nou
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
+                    type="submit"
+                    className="checkout-submit-action hidden w-full disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
+                  >
+                    <span className="checkout-submit-action__icon">
+                      <ShieldCheck size={20} aria-hidden />
+                    </span>
+                    <span className="checkout-submit-action__copy">
+                      <strong>
+                        {submitting
+                          ? "Se trimite comanda…"
+                          : paymentMethod === "card"
+                            ? "Comandă și plătește online"
+                            : "Comandă și achită la livrare"}
+                      </strong>
+                    </span>
+                    <ArrowRight size={20} aria-hidden />
                   </button>
-                </div>
-              )}
-              <button
-                disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
-                type="submit"
-                className="wood-grain hidden w-full rounded-xl py-3.5 font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50 lg:block"
-              >
-                {submitting
-                  ? "Se procesează..."
-                  : paymentMethod === "card"
-                    ? "Continuă către plata securizată"
-                    : "Comandă cu obligație de plată"}
-              </button>
-            </form>
+                </form>
+              </>
+            )}
           </div>
 
-          <aside className="checkout-summary h-fit rounded-2xl border border-border bg-card/90 p-5 shadow-soft backdrop-blur-md lg:sticky lg:top-24">
-            <h3 className="font-display text-xl sm:text-2xl">
-              <span className="mr-2 text-[color:var(--gold)]">✦</span>Sumar
-            </h3>
-            <div className="mt-4 space-y-2 text-sm">
-              {totals.productDiscount > 0 && (
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Preț anterior</span>
-                  <del>{money(totals.referenceSubtotal)}</del>
+          {totalQty > 0 && (
+            <aside className="checkout-summary h-fit rounded-2xl border border-border bg-card/90 p-5 shadow-soft backdrop-blur-md lg:sticky lg:top-24">
+              <h3 className="font-display text-xl sm:text-2xl">
+                <span className="mr-2 text-[color:var(--gold)]">✦</span>Sumar
+              </h3>
+              <div className="mt-4 space-y-2 text-sm">
+                {totals.productDiscount > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Preț anterior</span>
+                    <del>{money(totals.referenceSubtotal)}</del>
+                  </div>
+                )}
+                {totals.productDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                    <span>Reduceri produse</span>
+                    <span>−{money(totals.productDiscount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-medium">
+                  <span>Produse ({totalQty} buc)</span>
+                  <span>{money(totals.baseSubtotal)}</span>
                 </div>
-              )}
-              {totals.productDiscount > 0 && (
-                <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
-                  <span>Reduceri produse</span>
-                  <span>−{money(totals.productDiscount)}</span>
+                {totals.discount > 0 && (
+                  <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                    <span>Reducere aplicată</span>
+                    <span>−{money(totals.discount)}</span>
+                  </div>
+                )}
+                {activePromotion && (
+                  <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                    <span>{activePromotion.label}</span>
+                    <span>−{money(activePromotion.discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>{activeQuote ? `Livrare · ${activeQuote.courier}` : "Livrare"}</span>
+                  <span>
+                    {shippingCost == null
+                      ? "La confirmare"
+                      : shippingCost === 0
+                        ? "Gratuită"
+                        : money(shippingCost)}
+                  </span>
                 </div>
-              )}
-              <div className="flex justify-between font-medium">
-                <span>Produse ({totalQty} buc)</span>
-                <span>{money(totals.baseSubtotal)}</span>
+                <div className="font-display flex justify-between border-t border-border pt-3 text-xl">
+                  <span>{shippingCost == null ? "Produse, fără livrare" : "Total de plată"}</span>
+                  <span>{money(productsAfterCode + (shippingCost ?? 0))}</span>
+                </div>
+                <p className="text-right text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  Preț final
+                </p>
               </div>
-              {totals.discount > 0 && (
-                <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
-                  <span>Reducere aplicată</span>
-                  <span>−{money(totals.discount)}</span>
-                </div>
+              {shippingCost == null && config && (
+                <p className="mt-5 rounded-md bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+                  Costul livrării nu este inclus încă. Îți comunicăm totalul final și îți cerem
+                  acordul înainte de expediere.
+                </p>
               )}
-              {activePromotion && (
-                <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
-                  <span>{activePromotion.label}</span>
-                  <span>−{money(activePromotion.discount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span>{activeQuote ? `Livrare · ${activeQuote.courier}` : "Livrare"}</span>
-                <span>
-                  {shippingCost == null
-                    ? "La confirmare"
-                    : shippingCost === 0
-                      ? "Gratuită"
-                      : money(shippingCost)}
-                </span>
-              </div>
-              <div className="font-display flex justify-between border-t border-border pt-3 text-xl">
-                <span>{shippingCost == null ? "Produse, fără livrare" : "Total de plată"}</span>
-                <span>{money(productsAfterCode + (shippingCost ?? 0))}</span>
-              </div>
-              <p className="text-right text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                Preț final
-              </p>
-            </div>
-            {shippingCost == null && config && (
-              <p className="mt-5 rounded-md bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-                Costul livrării nu este inclus încă. Îți comunicăm totalul final și îți cerem
-                acordul înainte de expediere.
-              </p>
-            )}
-          </aside>
+            </aside>
+          )}
         </div>
 
         {/* Bara de acțiune pe telefon: totalul rămâne vizibil, comanda se trimite de aici. */}
@@ -1297,23 +1327,17 @@ function OrderPage() {
                 disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
                 aria-label={
                   paymentMethod === "card"
-                    ? "Continuă către plata securizată"
-                    : "Comandă cu obligație de plată; achiți la livrare"
+                    ? "Comandă și plătește online"
+                    : "Comandă și achită la livrare"
                 }
-                className="wood-grain checkout-mobile-submit ml-auto min-h-11 flex-1 rounded-full px-4 text-sm font-medium text-[color:var(--cream)] shadow-warm disabled:cursor-not-allowed disabled:opacity-50"
+                className="checkout-submit-action checkout-mobile-submit ml-auto min-h-11 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? (
-                  "Se procesează..."
+                  "Se trimite comanda…"
                 ) : paymentMethod === "card" ? (
-                  <>
-                    <strong>Continuă la plată</strong>
-                    <small>pe pagina securizată</small>
-                  </>
+                  <strong>Comandă și plătește online</strong>
                 ) : (
-                  <>
-                    <strong>Plasează comanda</strong>
-                    <small>cu obligație de plată · achiți la livrare</small>
-                  </>
+                  <strong>Comandă și achită la livrare</strong>
                 )}
               </button>
             </div>
@@ -1346,7 +1370,15 @@ function CheckoutAtmosphere() {
   );
 }
 
-function CheckoutMobileHeader({ totalQty }: { totalQty: number }) {
+function CheckoutMobileHeader({
+  totalQty,
+  title,
+  subtitle,
+}: {
+  totalQty: number;
+  title?: string;
+  subtitle?: string;
+}) {
   return (
     <div className="checkout-mobile-header">
       <Link to="/produse" aria-label="Înapoi la cutiuțe">
@@ -1355,9 +1387,10 @@ function CheckoutMobileHeader({ totalQty }: { totalQty: number }) {
       <BrandMark aria-hidden className="h-9 w-9" />
       <div>
         <strong>
-          <ShieldCheck size={12} aria-hidden /> Checkout securizat
+          <ShieldCheck size={12} aria-hidden />{" "}
+          {title ?? (totalQty > 0 ? "Checkout securizat" : "Coșul tău")}
         </strong>
-        <span>Fără cont · doar 3 pași</span>
+        <span>{subtitle ?? (totalQty > 0 ? "Fără cont · doar 3 pași" : "Alege din colecție")}</span>
       </div>
       <span className="checkout-mobile-header__count" aria-label={`${totalQty} produse în coș`}>
         <ShoppingBag size={14} aria-hidden /> {totalQty}

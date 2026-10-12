@@ -137,6 +137,8 @@ export function isPublicStoryPath(pathname: string) {
   return !(
     pathname.startsWith("/admin") ||
     pathname === "/auth" ||
+    pathname === "/comanda" ||
+    pathname === "/cont" ||
     pathname.startsWith("/api/") ||
     pathname === "/sitemap.xml"
   );

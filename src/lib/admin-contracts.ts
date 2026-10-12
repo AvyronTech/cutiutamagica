@@ -52,6 +52,7 @@ export interface AdminProduct {
   imageUrl: string;
   url: string;
   sku: string;
+  eanGtin: string | null;
   mechanismType: string;
   rightsStatus: string;
   missingFieldsCount: number;

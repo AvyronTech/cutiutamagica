@@ -3,6 +3,7 @@ import { useReducedMotion } from "framer-motion";
 import { LandingBackdrop } from "./LandingBackdrop";
 import { HeroFeatures } from "./HeroFeatures";
 import { useLandingInteractions } from "./useLandingInteractions";
+import { currentVisualEffectsTier } from "@/lib/visual-performance";
 
 /** A continuous world spans the landing page, without a permanent WebGL render loop. */
 export function HeroWorld({ children }: { children: ReactNode }) {
@@ -39,7 +40,7 @@ export function HeroWorld({ children }: { children: ReactNode }) {
   }, [reduced]);
   useEffect(() => {
     const node = root.current;
-    if (!node || reduced) return;
+    if (!node || reduced || currentVisualEffectsTier() !== "full") return;
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection;
     if (connection?.saveData) return;

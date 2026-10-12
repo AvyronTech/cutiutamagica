@@ -21,6 +21,7 @@
     "cf:db:seed:local": "wrangler d1 execute DB --local --file=./cloudflare/d1/seed/0001_music_boxes.sql",
     "cf:media:local": "bash ./scripts/upload-product-media.sh --local",
     "cf:media:remote": "bash ./scripts/upload-product-media.sh --remote",
+    "ai:runner": "node ./scripts/ai-studio-runner.mjs",
     "cf:deploy:dry": "npm run build:production && node ./scripts/verify-production-build.mjs && wrangler deploy --env production --dry-run",
     "cf:deploy": "npm run build:production && node ./scripts/verify-production-build.mjs && wrangler deploy --env production"
   },

@@ -2,6 +2,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { isPublicStoryPath, pageStoryProfile } from "@/lib/page-loading";
 import { BrandMark } from "./BrandMark";
+import { currentVisualEffectsTier } from "@/lib/visual-performance";
 
 const MIN_INITIAL_VISIBLE_MS = 720;
 const MIN_ROUTE_VISIBLE_MS = 380;
@@ -16,7 +17,6 @@ type ActiveStory = {
   initial: boolean;
 };
 
-type NavigatorConnection = { saveData?: boolean; effectiveType?: string };
 type OptionalIdleWindow = {
   requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
   cancelIdleCallback?: (handle: number) => void;
@@ -29,9 +29,7 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
   // Render the first cinematic frame with the document, so it can never flash in late.
   // A tiny head script hides this SSR shell before paint when the session already saw it.
   const [active, setActive] = useState<ActiveStory | null>(() =>
-    isPublicStoryPath(initialPath)
-      ? { id: 1, path: initialPath, phase: "enter", initial: true }
-      : null,
+    initialPath === "/" ? { id: 1, path: initialPath, phase: "enter", initial: true } : null,
   );
   const [sceneReady, setSceneReady] = useState(false);
   const activeId = active?.id;
@@ -120,12 +118,10 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
       /* The animation remains safe when storage is unavailable. */
     }
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection;
-    const constrained = connection?.saveData || connection?.effectiveType?.includes("2g");
+    const tier = currentVisualEffectsTier();
     introTimer.current = window.setTimeout(
       finish,
-      reduced ? 160 : constrained ? 420 : MIN_INITIAL_VISIBLE_MS,
+      tier === "minimal" ? 160 : tier === "balanced" ? 420 : MIN_INITIAL_VISIBLE_MS,
     );
     maximumTimer.current = window.setTimeout(finish, MAX_ACTIVE_MS);
     requestAnimationFrame(() => {
@@ -175,11 +171,8 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
       !host.current
     )
       return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const compact = window.matchMedia("(max-width: 720px)").matches;
-    const connection = (navigator as Navigator & { connection?: NavigatorConnection }).connection;
-    const constrained = connection?.saveData || connection?.effectiveType?.includes("2g");
-    if (reduced || compact || constrained || document.hidden) return;
+    if (currentVisualEffectsTier() !== "full" || compact || document.hidden) return;
     let disposed = false;
     let scene: { dispose(): void } | undefined;
     const loadScene = () => {

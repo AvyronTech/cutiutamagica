@@ -207,6 +207,26 @@ function storedPayment(id: string) {
 }
 
 describe("secure checkout", () => {
+  it("keeps guest orders separate when two buyers provide the same phone number", async () => {
+    const first = await createWebsiteOrder(env.DB, input());
+    const second = await createWebsiteOrder(env.DB, {
+      ...input(),
+      idempotencyKey: crypto.randomUUID(),
+      customer: {
+        ...input().customer,
+        name: "Alt cumpărător",
+        email: "alt@example.test",
+      },
+    });
+    const firstCustomer = sqlite
+      .prepare("SELECT customer_id FROM orders WHERE id=?1")
+      .get(first.orderId) as { customer_id: string };
+    const secondCustomer = sqlite
+      .prepare("SELECT customer_id FROM orders WHERE id=?1")
+      .get(second.orderId) as { customer_id: string };
+    expect(secondCustomer.customer_id).not.toBe(firstCustomer.customer_id);
+  });
+
   it("issues referral codes only after delivery and rewards the advocate after referred delivery", async () => {
     const source = await order();
     expect(await issuePostDeliveryReferral(env.DB, source.orderId)).toEqual({

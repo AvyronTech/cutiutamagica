@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion, useScroll, motion } from "framer-motion";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Info, Music2, PackageOpen, Truck } from "lucide-react";
@@ -26,6 +26,21 @@ export function SideScrollMagic() {
   const reduced = useReducedMotion();
   const path = useRouterState({ select: (state) => state.location.pathname });
   const [active, setActive] = useState("inceput");
+  const jumpFrame = useRef<number | null>(null);
+
+  useEffect(() => {
+    const cancelJump = () => {
+      if (jumpFrame.current !== null) cancelAnimationFrame(jumpFrame.current);
+      jumpFrame.current = null;
+    };
+    window.addEventListener("wheel", cancelJump, { passive: true });
+    window.addEventListener("touchstart", cancelJump, { passive: true });
+    return () => {
+      cancelJump();
+      window.removeEventListener("wheel", cancelJump);
+      window.removeEventListener("touchstart", cancelJump);
+    };
+  }, []);
 
   useEffect(() => {
     if (path !== "/") return;
@@ -43,9 +58,26 @@ export function SideScrollMagic() {
   }, [path]);
 
   function jump(id: string) {
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "start" });
+    const target = document.getElementById(id);
+    if (!target) return;
+    if (jumpFrame.current !== null) cancelAnimationFrame(jumpFrame.current);
+    const destination = Math.max(0, target.getBoundingClientRect().top + window.scrollY);
+    const start = window.scrollY;
+    const distance = destination - start;
+    if (reduced || Math.abs(distance) < 80) {
+      window.scrollTo(0, destination);
+      return;
+    }
+    const duration = Math.min(520, 260 + Math.abs(distance) * 0.025);
+    const started = performance.now();
+    const frame = (now: number) => {
+      const progress = Math.min(1, (now - started) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      window.scrollTo(0, start + distance * eased);
+      if (progress < 1) jumpFrame.current = requestAnimationFrame(frame);
+      else jumpFrame.current = null;
+    };
+    jumpFrame.current = requestAnimationFrame(frame);
   }
 
   return (

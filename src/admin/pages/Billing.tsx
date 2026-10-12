@@ -9,7 +9,8 @@ import {
   saveInvoiceSeries,
   saveLegalEntity,
 } from "@/lib/admin.functions";
-import { CredentialPanel } from "@/admin/pages/GrowthSettings";
+import { OblioSetup } from "@/admin/pages/CheckoutConnections";
+import type { CheckoutSettings } from "@/lib/checkout-settings";
 
 const inputClass =
   "w-full rounded-lg border border-[#334155] bg-[#0b1526] px-3 py-2.5 text-sm text-slate-100 focus:border-cyan-400/60 focus:outline-none";
@@ -26,6 +27,14 @@ export default function Billing() {
     queryKey: ["admin", "commerce-operations"],
     queryFn: () => load(),
     staleTime: 15_000,
+  });
+  const checkoutQuery = useQuery({
+    queryKey: ["admin", "checkout-settings"],
+    queryFn: async () => {
+      const response = await fetch("/api/v1/admin/checkout-settings");
+      if (!response.ok) throw new Error("Configurarea Oblio nu poate fi citită.");
+      return ((await response.json()) as { data: { settings: CheckoutSettings } }).data;
+    },
   });
   const refresh = () => client.invalidateQueries({ queryKey: ["admin", "commerce-operations"] });
   const entityMutation = useMutation({
@@ -64,7 +73,9 @@ export default function Billing() {
   const ready =
     entity.status === "verified" &&
     activeSeries?.status === "active" &&
-    Boolean(oblio?.secretConfigured);
+    Boolean(oblio?.secretConfigured) &&
+    checkoutQuery.data?.settings.invoiceProvider === "oblio" &&
+    Boolean(checkoutQuery.data?.settings.oblioEmail);
 
   function submitEntity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,7 +102,7 @@ export default function Billing() {
           secretului Oblio. Emiterea rămâne blocată cât timp integrarea nu este configurată.
         </p>
       </header>
-      <CredentialPanel providers={["oblio"]} />
+      <OblioSetup />
       <div
         className={`flex gap-3 rounded-lg border p-4 text-sm ${ready ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-amber-400/30 bg-amber-400/10 text-amber-100"}`}
       >
@@ -103,7 +114,7 @@ export default function Billing() {
         <span>
           {ready
             ? "Fluxul de emitere Oblio este pregătit."
-            : `Blocaje: ${entity.status !== "verified" ? "profil juridic neverificat; " : ""}${activeSeries?.status !== "active" ? "serie inactivă; " : ""}${!oblio?.secretConfigured ? "secret Oblio lipsă." : ""}`}
+            : `Blocaje: ${entity.status !== "verified" ? "profil juridic neverificat; " : ""}${activeSeries?.status !== "active" ? "serie inactivă; " : ""}${!oblio?.secretConfigured ? "secret Oblio lipsă; " : ""}${checkoutQuery.data?.settings.invoiceProvider !== "oblio" || !checkoutQuery.data?.settings.oblioEmail ? "cont Oblio neconfigurat." : ""}`}
         </span>
       </div>
 

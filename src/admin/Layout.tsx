@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import avyronLogo from "@/assets/avyron-logo.jpg";
 import { PwaInstallButton } from "@/admin/PwaInstallButton";
 import type { AdminNotification } from "@/lib/admin-contracts";
 import {
@@ -23,8 +22,6 @@ import {
   Bell,
   Search,
   ShoppingBag,
-  Plus,
-  Zap,
   Truck,
   Wallet,
   AlertTriangle,
@@ -68,6 +65,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
       { path: "/admin/products", label: "Produse", icon: ShoppingBag },
+      { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
       { path: "/admin/personalizations", label: "Personalizări", icon: WandSparkles },
     ],
   },
@@ -101,7 +99,6 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
       { path: "/admin/promotions", label: "Promoții", icon: Target },
       { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
       { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
-      { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
     ],
   },
   {
@@ -120,13 +117,6 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
 ];
 
 const navItems = navGroups.flatMap((group) => group.items);
-
-const quickActions = [
-  { label: "Comenzi", icon: Plus, path: "/admin/orders", color: "bg-purple-600" },
-  { label: "Generează QR", icon: QrCode, path: "/admin/qr-generator", color: "bg-amber-600" },
-  { label: "Verifică AWB", icon: Truck, path: "/admin/integrations", color: "bg-emerald-600" },
-  { label: "Acces rapid", icon: Zap, path: "/admin/integrations", color: "bg-blue-600" },
-];
 
 function NotificationIcon({ type }: { type: string }) {
   switch (type) {
@@ -149,11 +139,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const removeNotification = useServerFn(dismissNotification);
   const logout = useServerFn(logoutAdminAccount);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [fabOpen, setFabOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [navSearch, setNavSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
+    Operațiuni: true,
     "Clienți și creștere": true,
     "Analiză și control": true,
   });
@@ -247,7 +237,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
-      setFabOpen(false);
     }
   }, [location.pathname, isMobile]);
 
@@ -273,7 +262,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-screen overflow-hidden relative">
+    <div className="admin-workspace relative flex h-dvh overflow-hidden bg-[#080f1e] text-slate-100">
       {/* Mobile Overlay */}
       {isMobile && sidebarOpen && (
         <div
@@ -290,18 +279,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
               }`
             : "w-64 flex-shrink-0"
-        } bg-[#0B1120] border-r border-[#1E293B] flex flex-col`}
+        } flex flex-col border-r border-white/10 bg-[radial-gradient(circle_at_0_0,rgba(163,123,255,.12),transparent_34%),#0b1424] shadow-[16px_0_44px_rgba(0,0,0,.12)]`}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-4 h-16 border-b border-[#1E293B]">
+        <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 border border-purple-500/30">
-              <img src={avyronLogo} alt="Logo" className="w-full h-full object-cover" />
+            <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-2xl border border-amber-200/30 bg-amber-100/10 p-1 shadow-[0_8px_28px_rgba(233,190,104,.12)]">
+              <img
+                src="/brand/music-box-universal.webp"
+                alt="Cutiuța Magică"
+                className="h-full w-full object-contain"
+              />
             </div>
             <div className="overflow-hidden">
               <h1 className="text-sm font-bold text-white whitespace-nowrap">Cutiuța Magică</h1>
-              <p className="text-[10px] text-purple-300 whitespace-nowrap font-medium">
-                Centru intern de operare
+              <p className="whitespace-nowrap text-[10px] font-medium tracking-[.14em] text-amber-200/80">
+                ATELIER · ADMIN
               </p>
             </div>
           </div>
@@ -317,7 +310,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3">
+        <nav aria-label="Navigare administrare" className="flex-1 overflow-y-auto px-3 py-5">
           {navGroups.map((group) => {
             const hasActiveItem = group.items.some(
               (item) =>
@@ -335,7 +328,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       [group.label]: !current[group.label],
                     }))
                   }
-                  className="mb-1 flex w-full items-center justify-between px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600 transition hover:text-slate-400"
+                  className="mb-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 transition hover:bg-white/5 hover:text-white"
                   aria-expanded={!collapsed}
                 >
                   {group.label}
@@ -352,14 +345,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         <Link
                           key={item.path}
                           to={item.path}
-                          className={`group flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all duration-200 ${
+                          className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 ${
                             isActive
-                              ? "border-purple-500/30 bg-purple-600/20 text-purple-200"
-                              : "border-transparent text-slate-400 hover:bg-[#1E293B] hover:text-white"
+                              ? "border-amber-200/25 bg-[linear-gradient(105deg,rgba(241,194,119,.17),rgba(164,125,233,.1))] text-white shadow-[inset_3px_0_0_#f4ce9f]"
+                              : "border-transparent text-slate-300 hover:border-white/10 hover:bg-white/[.07] hover:text-white"
                           }`}
                         >
                           <Icon
-                            className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-purple-400" : "group-hover:text-white"}`}
+                            className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-amber-200" : "text-slate-400 group-hover:text-white"}`}
                           />
                           <span className="whitespace-nowrap text-[13px] font-medium">
                             {item.label}
@@ -374,24 +367,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Bottom: Avyron Logo + Version */}
-        <div className="p-4 border-t border-[#1E293B]">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 rounded-lg overflow-hidden border border-[#334155]/50 opacity-70">
-              <img src={avyronLogo} alt="Avyron" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              <p className="text-xs text-slate-500">Centru operațional</p>
-            </div>
-          </div>
+        <div className="border-t border-white/10 px-5 py-4">
+          <p className="text-xs font-medium text-slate-200">Cutiuța Magică</p>
+          <p className="mt-1 text-[11px] text-slate-400">Comerț · conținut · relații clienți</p>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-14 md:h-16 border-b border-[#1E293B] bg-[#0B1120]/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 flex-shrink-0 relative z-30">
+        <header className="relative z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#0c1627]/90 px-4 backdrop-blur-xl md:h-[76px] md:px-7">
           <div className="flex items-center gap-3">
             {/* Hamburger button - mobile */}
             {isMobile && (
@@ -403,14 +388,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <Menu className="w-5 h-5" />
               </button>
             )}
-            <div className="relative hidden lg:block">
+            <div className="hidden min-w-0 md:block">
+              <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-amber-200/70">
+                Cutiuța Magică / Administrare
+              </p>
+              <p className="truncate text-sm font-medium text-white">
+                {navItems.find((item) => item.path === location.pathname)?.label ??
+                  "Spațiu de lucru"}
+              </p>
+            </div>
+            <div className="relative hidden lg:block lg:ml-5">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 type="search"
                 value={navSearch}
                 onChange={(event) => setNavSearch(event.target.value)}
                 placeholder="Caută o secțiune…"
-                className="w-64 rounded-lg border border-[#26344a] bg-[#111b2d] py-2 pl-9 pr-3 text-xs text-slate-200 outline-none transition focus:border-purple-500/50"
+                className="w-60 rounded-xl border border-white/10 bg-white/[.05] py-2.5 pl-9 pr-3 text-xs text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-amber-200/50"
               />
               {navSearch.trim() && (
                 <div className="absolute left-0 top-11 z-50 w-72 overflow-hidden rounded-xl border border-[#334155] bg-[#101a2b] p-1.5 shadow-2xl">
@@ -454,7 +448,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
               {/* Notification Panel - Fixed positioning for all pages */}
               {showNotifications && (
-                <div className="notification-panel fixed right-4 top-14 md:top-16 w-80 md:w-96 bg-[#1E293B] border border-[#334155] rounded-xl shadow-2xl z-[100] max-h-[80vh] overflow-hidden flex flex-col">
+                <div className="notification-panel fixed right-4 top-16 z-[100] flex max-h-[80vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#172237]/85 shadow-[0_24px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl md:top-[76px]">
                   <div className="flex items-center justify-between p-4 border-b border-[#334155]">
                     <div className="flex items-center gap-2">
                       <Bell className="w-4 h-4 text-purple-400" />
@@ -569,8 +563,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-purple-500/30">
-                <img src={avyronLogo} alt="Admin" className="w-full h-full object-cover" />
+              <div
+                className="grid h-8 w-8 place-items-center rounded-xl border border-amber-200/20 bg-amber-200/10 text-xs font-semibold text-amber-100"
+                aria-hidden="true"
+              >
+                CM
               </div>
               <span className="text-sm font-medium text-slate-200 hidden sm:inline">Admin</span>
               <button
@@ -585,54 +582,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#0F172A] pb-24 md:pb-6">
-          {children}
+        <main className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_92%_0%,rgba(116,93,162,.13),transparent_28%),linear-gradient(180deg,#0c1728,#0a1322)] p-4 pb-12 md:p-7">
+          <div className="mx-auto w-full max-w-[1560px]">{children}</div>
         </main>
       </div>
-
-      {/* Floating Action Button - Mobile */}
-      {isMobile && location.pathname === "/admin" && (
-        <div className="fixed bottom-6 right-6 z-50">
-          {/* FAB Menu Items */}
-          {fabOpen && (
-            <div className="absolute bottom-16 right-0 flex flex-col gap-3 items-end mb-3">
-              {quickActions.map((action, idx) => {
-                const Icon = action.icon;
-                return (
-                  <Link
-                    key={idx}
-                    to={action.path}
-                    className="flex items-center gap-3 animate-fade-in"
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                    onClick={() => setFabOpen(false)}
-                  >
-                    <span className="bg-[#1E293B] text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap border border-[#334155]">
-                      {action.label}
-                    </span>
-                    <div
-                      className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center shadow-lg`}
-                    >
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-
-          {/* FAB Button */}
-          <button
-            onClick={() => setFabOpen(!fabOpen)}
-            aria-label="Acțiuni rapide"
-            aria-expanded={fabOpen}
-            className={`w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl flex items-center justify-center transition-all duration-300 ${
-              fabOpen ? "rotate-45" : ""
-            }`}
-          >
-            <Plus className="w-6 h-6 text-white" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

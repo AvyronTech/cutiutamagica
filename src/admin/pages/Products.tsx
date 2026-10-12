@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { AdminProduct } from "@/lib/admin-contracts";
+import { ProductImage } from "@/components/site/ProductImage";
+import { localProductPhoto } from "@/lib/catalog-products";
 import {
   createAdminProductDraft,
   getAdminProducts,
@@ -61,12 +63,17 @@ function ProductCard({
   updating: boolean;
 }) {
   const nextStatus = product.status === "activ" ? "inactiv" : "activ";
+  const imageSrc = product.imageUrl || localProductPhoto(product.slug);
   return (
     <article className="glass-card flex flex-col rounded-xl p-4">
       <div className="mb-3 flex items-start gap-3">
         <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#334155]/60 bg-[#0F172A]">
-          {product.imageUrl ? (
-            <img className="h-full w-full object-cover" src={product.imageUrl} alt={product.name} />
+          {imageSrc ? (
+            <ProductImage
+              className="h-full w-full object-cover"
+              src={imageSrc}
+              alt={product.name}
+            />
           ) : (
             <Music2 className="h-7 w-7 text-purple-300" aria-hidden="true" />
           )}
@@ -82,6 +89,9 @@ function ProductCard({
             <ExternalLink className="ml-1 inline h-3 w-3 opacity-60" />
           </a>
           <p className="mt-1 font-mono text-[10px] text-slate-500">{product.sku}</p>
+          <p className="mt-1 font-mono text-[10px] text-slate-400">
+            {product.eanGtin ? `EAN ${product.eanGtin}` : "EAN de completat în fișa tehnică"}
+          </p>
           <p className="mt-1 text-lg font-bold text-white">
             {product.price.toLocaleString("ro-RO", { minimumFractionDigits: 2 })} lei
           </p>
@@ -153,7 +163,7 @@ function ProductCard({
         href={`/admin/products/${product.id}`}
         className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-cyan-300 py-2 text-xs font-semibold text-[#07111f] transition hover:bg-cyan-200"
       >
-        Deschide mini-dashboardul
+        Deschide fișa produsului
       </a>
     </article>
   );

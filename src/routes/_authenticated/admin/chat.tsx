@@ -3,4 +3,5 @@ import ChatCenter from "@/admin/pages/ChatCenter";
 
 export const Route = createFileRoute("/_authenticated/admin/chat")({
   component: ChatCenter,
+  head: () => ({ meta: [{ title: "Admin · Chat clienți | Cutiuța Magică" }] }),
 });

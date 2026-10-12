@@ -23,6 +23,8 @@ describe("page story loading profiles", () => {
   it("keeps internal and machine routes free of cinematic overlays", () => {
     expect(isPublicStoryPath("/admin/orders")).toBe(false);
     expect(isPublicStoryPath("/auth")).toBe(false);
+    expect(isPublicStoryPath("/comanda")).toBe(false);
+    expect(isPublicStoryPath("/cont")).toBe(false);
     expect(isPublicStoryPath("/api/v1/orders")).toBe(false);
     expect(isPublicStoryPath("/sitemap.xml")).toBe(false);
     expect(isPublicStoryPath("/produse")).toBe(true);

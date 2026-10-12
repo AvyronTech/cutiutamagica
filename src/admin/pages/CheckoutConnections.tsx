@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { paymentProviders, type CheckoutSettings } from "@/lib/checkout-settings";
+import { type CheckoutSettings } from "@/lib/checkout-settings";
 import { CredentialPanel } from "./GrowthSettings";
 const labels = {
   stripe: "Stripe",
   revolut_pay: "Revolut Pay · Merchant",
-  netopia: "NETOPIA Payments",
 };
+const visiblePaymentProviders = ["stripe", "revolut_pay"] as const;
 type Snapshot = {
   settings: CheckoutSettings;
   version: number;
@@ -45,21 +45,12 @@ export function CheckoutConnections() {
     if (!query.data) return;
     const f = new FormData(event.currentTarget),
       settings = { ...query.data.settings };
-    for (const p of paymentProviders)
+    for (const p of visiblePaymentProviders)
       settings[p] = {
         enabled: f.get(`${p}-enabled`) === "on",
         environment: f.get(`${p}-environment`) as "sandbox" | "production",
         acceptanceTestReference: String(f.get(`${p}-test`) ?? ""),
       };
-    for (const field of [
-      "netopiaPosSignature",
-      "netopiaActiveKey",
-      "oblioEmail",
-      "invoiceSeries",
-      "invoiceTaxId",
-    ] as const)
-      settings[field] = String(f.get(field) ?? "");
-    settings.invoiceProvider = f.get("invoiceProvider") as CheckoutSettings["invoiceProvider"];
     setBusy(true);
     try {
       const r = await fetch(url, {
@@ -78,24 +69,15 @@ export function CheckoutConnections() {
     }
   }
   return (
-    <section className="space-y-5 rounded-xl border border-slate-700 p-5 text-slate-200">
-      <h2 className="text-xl font-semibold">Plăți și facturare · configurare internă</h2>
+    <section className="space-y-5 rounded-2xl border border-white/10 bg-white/[.04] p-5 text-slate-200 md:p-6">
+      <h2 className="text-xl font-semibold text-white">Încasări cu cardul</h2>
       <p className="text-sm text-slate-400">
         Cheile sunt criptate. Cumpărătorii văd doar metodele activate și verificate. Mediul
         aplicației: {query.data?.environment ?? "…"}. Datele cardurilor se introduc exclusiv la
         procesator.
       </p>
       <CredentialPanel
-        providers={[
-          "stripe",
-          "stripe_webhook",
-          "revolut_merchant",
-          "revolut_merchant_webhook",
-          "netopia",
-          "netopia_public_key",
-          "oblio",
-          "smartship",
-        ]}
+        providers={["stripe", "stripe_webhook", "revolut_merchant", "revolut_merchant_webhook"]}
       />
       {query.isError && (
         <p role="alert">
@@ -145,14 +127,12 @@ export function CheckoutConnections() {
       )}
       {query.data && (
         <form key={query.data.version} onSubmit={save} className="space-y-5">
-          <div className="grid gap-4 lg:grid-cols-3">
-            {paymentProviders.map((p) => (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {visiblePaymentProviders.map((p) => (
               <fieldset key={p} className="rounded-lg border border-slate-700 p-4 space-y-3">
                 <legend className="px-1 font-semibold">{labels[p]}</legend>
                 <p className="text-xs text-slate-400">
-                  {query.data!.adapterReady[p]
-                    ? "Adaptor implementat · testul real în sandbox rămâne obligatoriu"
-                    : "Configurare pregătită · adaptorul hosted checkout/IPN trebuie finalizat și validat cu NETOPIA"}
+                  Adaptor pregătit · testul real în sandbox rămâne obligatoriu
                 </p>
                 <p className="text-xs">
                   Chei:{" "}
@@ -191,87 +171,104 @@ export function CheckoutConnections() {
                   Activez metoda în checkout după verificare
                 </label>
                 <p className="break-all text-xs text-slate-400">
-                  Webhook:{" "}
-                  {p === "stripe"
-                    ? "/api/v1/webhooks/stripe"
-                    : p === "revolut_pay"
-                      ? "/api/v1/webhooks/revolut"
-                      : "în așteptarea adaptorului IPN"}
+                  Webhook: {p === "stripe" ? "/api/v1/webhooks/stripe" : "/api/v1/webhooks/revolut"}
                 </p>
               </fieldset>
             ))}
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm">
-              NETOPIA · POS Signature
-              <input
-                name="netopiaPosSignature"
-                defaultValue={query.data.settings.netopiaPosSignature}
-                className={input}
-              />
-            </label>
-            <label className="text-sm">
-              NETOPIA · Active key ID
-              <input
-                name="netopiaActiveKey"
-                defaultValue={query.data.settings.netopiaActiveKey}
-                className={input}
-              />
-            </label>
-            <label className="text-sm">
-              Furnizor facturare
-              <select
-                name="invoiceProvider"
-                defaultValue={query.data.settings.invoiceProvider}
-                className={input}
-              >
-                <option value="none">Neconfigurat</option>
-                <option value="oblio">Oblio · configurare necesară</option>
-              </select>
-            </label>
-            <label className="text-sm">
-              Oblio · email cont
-              <input
-                type="email"
-                name="oblioEmail"
-                defaultValue={query.data.settings.oblioEmail}
-                className={input}
-              />
-            </label>
-            <label className="text-sm">
-              CIF emitent
-              <input
-                name="invoiceTaxId"
-                maxLength={30}
-                defaultValue={query.data.settings.invoiceTaxId}
-                className={input}
-              />
-            </label>
-            <label className="text-sm">
-              Serie facturi
-              <input
-                name="invoiceSeries"
-                maxLength={30}
-                defaultValue={query.data.settings.invoiceSeries}
-                className={input}
-              />
-            </label>
-          </div>
           <p className="text-xs text-slate-400">
-            Salvarea pregătește integrarea; nu emite facturi, nu creează conturi și nu inițiază
-            plăți. Oblio are adaptorul de emitere pregătit, dar rămâne inactiv până la configurarea
-            și verificarea explicită a contului. Adresa expeditorului, greutatea, dimensiunile și
-            pragul gratuității sunt în{" "}
-            <a className="underline" href="/admin/shipping">
-              Curierat · SmartShip
-            </a>
-            .
+            Activarea cere cheile mediului curent și o plată completă de test. Facturile se
+            configurează separat în Facturare, iar livrarea în Curierat.
           </p>
           <button
             disabled={busy}
             className="rounded-lg bg-amber-200 px-4 py-2 text-sm text-slate-950"
           >
-            {busy ? "Se salvează…" : "Salvează configurarea"}
+            {busy ? "Se salvează…" : "Salvează metodele de plată"}
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
+
+export function OblioSetup() {
+  const [busy, setBusy] = useState(false);
+  const url = "/api/v1/admin/checkout-settings";
+  const query = useQuery({
+    queryKey: ["admin", "checkout-settings"],
+    queryFn: async () => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Setările Oblio nu pot fi încărcate.");
+      return ((await response.json()) as { data: Snapshot }).data;
+    },
+  });
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!query.data) return;
+    const form = new FormData(event.currentTarget);
+    const settings: CheckoutSettings = {
+      ...query.data.settings,
+      invoiceProvider: form.get("invoiceProvider") as CheckoutSettings["invoiceProvider"],
+      oblioEmail: String(form.get("oblioEmail") ?? "").trim(),
+    };
+    setBusy(true);
+    try {
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ settings, expectedVersion: query.data.version }),
+      });
+      const payload = (await response.json()) as { error?: { message: string } };
+      if (!response.ok) throw new Error(payload.error?.message ?? "Salvarea nu a reușit.");
+      await query.refetch();
+      toast.success("Setările Oblio au fost salvate.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Salvarea nu a reușit.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/[.045] p-5">
+      <h2 className="text-base font-semibold text-white">Conexiunea Oblio</h2>
+      <p className="mt-1 text-xs leading-5 text-slate-300">
+        Cheia se păstrează criptat. CUI-ul vine din profilul juridic verificat, iar seria din
+        registrul de facturi.
+      </p>
+      <CredentialPanel providers={["oblio"]} />
+      {query.isError && (
+        <p role="alert" className="mt-3 text-sm text-rose-200">
+          Setările Oblio nu au putut fi încărcate.
+        </p>
+      )}
+      {query.data && (
+        <form key={query.data.version} onSubmit={save} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm text-slate-200">
+            Furnizor de facturare
+            <select
+              name="invoiceProvider"
+              defaultValue={query.data.settings.invoiceProvider}
+              className={input}
+            >
+              <option value="none">Neconfigurat</option>
+              <option value="oblio">Oblio</option>
+            </select>
+          </label>
+          <label className="text-sm text-slate-200">
+            E-mail cont Oblio
+            <input
+              type="email"
+              name="oblioEmail"
+              defaultValue={query.data.settings.oblioEmail}
+              className={input}
+            />
+          </label>
+          <button
+            disabled={busy}
+            className="w-fit rounded-xl bg-amber-200 px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50"
+          >
+            {busy ? "Se salvează…" : "Salvează conexiunea"}
           </button>
         </form>
       )}

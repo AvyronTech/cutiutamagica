@@ -13,7 +13,7 @@ export function LimitedEditionBadge({
   return (
     <span
       className={`limited-edition-seal limited-edition-seal--${surface}`}
-      aria-label={`Ediție limitată, serie de ${edition.totalUnits} de bucăți`}
+      aria-label={`Ediție limitată, serie de ${edition.totalUnits} bucăți`}
     >
       <Gem aria-hidden />
       <span>

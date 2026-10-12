@@ -1,3 +1,6 @@
+import { useEffect, useRef, useState } from "react";
+import { productImageFallback } from "@/lib/product-image-source";
+
 /**
  * Fotografiile de produs livrate în cea mai bună variantă pe care o acceptă browserul.
  *
@@ -37,9 +40,21 @@ export function ProductImage({
   width,
   height,
 }: Props) {
+  const [resolvedSrc, setResolvedSrc] = useState(src);
+  const imageRef = useRef<HTMLImageElement>(null);
+  useEffect(() => setResolvedSrc(src), [src]);
+  useEffect(() => {
+    const fallback = productImageFallback(src);
+    const image = imageRef.current;
+    // O eroare poate surveni înainte ca React să atașeze onError la HTML-ul inițial.
+    if (fallback && resolvedSrc === src && image?.complete && image.naturalWidth === 0) {
+      setResolvedSrc(fallback);
+    }
+  }, [src, resolvedSrc]);
   const img = (
     <img
-      src={src}
+      ref={imageRef}
+      src={resolvedSrc}
       alt={alt}
       className={className}
       style={style}
@@ -49,16 +64,20 @@ export function ProductImage({
       decoding={decoding}
       width={width}
       height={height}
+      onError={() => {
+        const fallback = productImageFallback(src);
+        if (fallback && resolvedSrc !== fallback) setResolvedSrc(fallback);
+      }}
     />
   );
 
-  if (!hasOptimizedVariants(src)) return img;
+  if (!hasOptimizedVariants(resolvedSrc)) return img;
 
-  const base = src.slice(0, -".webp".length);
+  const base = resolvedSrc.slice(0, -".webp".length);
   return (
     <picture className="contents">
       <source type="image/avif" srcSet={`${base}.avif`} sizes={sizes} />
-      <source type="image/webp" srcSet={src} sizes={sizes} />
+      <source type="image/webp" srcSet={resolvedSrc} sizes={sizes} />
       {img}
     </picture>
   );

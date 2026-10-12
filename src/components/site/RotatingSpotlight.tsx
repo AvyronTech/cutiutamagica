@@ -46,7 +46,13 @@ function SpotlightCard({ product }: { product: Product }) {
           <span>
             <Music2 aria-hidden /> {product.melody || "Melodie mecanică"}
           </span>
-          <ProductPrice product={product} size="compact" tone="light" showSavings={false} />
+          {available ? (
+            <ProductPrice product={product} size="compact" tone="light" showSavings={false} />
+          ) : (
+            <span className="spotlight-card__availability">
+              {product.availability === "out_of_stock" ? "Revine în colecție" : "În curând"}
+            </span>
+          )}
         </div>
         <div className="spotlight-card__actions">
           {available && (
@@ -81,7 +87,7 @@ export function RotatingSpotlight({
   const [viewport, api] = useEmblaCarousel({
     loop: products.length > 1,
     align: "center",
-    duration: 24,
+    duration: 18,
     skipSnaps: false,
   });
   const reduced = useReducedMotion();

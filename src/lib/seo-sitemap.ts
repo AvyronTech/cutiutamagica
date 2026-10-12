@@ -2,7 +2,7 @@ import type { CatalogProduct } from "@/server/db/catalog.repository";
 import { DISCOVERY_UPDATED, giftGuides } from "@/data/gift-guides";
 import { productPath } from "@/lib/product-url";
 const base = "https://cutiutamagica.eu";
-const PRODUCT_EXPERIENCE_UPDATED = "2026-10-09";
+const PRODUCT_EXPERIENCE_UPDATED = "2026-10-13";
 export type SitemapProduct = Pick<CatalogProduct, "slug" | "updatedAt" | "imageUrl" | "gallery">;
 const xml = (value: string) =>
   value
@@ -23,7 +23,7 @@ export function renderSitemap(products: SitemapProduct[]): string {
     .sort()
     .at(-1);
   const entries: Array<{ path: string; lastmod?: string; images?: string[] }> = [
-    { path: "/", lastmod: "2026-10-09", images: ["/produse/hp-keeper/1.webp"] },
+    { path: "/", lastmod: "2026-10-13", images: ["/produse/hp-keeper/1.webp"] },
     {
       path: "/produse",
       lastmod:

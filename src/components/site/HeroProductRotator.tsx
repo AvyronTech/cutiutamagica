@@ -9,6 +9,8 @@ import { animateIntoCart } from "@/lib/cart-flight";
 import { notifyAddedToCart } from "@/lib/notify";
 import { LimitedEditionBadge } from "./LimitedEditionBadge";
 import { productLink } from "@/lib/product-url";
+import { currentVisualEffectsTier, type VisualEffectsTier } from "@/lib/visual-performance";
+import { isAvailable } from "@/data/products";
 
 const ROTATION_INTERVAL_MS = 2500;
 const productImagePreloadSource = (src: string) =>
@@ -20,33 +22,39 @@ const productImagePreloadSource = (src: string) =>
 export function HeroProductRotator({ products }: { products: Product[] }) {
   const { addToCart } = useShop();
   const navigate = useNavigate();
-  const items = useMemo(() => products.filter((product) => product.image).slice(0, 6), [products]);
+  const items = useMemo(
+    () => products.filter((product) => isAvailable(product) && product.image).slice(0, 6),
+    [products],
+  );
   const reduced = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
+  const [effectsTier, setEffectsTier] = useState<VisualEffectsTier>("full");
+
+  useEffect(() => setEffectsTier(currentVisualEffectsTier()), []);
 
   const activeIndex = items.length ? index % items.length : 0;
   const active = items[activeIndex];
 
   useEffect(() => {
-    if (paused || interacting || reduced || items.length < 2) return;
+    if (paused || interacting || reduced || effectsTier === "minimal" || items.length < 2) return;
     const timer = window.setTimeout(
       () => setIndex((value) => (value + 1) % items.length),
-      ROTATION_INTERVAL_MS,
+      effectsTier === "balanced" ? ROTATION_INTERVAL_MS * 2 : ROTATION_INTERVAL_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [activeIndex, interacting, items.length, paused, reduced]);
+  }, [activeIndex, effectsTier, interacting, items.length, paused, reduced]);
 
   useEffect(() => {
-    if (items.length < 2) return;
+    if (items.length < 2 || effectsTier !== "full") return;
     const next = items[(activeIndex + 1) % items.length];
     const image = new Image();
     image.decoding = "async";
     image.fetchPriority = "low";
     image.src = productImagePreloadSource(next.image);
     void image.decode().catch(() => undefined);
-  }, [activeIndex, items]);
+  }, [activeIndex, effectsTier, items]);
 
   if (!active) return null;
 
@@ -86,32 +94,33 @@ export function HeroProductRotator({ products }: { products: Product[] }) {
               height={800}
             />
           </Link>
-          <LimitedEditionBadge edition={active.limitedEdition} surface="hero" />
-          <div className="hero-photo-caption">
-            <span>
-              <small>Cutiuța din cadru</small>
-              {active.shortName || active.category}
-            </span>
-            <span className="hero-photo-actions">
-              <Link {...productLink(active.id)}>
-                Vezi cutiuța <ArrowUpRight size={14} aria-hidden />
-              </Link>
-              <button
-                type="button"
-                onClick={(event) => {
-                  const added = addToCart(active.id, 1);
-                  animateIntoCart(event.currentTarget, active.image, added);
-                  notifyAddedToCart(active.name, added, () => navigate({ to: "/comanda" }));
-                }}
-              >
-                <ShoppingBag size={14} aria-hidden /> Adaugă
-              </button>
-            </span>
-          </div>
         </motion.div>
       </AnimatePresence>
 
-      {items.length > 1 && (
+      <LimitedEditionBadge edition={active.limitedEdition} surface="hero" />
+      <div className="hero-photo-caption">
+        <span>
+          <small>Cutiuța din cadru</small>
+          {active.shortName || active.category}
+        </span>
+        <span className="hero-photo-actions">
+          <Link {...productLink(active.id)}>
+            Vezi cutiuța <ArrowUpRight size={14} aria-hidden />
+          </Link>
+          <button
+            type="button"
+            onClick={(event) => {
+              const added = addToCart(active.id, 1);
+              animateIntoCart(event.currentTarget, active.image, added);
+              notifyAddedToCart(active.name, added, () => navigate({ to: "/comanda" }));
+            }}
+          >
+            <ShoppingBag size={14} aria-hidden /> Adaugă
+          </button>
+        </span>
+      </div>
+
+      {items.length > 1 && effectsTier !== "minimal" && (
         <div className="hero-rotation-controls">
           <span aria-hidden>
             {items.map((product, itemIndex) => (

@@ -37,7 +37,7 @@ export async function checkoutReadiness(env: CommerceEnv) {
   };
   const options: CheckoutOption[] = [];
   const definitions: CheckoutOption[] = [
-    { id: "stripe", label: "Card bancar", description: "Plată securizată prin Stripe" },
+    { id: "stripe", label: "Card bancar", description: "Plată securizată cu cardul" },
     {
       id: "revolut_pay",
       label: "Revolut Pay",

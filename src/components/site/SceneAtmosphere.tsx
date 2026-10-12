@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
+import { currentVisualEffectsTier } from "@/lib/visual-performance";
 /** CSS-only depth; animations run only while this scene is visible. */
 export function SceneAtmosphere() {
   const root = useRef<HTMLDivElement>(null),
@@ -7,7 +8,7 @@ export function SceneAtmosphere() {
     reduced = useReducedMotion();
   useEffect(() => {
     const node = root.current;
-    if (!node || reduced) return;
+    if (!node || reduced || currentVisualEffectsTier() !== "full") return;
     let visible = false;
     const sync = () => setActive(visible && !document.hidden);
     const observer = new IntersectionObserver(([entry]) => {

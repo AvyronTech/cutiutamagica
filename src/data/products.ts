@@ -4,11 +4,11 @@ import {
   PRODUCT_BASE_PRICE_BANI,
 } from "@/lib/pricing";
 
-const fairy = "/media/media_fairy_hero";
-const hpAlways = "/media/media_hp_always_hero";
-const lotrRing = "/media/media_lotr_rings_hero";
-const pirates = "/media/media_pirates_hero";
-const starwarsDad = "/media/media_starwars_dad_hero";
+const fairy = "/produse/archive/fairy.webp";
+const hpAlways = "/produse/archive/hp-always.webp";
+const lotrRing = "/produse/archive/lotr-rings.webp";
+const pirates = "/produse/archive/pirates.webp";
+const starwarsDad = "/produse/archive/starwars-dad.webp";
 
 export type ProductGalleryImage = {
   src: string;
@@ -104,7 +104,7 @@ export const products: Product[] = [
         position: "center",
       },
       { src: "/produse/hp-keeper/3.webp", label: "Dimensiuni și mecanism", position: "center" },
-      { src: "/media/media_hp_keeper_hero", label: "Fotografia din magazin", position: "center" },
+      { src: "/produse/hp-keeper/card.webp", label: "Fotografia din magazin", position: "center" },
     ],
     description:
       "Cutiuța muzicală inspirată din universul Harry Potter combină lemnul închis la culoare, detaliile tematice și mecanismul metalic vizibil într-un obiect compact și memorabil. Ridici capacul, descoperi grafica interioară, apoi rotești ușor manivela pentru a pune mecanismul muzical în mișcare — fără baterii și fără încărcare. Redă o parte din piesa legendară a seriei de filme, creând o atmosferă magică și fidelă, care trezește emoții unice fanilor și colecționarilor.",
@@ -197,7 +197,7 @@ export const products: Product[] = [
       { src: "/produse/kitten/4.webp", label: "Dimensiuni produs", position: "center" },
       { src: "/produse/kitten/5.webp", label: "Farmec clasic, fără baterii", position: "center" },
       { src: "/produse/kitten/6.webp", label: "Un dar plin de tandrețe", position: "center" },
-      { src: "/media/media_kitten_hero", label: "Fotografia din magazin", position: "center" },
+      { src: "/produse/kitten/card.webp", label: "Fotografia din magazin", position: "center" },
     ],
     description:
       "Cutiuța muzicală cu pisicuță, lună strălucitoare și fluturi este un obiect decorativ și de colecție cu un farmec aparte. Ridici capacul, descoperi ilustrația, apoi rotești ușor manivela pentru a pune în mișcare mecanismul muzical metalic — fără baterii și fără încărcare.",
@@ -249,7 +249,7 @@ export const products: Product[] = [
         position: "center",
       },
       { src: "/produse/halloween/7.webp", label: "Mică cutie, vrajă mare", position: "center" },
-      { src: "/media/media_halloween_hero", label: "Fotografia din magazin", position: "center" },
+      { src: "/produse/halloween/card.webp", label: "Fotografia din magazin", position: "center" },
     ],
     description:
       "Ridică capacul, rotește manivela și lasă mecanismul muzical să dea viață atmosferei. Designul tematic, detaliile de Halloween și mecanismul vizibil transformă această cutiuță într-un cadou aparte și într-un decor memorabil.",

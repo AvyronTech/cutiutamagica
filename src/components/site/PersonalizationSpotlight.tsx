@@ -45,10 +45,10 @@ export function PersonalizationSpotlight() {
         <div className="personalization-compact-visual" aria-hidden>
           <span className="personalization-compact-orbit" />
           <img
-            src="/scenes/personalization-box-v2.webp"
+            src="/brand/music-box-universal.webp"
             alt=""
-            width={1000}
-            height={833}
+            width={800}
+            height={800}
             loading="lazy"
             decoding="async"
           />
