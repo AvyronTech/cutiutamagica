@@ -179,7 +179,7 @@ function CreateProductDialog({
   onCreate: (data: {
     name: string;
     slug: string;
-    sku: string;
+    sku?: string;
     category: string;
     priceBani: number;
   }) => Promise<void>;
@@ -199,7 +199,10 @@ function CreateProductDialog({
           await onCreate({
             name,
             slug,
-            sku: String(values.get("sku")).toUpperCase(),
+            sku:
+              String(values.get("sku") || "")
+                .trim()
+                .toUpperCase() || undefined,
             category: String(values.get("category")),
             priceBani: Math.round(Number(values.get("price")) * 100),
           });
@@ -255,16 +258,18 @@ function CreateProductDialog({
             />
           </label>
           <label className="text-xs text-slate-400">
-            SKU
+            SKU (opțional)
             <input
               name="sku"
-              required
               minLength={3}
               maxLength={80}
-              placeholder="CM-NOU-01"
+              placeholder="Generat automat după categorie"
               pattern="[A-Za-z0-9_-]+"
               className={inputClass}
             />
+            <span className="mt-1 block text-[11px] text-slate-500">
+              Lasă gol pentru un cod unic; un cod introdus manual rămâne rezervat permanent.
+            </span>
           </label>
           <label className="text-xs text-slate-400">
             Categorie
@@ -362,7 +367,7 @@ export default function Products() {
     mutationFn: (data: {
       name: string;
       slug: string;
-      sku: string;
+      sku?: string;
       category: string;
       priceBani: number;
     }) => createProduct({ data }),
@@ -426,6 +431,12 @@ export default function Products() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a
+            href="/admin/products/identification"
+            className="flex items-center justify-center gap-2 rounded-lg border border-cyan-300/30 bg-cyan-300/10 px-3 py-2.5 text-xs font-semibold text-cyan-100 hover:bg-cyan-300/20"
+          >
+            Identificare & etichetare
+          </a>
           <button
             type="button"
             onClick={() => setShowCreate(true)}

@@ -23,6 +23,7 @@ export default function PersonalizationProcurement() {
   const updateStatus = useServerFn(updatePersonalizationProcurement);
   const queryClient = useQueryClient();
   const [error, setError] = useState("");
+  const [assigningId, setAssigningId] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["admin", "personalization-procurement"],
     queryFn: () => load(),
@@ -62,6 +63,31 @@ export default function PersonalizationProcurement() {
       },
     });
   };
+  async function assignCode(requestId: string) {
+    await updateInternalCode({ action: "personalization.assign", requestId }, requestId);
+  }
+  async function advanceProduction(requestId: string, status: string) {
+    await updateInternalCode({ action: "personalization.status", requestId, status }, requestId);
+  }
+  async function updateInternalCode(body: unknown, requestId: string) {
+    setAssigningId(requestId);
+    setError("");
+    try {
+      const response = await fetch("/api/v1/admin/product-identification", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const payload = (await response.json()) as { error?: { message?: string } };
+      if (!response.ok) throw new Error(payload.error?.message || "Codul nu a putut fi alocat.");
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Codul nu a putut fi alocat.");
+    } finally {
+      setAssigningId(null);
+    }
+  }
 
   return (
     <div className="space-y-6 p-4 text-slate-100 sm:p-6">
@@ -183,6 +209,11 @@ export default function PersonalizationProcurement() {
               <p className="mt-1 text-xs text-slate-500">
                 {request.email} · {request.phone} · {formatPersonalizationPrice(request.totalBani)}
               </p>
+              {request.internalCode ? (
+                <p className="mt-1 font-mono text-xs text-cyan-200">
+                  Cod intern: {request.internalCode} · {request.internalStatus}
+                </p>
+              ) : null}
               {request.listingTitle ? (
                 <p className="mt-3 text-xs text-emerald-300">
                   Sursă: {request.listingTitle}
@@ -192,6 +223,34 @@ export default function PersonalizationProcurement() {
               ) : null}
             </div>
             <div className="flex flex-wrap gap-2 lg:justify-end">
+              {!request.internalCode ? (
+                <button
+                  type="button"
+                  disabled={assigningId === request.id}
+                  onClick={() => void assignCode(request.id)}
+                  className="flex min-h-10 items-center gap-2 rounded-lg border border-cyan-300/25 px-3 text-xs font-semibold text-cyan-200 disabled:opacity-50"
+                >
+                  Alocă cod intern
+                </button>
+              ) : null}
+              {request.internalCode &&
+              (request.internalStatus === "received" ||
+                request.internalStatus === "contacted" ||
+                request.internalStatus === "approved") ? (
+                <button
+                  type="button"
+                  disabled={assigningId === request.id}
+                  onClick={() =>
+                    void advanceProduction(
+                      request.id,
+                      request.internalStatus === "approved" ? "in_production" : "approved",
+                    )
+                  }
+                  className="flex min-h-10 items-center gap-2 rounded-lg border border-emerald-300/25 px-3 text-xs font-semibold text-emerald-200 disabled:opacity-50"
+                >
+                  {request.internalStatus === "approved" ? "Începe producția" : "Aprobă producția"}
+                </button>
+              ) : null}
               {request.sourceUrl ? (
                 <a
                   href={request.sourceUrl}

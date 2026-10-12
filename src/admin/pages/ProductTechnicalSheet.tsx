@@ -1,6 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { BarChart3, Barcode, Boxes, FileText, Link2, PackageSearch, Save } from "lucide-react";
+import {
+  BarChart3,
+  Barcode,
+  Boxes,
+  FileText,
+  Link2,
+  PackageSearch,
+  Printer,
+  Save,
+} from "lucide-react";
 import { toast } from "sonner";
 import { isValidGtin } from "@/lib/gtin";
 
@@ -17,7 +26,16 @@ type Sheet = {
     source_type: string;
     source_reference: string | null;
     verification_status: string;
+    gtin_type: string | null;
+    assigned_at: string | null;
+    document_id: string | null;
   } | null;
+  documents: Array<{
+    id: string;
+    document_type: string;
+    document_number: string | null;
+    review_status: string;
+  }>;
   levels: Array<{
     name: string;
     on_hand_quantity: number;
@@ -80,6 +98,8 @@ export function ProductTechnicalSheet({
           cost: form.get("cost") === "" ? null : Number(form.get("cost")),
           identifierSource: form.get("identifierSource"),
           sourceReference: String(form.get("sourceReference") || ""),
+          documentId: String(form.get("documentId") || "") || null,
+          verifyGtin: form.get("verifyGtin") === "on",
         }),
       });
       const payload = (await response.json()) as { error?: { message?: string } };
@@ -99,7 +119,7 @@ export function ProductTechnicalSheet({
         {query.error instanceof Error ? query.error.message : "Fișa nu poate fi încărcată."}
       </p>
     );
-  const { variant, source, levels, sales, invoices } = query.data;
+  const { variant, source, levels, sales, invoices, documents } = query.data;
   const available = levels.reduce(
     (sum, level) =>
       sum +
@@ -150,7 +170,7 @@ export function ProductTechnicalSheet({
               className={`rounded-full border px-3 py-1 text-xs ${source?.verification_status === "verified" ? "border-emerald-400/30 text-emerald-200" : "border-amber-400/30 text-amber-200"}`}
             >
               {source?.verification_status === "verified"
-                ? "Sursă verificată"
+                ? `${source.gtin_type ?? "GTIN"} verificat`
                 : source
                   ? "Sursă de verificat"
                   : "Fără EAN"}
@@ -204,6 +224,27 @@ export function ProductTechnicalSheet({
               />
             </label>
             <label className="text-sm text-slate-300">
+              Document justificativ
+              <select name="documentId" defaultValue={source?.document_id ?? ""} className={field}>
+                <option value="">Fără document asociat</option>
+                {documents
+                  .filter((document) => document.review_status === "verified")
+                  .map((document) => (
+                    <option key={document.id} value={document.id}>
+                      {document.document_type}
+                      {document.document_number ? ` · ${document.document_number}` : ""}
+                    </option>
+                  ))}
+              </select>
+              <span className="mt-1 block text-xs text-slate-500">
+                Sunt afișate doar documentele verificate ale produsului.
+              </span>
+            </label>
+            <label className="flex items-center gap-3 self-end rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-300">
+              <input type="checkbox" name="verifyGtin" className="h-4 w-4 accent-cyan-300" />
+              Confirm atribuirea codului pe baza sursei completate
+            </label>
+            <label className="text-sm text-slate-300">
               Cost unitar intern (RON)
               <input
                 name="cost"
@@ -226,6 +267,14 @@ export function ProductTechnicalSheet({
               </button>
             </div>
           </form>
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <a
+              href={`/admin/products/identification?product=${encodeURIComponent(productId)}`}
+              className="inline-flex items-center gap-2 rounded-xl border border-cyan-300/30 px-4 py-2.5 text-sm font-medium text-cyan-200 hover:bg-cyan-300/10"
+            >
+              <Printer className="h-4 w-4" aria-hidden /> Generează etichetă și vezi loturile
+            </a>
+          </div>
         </section>
         <section className={card} aria-labelledby="product-links-title">
           <p className="text-xs uppercase tracking-[.18em] text-cyan-300">Legături operaționale</p>

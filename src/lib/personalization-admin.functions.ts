@@ -30,6 +30,9 @@ function verifiedTemuUrl(value: string): string {
 
 export type PersonalizationProcurementRequest = {
   id: string;
+  internalCode: string | null;
+  internalStatus:
+    "received" | "contacted" | "approved" | "in_production" | "shipped" | "cancelled" | null;
   customerName: string;
   email: string;
   phone: string;
@@ -67,7 +70,8 @@ export const getPersonalizationProcurement = createServerFn({ method: "GET" })
     assertPermission(context.admin, "orders.read");
     const [requests, sources] = await Promise.all([
       env.DB.prepare(
-        `SELECT pr.id,pr.customer_name AS customerName,pr.email,pr.phone,
+        `SELECT pr.id,pi.code AS internalCode,pr.status AS internalStatus,
+          pr.customer_name AS customerName,pr.email,pr.phone,
           pr.box_model AS boxModel,pr.box_color AS boxColor,pr.melody,pr.engraving,
           pr.gift_wrap AS giftWrap,pr.total_bani AS totalBani,pr.status AS requestStatus,
           pr.procurement_status AS procurementStatus,pr.supplier_source_id AS sourceId,
@@ -75,6 +79,7 @@ export const getPersonalizationProcurement = createServerFn({ method: "GET" })
           ps.variant_label AS variantLabel,ps.price_text AS priceText,
           pr.created_at AS createdAt,pr.ordered_at AS orderedAt
          FROM personalization_requests pr
+         LEFT JOIN personalization_identifiers pi ON pi.request_id=pr.id
          LEFT JOIN personalization_supplier_sources ps ON ps.id=pr.supplier_source_id
          ORDER BY CASE pr.procurement_status
            WHEN 'ready_to_order' THEN 0 WHEN 'awaiting_source' THEN 1

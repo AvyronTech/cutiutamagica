@@ -21,6 +21,7 @@ import {
   toStoredOrderState,
 } from "@/lib/order-status";
 import { productPath } from "@/lib/product-url";
+import { formatSku, skuPrefix } from "@/lib/product-identification";
 
 type DbValue = string | number | null;
 type DbRow = Record<string, DbValue>;
@@ -388,7 +389,7 @@ export async function listAdminProducts(
 export interface CreateAdminProductInput {
   name: string;
   slug: string;
-  sku: string;
+  sku?: string;
   category: string;
   priceBani: number;
   actorId: string;
@@ -398,56 +399,93 @@ export interface CreateAdminProductInput {
 export async function createAdminProduct(
   db: D1Database,
   input: CreateAdminProductInput,
-): Promise<{ id: string }> {
+): Promise<{ id: string; sku: string }> {
   const productId = crypto.randomUUID();
   const variantId = crypto.randomUUID();
   const nowIso = new Date().toISOString();
-  await db.batch([
-    db
-      .prepare(
-        `INSERT INTO products(
+  const prefix = skuPrefix(input.category, input.name);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const row = input.sku
+      ? null
+      : await db
+          .prepare(
+            `SELECT COALESCE(MAX(COALESCE(sequence_number,
+              CAST(substr(sku,length(?1)+5) AS INTEGER))),0)+1 AS next
+             FROM product_sku_registry WHERE prefix=?1 OR sku LIKE ?2`,
+          )
+          .bind(prefix, `CM-${prefix}-%`)
+          .first<{ next: number }>();
+    const sequence = row?.next ?? null;
+    const sku = input.sku || formatSku(prefix, sequence ?? 1);
+    try {
+      await db.batch([
+        db
+          .prepare(
+            `INSERT INTO product_sku_registry(sku,variant_id,prefix,sequence_number,assigned_by,assigned_at)
+       VALUES(?1,?2,?3,?4,?5,?6)`,
+          )
+          .bind(sku, variantId, input.sku ? null : prefix, sequence, input.actorId, nowIso),
+        db
+          .prepare(
+            `INSERT INTO products(
           id,slug,status,name,short_name,category,storefront_state,release_note,rights_status,
           tax_class,tax_rate_bps,created_at,updated_at
         ) VALUES(?1,?2,'draft',?3,?3,?4,'coming_soon','În pregătire','review_required','review_required',0,?5,?5)`,
-      )
-      .bind(productId, input.slug, input.name, input.category, nowIso),
-    db
-      .prepare(
-        `INSERT INTO product_variants(
+          )
+          .bind(productId, input.slug, input.name, input.category, nowIso),
+        db
+          .prepare(
+            `INSERT INTO product_variants(
           id,product_id,sku,name,status,inventory_policy,attributes_json,created_at,updated_at
         ) VALUES(?1,?2,?3,'Standard','active','deny','{"mechanism":"manual_crank"}',?4,?4)`,
-      )
-      .bind(variantId, productId, input.sku, nowIso),
-    db
-      .prepare(
-        `INSERT INTO inventory_levels(
+          )
+          .bind(variantId, productId, sku, nowIso),
+        db
+          .prepare(
+            `INSERT INTO inventory_levels(
           id,variant_id,location_id,on_hand_quantity,reserved_quantity,safety_stock_quantity,updated_at
         ) VALUES(?1,?2,'location_main',0,0,0,?3)`,
-      )
-      .bind(crypto.randomUUID(), variantId, nowIso),
-    db
-      .prepare(
-        `INSERT INTO price_list_items(
+          )
+          .bind(crypto.randomUUID(), variantId, nowIso),
+        db
+          .prepare(
+            `INSERT INTO price_list_items(
           id,price_list_id,variant_id,price_bani,min_quantity,created_at,updated_at
         ) VALUES(?1,'price_list_website_ron',?2,?3,1,?4,?4)`,
-      )
-      .bind(crypto.randomUUID(), variantId, input.priceBani, nowIso),
-    db
-      .prepare(
-        `INSERT INTO audit_log(
+          )
+          .bind(crypto.randomUUID(), variantId, input.priceBani, nowIso),
+        db
+          .prepare(
+            `INSERT INTO audit_log(
           id,actor_admin_user_id,actor_label,action,entity_type,entity_id,request_id,after_json,metadata_json,created_at
         ) VALUES(?1,?2,?2,'product.draft.create','product',?3,?4,?5,'{}',?6)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            input.actorId,
+            productId,
+            input.requestId,
+            JSON.stringify({ name: input.name, slug: input.slug, sku }),
+            nowIso,
+          ),
+        db
+          .prepare(
+            `INSERT INTO product_identifier_history(id,variant_id,action,new_value,actor_admin_user_id,created_at)
+         VALUES(?1,?2,'sku_assigned',?3,?4,?5)`,
+          )
+          .bind(crypto.randomUUID(), variantId, sku, input.actorId, nowIso),
+      ]);
+      return { id: productId, sku };
+    } catch (error) {
+      if (
+        input.sku ||
+        attempt === 4 ||
+        !/UNIQUE constraint failed.*(?:sku_registry|product_variants)/i.test(String(error))
       )
-      .bind(
-        crypto.randomUUID(),
-        input.actorId,
-        productId,
-        input.requestId,
-        JSON.stringify({ name: input.name, slug: input.slug, sku: input.sku }),
-        nowIso,
-      ),
-  ]);
-  return { id: productId };
+        throw error;
+    }
+  }
+  throw new Error("Nu am putut aloca un SKU unic. Încearcă din nou.");
 }
 
 export interface UpdateProductStatusInput {

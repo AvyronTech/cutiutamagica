@@ -24,6 +24,7 @@ import { handleAdminMediaApi } from "@/server/api/admin-media";
 import { handleAdminProductExperienceApi } from "@/server/api/admin-product-experience";
 import { handleAdminProductApi } from "@/server/api/admin-product";
 import { handleProductTechnicalSheet } from "@/server/api/product-technical-sheet";
+import { handleProductIdentification } from "@/server/api/product-identification";
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
 import { handleAdminMarketingAgentApi } from "@/server/api/admin-marketing-agent";
 import { handleAdminAiStudioApi } from "@/server/api/admin-ai-studio";
@@ -243,6 +244,9 @@ export async function handleApiRequest(
 
   const technicalSheetResponse = await handleProductTechnicalSheet(request, env);
   if (technicalSheetResponse) return technicalSheetResponse;
+
+  const identificationResponse = await handleProductIdentification(request, env);
+  if (identificationResponse) return identificationResponse;
 
   const adminAvyronResponse = await handleAdminAvyronSyncApi(request, env);
   if (adminAvyronResponse) return adminAvyronResponse;
