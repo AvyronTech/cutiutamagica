@@ -471,11 +471,11 @@ export async function createWebsiteOrder(
       `
     SELECT id FROM customers
     WHERE status = 'active'
-      AND (phone_e164 = ?1 OR email_normalized = ?2 OR lower(email) = ?2)
+      AND (email_normalized = ?1 OR lower(email) = ?1)
     ORDER BY updated_at DESC LIMIT 1
   `,
     )
-    .bind(phoneE164, normalizedRequest.customer.email)
+    .bind(normalizedRequest.customer.email)
     .first<DbRow>();
   const resolvedCustomerId = existingCustomer ? stringValue(existingCustomer.id) : customerId;
 

@@ -143,6 +143,13 @@ async function ensureCommerceCustomer(env: Env, account: Reviewer) {
        )
        WHERE id=?1`,
     ).bind(account.id, normalizedEmail),
+    env.DB.prepare(
+      `UPDATE customers
+       SET customer_type='registered', account_subject=COALESCE(account_subject, ?1),
+           updated_at=?3
+       WHERE email_normalized=?2 AND status='active'
+         AND (account_subject IS NULL OR account_subject=?1)`,
+    ).bind(account.id, normalizedEmail, now),
   ]);
 }
 
