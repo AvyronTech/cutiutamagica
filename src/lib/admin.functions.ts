@@ -109,9 +109,11 @@ const createProductInput = z.object({
   sku: z
     .string()
     .trim()
+    .toUpperCase()
     .min(3)
     .max(80)
-    .regex(/^[A-Za-z0-9_-]+$/, "SKU-ul poate conține litere, cifre, cratimă și underscore."),
+    .regex(/^[A-Z0-9_-]+$/, "SKU-ul poate conține litere, cifre, cratimă și underscore.")
+    .optional(),
   category: z.string().trim().min(2).max(100),
   priceBani: z.number().int().min(1).max(10_000_000),
 });

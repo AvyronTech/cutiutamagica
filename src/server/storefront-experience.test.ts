@@ -182,6 +182,10 @@ describe("storefront and dashboard share one catalog", () => {
     ).toEqual(placements);
   });
   it("saves an EAN with provenance, preserves verification on unchanged saves and rejects stale edits", async () => {
+    for (const file of readdirSync(migrations)
+      .filter((name) => name.endsWith(".sql") && name.slice(0, 4) > "0029")
+      .sort())
+      sqlite.exec(readFileSync(resolve(migrations, file), "utf8"));
     const env = bindings();
     const id = productId();
     const path = `/api/v1/admin/products/${id}/technical-sheet`;

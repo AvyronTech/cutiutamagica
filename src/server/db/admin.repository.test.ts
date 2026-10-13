@@ -99,6 +99,32 @@ describe("admin creation flows", () => {
     });
   });
 
+  it("allocates SKU codes atomically and never reuses an archived code", async () => {
+    const first = await createAdminProduct(database(), {
+      name: "Pisicuță muzicală",
+      slug: "pisicuta-noua",
+      category: "Cadouri speciale",
+      priceBani: 13900,
+      actorId: "admin-test",
+      requestId: "auto-sku-1",
+    });
+    expect(first.sku).toMatch(/^CM-PM-\d{3,}$/);
+    sqlite.prepare("UPDATE product_variants SET status='archived' WHERE sku=?").run(first.sku);
+    const second = await createAdminProduct(database(), {
+      name: "Pisicuță muzicală",
+      slug: "pisicuta-noua-2",
+      category: "Cadouri speciale",
+      priceBani: 13900,
+      actorId: "admin-test",
+      requestId: "auto-sku-2",
+    });
+    expect(second.sku).not.toBe(first.sku);
+    expect(Number(second.sku.split("-").at(-1))).toBe(Number(first.sku.split("-").at(-1)) + 1);
+    expect(() =>
+      sqlite.prepare("DELETE FROM product_sku_registry WHERE sku=?").run(first.sku),
+    ).toThrow();
+  });
+
   it("creates an audited manual marketplace order from the real catalog price", async () => {
     const order = await createAdminOrder(database(), {
       channelCode: "vinted",

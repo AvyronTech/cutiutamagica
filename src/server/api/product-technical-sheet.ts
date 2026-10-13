@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
-import { isValidGtin } from "@/lib/gtin";
+import { gtinType } from "@/lib/product-identification";
 
 const updateSchema = z.object({
   variantId: z.string().min(1).max(128),
@@ -10,13 +10,15 @@ const updateSchema = z.object({
     .trim()
     .max(14)
     .refine(
-      (value) => !value || isValidGtin(value),
+      (value) => !value || Boolean(gtinType(value)),
       "Codul GTIN/EAN are lungimea sau cifra de control greșită.",
     ),
   mpn: z.string().trim().max(120),
   cost: z.number().finite().min(0).max(1_000_000).nullable(),
   identifierSource: z.enum(["gs1", "manufacturer", "supplier"]),
   sourceReference: z.string().trim().max(240),
+  documentId: z.string().uuid().nullable().optional(),
+  verifyGtin: z.boolean().optional(),
 });
 
 type VariantRow = {
@@ -32,6 +34,9 @@ type SourceRow = {
   source_reference: string | null;
   verification_status: string;
   verified_at: string | null;
+  gtin_type: string | null;
+  assigned_at: string | null;
+  document_id: string | null;
 };
 
 function json(data: unknown, status = 200): Response {
@@ -56,7 +61,7 @@ export async function handleProductTechnicalSheet(
       request.method === "PATCH" ? "catalog.write" : "catalog.read",
     );
     if (request.method === "GET") {
-      const [variant, source, levels, sales, invoices] = await Promise.all([
+      const [variant, source, levels, sales, invoices, documents] = await Promise.all([
         env.DB.prepare(
           `SELECT pv.id,pv.sku,pv.ean_gtin,pv.mpn,pv.cost_bani,pv.version
           FROM product_variants pv JOIN products p ON p.id=pv.product_id
@@ -66,7 +71,8 @@ export async function handleProductTechnicalSheet(
           .bind(productId)
           .first<VariantRow>(),
         env.DB.prepare(
-          `SELECT pis.source_type,pis.source_reference,pis.verification_status,pis.verified_at
+          `SELECT pis.source_type,pis.source_reference,pis.verification_status,pis.verified_at,
+                  pis.gtin_type,pis.assigned_at,pis.document_id
           FROM product_identifier_sources pis
           WHERE pis.variant_id=(SELECT id FROM product_variants
             WHERE product_id=?1 AND status!='archived' ORDER BY sort_order LIMIT 1)
@@ -104,13 +110,28 @@ export async function handleProductTechnicalSheet(
               .bind(productId)
               .first()
           : Promise.resolve(null),
+        env.DB.prepare(
+          `SELECT id,document_type,document_number,review_status FROM product_documents
+           WHERE product_id=?1 ORDER BY created_at DESC LIMIT 30`,
+        )
+          .bind(productId)
+          .all(),
       ]);
       if (!variant)
         return json(
           { error: { code: "PRODUCT_NOT_FOUND", message: "Produsul nu are o variantă activă." } },
           404,
         );
-      return json({ data: { variant, source, levels: levels.results, sales, invoices } });
+      return json({
+        data: {
+          variant,
+          source,
+          levels: levels.results,
+          sales,
+          invoices,
+          documents: documents.results,
+        },
+      });
     }
 
     const origin = request.headers.get("origin");
@@ -128,9 +149,36 @@ export async function handleProductTechnicalSheet(
         400,
       );
     const data = parsed.data;
+    if (data.verifyGtin && (!data.eanGtin || !data.sourceReference))
+      return json(
+        {
+          error: {
+            code: "EVIDENCE_REQUIRED",
+            message: "Pentru verificare, completează codul și referința sursei.",
+          },
+        },
+        400,
+      );
+    if (data.documentId) {
+      const evidence = await env.DB.prepare(
+        "SELECT id FROM product_documents WHERE id=?1 AND product_id=?2 AND review_status='verified'",
+      )
+        .bind(data.documentId, productId)
+        .first();
+      if (!evidence)
+        return json(
+          {
+            error: {
+              code: "INVALID_DOCUMENT",
+              message: "Alege un document verificat al acestui produs.",
+            },
+          },
+          400,
+        );
+    }
     if (data.eanGtin) {
       const duplicate = await env.DB.prepare(
-        `SELECT id FROM product_variants WHERE ean_gtin=?1 AND id!=?2 LIMIT 1`,
+        `SELECT variant_id FROM product_gtin_registry WHERE gtin=?1 AND variant_id!=?2 LIMIT 1`,
       )
         .bind(data.eanGtin, data.variantId)
         .first();
@@ -164,7 +212,7 @@ export async function handleProductTechnicalSheet(
         409,
       );
     const source = await env.DB.prepare(
-      `SELECT source_type,source_reference,verification_status,verified_at
+      `SELECT source_type,source_reference,verification_status,verified_at,gtin_type,assigned_at,document_id
       FROM product_identifier_sources WHERE variant_id=?1 AND identifier_type IN ('EAN','GTIN')
       ORDER BY created_at DESC LIMIT 1`,
     )
@@ -175,7 +223,15 @@ export async function handleProductTechnicalSheet(
       current.ean_gtin !== nextEan ||
       (nextEan !== null &&
         (source?.source_type !== data.identifierSource ||
-          (source?.source_reference ?? "") !== data.sourceReference));
+          (source?.source_reference ?? "") !== data.sourceReference ||
+          (source?.document_id ?? null) !== (data.documentId ?? null)));
+    const nextStatus = nextEan
+      ? data.verifyGtin
+        ? "verified"
+        : sourceChanged
+          ? "pending"
+          : (source?.verification_status ?? "pending")
+      : null;
     const auditId = crypto.randomUUID();
     const statements: D1PreparedStatement[] = [
       env.DB.prepare(
@@ -219,18 +275,61 @@ export async function handleProductTechnicalSheet(
         statements.push(
           env.DB.prepare(
             `INSERT INTO product_identifier_sources
-        (id,variant_id,identifier_type,identifier_value,source_type,source_reference,verification_status)
-        SELECT ?1,?2,'EAN',?3,?4,?5,'pending' WHERE EXISTS (SELECT 1 FROM audit_log WHERE id=?6)`,
+        (id,variant_id,identifier_type,identifier_value,source_type,source_reference,verification_status,
+         gtin_type,assigned_at,document_id,verified_at)
+        SELECT ?1,?2,'GTIN',?3,?4,?5,?6,?7,strftime('%Y-%m-%dT%H:%M:%fZ','now'),?8,
+               CASE WHEN ?6='verified' THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') END
+        WHERE EXISTS (SELECT 1 FROM audit_log WHERE id=?9)`,
           ).bind(
             crypto.randomUUID(),
             data.variantId,
             nextEan,
             data.identifierSource,
             data.sourceReference || null,
+            nextStatus,
+            gtinType(nextEan),
+            data.documentId ?? null,
             auditId,
           ),
         );
+    } else if (nextEan && data.verifyGtin && source?.verification_status !== "verified") {
+      statements.push(
+        env.DB.prepare(
+          `UPDATE product_identifier_sources SET verification_status='verified',verified_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+         WHERE variant_id=?1 AND identifier_type IN ('EAN','GTIN') AND identifier_value=?2 AND EXISTS(SELECT 1 FROM audit_log WHERE id=?3)`,
+        ).bind(data.variantId, nextEan, auditId),
+      );
     }
+    if (
+      current.ean_gtin !== nextEan ||
+      (nextEan && data.verifyGtin && source?.verification_status !== "verified")
+    )
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO product_identifier_history(id,variant_id,action,old_value,new_value,metadata_json,actor_admin_user_id)
+         SELECT ?1,?2,?3,?4,?5,?6,?7 WHERE EXISTS(SELECT 1 FROM audit_log WHERE id=?8)`,
+        ).bind(
+          crypto.randomUUID(),
+          data.variantId,
+          current.ean_gtin === nextEan
+            ? "gtin_verified"
+            : !nextEan
+              ? "gtin_cleared"
+              : current.ean_gtin
+                ? "gtin_changed"
+                : "gtin_assigned",
+          current.ean_gtin,
+          nextEan,
+          JSON.stringify({
+            source: data.identifierSource,
+            sourceReference: data.sourceReference,
+            documentId: data.documentId ?? null,
+            status: nextStatus,
+          }),
+          admin.id,
+          auditId,
+        ),
+      );
     const result = await env.DB.batch(statements);
     if (Number(result[0].meta.changes) !== 1)
       return json(
@@ -247,7 +346,7 @@ export async function handleProductTechnicalSheet(
       data: {
         variantId: data.variantId,
         version: data.expectedVersion + 1,
-        verificationStatus: sourceChanged ? "pending" : (source?.verification_status ?? null),
+        verificationStatus: nextStatus,
       },
     });
   } catch (error) {

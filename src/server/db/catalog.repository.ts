@@ -53,7 +53,12 @@ export async function listPublicCatalog(
 ): Promise<CatalogProduct[]> {
   const result = await db
     .prepare(
-      `SELECT p.*,(SELECT json_object('scene',scene,'accent',accent,'occasion',occasion) FROM product_scenes WHERE product_id=p.id) AS scene_json,pv.sku,pv.ean_gtin,pv.mpn,pv.inventory_policy,COALESCE(NULLIF((SELECT display_name FROM product_audio_config WHERE product_id=p.id),''),m.title) AS melody,
+      `SELECT p.*,(SELECT json_object('scene',scene,'accent',accent,'occasion',occasion) FROM product_scenes WHERE product_id=p.id) AS scene_json,pv.sku,
+       CASE WHEN EXISTS(SELECT 1 FROM product_identifier_sources pis
+         WHERE pis.variant_id=pv.id AND pis.identifier_type IN ('EAN','GTIN')
+           AND pis.identifier_value=pv.ean_gtin AND pis.verification_status='verified')
+       THEN pv.ean_gtin END AS ean_gtin,
+       pv.mpn,pv.inventory_policy,COALESCE(NULLIF((SELECT display_name FROM product_audio_config WHERE product_id=p.id),''),m.title) AS melody,
  pli.price_bani,CASE WHEN pre.reference_bani=pli.compare_at_bani THEN pli.compare_at_bani END AS compare_at_bani,
  (SELECT status FROM channel_listings cl WHERE cl.product_id=p.id AND cl.variant_id=pv.id AND cl.channel_id='channel_website' LIMIT 1) AS listing_status,
  (SELECT SUM(MAX(0,on_hand_quantity-reserved_quantity-safety_stock_quantity)) FROM inventory_levels il JOIN stock_locations sl ON sl.id=il.location_id AND sl.active=1 WHERE il.variant_id=pv.id) AS stock,
