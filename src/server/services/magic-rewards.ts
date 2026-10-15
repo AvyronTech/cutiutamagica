@@ -1,4 +1,6 @@
 import { sendEmail } from "@/server/integrations/resend";
+import { listPublicCatalog } from "@/server/db/catalog.repository";
+import { productPath } from "@/lib/product-url";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
 export class CustomerRewardError extends Error {
@@ -596,6 +598,20 @@ function dayDifference(from: string, to: string) {
   return Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000);
 }
 
+function nextAnnualDate(today: string, month: number, day: number) {
+  for (let year = Number(today.slice(0, 4)); year < Number(today.slice(0, 4)) + 5; year += 1) {
+    const occurrence = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const check = new Date(`${occurrence}T12:00:00Z`);
+    if (
+      check.getUTCMonth() === month - 1 &&
+      check.getUTCDate() === day &&
+      dayDifference(today, occurrence) >= 0
+    )
+      return occurrence;
+  }
+  return null;
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -607,17 +623,15 @@ function escapeHtml(value: string) {
 
 export async function processGiftCalendarReminders(env: CommerceEnv) {
   const today = bucharestDate();
-  const year = Number(today.slice(0, 4));
   const candidates = await env.DB.prepare(
     `SELECT e.*,a.email FROM gift_calendar_events e
      JOIN review_accounts a ON a.id=e.review_account_id
      WHERE e.active=1 AND e.email_enabled=1 AND a.status='active'`,
   ).all<Record<string, string | number>>();
+  let suggestions: Array<{ name: string; url: string }> | null = null;
   for (const event of candidates.results) {
-    const month = String(event.event_month).padStart(2, "0");
-    const day = String(event.event_day).padStart(2, "0");
-    let occurrence = `${year}-${month}-${day}`;
-    if (dayDifference(today, occurrence) < 0) occurrence = `${year + 1}-${month}-${day}`;
+    const occurrence = nextAnnualDate(today, Number(event.event_month), Number(event.event_day));
+    if (!occurrence) continue;
     const daysBefore = dayDifference(today, occurrence);
     const reminders = JSON.parse(String(event.reminder_days_json)) as number[];
     if (!reminders.includes(daysBefore)) continue;
@@ -647,6 +661,16 @@ export async function processGiftCalendarReminders(env: CommerceEnv) {
         .run();
     }
     const person = String(event.person_name);
+    if (!suggestions) {
+      const catalog = await listPublicCatalog(env.DB);
+      suggestions = catalog
+        .filter((product) => product.availability === "available")
+        .slice(0, 3)
+        .map((product) => ({
+          name: product.name,
+          url: new URL(productPath(product.id), env.PUBLIC_SITE_URL).toString(),
+        }));
+    }
     const subject =
       daysBefore === 0
         ? `Astăzi este momentul lui ${person} ✨`
@@ -655,7 +679,11 @@ export async function processGiftCalendarReminders(env: CommerceEnv) {
       subject,
       "",
       "Am păstrat momentul în Calendarul cadourilor.",
-      "Vrei să vezi trei idei potrivite?",
+      suggestions.length
+        ? "Trei modele disponibile pe care le poți descoperi:"
+        : "Descoperă ideile de cadou disponibile:",
+      "",
+      ...suggestions.map((product) => `${product.name}: ${product.url}`),
       "",
       `${env.PUBLIC_SITE_URL}/cadouri`,
       "",
@@ -666,7 +694,7 @@ export async function processGiftCalendarReminders(env: CommerceEnv) {
         to: String(event.email),
         subject,
         text,
-        html: `<div style="font-family:Inter,system-ui,sans-serif;line-height:1.6;color:#3c2d24"><h1>${escapeHtml(subject)}</h1><p>Am păstrat momentul în Calendarul cadourilor.</p><p><a href="${env.PUBLIC_SITE_URL}/cadouri">Vezi trei idei de cadou</a></p><small>Poți opri oricând reminderele din contul tău.</small></div>`,
+        html: `<div style="font-family:Inter,system-ui,sans-serif;line-height:1.6;color:#3c2d24"><h1>${escapeHtml(subject)}</h1><p>Am păstrat momentul în Calendarul cadourilor.</p>${suggestions.length ? `<p>Modele disponibile acum:</p><ul>${suggestions.map((product) => `<li><a href="${escapeHtml(product.url)}">${escapeHtml(product.name)}</a></li>`).join("")}</ul>` : ""}<p><a href="${escapeHtml(`${env.PUBLIC_SITE_URL}/cadouri`)}">Descoperă cadourile</a></p><small>Poți opri oricând reminderele din contul tău.</small></div>`,
         channel: "default",
         idempotencyKey: key,
         entityType: "gift_calendar_reminder",

@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { createWebsiteOrder, checkoutSubtotal } from "./db/order.repository";
 import { websiteOrderInputSchema } from "@/lib/order-contracts";
 import { handlePayments, safeCheckoutUrl } from "./api/payments";
+import { digest } from "./review-accounts";
 import { handleCommerceApi } from "./api/commerce";
 import { handleCheckoutAdmin } from "./api/checkout-admin";
 import { handleShippingCheckout } from "./api/shipping-checkout";
@@ -14,6 +15,11 @@ import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { shippingFingerprint } from "./services/shipping-fingerprint";
 import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
 import { verifyStripeWebhook } from "./integrations/stripe";
+import {
+  createStripeCardSetup,
+  completeStripeCardSetup,
+  removeStripeCard,
+} from "./services/customer-stripe-cards";
 import { sendOrderConfirmation, sendOrderOwnerNotification } from "./integrations/resend";
 import { evaluateCheckoutCode, issuePostDeliveryReferral } from "./services/referrals";
 import {
@@ -342,6 +348,60 @@ describe("secure checkout", () => {
     expect(body).toContain(String(Math.round(created.total * 100)));
     expect(body).not.toContain(created.publicToken);
     expect(sqlite.prepare("SELECT count(*) AS n FROM payment_attempts").get()!.n).toBe(1);
+  });
+  it("does not expose a saved Stripe card to a guest who knows the order token", async () => {
+    const created = await order();
+    const customer = sqlite
+      .prepare("SELECT customer_id AS id FROM orders WHERE id=?")
+      .get(created.orderId)!;
+    sqlite
+      .prepare(
+        "INSERT INTO billing_customers(id,customer_id,provider,environment,external_customer_id) VALUES('billing-guest',?,'stripe','sandbox','cus_existing')",
+      )
+      .run(customer.id);
+    const fetcher = stripeFetch();
+    expect((await handlePayments(request("/api/v1/payments/checkout", created), env))!.status).toBe(
+      200,
+    );
+    const params = new URLSearchParams(
+      String((fetcher.mock.calls as unknown as Array<[string, RequestInit]>)[0][1].body),
+    );
+    expect(params.get("customer")).toBeNull();
+    expect(params.get("customer_email")).toBe("test@example.test");
+  });
+  it("shows a saved card only to its signed-in owner, including resumed checkout", async () => {
+    const created = await order();
+    const customer = sqlite
+      .prepare("SELECT customer_id AS id FROM orders WHERE id=?")
+      .get(created.orderId)!;
+    sqlite
+      .prepare(
+        "INSERT INTO billing_customers(id,customer_id,provider,environment,external_customer_id) VALUES('billing-member',?,'stripe','sandbox','cus_member')",
+      )
+      .run(customer.id);
+    sqlite
+      .prepare(
+        "INSERT INTO review_accounts(id,email,display_name,password_hash,password_salt,customer_id) VALUES('account-member','test@example.test','Test','unused','unused',?)",
+      )
+      .run(customer.id);
+    const token = "a".repeat(64);
+    sqlite
+      .prepare(
+        "INSERT INTO review_sessions(token_hash,account_id,expires_at) VALUES(?,'account-member',?)",
+      )
+      .run(await digest(token), Math.floor(Date.now() / 1000) + 3600);
+    const fetcher = stripeFetch();
+    const signedIn = request("/api/v1/payments/checkout", created);
+    signedIn.headers.set("cookie", `cm_reviewer=${token}`);
+    expect((await handlePayments(signedIn, env))!.status).toBe(200);
+    const params = new URLSearchParams(
+      String((fetcher.mock.calls as unknown as Array<[string, RequestInit]>)[0][1].body),
+    );
+    expect(params.get("customer")).toBe("cus_member");
+    expect(params.get("customer_email")).toBeNull();
+    expect((await handlePayments(request("/api/v1/payments/checkout", created), env))!.status).toBe(
+      403,
+    );
   });
   it("accepts only paid exact-amount, exact-currency events and handles replay once", async () => {
     const created = await start();
@@ -906,4 +966,76 @@ it("does not place an order whose authoritative total differs from the buyer's a
     "Prețul sau livrarea",
   );
   expect(sqlite.prepare("SELECT count(*) AS n FROM orders").get()!.n).toBe(0);
+});
+
+describe("Stripe saved cards", () => {
+  it("saves only a provider token after a successful setup and detaches on removal", async () => {
+    const created = await order();
+    const customer = sqlite
+      .prepare("SELECT customer_id AS id FROM orders WHERE id=?")
+      .get(created.orderId)!;
+    sqlite
+      .prepare(
+        `INSERT INTO review_accounts(id,email,display_name,password_hash,password_salt,customer_id)
+       VALUES('account-card-test','test@example.test','Test','unused','unused',?)`,
+      )
+      .run(customer.id);
+    const fetcher = vi.fn(async (url: string, _init?: RequestInit) => {
+      if (url.endsWith("/customers")) return Response.json({ id: "cus_test_customer" });
+      if (url.endsWith("/checkout/sessions"))
+        return Response.json({
+          id: "cs_test_saved",
+          url: "https://checkout.stripe.com/c/pay/cs_test_saved",
+        });
+      if (url.endsWith("/setup_intents/seti_test_saved"))
+        return Response.json({
+          status: "succeeded",
+          customer: "cus_test_customer",
+          payment_method: "pm_test_saved",
+        });
+      if (url.endsWith("/payment_methods/pm_test_saved"))
+        return Response.json({
+          id: "pm_test_saved",
+          customer: "cus_test_customer",
+          type: "card",
+          allow_redisplay: _init?.method === "POST" ? "always" : "unspecified",
+          card: { brand: "visa", last4: "4242", exp_month: 12, exp_year: 2030 },
+        });
+      if (url.endsWith("/payment_methods/pm_test_saved/detach"))
+        return Response.json({ id: "pm_test_saved", customer: null });
+      throw new Error(`Unexpected Stripe path: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetcher);
+
+    const setup = await createStripeCardSetup(env, {
+      id: "account-card-test",
+      email: "test@example.test",
+      customerId: String(customer.id),
+    });
+    expect(setup.url).toBe("https://checkout.stripe.com/c/pay/cs_test_saved");
+    const sessionRequest = fetcher.mock.calls.find(([url]) => url.endsWith("/checkout/sessions"));
+    expect(String(sessionRequest?.[1]?.body)).toContain("mode=setup");
+    expect(String(sessionRequest?.[1]?.body)).toContain("customer=cus_test_customer");
+    await completeStripeCardSetup(env, {
+      id: "cs_test_saved",
+      mode: "setup",
+      customer: "cus_test_customer",
+      setup_intent: "seti_test_saved",
+    });
+    const redisplayRequest = fetcher.mock.calls.find(
+      ([url, init]) => url.endsWith("/payment_methods/pm_test_saved") && init?.method === "POST",
+    );
+    expect(String(redisplayRequest?.[1]?.body)).toContain("allow_redisplay=always");
+    const method = sqlite
+      .prepare(
+        "SELECT id,last4,external_payment_method_id AS token,status FROM customer_payment_methods",
+      )
+      .get()!;
+    expect(method).toMatchObject({ last4: "4242", token: "pm_test_saved", status: "active" });
+    expect(JSON.stringify(method)).not.toContain("1234567890124242");
+    await removeStripeCard(env, String(customer.id), String(method.id));
+    expect(
+      sqlite.prepare("SELECT status FROM customer_payment_methods WHERE id=?").get(method.id),
+    ).toMatchObject({ status: "deleted" });
+  });
 });

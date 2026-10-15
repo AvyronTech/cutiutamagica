@@ -286,7 +286,9 @@ describe("customer Google OpenID Connect accounts", () => {
 
   it("keeps OAuth visibly disabled until the two Worker secrets exist", async () => {
     const providers = (await handleReviewAccount(request("reviewer/providers"), env))!;
-    expect(await providers.json()).toEqual({ data: { google: { enabled: false } } });
+    expect(await providers.json()).toEqual({
+      data: { google: { enabled: false }, email: { enabled: false } },
+    });
 
     const start = (await handleReviewAccount(request("reviewer/oauth/google"), env))!;
     expect(start.status).toBe(302);
@@ -387,5 +389,57 @@ describe("customer Google OpenID Connect accounts", () => {
     expect(forged.headers.get("location")).toBe("https://cutiutamagica.eu/cont?auth=eroare");
     expect((await handleReviewAccount(request("reviewer/login", {}), env))!.status).toBe(410);
     expect((await handleReviewAccount(request("reviewer/register", {}), env))!.status).toBe(410);
+  });
+});
+
+describe("customer email access", () => {
+  it("issues a short-lived code, creates a customer session, and rejects replay", async () => {
+    const send = vi.fn(async (_message: { text: string }) => ({ messageId: "email-test-1" }));
+    Object.assign(env, { EMAIL: { send } });
+    const providers = (await handleReviewAccount(request("reviewer/providers"), env))!;
+    expect(await providers.json()).toMatchObject({ data: { email: { enabled: true } } });
+
+    const start = (await handleReviewAccount(
+      request("reviewer/email/start", { email: "maria@example.test" }),
+      env,
+    ))!;
+    expect(start.status).toBe(200);
+    const startBody = await start.text();
+    const { data: challenge } = JSON.parse(startBody) as { data: { challengeId: string } };
+    const sent = send.mock.calls[0]?.[0];
+    const code = sent.text.match(/\b\d{8}\b/)?.[0];
+    expect(code).toMatch(/^\d{8}$/);
+    expect(startBody).not.toContain(code);
+
+    const verify = (await handleReviewAccount(
+      request("reviewer/email/verify", {
+        email: "maria@example.test",
+        challengeId: challenge.challengeId,
+        code,
+      }),
+      env,
+    ))!;
+    expect(verify.status).toBe(200);
+    const session = verify.headers.get("set-cookie")?.match(/cm_reviewer=[a-f0-9]{64}/)?.[0];
+    expect(session).toBeTruthy();
+    expect(await currentReviewer(request("reviewer", undefined, session), env)).toMatchObject({
+      email: "maria@example.test",
+    });
+    expect(
+      sqlite
+        .prepare("SELECT customer_id FROM review_accounts WHERE email='maria@example.test'")
+        .get(),
+    ).toMatchObject({
+      customer_id: expect.any(String),
+    });
+    const replay = (await handleReviewAccount(
+      request("reviewer/email/verify", {
+        email: "maria@example.test",
+        challengeId: challenge.challengeId,
+        code,
+      }),
+      env,
+    ))!;
+    expect(replay.status).toBe(401);
   });
 });

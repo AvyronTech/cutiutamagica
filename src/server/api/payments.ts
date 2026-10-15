@@ -9,6 +9,8 @@ import {
   type CommerceEnv,
 } from "../integrations/provider-runtime";
 import { createStripeCheckoutSession, verifyStripeWebhook } from "../integrations/stripe";
+import { completeStripeCardSetup } from "../services/customer-stripe-cards";
+import { currentReviewer } from "../review-accounts";
 import {
   createRevolutCheckout,
   getRevolutOrder,
@@ -23,6 +25,7 @@ const json = (data: unknown, status = 200) =>
   });
 type Order = {
   id: string;
+  customer_id: string | null;
   order_number: string;
   public_token: string;
   customer_email: string;
@@ -107,6 +110,16 @@ async function checkout(request: Request, env: CommerceEnv) {
       "PAYMENT_UNAVAILABLE",
       409,
     );
+  const reviewer =
+    provider === "stripe" && order.customer_id ? await currentReviewer(request, env) : null;
+  const savedCustomerAccess = reviewer
+    ? await env.DB.prepare(
+        "SELECT 1 AS allowed FROM review_accounts WHERE id=?1 AND customer_id=?2 AND status='active'",
+      )
+        .bind(reviewer.id, order.customer_id)
+        .first<{ allowed: number }>()
+    : null;
+  const savedCustomerId = savedCustomerAccess ? order.customer_id : null;
   let attempt = await attemptFor(env, order.id);
   if (
     !attempt &&
@@ -134,7 +147,16 @@ async function checkout(request: Request, env: CommerceEnv) {
       409,
     );
   if (attempt?.status === "pending") {
-    const metadata = JSON.parse(attempt.provider_metadata_json) as { checkoutUrl?: string };
+    const metadata = JSON.parse(attempt.provider_metadata_json) as {
+      checkoutUrl?: string;
+      savedCustomerId?: string;
+    };
+    if (metadata.savedCustomerId && metadata.savedCustomerId !== savedCustomerId)
+      throw new ProviderError(
+        "Intră în cont pentru a continua cu cardul salvat.",
+        "CUSTOMER_LOGIN_REQUIRED",
+        403,
+      );
     if (metadata.checkoutUrl)
       return json({
         data: {
@@ -180,6 +202,7 @@ async function checkout(request: Request, env: CommerceEnv) {
     orderId: order.id,
     orderNumber: order.order_number,
     customerEmail: order.customer_email,
+    customerId: savedCustomerId,
     amountBani: order.total_bani,
     currency: order.currency,
     description: `Cutiuța Magică · ${order.order_number}`,
@@ -193,7 +216,11 @@ async function checkout(request: Request, env: CommerceEnv) {
     await env.DB.prepare(
       `UPDATE payment_attempts SET external_payment_id=?1,status='pending',provider_metadata_json=?2,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?3 AND status='created'`,
     )
-      .bind(session.id, JSON.stringify({ checkoutUrl }), attempt!.id)
+      .bind(
+        session.id,
+        JSON.stringify({ checkoutUrl, ...(savedCustomerId ? { savedCustomerId } : {}) }),
+        attempt!.id,
+      )
       .run();
     return json({ data: { checkoutUrl } });
   } catch (error) {
@@ -358,7 +385,16 @@ async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | 
     const object = (event.data as { object?: Record<string, unknown> })?.object;
     if (!object || typeof object.id !== "string")
       return json({ error: { code: "INVALID_EVENT" } }, 400);
-    if (type === "checkout.session.expired") await expireAttempt(env, provider, object.id, eventId);
+    if (object.mode === "setup") {
+      if (type === "checkout.session.completed") await completeStripeCardSetup(env, object);
+      if (type === "checkout.session.expired")
+        await env.DB.prepare(
+          "UPDATE customer_card_setups SET status='expired' WHERE stripe_session_id=?1 AND status='pending'",
+        )
+          .bind(object.id)
+          .run();
+    } else if (type === "checkout.session.expired")
+      await expireAttempt(env, provider, object.id, eventId);
     else if (object.payment_status === "paid")
       await settle(env, provider, object.id, object.amount_total, object.currency, eventId);
   } else if (
