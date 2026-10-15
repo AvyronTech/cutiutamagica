@@ -17950,3 +17950,163 @@ body.product-lightbox-open
     text-align: center;
   }
 }
+
+.landing-world-image--hero .hero-world,
+.landing-world-image--story .hero-world {
+  opacity: 1;
+}
+.landing-world-image--emotion .hero-world,
+.landing-world-image--dedicated .hero-world,
+.landing-world-image--personalize .hero-world,
+.landing-world-image--future .hero-world {
+  opacity: 0.9;
+}
+.hero-world-veil {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(7 12 19 / 0.66) 0%,
+      rgb(8 12 18 / 0.44) 39%,
+      rgb(7 11 16 / 0.16) 75%,
+      rgb(5 8 12 / 0.31) 100%
+    ),
+    linear-gradient(0deg, rgb(13 10 8 / 0.54), transparent 45%);
+}
+.magic-hero h1 {
+  max-width: 620px;
+  font-size: clamp(44px, 5.1vw, 72px);
+  line-height: 1.02;
+}
+.hero-description {
+  max-width: 440px;
+  margin-block: 22px 25px;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+/* The thread starts at the first card's upper left and finishes at the last card's lower right. */
+.hero-story-bridge {
+  --thread-offset: 1;
+}
+.hero-features .hero-story-thread {
+  position: absolute;
+  inset: 12px 30px 24px;
+  z-index: 1;
+  width: calc(100% - 60px);
+  height: calc(100% - 36px);
+  pointer-events: none;
+  filter: drop-shadow(0 0 7px rgb(244 192 105 / 0.55));
+}
+.hero-features .hero-feature {
+  z-index: 2;
+}
+.hero-features .hero-story-thread--mobile {
+  display: none;
+}
+.hero-thread-guide {
+  stroke: rgb(239 206 146 / 0.25);
+  stroke-width: 1.2;
+}
+.hero-thread-light {
+  stroke: #f5d49a;
+  stroke-width: 1.7;
+  stroke-dashoffset: var(--thread-offset);
+}
+
+/* The future collection is a short editorial carousel. */
+.upcoming-scene {
+  position: relative;
+  isolation: isolate;
+  padding-block: 26px 36px;
+}
+.upcoming-scene::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background: linear-gradient(
+    180deg,
+    rgb(8 12 17 / 0.56),
+    rgb(8 12 17 / 0.27) 48%,
+    rgb(8 12 17 / 0.48)
+  );
+  pointer-events: none;
+}
+.upcoming-viewport {
+  width: min(790px, calc(100% - 48px));
+  margin-top: 18px;
+}
+.upcoming-card {
+  flex-basis: calc((100% - 28px) / 3);
+  border-color: rgb(214 179 123 / 0.34);
+  background: #1e1b1b;
+}
+.upcoming-image {
+  aspect-ratio: 1.48;
+}
+.upcoming-copy {
+  padding: 12px;
+  background: #1e1b1b;
+}
+.upcoming-copy h3 {
+  font-size: 18px;
+}
+.upcoming-scene > .carousel-controls {
+  margin-top: 12px;
+}
+@media (max-width: 820px) {
+  .upcoming-viewport {
+    width: min(580px, calc(100% - 36px));
+  }
+  .upcoming-card {
+    flex-basis: calc((100% - 14px) / 2);
+  }
+}
+@media (max-width: 767px) {
+  .hero-features .hero-story-thread--desktop {
+    display: none;
+  }
+  .hero-features .hero-story-thread--mobile {
+    display: block;
+  }
+  .hero-features .hero-story-thread {
+    inset: 12px 16px 22px;
+    width: calc(100% - 32px);
+    height: calc(100% - 34px);
+  }
+  .magic-hero h1 {
+    font-size: clamp(42px, 11vw, 61px);
+  }
+  .hero-description {
+    max-width: 36ch;
+    font-size: 14px;
+    line-height: 1.58;
+  }
+}
+@media (max-width: 640px) {
+  .landing-world-image--hero .hero-world,
+  .landing-world-image--future .hero-world {
+    object-position: 100% 50%;
+  }
+  .landing-world-image--story .hero-world,
+  .landing-world-image--dedicated .hero-world,
+  .landing-world-image--personalize .hero-world {
+    object-position: 0% 50%;
+  }
+  .hero-world-veil {
+    background:
+      linear-gradient(90deg, rgb(6 11 18 / 0.69), rgb(6 11 18 / 0.37)),
+      linear-gradient(0deg, rgb(7 10 15 / 0.58), transparent 54%);
+  }
+  .upcoming-viewport {
+    width: min(300px, calc(100% - 56px));
+  }
+  .upcoming-card {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-story-bridge {
+    --thread-offset: 0;
+  }
+}

@@ -46,11 +46,9 @@ export function HeroWorld({ children }: { children: ReactNode }) {
     if (connection?.saveData) return;
     // Keep the continuous scene on small touch screens, without tying a parallax write to every frame.
     if (matchMedia("(max-width: 767px) and (pointer: coarse)").matches) return;
-    const bridge = node.querySelector<HTMLElement>(".hero-story-bridge");
     let frame = 0,
       visible = false;
-    let lastDepth = "",
-      lastThreadOffset = "";
+    let lastDepth = "";
     const draw = () => {
       frame = 0;
       if (!visible || document.hidden) return;
@@ -59,17 +57,6 @@ export function HeroWorld({ children }: { children: ReactNode }) {
       if (depth !== lastDepth) {
         lastDepth = depth;
         node.style.setProperty("--hero-depth", depth);
-      }
-      if (bridge) {
-        const p = Math.max(
-          0,
-          Math.min(1, (innerHeight * 0.8 - bridge.getBoundingClientRect().top) / 280),
-        );
-        const threadOffset = (1 - p).toFixed(3);
-        if (threadOffset !== lastThreadOffset) {
-          lastThreadOffset = threadOffset;
-          node.style.setProperty("--thread-offset", threadOffset);
-        }
       }
     };
     const request = () => {
@@ -90,7 +77,6 @@ export function HeroWorld({ children }: { children: ReactNode }) {
       window.removeEventListener("resize", request);
       document.removeEventListener("visibilitychange", request);
       node.style.removeProperty("--hero-depth");
-      node.style.removeProperty("--thread-offset");
     };
   }, [reduced]);
   return (
@@ -102,22 +88,37 @@ export function HeroWorld({ children }: { children: ReactNode }) {
 }
 
 export function HeroStoryBridge() {
+  const bridge = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    const node = bridge.current;
+    if (!node || reduced) return;
+    let frame = 0;
+    const draw = () => {
+      frame = 0;
+      const bounds = node.getBoundingClientRect();
+      const start = innerHeight * 0.86;
+      const end = innerHeight * 0.28;
+      const progress = Math.max(
+        0,
+        Math.min(1, (start - bounds.top) / (bounds.height + start - end)),
+      );
+      node.style.setProperty("--thread-offset", (1 - progress).toFixed(3));
+    };
+    const request = () => {
+      if (!frame) frame = requestAnimationFrame(draw);
+    };
+    request();
+    window.addEventListener("scroll", request, { passive: true });
+    window.addEventListener("resize", request);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", request);
+      window.removeEventListener("resize", request);
+    };
+  }, [reduced]);
   return (
-    <div className="hero-story-bridge">
-      <svg
-        className="hero-story-thread"
-        viewBox="0 0 1000 100"
-        preserveAspectRatio="none"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path className="hero-thread-guide" d="M0 50 C200 50 280 5 410 38 S700 92 1000 48" />
-        <path
-          className="hero-thread-light"
-          pathLength="1"
-          d="M0 50 C200 50 280 5 410 38 S700 92 1000 48"
-        />
-      </svg>
+    <div className="hero-story-bridge" ref={bridge}>
       <HeroFeatures />
       <span className="hero-bridge-star" aria-hidden="true">
         ✧

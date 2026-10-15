@@ -35,9 +35,9 @@ export const Route = createFileRoute("/")({
   },
   head: () =>
     seoHead({
-      title: "Cutiuța Magică — cutiuțe muzicale, cadouri cu poveste",
+      title: "Cutiuțe muzicale din lemn, cadouri cu poveste | Cutiuța Magică",
       description:
-        "O cutiuță mică. O emoție care rămâne. Descoperă cutiuțe muzicale din lemn cu manivelă, melodii îndrăgite și cadouri cu poveste.",
+        "Descoperă cutiuțe muzicale din lemn, cu manivelă și melodii îndrăgite. Alege povestea potrivită pentru un cadou cu sens.",
       path: "/",
       image: "/produse/hp-keeper/1.webp",
       imageAlt: "Cutiuță muzicală din lemn cu manivelă, pregătită pentru un cadou",
@@ -92,7 +92,7 @@ function Index() {
       <HeroWorld>
         <section
           id="inceput"
-          data-world="story"
+          data-world="hero"
           className="magic-hero"
           aria-labelledby="hero-heading"
         >
@@ -107,13 +107,13 @@ function Index() {
                 <span className="tiny-star">✧</span> Lemn. Manivelă. Melodie.
               </p>
               <h1 id="hero-heading">
-                <span className="hero-solar-line">O cutiuță mică.</span>
+                <span className="hero-solar-line">Cutiuțe muzicale.</span>
                 <br />
-                <em className="hero-solar-line">O lume care cântă.</em>
+                <em className="hero-solar-line">Povești de dăruit.</em>
               </h1>
               <p className="hero-description">
-                Deschizi capacul. Învârți manivela. Și o melodie te duce aproape de cineva drag, de
-                o amintire, de lumea ta.
+                Învârți manivela și începe melodia. Fiecare cutiuță din lemn păstrează o lume pe
+                care cineva drag o va recunoaște.
               </p>
               <div className="hero-actions">
                 <a
@@ -167,6 +167,7 @@ function Index() {
           title="Descoperă povestea."
           description="Universuri pe care le iubești, păstrate într-o cutiuță. Alege melodia care te duce înapoi."
           sharedWorld
+          bgImage="/scenes/library.webp"
           spotlight={<RotatingSpotlight products={collectionProducts(products, "story")} />}
         />
         <ProductCarouselSection

@@ -90,6 +90,16 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
       className="upcoming-scene"
       aria-labelledby="upcoming-title"
     >
+      <img
+        className="scene-backdrop"
+        src="/scenes/catalog-atelier.webp"
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        width="1672"
+        height="941"
+      />
       <header className="scene-heading" data-reveal>
         <p className="scene-eyebrow">
           05 <span>Următorul capitol</span>
