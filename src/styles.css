@@ -18235,7 +18235,9 @@ body.product-lightbox-open
   border: 1px solid rgb(246 210 151 / 0.33);
   border-radius: 25px;
   background: linear-gradient(145deg, rgb(30 34 34 / 0.94), rgb(19 23 26 / 0.96));
-  box-shadow: 0 25px 80px rgb(0 0 0 / 0.38), inset 0 1px rgb(255 246 224 / 0.13);
+  box-shadow:
+    0 25px 80px rgb(0 0 0 / 0.38),
+    inset 0 1px rgb(255 246 224 / 0.13);
   backdrop-filter: blur(18px);
 }
 .customer-login__tabs {
@@ -18326,7 +18328,9 @@ body.product-lightbox-open
   color: #241b14;
   font-size: 14px;
   font-weight: 750;
-  transition: background 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
 }
 .customer-login__form button:not(.customer-login__text-button):hover {
   background: #f4d8a7;
@@ -18454,8 +18458,7 @@ body.product-lightbox-open
   border-color: rgb(226 190 119 / 0.2);
   color: #f2e5d1;
   background:
-    radial-gradient(circle at 0% 0%, rgb(218 169 82 / 0.1), transparent 35%),
-    rgb(22 19 30 / 0.9);
+    radial-gradient(circle at 0% 0%, rgb(218 169 82 / 0.1), transparent 35%), rgb(22 19 30 / 0.9);
 }
 .customer-billing-grid > article > svg {
   color: #e9c586;
@@ -18478,4 +18481,326 @@ body.product-lightbox-open
 }
 .customer-billing-grid button:not(.magic-button) {
   color: #f2cf92;
+}
+
+/* Product scenes continue under the information and controls, across every card variant. */
+.product-card-themed {
+  --card-veil: #f1e5d4;
+}
+.product-card-themed--glass {
+  --card-veil: #111714;
+}
+.product-card-scene::after {
+  background:
+    linear-gradient(
+      180deg,
+      transparent 21%,
+      color-mix(in srgb, var(--card-veil) 58%, transparent) 49%,
+      color-mix(in srgb, var(--card-veil) 86%, transparent) 100%
+    ),
+    radial-gradient(
+      ellipse at 55% 90%,
+      color-mix(in srgb, var(--card-accent) 24%, transparent),
+      transparent 65%
+    );
+}
+.product-card-themed--glass .product-card-scene::after {
+  background: linear-gradient(180deg, transparent 22%, #111714b8 51%, #0d1211eb 100%);
+}
+.product-card-scene__image {
+  top: auto;
+  bottom: -8%;
+  height: 69%;
+  opacity: 0.19;
+  filter: blur(13px) saturate(1.18);
+  -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 76%, transparent);
+  mask-image: linear-gradient(transparent, #000 28%, #000 76%, transparent);
+}
+.product-card-scene__plane {
+  z-index: 1;
+  top: auto;
+  bottom: 8%;
+  height: 30%;
+  opacity: 0.18;
+}
+.product-card-scene__orbit {
+  z-index: 1;
+  top: auto;
+  bottom: -54px;
+  right: -58px;
+  opacity: 0.18;
+}
+.product-card-scene__horizon {
+  position: absolute;
+  z-index: 1;
+  left: -8%;
+  right: -8%;
+  bottom: 5%;
+  height: 34%;
+  opacity: 0.32;
+  background:
+    radial-gradient(
+      ellipse 60% 24% at 65% 90%,
+      color-mix(in srgb, var(--card-accent) 28%, transparent),
+      transparent 100%
+    ),
+    linear-gradient(
+      170deg,
+      transparent 54%,
+      color-mix(in srgb, var(--card-accent) 18%, transparent) 55%,
+      transparent 57%
+    );
+  -webkit-mask-image: linear-gradient(transparent, #000 38%, #000);
+  mask-image: linear-gradient(transparent, #000 38%, #000);
+}
+.product-card-themed[data-product-scene="library"] .product-card-scene__horizon {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 19px,
+      color-mix(in srgb, var(--card-accent) 31%, transparent) 20px 22px,
+      transparent 24px 28px
+    ),
+    linear-gradient(0deg, color-mix(in srgb, var(--card-accent) 17%, transparent), transparent 74%);
+}
+.product-card-themed[data-product-scene="winter"] .product-card-scene__horizon,
+.product-card-themed[data-product-scene="forest"] .product-card-scene__horizon {
+  clip-path: polygon(
+    0 88%,
+    17% 34%,
+    29% 78%,
+    47% 12%,
+    65% 74%,
+    83% 30%,
+    100% 83%,
+    100% 100%,
+    0 100%
+  );
+  background: linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--card-accent) 33%, transparent),
+    color-mix(in srgb, var(--card-accent) 8%, transparent)
+  );
+}
+.product-card-themed[data-product-scene="sunshine"] .product-card-scene__horizon {
+  background: radial-gradient(
+    circle at 73% 98%,
+    color-mix(in srgb, var(--card-accent) 54%, #fff7da),
+    transparent 38%
+  );
+}
+.product-card-themed[data-product-scene="garden"] .product-card-scene__horizon {
+  background:
+    radial-gradient(
+      ellipse 15% 50% at 17% 91%,
+      color-mix(in srgb, var(--card-accent) 36%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 19% 47% at 57% 99%,
+      color-mix(in srgb, var(--card-accent) 36%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 16% 48% at 85% 81%,
+      color-mix(in srgb, var(--card-accent) 30%, transparent),
+      transparent
+    );
+}
+.product-card-themed[data-product-scene="autumn"] .product-card-scene__horizon {
+  background:
+    radial-gradient(
+      ellipse 22% 14% at 20% 78%,
+      color-mix(in srgb, var(--card-accent) 46%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 17% 12% at 75% 58%,
+      color-mix(in srgb, var(--card-accent) 42%, transparent),
+      transparent
+    ),
+    linear-gradient(0deg, color-mix(in srgb, var(--card-accent) 18%, transparent), transparent);
+}
+.product-card-themed[data-product-scene="ocean"] .product-card-scene__horizon {
+  background: repeating-radial-gradient(
+    ellipse 85% 20% at 50% 100%,
+    transparent 0 14px,
+    color-mix(in srgb, var(--card-accent) 33%, transparent) 15px 17px,
+    transparent 19px 37px
+  );
+}
+.product-card-themed[data-product-scene="galaxy"] .product-card-scene__horizon,
+.product-card-themed[data-product-scene="starlight"] .product-card-scene__horizon {
+  background:
+    radial-gradient(circle at 15% 62%, var(--card-accent) 0 1px, transparent 2px),
+    radial-gradient(circle at 76% 30%, var(--card-accent) 0 1px, transparent 2px),
+    radial-gradient(circle at 45% 82%, var(--card-accent) 0 1px, transparent 2px),
+    radial-gradient(
+      ellipse at 65% 100%,
+      color-mix(in srgb, var(--card-accent) 32%, transparent),
+      transparent 65%
+    );
+}
+.product-card-themed:hover .product-card-scene__image {
+  opacity: 0.22;
+  transform: scale(1.27);
+}
+.product-card-themed--solid .product-card-themed__content,
+.product-card-themed--solid .product-card-themed__actions {
+  text-shadow: 0 1px 0 #fff8;
+}
+.catalog-upcoming .product-card-themed--solid .product-card-themed__content p,
+.product-card-themed--solid .product-card-themed__content p {
+  color: #584a3c;
+}
+
+/* A quiet second act behind details, reviews and related products. */
+.product-world-afterstory {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 22px 0 26px;
+  background:
+    radial-gradient(
+      ellipse 72% 34% at 88% 92%,
+      color-mix(in srgb, var(--world-accent) 18%, transparent),
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse 60% 24% at 8% 37%,
+      color-mix(in srgb, var(--world-accent) 11%, transparent),
+      transparent 100%
+    ),
+    linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--world-paper) 96%, #fff) 19%,
+      var(--world-paper) 77%,
+      color-mix(in srgb, var(--world-paper) 86%, var(--world-mid))
+    );
+}
+.product-world-afterstory__scene {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.product-world-afterstory__scene img {
+  position: absolute;
+  width: min(75%, 990px);
+  height: 55%;
+  right: -9%;
+  bottom: -8%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.16;
+  filter: blur(9px) saturate(0.86);
+  -webkit-mask-image: radial-gradient(ellipse at 67% 74%, #000 12%, transparent 70%);
+  mask-image: radial-gradient(ellipse at 67% 74%, #000 12%, transparent 70%);
+}
+.product-world-afterstory__horizon {
+  position: absolute;
+  width: 100%;
+  height: 32%;
+  bottom: 0;
+  opacity: 0.22;
+  background: radial-gradient(ellipse 48% 40% at 85% 88%, var(--world-accent), transparent 80%);
+  -webkit-mask-image: linear-gradient(transparent, #000 55%);
+  mask-image: linear-gradient(transparent, #000 55%);
+}
+.product-world--library .product-world-afterstory__horizon {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 45px,
+    var(--world-accent) 46px 48px,
+    transparent 49px 67px
+  );
+}
+.product-world--winter .product-world-afterstory__horizon,
+.product-world--forest .product-world-afterstory__horizon {
+  clip-path: polygon(
+    0 80%,
+    20% 38%,
+    34% 74%,
+    51% 23%,
+    72% 77%,
+    88% 40%,
+    100% 71%,
+    100% 100%,
+    0 100%
+  );
+  background: linear-gradient(0deg, var(--world-accent), transparent);
+}
+.product-world--ocean .product-world-afterstory__horizon {
+  background: repeating-radial-gradient(
+    ellipse 92% 16% at 50% 100%,
+    transparent 0 35px,
+    var(--world-accent) 37px 39px,
+    transparent 42px 78px
+  );
+}
+.product-world--starlight .product-world-afterstory__horizon,
+.product-world--galaxy .product-world-afterstory__horizon {
+  background:
+    radial-gradient(circle at 18% 38%, var(--world-accent) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 54%, var(--world-accent) 0 2px, transparent 3px),
+    radial-gradient(circle at 81% 21%, var(--world-accent) 0 1px, transparent 2px),
+    radial-gradient(ellipse at 68% 100%, var(--world-accent), transparent 70%);
+}
+.product-world-afterstory > :not(.product-world-afterstory__scene) {
+  position: relative;
+  z-index: 1;
+}
+.product-world-afterstory .product-discovery {
+  background: linear-gradient(
+    145deg,
+    #fffaf1f2,
+    color-mix(in srgb, var(--world-accent) 7%, #fffaf1e8)
+  );
+  box-shadow:
+    0 24px 70px #49362012,
+    inset 0 1px #fff;
+}
+.product-world-afterstory .product-discovery__grid article {
+  background:
+    radial-gradient(
+      ellipse at 100% 100%,
+      color-mix(in srgb, var(--world-accent) 13%, transparent),
+      transparent 67%
+    ),
+    #fffaf0b8;
+}
+.product-world-afterstory .product-reviews {
+  background:
+    radial-gradient(
+      ellipse at 0 100%,
+      color-mix(in srgb, var(--world-accent) 11%, transparent),
+      transparent 57%
+    ),
+    #fffaf3ee;
+}
+.product-world-afterstory .product-related-section > h2 {
+  color: #382b21;
+  text-shadow: 0 1px #fffc;
+}
+@media (max-width: 767px) {
+  .product-world-afterstory {
+    padding-block: 10px 44px;
+  }
+  .product-world-afterstory__scene img {
+    width: 135%;
+    height: 35%;
+    right: -48%;
+    opacity: 0.13;
+  }
+  .product-card-scene__image {
+    filter: blur(11px) saturate(1.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-card-themed:hover .product-card-scene__image {
+    transform: scale(1.24);
+    transition: none;
+  }
 }
