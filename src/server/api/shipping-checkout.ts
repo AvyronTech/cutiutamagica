@@ -225,7 +225,7 @@ export async function handleShippingCheckout(
           courierId: 0,
           courierName: "SAMEDAY Easybox",
           costRon: Number(policy.locker_price_bani) / 100,
-          deliveryDate: "1–2 zile lucrătoare",
+          deliveryDate: null,
           ownContract: true,
         },
       ];
