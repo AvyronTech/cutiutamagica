@@ -64,7 +64,9 @@ export async function listPublicCatalog(
  (SELECT SUM(MAX(0,on_hand_quantity-reserved_quantity-safety_stock_quantity)) FROM inventory_levels il JOIN stock_locations sl ON sl.id=il.location_id AND sl.active=1 WHERE il.variant_id=pv.id) AS stock,
  (SELECT json_group_array(json_object('src',url,'label',label)) FROM (
  SELECT COALESCE(pm.source_url,'/media/'||pm.id) AS url,COALESCE(pm.alt_text,pm.title,p.name) AS label
- FROM product_media pm WHERE pm.product_id=p.id AND pm.media_type='image' AND pm.status='active' AND pm.public_access=1 AND ${mediaApprovalSql("pm", previewUnreviewedMedia)}
+ FROM product_media pm WHERE pm.product_id=p.id AND pm.media_type='image'
+   AND pm.usage_type IN ('product','hero','detail')
+   AND pm.status='active' AND pm.public_access=1 AND ${mediaApprovalSql("pm", previewUnreviewedMedia)}
  ORDER BY pm.sort_order,pm.is_primary DESC,pm.created_at DESC
  )) AS gallery_json
  FROM products p
