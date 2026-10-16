@@ -69,6 +69,7 @@ const updateMetadataSchema = z.object({
   rightsStatus: z.enum(["review_required", "cleared", "restricted", "expired"]).optional(),
   status: z.enum(["draft", "active", "archived"]).optional(),
   expectedVersion: z.number().int().positive(),
+  changeReason: z.string().trim().max(500).default(""),
 });
 
 const MIME_RULES = {
@@ -83,6 +84,11 @@ const MIME_RULES = {
   "video/webm": { extension: "webm", mediaType: "video", max: 80_000_000 },
   "model/gltf-binary": { extension: "glb", mediaType: "model_3d", max: 50_000_000 },
   "application/pdf": { extension: "pdf", mediaType: "document", max: 10_000_000 },
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+    extension: "docx",
+    mediaType: "document",
+    max: 10_000_000,
+  },
 } as const;
 
 type AllowedMime = keyof typeof MIME_RULES;
@@ -126,6 +132,8 @@ function isExpectedSignature(mime: AllowedMime, bytes: Uint8Array): boolean {
       return ascii.slice(0, 4) === "glTF";
     case "application/pdf":
       return ascii.slice(0, 5) === "%PDF-";
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
   }
 }
 
@@ -197,7 +205,7 @@ async function listProductMedia(request: Request, env: Env, productId: string): 
              marketing_approved, public_access, sync_to_avyron, status, rights_status,
              sort_order, is_primary, version, created_at, updated_at
       FROM product_media
-      WHERE product_id = ?1 AND status != 'archived'
+      WHERE product_id = ?1 AND (status != 'archived' OR media_type = 'document')
       ORDER BY CASE slot_code
         WHEN '01_hero' THEN 1 WHEN '02_decor' THEN 2 WHEN '03_closed' THEN 3
         WHEN '04_dimensions' THEN 4 WHEN '05_mechanism' THEN 5 WHEN '06_melody' THEN 6
@@ -406,13 +414,7 @@ async function uploadProductMedia(
           `INSERT INTO product_documents (
              id, product_id, media_id, document_type, review_status, created_by
            ) VALUES (?1, ?2, ?3, ?4, 'pending', ?5)`,
-        ).bind(
-          `document_${crypto.randomUUID().replaceAll("-", "")}`,
-          productId,
-          assetId,
-          parsed.data.documentType!,
-          admin.id,
-        ),
+        ).bind(crypto.randomUUID(), productId, assetId, parsed.data.documentType!, admin.id),
       );
     }
     statements.push(
@@ -473,8 +475,37 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
   const publicAccess = parsed.data.publicAccess ?? Boolean(current.public_access);
   const syncToAvyron = parsed.data.syncToAvyron ?? Boolean(current.sync_to_avyron);
   const nextStatus = parsed.data.status ?? String(current.status);
+  if (current.media_type === "document" && (publicAccess || syncToAvyron)) {
+    return json(
+      {
+        error: {
+          code: "PRIVATE_DOCUMENT_REQUIRED",
+          message: "Documentele produsului rămân private.",
+        },
+      },
+      { status: 400 },
+    );
+  }
   if (
-    (syncToAvyron || (!localMediaPreview(env) && (publicAccess || nextStatus === "active"))) &&
+    current.media_type === "document" &&
+    nextStatus === "archived" &&
+    current.status !== "archived" &&
+    parsed.data.changeReason.length < 10
+  ) {
+    return json(
+      {
+        error: {
+          code: "REASON_REQUIRED",
+          message: "Arhivarea documentului cere un motiv de cel puțin 10 caractere.",
+        },
+      },
+      { status: 400 },
+    );
+  }
+  if (
+    (syncToAvyron ||
+      (!localMediaPreview(env) &&
+        (publicAccess || (nextStatus === "active" && current.media_type !== "document")))) &&
     (!approved || rights !== "cleared")
   ) {
     return json(
@@ -488,8 +519,9 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
     );
   }
 
-  const result = await env.DB.prepare(
-    `
+  const statements: D1PreparedStatement[] = [
+    env.DB.prepare(
+      `
     UPDATE product_media
     SET sort_order=COALESCE(?12,sort_order), title = COALESCE(?1, title),
         promo_text_ro = COALESCE(?2, promo_text_ro),
@@ -500,13 +532,12 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
         sync_to_avyron = ?7,
         rights_status = ?8,
         status = ?9,
-        archived_at = CASE WHEN ?9 = 'archived' THEN strftime('%Y-%m-%dT%H:%M:%fZ', 'now') ELSE archived_at END,
+        archived_at = CASE WHEN ?9 = 'archived' THEN strftime('%Y-%m-%dT%H:%M:%fZ', 'now') ELSE NULL END,
         version = version + 1,
         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
     WHERE id = ?10 AND version = ?11
   `,
-  )
-    .bind(
+    ).bind(
       parsed.data.title ?? null,
       parsed.data.promoTextRo ?? null,
       parsed.data.altText ?? null,
@@ -519,30 +550,54 @@ async function updateMedia(request: Request, env: Env, mediaId: string): Promise
       mediaId,
       parsed.data.expectedVersion,
       parsed.data.sortOrder ?? null,
-    )
-    .run();
-  if (Number(result.meta.changes) !== 1) {
-    return json({ error: { code: "VERSION_CONFLICT" } }, { status: 409 });
+    ),
+  ];
+  if (current.media_type === "document") {
+    statements.push(
+      env.DB.prepare(
+        `UPDATE product_documents SET review_status = ?1,
+       notes = CASE WHEN ?1='rejected' THEN ?4 ELSE notes END,
+       verified_by = CASE WHEN ?1='verified' THEN ?2 ELSE NULL END,
+       verified_at = CASE WHEN ?1='verified' THEN strftime('%Y-%m-%dT%H:%M:%fZ', 'now') ELSE NULL END,
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE media_id = ?3
+       AND EXISTS(SELECT 1 FROM product_media WHERE id=?3 AND version=?5)`,
+      ).bind(
+        nextStatus === "active" ? "verified" : nextStatus === "archived" ? "rejected" : "pending",
+        admin.id,
+        mediaId,
+        parsed.data.changeReason || null,
+        parsed.data.expectedVersion + 1,
+      ),
+    );
   }
-  if (current.media_type === "document" && nextStatus === "active") {
-    await env.DB.prepare(
-      `UPDATE product_documents SET review_status = 'verified', verified_by = ?1,
-       verified_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
-       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE media_id = ?2`,
-    )
-      .bind(admin.id, mediaId)
-      .run();
-  }
-  await env.DB.prepare(
-    `
+  statements.push(
+    env.DB.prepare(
+      `
     INSERT INTO audit_log (
       id, actor_admin_user_id, actor_label, action, entity_type, entity_id,
-      after_json, metadata_json
-    ) VALUES (?1, ?2, ?3, 'media.update', 'product_media', ?4, ?5, '{}')
+      before_json, after_json, metadata_json
+    ) SELECT ?1, ?2, ?3, 'media.update', 'product_media', ?4, ?5, ?6, ?7
+      WHERE EXISTS(SELECT 1 FROM product_media WHERE id=?4 AND version=?8)
   `,
-  )
-    .bind(crypto.randomUUID(), admin.id, admin.email, mediaId, JSON.stringify(parsed.data))
-    .run();
+    ).bind(
+      crypto.randomUUID(),
+      admin.id,
+      admin.email,
+      mediaId,
+      JSON.stringify({
+        status: current.status,
+        rightsStatus: current.rights_status,
+        publicAccess: current.public_access,
+      }),
+      JSON.stringify(parsed.data),
+      JSON.stringify({ reason: parsed.data.changeReason || null }),
+      parsed.data.expectedVersion + 1,
+    ),
+  );
+  const results = await env.DB.batch(statements);
+  if (Number(results[0].meta.changes) !== 1) {
+    return json({ error: { code: "VERSION_CONFLICT" } }, { status: 409 });
+  }
   await env.CACHE.delete("catalog:public:v1");
   return json({ data: { id: mediaId, version: parsed.data.expectedVersion + 1 } });
 }
@@ -551,13 +606,18 @@ async function previewMedia(request: Request, env: Env, mediaId: string): Promis
   await authenticateAdminRequest(request, env, "catalog.read");
   const media = await env.DB.prepare(
     `
-    SELECT r2_key, mime_type
+    SELECT r2_key, mime_type, original_filename, media_type
     FROM product_media
-    WHERE id = ?1 AND r2_key IS NOT NULL AND status != 'archived'
+    WHERE id = ?1 AND r2_key IS NOT NULL AND (status != 'archived' OR media_type='document')
   `,
   )
     .bind(mediaId)
-    .first<{ r2_key: string; mime_type: string | null }>();
+    .first<{
+      r2_key: string;
+      mime_type: string | null;
+      original_filename: string | null;
+      media_type: string;
+    }>();
   if (!media) return new Response("Not found", { status: 404 });
   const object = await env.MEDIA.get(media.r2_key);
   if (!object) return new Response("Not found", { status: 404 });
@@ -566,6 +626,10 @@ async function previewMedia(request: Request, env: Env, mediaId: string): Promis
   headers.set("cache-control", "private, no-store");
   headers.set("x-content-type-options", "nosniff");
   if (!headers.has("content-type") && media.mime_type) headers.set("content-type", media.mime_type);
+  if (media.media_type === "document") {
+    const filename = (media.original_filename || "document").replace(/[\r\n"\\]/g, "_");
+    headers.set("content-disposition", `attachment; filename="${filename}"`);
+  }
   return new Response(request.method === "HEAD" ? null : object.body, { headers });
 }
 

@@ -249,11 +249,26 @@ describe("storefront and dashboard share one catalog", () => {
         .prepare("SELECT verification_status FROM product_identifier_sources WHERE variant_id=?")
         .get(body.variantId)!.verification_status,
     ).toBe("verified");
-    expect((await handleProductTechnicalSheet(patch(path, body), env))!.status).toBe(409);
+    const clear = { ...body, expectedVersion: body.expectedVersion + 2, eanGtin: "" };
+    expect((await handleProductTechnicalSheet(patch(path, clear), env))!.status).toBe(400);
+    expect(
+      (await handleProductTechnicalSheet(
+        patch(path, { ...clear, changeReason: "Codul de pe ambalaj a fost atribuit greșit." }),
+        env,
+      ))!.status,
+    ).toBe(200);
     expect(
       sqlite.prepare("SELECT ean_gtin FROM product_variants WHERE id=?").get(body.variantId)!
         .ean_gtin,
-    ).toBe(body.eanGtin);
+    ).toBeNull();
+    expect(
+      sqlite
+        .prepare(
+          "SELECT metadata_json FROM product_identifier_history WHERE variant_id=? AND action='gtin_cleared' ORDER BY created_at DESC LIMIT 1",
+        )
+        .get(body.variantId)!.metadata_json,
+    ).toContain("Codul de pe ambalaj");
+    expect((await handleProductTechnicalSheet(patch(path, body), env))!.status).toBe(409);
   });
   it("moves the default chat left without changing its messages or enabled state", () => {
     const row = sqlite
@@ -379,6 +394,80 @@ describe("storefront and dashboard share one catalog", () => {
         .find((p) => p.slug === "hp-keeper")!
         .gallery.some((p) => p.src === "/preview-only.webp"),
     ).toBe(false);
+  });
+  it("archives a private product document only with a reason and keeps its record", async () => {
+    const env = bindings();
+    const media = sqlite
+      .prepare("SELECT id,version FROM product_media WHERE product_id=? LIMIT 1")
+      .get(productId())!;
+    sqlite
+      .prepare(
+        "UPDATE product_media SET media_type='document',status='draft',public_access=0,sync_to_avyron=0 WHERE id=?",
+      )
+      .run(media.id);
+    sqlite
+      .prepare(
+        "INSERT INTO product_documents(id,product_id,media_id,document_type) VALUES('doc-test',?1,?2,'rights')",
+      )
+      .run(productId(), media.id);
+    const path = `/api/v1/admin/media/${media.id}`;
+    const update = { expectedVersion: Number(media.version), status: "archived" };
+    expect((await handleAdminMediaApi(patch(path, update), env))!.status).toBe(400);
+    expect(
+      (await handleAdminMediaApi(
+        patch(path, { ...update, changeReason: "Versiune retrasă după verificarea drepturilor." }),
+        env,
+      ))!.status,
+    ).toBe(200);
+    expect(
+      sqlite.prepare("SELECT review_status,notes FROM product_documents WHERE id='doc-test'").get(),
+    ).toMatchObject({
+      review_status: "rejected",
+      notes: "Versiune retrasă după verificarea drepturilor.",
+    });
+    expect(
+      sqlite
+        .prepare(
+          "SELECT metadata_json FROM audit_log WHERE entity_id=? ORDER BY created_at DESC LIMIT 1",
+        )
+        .get(media.id)!.metadata_json,
+    ).toContain("Versiune retrasă");
+  });
+  it("accepts an editable DOCX into the private product file without publishing it", async () => {
+    const env = bindings();
+    const bytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
+    const response = (await handleAdminMediaApi(
+      new Request(`https://test.local/api/v1/admin/products/${productId()}/media`, {
+        method: "POST",
+        headers: {
+          origin: "https://test.local",
+          "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "x-media-size": String(bytes.byteLength),
+          "x-media-filename": encodeURIComponent("autorizatie.docx"),
+          "x-media-metadata": encodeURIComponent(
+            JSON.stringify({ mediaType: "document", usageType: "product", documentType: "rights" }),
+          ),
+        },
+        body: bytes,
+      }),
+      env,
+    ))!;
+    expect(response.status).toBe(201);
+    const payload = (await response.json()) as { data: { id: string } };
+    expect(
+      sqlite
+        .prepare("SELECT media_type,status,public_access,r2_key FROM product_media WHERE id=?")
+        .get(payload.data.id),
+    ).toMatchObject({
+      media_type: "document",
+      status: "draft",
+      public_access: 0,
+    });
+    expect(
+      sqlite
+        .prepare("SELECT review_status FROM product_documents WHERE media_id=?")
+        .get(payload.data.id),
+    ).toMatchObject({ review_status: "pending" });
   });
   it("publishes all discovery profiles and their sitemap from the central catalog", async () => {
     const products = await catalog();

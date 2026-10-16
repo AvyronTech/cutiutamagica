@@ -100,6 +100,7 @@ export function ProductTechnicalSheet({
           sourceReference: String(form.get("sourceReference") || ""),
           documentId: String(form.get("documentId") || "") || null,
           verifyGtin: form.get("verifyGtin") === "on",
+          changeReason: String(form.get("changeReason") || ""),
         }),
       });
       const payload = (await response.json()) as { error?: { message?: string } };
@@ -256,6 +257,17 @@ export function ProductTechnicalSheet({
                 className={field}
               />
             </label>
+            {(variant.ean_gtin || variant.mpn) && (
+              <label className="text-sm text-slate-300">
+                Motivul retragerii sau schimbării unui cod
+                <input
+                  name="changeReason"
+                  maxLength={500}
+                  placeholder="Obligatoriu dacă modifici codul existent"
+                  className={field}
+                />
+              </label>
+            )}
             <div className="flex items-end">
               <button
                 type="submit"

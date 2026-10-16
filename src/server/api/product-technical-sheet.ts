@@ -17,8 +17,9 @@ const updateSchema = z.object({
   cost: z.number().finite().min(0).max(1_000_000).nullable(),
   identifierSource: z.enum(["gs1", "manufacturer", "supplier"]),
   sourceReference: z.string().trim().max(240),
-  documentId: z.string().uuid().nullable().optional(),
+  documentId: z.string().trim().min(1).max(128).nullable().optional(),
   verifyGtin: z.boolean().optional(),
+  changeReason: z.string().trim().max(500).default(""),
 });
 
 type VariantRow = {
@@ -211,6 +212,20 @@ export async function handleProductTechnicalSheet(
         },
         409,
       );
+    if (
+      ((current.ean_gtin && current.ean_gtin !== (data.eanGtin || null)) ||
+        (current.mpn && current.mpn !== (data.mpn || null))) &&
+      data.changeReason.length < 10
+    )
+      return json(
+        {
+          error: {
+            code: "REASON_REQUIRED",
+            message: "Retragerea sau schimbarea unui cod cere un motiv de cel puțin 10 caractere.",
+          },
+        },
+        400,
+      );
     const source = await env.DB.prepare(
       `SELECT source_type,source_reference,verification_status,verified_at,gtin_type,assigned_at,document_id
       FROM product_identifier_sources WHERE variant_id=?1 AND identifier_type IN ('EAN','GTIN')
@@ -247,13 +262,18 @@ export async function handleProductTechnicalSheet(
         data.expectedVersion,
       ),
       env.DB.prepare(
-        `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,after_json,metadata_json)
-        SELECT ?1,?2,?3,'product.identifier.update','product_variant',?4,?5,'{}' WHERE changes()=1`,
+        `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,before_json,after_json,metadata_json)
+        SELECT ?1,?2,?3,'product.identifier.update','product_variant',?4,?5,?6,?7 WHERE changes()=1`,
       ).bind(
         auditId,
         admin.id,
         admin.email,
         data.variantId,
+        JSON.stringify({
+          eanGtin: current.ean_gtin,
+          mpn: current.mpn,
+          costBani: current.cost_bani,
+        }),
         JSON.stringify({
           eanGtin: nextEan,
           mpn: data.mpn,
@@ -261,6 +281,7 @@ export async function handleProductTechnicalSheet(
           identifierSource: nextEan ? data.identifierSource : null,
           sourceReference: nextEan ? data.sourceReference : null,
         }),
+        JSON.stringify({ reason: data.changeReason || null }),
       ),
     ];
     if (sourceChanged) {
@@ -325,6 +346,7 @@ export async function handleProductTechnicalSheet(
             sourceReference: data.sourceReference,
             documentId: data.documentId ?? null,
             status: nextStatus,
+            reason: data.changeReason || null,
           }),
           admin.id,
           auditId,

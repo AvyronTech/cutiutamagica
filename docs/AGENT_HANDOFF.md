@@ -1,5 +1,16 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-17 — fișe pentru cinci produse și dosare parteneri
+
+- Ramură locală: `codex/catalog-product-files`, pornită din `codex/cutiuta-cloudflare-final`; checkout separat în `.worktrees/catalog-product-files` pentru a păstra modificările existente din checkoutul principal.
+- Catalog: texte calde și concise pentru `hp-keeper`, `got-winter`, `kitten`, `halloween`, `sunshine`, cu titlu și descriere SEO; fișierul `docs/catalog/five-product-marketplace.csv` are anunțurile portabile și câmpul EAN gol.
+- Documente: model universal și câte un dosar DOCX precompletat pentru fiecare produs în `docs/partners/product-packets/`, publicate ca șabloane descărcabile prin `public/templates/parteneri/`. Pentru `kitten` și `halloween`, dosarul indică producție proprie și rubrici de completat, fără aprobări sau semnături inventate.
+- Admin: pagina produsului poate descărca șabloane, încărca/descărca PDF și DOCX private, actualiza documentul, apoi arhiva o versiune numai cu motiv de cel puțin 10 caractere. Motivul și schimbarea intră în audit; versiunea arhivată rămâne disponibilă administratorilor. Schimbarea/ștergerea GTIN ori MPN existent cere motiv auditat.
+- Migrare append-only: `0063_five_product_editorial.sql` actualizează doar texte vechi cunoscute și păstrează editările deja făcute de administratori. Nu alocă GTIN și nu schimbă stoc, preț ori drepturi.
+- Verificări: `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`, `npm run cf:deploy:dry`, migrarea și datele de test D1 locale; pagina produsului verificată la desktop și 390 px mobil, fără depășire orizontală. Capturi: `docs/catalog/screenshots/kitten-desktop.jpg` și `kitten-mobile-390.jpg`. Zona admin cere autentificare, deci nu a fost inspectată vizual în această sesiune.
+- Efecte externe rămase: codurile GS1 nu au fost încă alocate; `generate.plus` oferă EAN de test, nepotrivite ca identificatori comerciali. Dosarele partenerilor au nevoie de completare/semnare, iar drepturile de folosire a mărcilor și melodiilor de verificat înaintea publicării pe alte platforme. Nu s-au făcut push, deploy, migrare D1 remote, upload live sau trimitere către parteneri.
+- Revenire: nu aplica migrarea și nu publica buildul; după aplicare, o migrare nouă poate restaura punctual textele precedente din istoricul Git. Documentele încărcate sunt versiuni private, arhivate logic, nu șterse fizic.
+
 ## Handoff 2026-10-10 — playbook de conținut și agenți sincronizați
 
 - Skillul canonic include `references/content-conversion-playbook.md`, cu structură completă pentru feed, Story în 3–5 cadre, Reel/TikTok nativ, montaj multi-foto, descrieri lungi, link specific către produs și măsurare la 24/72/168 de ore.

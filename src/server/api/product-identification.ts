@@ -44,7 +44,7 @@ const actionSchema = z.discriminatedUnion("action", [
     locationId: id,
     sourceKind: z.enum(["supplier", "in_house"]),
     supplierReference: z.string().trim().max(240).optional(),
-    documentId: z.string().uuid().nullable().optional(),
+    documentId: z.string().trim().min(1).max(128).nullable().optional(),
     receivedAt: z.string().date(),
     quantity: z.number().int().min(1).max(1_000_000),
     notes: z.string().trim().max(1000).optional(),

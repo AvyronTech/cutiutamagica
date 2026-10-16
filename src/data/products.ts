@@ -88,7 +88,10 @@ export const products: Product[] = [
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10090709545" },
     updatedAt: "2026-09-22",
     name: "Cutiuță Muzicală Harry Potter cu Manivelă – Cadou de Colecție",
-    tagline: "Un mic obiect de colecție pentru cei care vor să păstreze puțină magie aproape.",
+    tagline: "Un strop de magie pentru raftul cu povești preferate.",
+    seoTitle: "Cutiuță muzicală Harry Potter cu manivelă | Cutiuța Magică",
+    seoDescription:
+      "Cutiuță muzicală Harry Potter din lemn închis, cu manivelă și mecanism vizibil. Un cadou tematic pentru fani și colecționari.",
     melody: "Hedwig's Theme",
     category: "Harry Potter",
     image: "/produse/hp-keeper/card.webp",
@@ -107,9 +110,9 @@ export const products: Product[] = [
       { src: "/produse/hp-keeper/card.webp", label: "Fotografia din magazin", position: "center" },
     ],
     description:
-      "Cutiuța muzicală inspirată din universul Harry Potter combină lemnul închis la culoare, detaliile tematice și mecanismul metalic vizibil într-un obiect compact și memorabil. Ridici capacul, descoperi grafica interioară, apoi rotești ușor manivela pentru a pune mecanismul muzical în mișcare — fără baterii și fără încărcare. Redă o parte din piesa legendară a seriei de filme, creând o atmosferă magică și fidelă, care trezește emoții unice fanilor și colecționarilor.",
+      "Pentru fanul care păstrează poveștile cu magie aproape: o cutiuță din lemn închis, cu detalii tematice și mecanism la vedere. Deschizi capacul și rotești manivela pentru a asculta melodia, fără baterii. Un dar compact care își găsește locul pe birou, în bibliotecă sau într-o colecție dragă.",
     story:
-      "Este potrivită pentru fani, colecționari, adolescenți 14+, cadouri de aniversare, Crăciun, Secret Santa, dar și ca decor pentru birou, bibliotecă, raft sau vitrină. Mică la dimensiuni. Mare la capitolul magie. Imaginile sunt orientative și pot include elemente decorative care nu fac parte din produs.",
+      "O alegere personală pentru aniversări, Secret Santa sau pentru cineva care zâmbește imediat când recunoaște universul preferat.",
     details: [
       "Dimensiuni aprox.: 6,5 × 5 × 4 cm",
       "Înălțime cu capacul deschis: aprox. 6,2 cm",
@@ -132,8 +135,11 @@ export const products: Product[] = [
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039606794" },
     updatedAt: "2026-09-22",
-    name: "Cutiuță Muzicală Game of Thrones „Winter Is Coming” cu Manivelă – Cadou de Colecție",
-    tagline: "Iarna vine… dar de data aceasta aduce și muzică.",
+    name: "Cutiuță muzicală Game of Thrones „Winter Is Coming”",
+    tagline: "Un mic dar cu aer de legendă, pentru cei care iubesc Nordul.",
+    seoTitle: "Cutiuță muzicală Game of Thrones cu manivelă | Cutiuța Magică",
+    seoDescription:
+      "Cutiuță muzicală Game of Thrones din lemn negru, cu lup, mesaj Winter Is Coming și mecanism manual. Cadou pentru fanii fantasy.",
     melody: "Game of Thrones — Main Theme",
     category: "Fantasy",
     image: "/produse/got-winter/card.webp",
@@ -154,9 +160,9 @@ export const products: Product[] = [
       { src: "/produse/got-winter/6.webp", label: "Pentru seri cu farmec", position: "center" },
     ],
     description:
-      "O cutiuță muzicală cu atmosferă medieval-fantasy, creată pentru fanii Game of Thrones, colecționari și cei care caută un cadou mic, dar memorabil. Designul negru cu lupul direwolf, mesajul „Winter Is Coming” și mecanismul metalic vizibil îi oferă un aspect aparte, potrivit atât pentru colecție, cât și pentru decor.",
+      "Lupul de pe capac, mesajul „Winter Is Coming” și lemnul negru dau acestei cutiuțe o prezență aparte. Când rotești manivela, mecanismul muzical vizibil pune melodia în mișcare, fără baterii. Este un cadou inspirat pentru un fan Game of Thrones sau un detaliu de păstrat într-o colecție fantasy.",
     story:
-      "Rotește ușor manivela metalică, iar mecanismul clasic pune melodia în mișcare — manual, fără baterii și fără încărcare. Poate fi oferită la aniversări, Crăciun, Secret Santa sau altor pasionați de universuri fantasy și poate completa perfect un birou, o bibliotecă, un raft sau o vitrină de colecție. Mică la dimensiuni. Legendară prin atmosferă. Imaginile sunt orientative și pot include elemente de decor care nu fac parte din produs.",
+      "Se potrivește unui birou sau unei biblioteci cu povești epice și aduce un moment recognoscibil într-un dar de dimensiuni mici.",
     details: [
       "Dimensiuni aprox.: 6,5 × 4 × 5 cm / 2.55 × 1.57 × 1.96 in",
       "Funcționare: mecanică, prin rotirea manivelei",
@@ -178,7 +184,10 @@ export const products: Product[] = [
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039491875" },
     updatedAt: "2026-09-22",
     name: "Cutiuță Muzicală cu Pisicuță și Lună – Manivelă, Cadou de Colecție",
-    tagline: "O cutiuță mică, o scenă de poveste și o melodie care face momentul mai cald.",
+    tagline: "Un gest mic și tandru pentru cineva care iubește pisicile.",
+    seoTitle: "Cutiuță muzicală cu pisicuță și manivelă | Cutiuța Magică",
+    seoDescription:
+      "Cutiuță muzicală din lemn cu pisicuță și lună, manivelă și mecanism vizibil. Un cadou delicat pentru iubitorii de pisici.",
     melody: "La Vie en Rose",
     category: "Cadouri Speciale",
     image: "/produse/kitten/card.webp",
@@ -200,9 +209,9 @@ export const products: Product[] = [
       { src: "/produse/kitten/card.webp", label: "Fotografia din magazin", position: "center" },
     ],
     description:
-      "Cutiuța muzicală cu pisicuță, lună strălucitoare și fluturi este un obiect decorativ și de colecție cu un farmec aparte. Ridici capacul, descoperi ilustrația, apoi rotești ușor manivela pentru a pune în mișcare mecanismul muzical metalic — fără baterii și fără încărcare.",
+      "Pentru iubitorii de pisici și de daruri cu poveste, această cutiuță aduce împreună ilustrația cu pisicuță și lună, lemnul deschis și o melodie caldă. Ridici capacul, apoi rotești manivela pentru a asculta mecanismul muzical, fără baterii. O surpriză delicată pentru o aniversare sau un simplu „m-am gândit la tine”.",
     story:
-      "Realizată din lemn deschis la culoare, cu modele decorative gravate și mecanism vizibil, este potrivită pentru iubitorii de pisici, colecționari, familie, cupluri sau persoane dragi. Poate fi oferită la aniversări, zile de naștere, Crăciun sau pur și simplu ca un mic dar-surpriză și poate fi păstrată ca decor pe birou, raft, bibliotecă ori într-o vitrină. Un dar mic, pentru bucurii mari. Imaginile sunt orientative și pot include elemente decorative care nu fac parte din produs.",
+      "Mică și ușor de așezat pe birou ori pe raft, păstrează farmecul unui gest personal mult după momentul în care a fost oferită.",
     details: [
       "Dimensiuni aprox.: 6,4 × 3,6 × 5 cm",
       "Funcționare: mecanică, prin rotirea manuală a manivelei",
@@ -225,7 +234,10 @@ export const products: Product[] = [
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039375629" },
     updatedAt: "2026-09-22",
     name: "Cutiuță Muzicală Halloween cu Manivelă – Cadou Misterios & Decor Tematic",
-    tagline: "O cutiuță mică, o melodie misterioasă și puțină magie de Halloween.",
+    tagline: "O mică poveste misterioasă, numai bună pentru sezonul dovlecilor.",
+    seoTitle: "Cutiuță muzicală Halloween cu manivelă | Cutiuța Magică",
+    seoDescription:
+      "Cutiuță muzicală Halloween din lemn, cu ilustrație tematică și mecanism manual. Cadou sau decor de sezon cu poveste.",
     melody: "This Is Halloween",
     category: "Halloween",
     image: "/produse/halloween/card.webp",
@@ -252,9 +264,9 @@ export const products: Product[] = [
       { src: "/produse/halloween/card.webp", label: "Fotografia din magazin", position: "center" },
     ],
     description:
-      "Ridică capacul, rotește manivela și lasă mecanismul muzical să dea viață atmosferei. Designul tematic, detaliile de Halloween și mecanismul vizibil transformă această cutiuță într-un cadou aparte și într-un decor memorabil.",
+      "Un detaliu care schimbă atmosfera unui colț de raft: ilustrația de Halloween, lemnul și mecanismul muzical la vedere dau acestei cutiuțe un farmec misterios. Deschizi capacul și rotești manivela ca să pornești melodia, fără baterii. Se potrivește unui decor de sezon sau unui cadou pentru cineva care așteaptă cu drag serile de octombrie.",
     story:
-      "Potrivită pentru cadouri, colecționari, petreceri și evenimente tematice, decoruri de Halloween sau adolescenți 12+. Funcționează mecanic, prin rotirea manivelei, fără baterii. Mică la dimensiuni. Mare la atmosferă. Imaginile sunt orientative și pot include elemente decorative care nu fac parte din produs.",
+      "O idee de dar pentru colecționari și gazde care preferă decorurile cu poveste, nu doar ornamentele obișnuite.",
     details: [
       "Dimensiuni: 6,4 × 3,8 × 5 cm / 2.51 × 1.49 × 1.96 in",
       "Funcționare: mecanică, prin rotirea manivelei, fără baterii",
@@ -276,8 +288,11 @@ export const products: Product[] = [
     availability: "available",
     source: { platform: "vinted", url: "https://www.vinted.ro/items/10039368670" },
     updatedAt: "2026-09-22",
-    name: "Cutiuță Muzicală „You Are My Sunshine” cu Manivelă – Cadou de Colecție",
-    tagline: "Uneori, cele mai frumoase amintiri încap într-o cutiuță.",
+    name: "Cutiuță muzicală „You Are My Sunshine”",
+    tagline: "Pentru omul care îți face zilele mai luminoase.",
+    seoTitle: "Cutiuță muzicală You Are My Sunshine | Cutiuța Magică",
+    seoDescription:
+      "Cutiuță muzicală You Are My Sunshine din lemn închis, cu mesaj sub capac și manivelă. Cadou personal pentru cuplu sau familie.",
     melody: "You Are My Sunshine",
     category: "Cadouri Speciale",
     image: "/produse/sunshine/card.webp",
@@ -294,9 +309,9 @@ export const products: Product[] = [
       { src: "/produse/sunshine/6.webp", label: "Melodia You Are My Sunshine", position: "center" },
     ],
     description:
-      "Cutiuța muzicală „You Are My Sunshine” este un mic obiect de colecție creat pentru a transforma un gest simplu într-un moment special. Designul din lemn, detaliile decorative și mesajul ascuns sub capac o fac potrivită atât pentru cupluri și familie, cât și pentru cei care iubesc obiectele cu poveste. Rotești ușor manivela metalică, cilindrul mecanismului pune în mișcare pieptenele muzical, iar melodia începe să se audă — fără baterii și fără încărcare.",
+      "Unele mesaje se simt mai bine decât se spun. Sub capacul acestei cutiuțe din lemn închis se află un mesaj afectuos; manivela pune în mișcare mecanismul muzical vizibil, fără baterii. Este un cadou mic și personal pentru partener, un membru al familiei sau cineva căruia vrei să-i amintești cât înseamnă pentru tine.",
     story:
-      "Mecanismul rămâne vizibil atunci când capacul este deschis, ceea ce îi oferă un farmec aparte și o transformă într-un obiect interesant de păstrat și expus. Este o alegere potrivită pentru aniversări, zile de naștere, Valentine’s Day, Crăciun, cadouri pentru partener, părinți sau persoane apropiate, dar și ca decor pentru birou, bibliotecă, vitrină, dormitor sau o colecție personală. Mică la dimensiuni, dar făcută să păstreze momente mari. Imaginile de prezentare sunt orientative; decorurile și accesoriile din fotografii nu sunt incluse.",
+      "Se oferă firesc la aniversare, de sărbători sau într-o zi obișnuită pe care vrei să o faci memorabilă.",
     details: [
       "Melodie: You Are My Sunshine",
       "Dimensiuni: aprox. 6,5 × 3,8 × 5 cm / 2.55 × 1.5 × 1.97 in",
