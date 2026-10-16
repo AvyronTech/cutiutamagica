@@ -61,6 +61,7 @@ export function ProductCard({
         />
         <span className="product-card-scene__plane" />
         <span className="product-card-scene__orbit" />
+        <span className="product-card-scene__horizon" />
       </div>
       <Link {...productLink(product.id)} className="block">
         <div

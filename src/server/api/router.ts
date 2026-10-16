@@ -28,6 +28,7 @@ import { handleProductIdentification } from "@/server/api/product-identification
 import { handleAdminAvyronSyncApi } from "@/server/api/admin-avyron-sync";
 import { handleAdminMarketingAgentApi } from "@/server/api/admin-marketing-agent";
 import { handleAdminAiStudioApi } from "@/server/api/admin-ai-studio";
+import { handleAdminShippingLabel } from "@/server/api/admin-shipping-label";
 import { handlePromotionCodes } from "@/server/api/promotions";
 import { getPublicProductExperience } from "@/server/api/product-experience";
 import { handleCommerceApi } from "@/server/api/commerce";
@@ -224,6 +225,8 @@ export async function handleApiRequest(
 
   const checkoutAdminResponse = await handleCheckoutAdmin(request, env as CommerceEnv);
   if (checkoutAdminResponse) return checkoutAdminResponse;
+  const shippingLabelResponse = await handleAdminShippingLabel(request, env as CommerceEnv);
+  if (shippingLabelResponse) return shippingLabelResponse;
   const salesResponse = await handleSalesWorkbench(request, env);
   if (salesResponse) return salesResponse;
   const designResponse = await handleStorefrontDesign(request, env);

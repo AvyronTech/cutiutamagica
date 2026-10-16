@@ -241,11 +241,13 @@ async function loadShippingPrice(
   const row = await db
     .prepare(
       `SELECT standard_price_bani, locker_price_bani, free_over_bani,
-              easybox_enabled, validation_status
+              easybox_enabled, use_live_quotes, validation_status
        FROM shipping_policy_configs WHERE code = 'RO_STANDARD'`,
     )
     .first<DbRow>();
   if (!row || row.validation_status !== "verified") return { amountBani: 0, pending: true };
+  if (option === "home_delivery" && numberValue(row.use_live_quotes) === 1)
+    return { amountBani: 0, pending: true };
   if (row.free_over_bani != null && subtotalAfterDiscountBani >= numberValue(row.free_over_bani)) {
     return { amountBani: 0, pending: false };
   }
@@ -399,6 +401,18 @@ export async function createWebsiteOrder(
       "Selectează un easybox și confirmă costul livrării înainte de comandă.",
       409,
     );
+  if (input.shippingOption === "home_delivery" && shipping.pending && !input.shippingQuoteId) {
+    const policy = await db
+      .prepare(
+        "SELECT use_live_quotes, validation_status FROM shipping_policy_configs WHERE code='RO_STANDARD'",
+      )
+      .first<DbRow>();
+    if (policy?.validation_status === "verified" && numberValue(policy.use_live_quotes) === 1)
+      throw new CheckoutError(
+        "Alege un curier și confirmă oferta de livrare înainte de comandă.",
+        409,
+      );
+  }
   if (input.shippingQuoteId) {
     const quote = await db
       .prepare(

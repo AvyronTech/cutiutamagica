@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, useReducedMotion } from "framer-motion";
 import { useState, type FormEvent, type PointerEvent } from "react";
@@ -11,20 +12,29 @@ import {
   LockKeyhole,
   ShieldCheck,
   Sparkles,
+  Mail,
+  Gift,
+  CalendarDays,
 } from "lucide-react";
 import { z } from "zod";
-import bgPoveste from "@/assets/bg-poveste.jpg";
 import { loginAdminAccount } from "@/lib/admin-auth.functions";
+import { reviewApi, type Reviewer } from "@/lib/reviews";
 
-const authSearchSchema = z.object({ redirect: z.string().optional() });
+const authSearchSchema = z.object({
+  redirect: z.string().optional(),
+  role: z.enum(["client", "admin"]).optional(),
+});
 
 export const Route = createFileRoute("/auth")({
   validateSearch: authSearchSchema,
   component: AuthPage,
   head: () => ({
     meta: [
-      { title: "Autentificare administrare · Cutiuța Magică" },
-      { name: "description", content: "Acces privat în administrarea Cutiuța Magică." },
+      { title: "Intră în cont · Cutiuța Magică" },
+      {
+        name: "description",
+        content: "Acces în contul Cutiuța Magică pentru clienți și echipa magazinului.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -45,6 +55,12 @@ const fieldClass =
 
 function AuthPage() {
   const search = useSearch({ from: "/auth" });
+  const customerMode = search.role === "client" || (!search.redirect && search.role !== "admin");
+  if (customerMode) return <CustomerAuth />;
+  return <AdminAuth redirect={search.redirect} />;
+}
+
+function AdminAuth({ redirect }: { redirect?: string }) {
   const login = useServerFn(loginAdminAccount);
   const reducedMotion = useReducedMotion();
   const [showPassword, setShowPassword] = useState(false);
@@ -70,7 +86,7 @@ function AuthPage() {
       await login({
         data: { email: String(form.get("email")), password: String(form.get("password")) },
       });
-      window.location.assign(safeRedirect(search.redirect));
+      window.location.assign(safeRedirect(redirect));
     } catch (cause) {
       setError(readableError(cause));
       setBusy(false);
@@ -78,17 +94,17 @@ function AuthPage() {
   }
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-[#17100c] text-[#fff9ed]">
+    <main className="admin-login relative min-h-[100svh] overflow-hidden bg-[#17100c] text-[#fff9ed]">
       <motion.img
-        src={bgPoveste}
+        src="/scenes/music-box-world.webp"
         alt=""
         aria-hidden="true"
         initial={reducedMotion ? false : { scale: 1.04, opacity: 0 }}
-        animate={{ scale: 1, opacity: 0.34 }}
+        animate={{ scale: 1, opacity: 0.92 }}
         transition={{ duration: 1.2, ease: "easeOut" }}
         className="absolute inset-0 h-full w-full object-cover"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(20,12,8,.97),rgba(39,23,14,.80)_55%,rgba(20,12,8,.94))]" />
+      <div className="admin-login__shade absolute inset-0" />
       <motion.div
         aria-hidden="true"
         animate={reducedMotion ? undefined : { y: [0, -12, 0], opacity: [0.35, 0.6, 0.35] }}
@@ -110,7 +126,7 @@ function AuthPage() {
             >
               <ArrowLeft size={14} /> Înapoi la magazin
             </Link>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#e8c88d]/30 bg-black/20 px-3 py-1.5 text-[11px] uppercase tracking-[.12em] text-[#f3d9a8] backdrop-blur md:mt-8">
+            <div className="mt-5 flex w-fit items-center gap-2 rounded-full border border-[#e8c88d]/30 bg-black/20 px-3 py-1.5 text-[11px] uppercase tracking-[.12em] text-[#f3d9a8] backdrop-blur md:mt-8">
               <Sparkles className="h-3.5 w-3.5" /> Atelierul din culise
             </div>
             <h1 className="mt-5 max-w-lg font-display text-4xl leading-[1.02] sm:text-5xl md:text-6xl">
@@ -142,10 +158,22 @@ function AuthPage() {
             animate={{ rotateX: tilt.x, rotateY: tilt.y }}
             transition={{ type: "spring", stiffness: 180, damping: 22 }}
             style={{ transformPerspective: 1000, transformStyle: "preserve-3d" }}
-            className="rounded-lg border border-white/15 bg-[#20150f]/80 p-5 shadow-2xl backdrop-blur-2xl sm:p-7 md:p-8"
+            className="rounded-2xl border border-white/15 bg-[#20150f]/85 p-5 shadow-2xl backdrop-blur-2xl sm:p-7 md:p-8"
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-[#e8c88d]/30 bg-[#e8c88d]/10">
               <ShieldCheck className="h-5 w-5 text-[#e8c88d]" />
+            </div>
+            <div className="mt-4 flex gap-2 text-xs">
+              <Link
+                to="/auth"
+                search={{ role: "client" }}
+                className="rounded-full border border-white/15 px-3 py-2 text-[#f7ead3]/70 hover:text-white"
+              >
+                Cont client
+              </Link>
+              <span className="rounded-full border border-[#e8c88d]/50 bg-[#e8c88d]/15 px-3 py-2 text-[#f3d9a8]">
+                Echipă
+              </span>
             </div>
             <h2 className="mt-4 font-display text-3xl">Intră în administrare</h2>
             <p className="mt-2 text-sm leading-6 text-[#f7ead3]/65">
@@ -201,6 +229,185 @@ function AuthPage() {
             ) : null}
           </motion.section>
         </div>
+      </div>
+    </main>
+  );
+}
+
+function CustomerAuth() {
+  const providers = useQuery({
+    queryKey: ["reviewer-auth-providers"],
+    queryFn: () =>
+      reviewApi<{ google: { enabled: boolean }; email: { enabled: boolean } }>(
+        "/api/v1/reviewer/providers",
+      ),
+    retry: false,
+  });
+  const [email, setEmail] = useState("");
+  const [challengeId, setChallengeId] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function requestCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const result = await reviewApi<{ challengeId: string }>("/api/v1/reviewer/email/start", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      setChallengeId(result.challengeId);
+    } catch (cause) {
+      setError(readableError(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await reviewApi<Reviewer>("/api/v1/reviewer/email/verify", {
+        method: "POST",
+        body: JSON.stringify({ email, challengeId, code }),
+      });
+      window.location.assign("/cont");
+    } catch (cause) {
+      setError(readableError(cause));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="customer-login">
+      <img
+        className="customer-login__scene"
+        src="/scenes/music-box-world.webp"
+        alt=""
+        aria-hidden="true"
+      />
+      <div className="customer-login__shade" aria-hidden="true" />
+      <div className="customer-login__layout">
+        <section className="customer-login__story">
+          <Link className="customer-login__back" to="/">
+            <ArrowLeft size={16} /> Înapoi la magazin
+          </Link>
+          <span className="customer-login__eyebrow">
+            <Sparkles size={15} /> Contul Cutiuța Magică
+          </span>
+          <h1>
+            Toate poveștile tale, <em>într-un singur loc.</em>
+          </h1>
+          <p>Urmărești comenzile, păstrezi momentele importante și vezi fiecare stea câștigată.</p>
+          <div className="customer-login__benefits">
+            <span>
+              <Gift size={18} /> Comenzi și cadouri
+            </span>
+            <span>
+              <CalendarDays size={18} /> Calendar personal
+            </span>
+            <span>
+              <Sparkles size={18} /> Magic Rewards
+            </span>
+          </div>
+        </section>
+        <section className="customer-login__card" aria-labelledby="customer-login-title">
+          <div className="customer-login__tabs">
+            <span aria-current="page">Cont client</span>
+            <Link to="/auth" search={{ role: "admin", redirect: "/admin" }}>
+              Echipă
+            </Link>
+          </div>
+          <div className="customer-login__icon">
+            <Mail size={23} />
+          </div>
+          <p className="customer-login__kicker">Bine ai revenit</p>
+          <h2 id="customer-login-title">
+            {challengeId ? "Verifică-ți e-mailul" : "Intră în povestea ta"}
+          </h2>
+          <p className="customer-login__intro">
+            {challengeId
+              ? `Am trimis un cod de 8 cifre la ${email}. Este valabil 10 minute.`
+              : "Primești un cod de acces pe e-mail. La prima vizită, contul se creează automat."}
+          </p>
+          {challengeId ? (
+            <form onSubmit={(event) => void verifyCode(event)} className="customer-login__form">
+              <label htmlFor="customer-login-code">Codul de acces</label>
+              <input
+                id="customer-login-code"
+                value={code}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 8))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{8}"
+                maxLength={8}
+                required
+                placeholder="00000000"
+                autoFocus
+              />
+              <button disabled={busy || code.length !== 8}>
+                {busy ? "Se verifică…" : "Deschide contul"} <ArrowRight size={17} />
+              </button>
+              <button
+                type="button"
+                className="customer-login__text-button"
+                onClick={() => {
+                  setChallengeId("");
+                  setCode("");
+                  setError("");
+                }}
+              >
+                Schimbă adresa de e-mail
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={(event) => void requestCode(event)} className="customer-login__form">
+              <label htmlFor="customer-login-email">Adresa ta de e-mail</label>
+              <input
+                id="customer-login-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                inputMode="email"
+                maxLength={254}
+                required
+                placeholder="nume@exemplu.ro"
+              />
+              <button
+                disabled={busy || providers.isLoading || providers.data?.email.enabled === false}
+              >
+                {busy ? "Se trimite…" : "Trimite codul de acces"} <ArrowRight size={17} />
+              </button>
+            </form>
+          )}
+          {error && (
+            <p className="customer-login__error" role="alert">
+              {error}
+            </p>
+          )}
+          {providers.data?.google.enabled && (
+            <div className="customer-login__alternate">
+              <span>sau</span>
+              <a href="/api/v1/reviewer/oauth/google">
+                Continuă cu Google <ArrowRight size={16} />
+              </a>
+            </div>
+          )}
+          {providers.data?.email.enabled === false && !providers.data.google.enabled && (
+            <p className="customer-login__error" role="status">
+              Accesul prin e-mail este în configurare. Poți continua cumpărăturile fără cont.
+            </p>
+          )}
+          <p className="customer-login__privacy">
+            Continuând, confirmi că ai citit{" "}
+            <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
+          </p>
+        </section>
       </div>
     </main>
   );

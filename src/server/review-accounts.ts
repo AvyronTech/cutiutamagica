@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { Reviewer } from "@/lib/reviews";
 import { readProviderJson } from "./integrations/provider-runtime";
 import { credential } from "./services/growth-settings";
+import { hasEmailTransport, sendEmail } from "./integrations/resend";
+import { boundedJson } from "./api/bounded-json";
 import type { CommerceEnv } from "./integrations/provider-runtime";
 
 type CustomerOAuthEnv = Env & {
@@ -41,6 +43,18 @@ export function requestIP(request: Request) {
 }
 const cookieName = "cm_reviewer";
 const oauthStateCookie = "cm_customer_oauth_state";
+const customerEmailSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(254)
+    .transform((value) => value.toLowerCase()),
+});
+const customerCodeSchema = customerEmailSchema.extend({
+  challengeId: z.string().uuid(),
+  code: z.string().regex(/^\d{8}$/),
+});
 
 function requestCookie(request: Request, name: string) {
   return request.headers
@@ -114,6 +128,96 @@ async function createReviewerSession(request: Request, env: Env, account: Review
     ).bind(await digest(value), account.id, Math.floor(Date.now() / 1000) + 604800),
   ]);
   return reviewJson({ data: account }, 200, { "set-cookie": cookie(request, value) });
+}
+
+async function startCustomerEmailLogin(request: Request, env: Env) {
+  const data = customerEmailSchema.parse(await boundedJson(request, 2_000));
+  await reviewRate(
+    env,
+    [`customer-email-ip:${requestIP(request)}`, `customer-email-address:${data.email}`],
+    5,
+  );
+  if (!(await hasEmailTransport(env)))
+    throw reviewFailure("Autentificarea prin e-mail nu este disponibilă momentan.", 503);
+
+  const challengeId = crypto.randomUUID();
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 100_000_000).padStart(8, "0");
+  const expiresAt = Math.floor(Date.now() / 1000) + 600;
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM customer_login_challenges WHERE expires_at<?1").bind(
+      Math.floor(Date.now() / 1000),
+    ),
+    env.DB.prepare(
+      `INSERT INTO customer_login_challenges(id,email_normalized,code_hash,expires_at)
+       VALUES(?1,?2,?3,?4)`,
+    ).bind(challengeId, data.email, await digest(`${challengeId}:${code}`), expiresAt),
+  ]);
+  try {
+    await sendEmail(env, {
+      to: data.email,
+      subject: "Codul tău de acces · Cutiuța Magică",
+      text: `Codul tău de acces este ${code}. Este valabil 10 minute. Dacă nu ai cerut acest cod, ignoră mesajul.`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#302219"><p>Cutiuța Magică</p><h1>Intră în povestea ta</h1><p>Codul tău de acces este:</p><p style="font-size:32px;font-weight:700;letter-spacing:8px">${code}</p><p>Este valabil 10 minute. Dacă nu ai cerut acest cod, ignoră mesajul.</p></div>`,
+      idempotencyKey: `customer-login/${challengeId}`,
+      entityType: "customer_login_challenge",
+      entityId: challengeId,
+    });
+  } catch (error) {
+    await env.DB.prepare("DELETE FROM customer_login_challenges WHERE id=?1")
+      .bind(challengeId)
+      .run();
+    throw error;
+  }
+  return reviewJson({ data: { challengeId, expiresInSeconds: 600 } });
+}
+
+async function verifyCustomerEmailLogin(request: Request, env: Env) {
+  const data = customerCodeSchema.parse(await boundedJson(request, 2_000));
+  await reviewRate(env, [`customer-code-ip:${requestIP(request)}`], 30);
+  const now = Math.floor(Date.now() / 1000);
+  const attempt = await env.DB.prepare(
+    `UPDATE customer_login_challenges SET attempts=attempts+1
+     WHERE id=?1 AND email_normalized=?2 AND consumed_at IS NULL
+       AND expires_at>?3 AND attempts<5
+     RETURNING code_hash`,
+  )
+    .bind(data.challengeId, data.email, now)
+    .first<{ code_hash: string }>();
+  if (!attempt || !sameToken(attempt.code_hash, await digest(`${data.challengeId}:${data.code}`)))
+    throw reviewFailure("Cod invalid sau expirat. Cere un cod nou.", 401);
+  const consumed = await env.DB.prepare(
+    `UPDATE customer_login_challenges SET consumed_at=?2
+     WHERE id=?1 AND consumed_at IS NULL AND expires_at>?2
+     RETURNING id`,
+  )
+    .bind(data.challengeId, now)
+    .first<{ id: string }>();
+  if (!consumed) throw reviewFailure("Codul a fost deja folosit.", 401);
+
+  let account = await env.DB.prepare(
+    "SELECT id,display_name AS displayName,email FROM review_accounts WHERE email=?1 AND status='active'",
+  )
+    .bind(data.email)
+    .first<Reviewer>();
+  if (!account) {
+    const id = crypto.randomUUID();
+    const displayName = safeDisplayName(null, data.email);
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO review_accounts(
+         id,email,display_name,password_hash,password_salt,status,auth_mode
+       ) VALUES(?1,?2,?3,?4,?5,'active','password')`,
+    )
+      .bind(id, data.email, displayName, randomHex(), randomHex(16))
+      .run();
+    account = await env.DB.prepare(
+      "SELECT id,display_name AS displayName,email FROM review_accounts WHERE email=?1 AND status='active'",
+    )
+      .bind(data.email)
+      .first<Reviewer>();
+  }
+  if (!account) throw reviewFailure("Contul nu poate fi deschis acum.", 409);
+  await ensureCommerceCustomer(env, account);
+  return createReviewerSession(request, env, account);
 }
 
 async function ensureCommerceCustomer(env: Env, account: Reviewer) {
@@ -295,7 +399,10 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
     const customerEnv = env as CustomerOAuthEnv;
     if (path === "/api/v1/reviewer/providers" && request.method === "GET")
       return reviewJson({
-        data: { google: { enabled: Boolean(await googleOAuthCredentials(customerEnv)) } },
+        data: {
+          google: { enabled: Boolean(await googleOAuthCredentials(customerEnv)) },
+          email: { enabled: await hasEmailTransport(env) },
+        },
       });
     if (path === "/api/v1/reviewer/oauth/google" && request.method === "GET")
       return startGoogleOAuth(request, customerEnv);
@@ -305,6 +412,9 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
       return reviewJson({ data: await currentReviewer(request, env) });
     if (request.method !== "POST") throw reviewFailure("Metodă nepermisă.", 405);
     sameOrigin(request);
+    if (path === "/api/v1/reviewer/email/start") return await startCustomerEmailLogin(request, env);
+    if (path === "/api/v1/reviewer/email/verify")
+      return await verifyCustomerEmailLogin(request, env);
     if (path === "/api/v1/reviewer/logout") {
       const value = token(request);
       if (value)
@@ -316,7 +426,10 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
       });
     }
     if (["/api/v1/reviewer/login", "/api/v1/reviewer/register"].includes(path))
-      throw reviewFailure("Conturile clienților folosesc autentificarea securizată Google.", 410);
+      throw reviewFailure(
+        "Conturile clienților folosesc autentificarea prin e-mail sau Google.",
+        410,
+      );
     throw reviewFailure("Pagina nu există.", 404);
   } catch (error) {
     if (path === "/api/v1/reviewer/oauth/google/callback") {

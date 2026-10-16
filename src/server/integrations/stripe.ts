@@ -13,6 +13,7 @@ export interface StripeCheckoutInput {
   orderId: string;
   orderNumber: string;
   customerEmail: string;
+  customerId?: string | null;
   amountBani: number;
   currency: string;
   description: string;
@@ -29,11 +30,20 @@ export async function createStripeCheckoutSession(
   params.set("mode", "payment");
   params.set("success_url", `${env.PUBLIC_SITE_URL}/comanda?payment=return`);
   params.set("cancel_url", `${env.PUBLIC_SITE_URL}/comanda?payment=cancelled`);
-  params.set("customer_email", input.customerEmail);
+  const savedCustomer = input.customerId
+    ? await env.DB.prepare(
+        `SELECT external_customer_id AS id FROM billing_customers
+         WHERE customer_id=?1 AND provider='stripe' AND environment=?2 AND status='active'`,
+      )
+        .bind(input.customerId, env.APP_ENV === "production" ? "production" : "sandbox")
+        .first<{ id: string }>()
+    : null;
+  if (savedCustomer?.id) params.set("customer", savedCustomer.id);
+  else params.set("customer_email", input.customerEmail);
   params.set("client_reference_id", input.orderId);
   params.set("metadata[order_id]", input.orderId);
   params.set("metadata[order_number]", input.orderNumber);
-  params.set("payment_method_types[0]", "card");
+  // Stripe shows the eligible methods enabled for this account and currency.
   params.set("locale", "ro");
   params.set("line_items[0][quantity]", "1");
   params.set("line_items[0][price_data][currency]", input.currency.toLowerCase());

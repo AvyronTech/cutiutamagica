@@ -522,29 +522,40 @@ function ProductPage() {
         </div>
       </div>
 
-      <ProductDiscovery product={product} />
-      <ProductReviews
-        key={product.id}
-        slug={product.id}
-        name={product.name}
-        products={products.map(({ id, name: productName }) => ({ id, name: productName }))}
-        initial={reviews}
-      />
-
-      {experienceQuery.data?.animation && (
-        <ProductAnimation animation={experienceQuery.data.animation} productName={product.name} />
-      )}
-
-      {related.length > 0 && (
-        <section className="product-related-section max-w-7xl mx-auto px-4">
-          <h2 className="font-display text-3xl mb-6 text-center">Și acestea îți pot plăcea</h2>
-          <ProductCardCarousel
-            products={related}
-            ariaLabel="Alte cutiuțe care ți-ar putea plăcea"
-            compact
+      <div className="product-world-afterstory">
+        <div className="product-world-afterstory__scene" aria-hidden>
+          <ProductImage
+            src={product.gallery[0]?.src ?? product.image}
+            alt=""
+            loading="lazy"
+            sizes="(max-width: 767px) 100vw, 70vw"
           />
-        </section>
-      )}
+          <span className="product-world-afterstory__horizon" />
+        </div>
+        <ProductDiscovery product={product} />
+        <ProductReviews
+          key={product.id}
+          slug={product.id}
+          name={product.name}
+          products={products.map(({ id, name: productName }) => ({ id, name: productName }))}
+          initial={reviews}
+        />
+
+        {experienceQuery.data?.animation && (
+          <ProductAnimation animation={experienceQuery.data.animation} productName={product.name} />
+        )}
+
+        {related.length > 0 && (
+          <section className="product-related-section max-w-7xl mx-auto px-4">
+            <h2 className="font-display text-3xl mb-6 text-center">Și acestea îți pot plăcea</h2>
+            <ProductCardCarousel
+              products={related}
+              ariaLabel="Alte cutiuțe care ți-ar putea plăcea"
+              compact
+            />
+          </section>
+        )}
+      </div>
 
       <AnimatePresence>
         {zoomOpen && (

@@ -30,7 +30,7 @@ const eventSchema = z
     personName: z.string().trim().min(1).max(80),
     eventMonth: z.number().int().min(1).max(12),
     eventDay: z.number().int().min(1).max(31),
-    reminderDays: z.array(z.number().int().min(0).max(90)).min(1).max(5).default([12, 3]),
+    reminderDays: z.array(z.number().int().min(0).max(90)).min(1).max(5).default([7, 3]),
     emailEnabled: z.boolean().default(true),
   })
   .refine(
@@ -109,6 +109,18 @@ export async function handleCustomerLoyalty(request: Request, env: Env): Promise
       return reviewJson({ data: { id } }, 201);
     }
     const eventMatch = url.pathname.match(/^\/api\/v1\/customer\/gift-calendar\/([a-f0-9-]{36})$/);
+    if (eventMatch && request.method === "PATCH") {
+      const data = z.object({ emailEnabled: z.boolean() }).parse(await boundedJson(request, 1_000));
+      const updated = await env.DB.prepare(
+        `UPDATE gift_calendar_events SET email_enabled=?3,
+         updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+         WHERE id=?1 AND review_account_id=?2 RETURNING id`,
+      )
+        .bind(eventMatch[1], account.id, data.emailEnabled ? 1 : 0)
+        .first<{ id: string }>();
+      if (!updated) return reviewJson({ error: { message: "Momentul nu a fost găsit." } }, 404);
+      return reviewJson({ data: { saved: true } });
+    }
     if (eventMatch && request.method === "DELETE") {
       await env.DB.prepare("DELETE FROM gift_calendar_events WHERE id=?1 AND review_account_id=?2")
         .bind(eventMatch[1], account.id)
