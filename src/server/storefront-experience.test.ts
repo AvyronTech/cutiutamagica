@@ -193,8 +193,20 @@ describe("storefront and dashboard share one catalog", () => {
       (await (await handleProductTechnicalSheet(
         new Request(`https://test.local${path}`),
         env,
-      ))!.json()) as { data: { variant: { id: string; version: number } } }
+      ))!.json()) as {
+        data: {
+          variant: { id: string; version: number };
+          barcodeTestSamples: { ean13_sample: string; ean8_sample: string };
+        };
+      }
     ).data;
+    expect(initial.barcodeTestSamples).toMatchObject({
+      ean13_sample: "4641770966880",
+      ean8_sample: "31705806",
+    });
+    expect(
+      sqlite.prepare("SELECT COUNT(*) AS count FROM product_barcode_test_samples").get(),
+    ).toMatchObject({ count: 5 });
     const body = {
       variantId: initial.variant.id,
       expectedVersion: initial.variant.version,
@@ -208,6 +220,19 @@ describe("storefront and dashboard share one catalog", () => {
       (await handleProductTechnicalSheet(patch(path, { ...body, eanGtin: "4006381333932" }), env))!
         .status,
     ).toBe(400);
+    for (const sample of [
+      initial.barcodeTestSamples.ean13_sample,
+      initial.barcodeTestSamples.ean8_sample,
+    ]) {
+      expect(
+        (await handleProductTechnicalSheet(patch(path, { ...body, eanGtin: sample }), env))!.status,
+      ).toBe(400);
+      expect(() =>
+        sqlite
+          .prepare("UPDATE product_variants SET ean_gtin=? WHERE id=?")
+          .run(sample, body.variantId),
+      ).toThrow("test_only_gtin");
+    }
     expect((await handleProductTechnicalSheet(patch(path, body), env))!.status).toBe(200);
     const source = sqlite
       .prepare(

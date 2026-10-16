@@ -84,7 +84,8 @@ def build(slug=None):
     table(doc, [
         ("Produs", title),
         ("SKU intern", item.get("sku", "[SKU]")),
-        ("GTIN EAN oficial", "[De completat după alocarea GS1; nu folosiți un număr de test]"),
+        ("GTIN-8 / EAN-8 oficial", "[Completați numai dacă acest format a fost alocat de GS1]"),
+        ("GTIN-13 / EAN-13 oficial", "[Completați numai dacă acest format a fost alocat de GS1]"),
         ("Rol operator", "Producție proprie, de documentat" if in_house else "[Producător / furnizor / importator]"),
         ("Versiune, dată, lot", "[Versiune]  [Data]  [Lot sau serie]"),
     ])

@@ -792,6 +792,19 @@ async function importIdentities(
     if (row.gtin) {
       if (!gtinType(row.gtin))
         errors.push({ row: index + 1, message: "GTIN invalid: lungime sau cifră de control." });
+      const generatedSample = await db
+        .prepare(
+          `SELECT product_id FROM product_barcode_test_samples
+           WHERE ean13_sample=?1 OR ean8_sample=?1 LIMIT 1`,
+        )
+        .bind(row.gtin)
+        .first();
+      if (generatedSample)
+        errors.push({
+          row: index + 1,
+          message:
+            "Codul generat pe generate.plus este doar pentru test, nu pentru import comercial.",
+        });
       if (seenGtins.has(row.gtin))
         errors.push({ row: index + 1, message: "GTIN repetat în fișier." });
       seenGtins.add(row.gtin);

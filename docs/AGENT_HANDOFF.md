@@ -2,6 +2,8 @@
 
 ## Handoff 2026-10-17 — fișe pentru cinci produse și dosare parteneri
 
+- Completare identificatori de test: `docs/catalog/generateplus-test-codes.csv` conține câte un EAN-13 și EAN-8 generat efectiv pe `generate.plus` pentru fiecare dintre cele cinci produse. Sunt exemple fictive, separate de GTIN-ul comercial și păstrate numai în zona administrativă. Migrarea append-only `0064_generated_barcode_test_samples.sql` le înregistrează cu statut `test_only` și împiedică salvarea lor în câmpul GTIN oficial. Fișa și modelele DOCX au spațiu explicit pentru GTIN-8 și GTIN-13 oficial; eticheta Code 128 continuă să folosească SKU-ul intern. Migrarea 0064 a fost aplicată doar în D1 local, iar cele cinci perechi au fost verificate acolo.
+
 - Ramură locală: `codex/catalog-product-files`, pornită din `codex/cutiuta-cloudflare-final`; checkout separat în `.worktrees/catalog-product-files` pentru a păstra modificările existente din checkoutul principal.
 - Catalog: texte calde și concise pentru `hp-keeper`, `got-winter`, `kitten`, `halloween`, `sunshine`, cu titlu și descriere SEO; fișierul `docs/catalog/five-product-marketplace.csv` are anunțurile portabile și câmpul EAN gol.
 - Documente: model universal și câte un dosar DOCX precompletat pentru fiecare produs în `docs/partners/product-packets/`, publicate ca șabloane descărcabile prin `public/templates/parteneri/`. Pentru `kitten` și `halloween`, dosarul indică producție proprie și rubrici de completat, fără aprobări sau semnături inventate.
