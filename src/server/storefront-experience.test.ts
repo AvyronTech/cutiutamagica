@@ -363,6 +363,36 @@ describe("storefront and dashboard share one catalog", () => {
         if (image.src.startsWith("/produse/"))
           expect(existsSync(resolve("public", image.src.slice(1)))).toBe(true);
   });
+  it("keeps approved social campaign images out of the storefront gallery", async () => {
+    const halloweenId = productId("halloween");
+    sqlite
+      .prepare(
+        `INSERT INTO product_media(
+          id,product_id,media_type,r2_key,alt_text,mime_type,width,height,
+          rights_status,usage_type,marketing_approved,public_access,status
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      )
+      .run(
+        "social_halloween_test",
+        halloweenId,
+        "image",
+        "marketing/campaigns/test/feed.png",
+        "Asset social aprobat",
+        "image/png",
+        1080,
+        1350,
+        "cleared",
+        "social",
+        1,
+        1,
+        "active",
+      );
+
+    const halloween = (await catalog()).find((product) => product.slug === "halloween")!;
+    expect(halloween.gallery.some((image) => image.src === "/media/social_halloween_test")).toBe(
+      false,
+    );
+  });
   it("previews unreviewed public media locally without changing rights or external sync", async () => {
     const env = bindings();
     const row = sqlite
