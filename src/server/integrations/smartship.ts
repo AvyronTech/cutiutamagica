@@ -272,6 +272,18 @@ export async function quoteSmartShip(
       409,
     );
   if (!response.ok || !Array.isArray(result?.costs)) {
+    console.error("smartship.quote_rejected", {
+      httpStatus: response.status,
+      providerStatus: typeof result?.status === "number" ? result.status : null,
+      errorIds: Array.isArray(result?.erori)
+        ? result.erori
+            .map((entry) => record(entry)?.id)
+            .filter((id): id is number => typeof id === "number")
+            .slice(0, 8)
+        : [],
+      hasCosts: Array.isArray(result?.costs),
+      contentType: response.headers.get("content-type"),
+    });
     throw new ProviderError(
       `SmartShip nu a putut calcula livrarea (${response.status}).`,
       "SMARTSHIP_QUOTE_FAILED",
