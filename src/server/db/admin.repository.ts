@@ -35,6 +35,7 @@ const ORDER_SELECT = `
     oa.line2,
     oa.city,
     oa.county,
+    oa.sector,
     (SELECT status FROM smartship_awb_requests WHERE order_id=vo.id) AS awb_request_status,
     (SELECT q.courier_id FROM shipping_quotes q WHERE q.id=o.shipping_quote_id) AS smartship_courier_id,
     (SELECT tracking_url FROM shipments WHERE order_id=vo.id AND provider='smartship'
@@ -133,7 +134,9 @@ function mapOrder(row: DbRow): AdminOrder {
       row.smartship_courier_id == null ? undefined : numberValue(row.smartship_courier_id),
     phone: stringValue(row.customer_phone_e164),
     email: stringValue(row.customer_email),
-    address: [line1, line2].filter(Boolean).join(", "),
+    address: [line1, line2, numberValue(row.sector) ? `Sector ${numberValue(row.sector)}` : ""]
+      .filter(Boolean)
+      .join(", "),
     city: stringValue(row.city),
     county: stringValue(row.county),
     version: numberValue(row.version),

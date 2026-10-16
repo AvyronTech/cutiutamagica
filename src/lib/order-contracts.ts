@@ -2,6 +2,7 @@ import { paymentProviders } from "./checkout-settings";
 import { z } from "zod";
 import { MAX_CART_QUANTITY, MAX_ITEM_QUANTITY } from "@/lib/pricing";
 import { PAYMENT_METHODS, SHIPPING_OPTIONS } from "@/lib/commerce-operations-contracts";
+import { deliverySector, isBucharest, sectorFromPostalCode } from "@/lib/bucharest-sector";
 
 export const websiteOrderInputSchema = z
   .object({
@@ -15,6 +16,7 @@ export const websiteOrderInputSchema = z
       city: z.string().trim().min(2).max(120),
       county: z.string().trim().max(120).optional().default(""),
       postalCode: z.string().trim().max(20).optional().default(""),
+      sector: z.number().int().min(0).max(6).optional().default(0),
       notes: z.string().trim().max(1_000),
     }),
     paymentMethod: z.enum(PAYMENT_METHODS),
@@ -42,6 +44,34 @@ export const websiteOrderInputSchema = z
       .max(40),
   })
   .superRefine((value, context) => {
+    if (
+      value.shippingOption === "home_delivery" &&
+      isBucharest(value.customer.city, value.customer.county) &&
+      !deliverySector(
+        value.customer.city,
+        value.customer.county,
+        value.customer.sector,
+        value.customer.postalCode,
+      )
+    )
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Alege sectorul pentru livrarea în București.",
+        path: ["customer", "sector"],
+      });
+    const postalSector = sectorFromPostalCode(value.customer.postalCode);
+    if (
+      value.shippingOption === "home_delivery" &&
+      isBucharest(value.customer.city, value.customer.county) &&
+      value.customer.sector > 0 &&
+      postalSector > 0 &&
+      value.customer.sector !== postalSector
+    )
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Sectorul și codul poștal nu corespund.",
+        path: ["customer", "postalCode"],
+      });
     if (value.shippingOption === "easybox" && !value.easyboxLockerId)
       context.addIssue({
         code: z.ZodIssueCode.custom,

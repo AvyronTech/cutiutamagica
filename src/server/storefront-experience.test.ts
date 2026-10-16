@@ -771,6 +771,9 @@ describe("dashboard writes and interest registration", () => {
 });
 
 describe("tracked stock at checkout", () => {
+  beforeEach(() => {
+    sqlite.exec(readFileSync(resolve(migrations, "0066_bucharest_delivery_sector.sql"), "utf8"));
+  });
   function order(quantity: number): WebsiteOrderInput {
     return {
       idempotencyKey: crypto.randomUUID(),
@@ -783,6 +786,7 @@ describe("tracked stock at checkout", () => {
         city: "București",
         county: "București",
         postalCode: "010101",
+        sector: 1,
         notes: "",
       },
       paymentMethod: "cash_on_delivery",

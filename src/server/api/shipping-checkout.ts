@@ -10,6 +10,7 @@ import {
   resolveSmartShipCity,
 } from "../integrations/smartship";
 import type { EasyboxLocker } from "@/lib/easybox";
+import { deliverySector, isBucharest, sectorFromPostalCode } from "@/lib/bucharest-sector";
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
 // The /cost API does not document a printing-required flag. SmartShip's quote UI
@@ -116,7 +117,18 @@ export async function handleShippingCheckout(
       checkoutConsentAccepted: true,
       checkoutConsentVersion: "quote",
     });
-    if (!input.success || !["home_delivery", "easybox"].includes(input.data.shippingOption))
+    if (!input.success)
+      return json(
+        {
+          error: {
+            message: input.error.issues.some((issue) => issue.path.join(".") === "customer.sector")
+              ? "Alege sectorul pentru livrarea în București."
+              : "Completează datele de contact și adresa pentru a calcula livrarea.",
+          },
+        },
+        400,
+      );
+    if (!["home_delivery", "easybox"].includes(input.data.shippingOption))
       return json(
         {
           error: { message: "Completează datele de contact și adresa pentru a calcula livrarea." },
@@ -171,6 +183,19 @@ export async function handleShippingCheckout(
         409,
       );
     const qty = input.data.items.reduce((sum, item) => sum + item.quantity, 0);
+    const destination = selectedLocker ?? customer;
+    const recipientSector = deliverySector(
+      destination.city,
+      destination.county,
+      selectedLocker && sectorFromPostalCode(selectedLocker.postalCode ?? "") ? 0 : customer.sector,
+      selectedLocker?.postalCode ?? customer.postalCode,
+    );
+    if (isBucharest(destination.city, destination.county) && !recipientSector)
+      throw new ProviderError(
+        "Alege sectorul de livrare pentru București înainte de calcularea tarifului.",
+        "SMARTSHIP_SECTOR_REQUIRED",
+        409,
+      );
     let quotes: Array<{
       courierId: number;
       courierName: string;
@@ -190,7 +215,6 @@ export async function handleShippingCheckout(
         Number(policy.default_height_cm) <= 0
       )
         throw new Error("SENDER_INCOMPLETE");
-      const destination = selectedLocker ?? customer;
       const cityId = await resolveSmartShipCity(env, destination.county, destination.city);
       quotes = await quoteSmartShip(env, {
         sender: {
@@ -209,7 +233,7 @@ export async function handleShippingCheckout(
           phone: customer.phone,
           cityId,
           country: "RO",
-          sector: /^0[1-6]\d{4}$/.test(customer.postalCode) ? Number(customer.postalCode[1]) : 0,
+          sector: recipientSector,
         },
         content: {
           packageContent: "Cutiuțe muzicale",
@@ -283,9 +307,10 @@ export async function handleShippingCheckout(
           `INSERT INTO shipping_quotes(
              id,provider,method_code,courier_id,courier_name,locker_id,amount_bani,currency,
              own_contract,request_hash,expires_at,delivery_estimate,locker_name,locker_address,
-             locker_city,locker_county,locker_postal_code,locker_latitude,locker_longitude
+             locker_city,locker_county,locker_postal_code,locker_latitude,locker_longitude,
+             recipient_sector
            ) VALUES(
-             ?1,'smartship',?2,?3,?4,?5,?6,'RON',?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17
+             ?1,'smartship',?2,?3,?4,?5,?6,'RON',?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18
            )`,
         ).bind(
           o.id,
@@ -305,6 +330,7 @@ export async function handleShippingCheckout(
           selectedLocker?.postalCode ?? null,
           selectedLocker?.latitude ?? null,
           selectedLocker?.longitude ?? null,
+          recipientSector,
         ),
       ),
     );

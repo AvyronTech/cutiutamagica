@@ -642,6 +642,73 @@ describe("delivery quote integrity", () => {
     expect(data[0].price).toBe(17.55);
     expect(data[0]).not.toHaveProperty("ownContract");
   });
+  it("keeps a selected Bucharest sector from the quote through the order and AWB", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET use_live_quotes=1,sender_name='Atelier Magic',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    const customer = {
+      ...input().customer,
+      city: "București",
+      county: "București",
+      postalCode: "",
+      sector: 3,
+    };
+    expect(() =>
+      websiteOrderInputSchema.parse({
+        ...input(),
+        customer: { ...customer, sector: 0 },
+      }),
+    ).toThrow();
+    const body = websiteOrderInputSchema.parse({ ...input(), customer });
+    const missingSector = await handleShippingCheckout(
+      request("/api/v1/shipping/quotes", { ...body, customer: { ...customer, sector: 0 } }),
+      env,
+    );
+    expect(missingSector?.status).toBe(400);
+    expect((await missingSector!.json()) as { error: { message: string } }).toMatchObject({
+      error: { message: "Alege sectorul pentru livrarea în București." },
+    });
+    const sentSectors: number[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, options?: RequestInit) => {
+        if (url.includes("/counties"))
+          return Response.json({ counties: [{ id: 40, county: "București" }] });
+        if (url.includes("/cities"))
+          return Response.json({ cities: [{ id: 255154, city: "București" }] });
+        if (url.includes("/cost") || url.includes("/awb/new")) {
+          const payload = JSON.parse(String(options?.body)) as {
+            recipient: { sector: number };
+          };
+          sentSectors.push(payload.recipient.sector);
+          return url.includes("/cost")
+            ? Response.json({
+                status: 200,
+                costs: [{ courier_id: 1, courier_name: "Cargus", cost: 23.81 }],
+              })
+            : Response.json({ status: 200, awb: "874156063269" });
+        }
+        throw new Error("Unexpected URL");
+      }),
+    );
+    const quoteResponse = await handleShippingCheckout(
+      request("/api/v1/shipping/quotes", body),
+      env,
+    );
+    expect(quoteResponse?.status).toBe(200);
+    const offer = ((await quoteResponse!.json()) as { data: Array<{ id: string }> }).data[0];
+    const created = await createWebsiteOrder(env.DB, { ...body, shippingQuoteId: offer.id });
+    expect(
+      sqlite.prepare("SELECT sector FROM order_addresses WHERE order_id=?").get(created.orderId)!
+        .sector,
+    ).toBe(3);
+    sqlite
+      .prepare("UPDATE orders SET payment_status='paid',paid_bani=total_bani WHERE id=?")
+      .run(created.orderId);
+    await issueSmartShipAwb(env, created.orderId, "test-admin");
+    expect(sentSectors).toEqual([3, 3]);
+  });
   it("requires the encrypted payout IBAN before asking SmartShip for a cash-on-delivery quote", async () => {
     env.SMARTSHIP_API_KEY = "private";
     sqlite.exec(

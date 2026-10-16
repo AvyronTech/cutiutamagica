@@ -255,6 +255,22 @@ export async function quoteSmartShip(
     }>;
     erori?: unknown;
   } | null;
+  if (result?.status === 999 && Array.isArray(result.erori)) {
+    const sectorMissing = result.erori.some((entry) => record(entry)?.id === 302501);
+    throw new ProviderError(
+      sectorMissing
+        ? "Alege sectorul de livrare pentru București și actualizează ofertele."
+        : "SmartShip nu a acceptat datele de livrare. Verifică numele, telefonul și adresa.",
+      "SMARTSHIP_QUOTE_VALIDATION",
+      409,
+    );
+  }
+  if (result?.status === 201)
+    throw new ProviderError(
+      "Tariful pentru ramburs nu poate fi calculat acum. Contactează-ne pentru această opțiune.",
+      "SMARTSHIP_COD_IBAN_INVALID",
+      409,
+    );
   if (!response.ok || !Array.isArray(result?.costs)) {
     throw new ProviderError(
       `SmartShip nu a putut calcula livrarea (${response.status}).`,
