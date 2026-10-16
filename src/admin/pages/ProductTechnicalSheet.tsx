@@ -30,6 +30,12 @@ type Sheet = {
     assigned_at: string | null;
     document_id: string | null;
   } | null;
+  barcodeTestSamples: {
+    ean13_sample: string;
+    ean8_sample: string;
+    source_url: string;
+    usage_status: "test_only";
+  } | null;
   documents: Array<{
     id: string;
     document_type: string;
@@ -100,6 +106,7 @@ export function ProductTechnicalSheet({
           sourceReference: String(form.get("sourceReference") || ""),
           documentId: String(form.get("documentId") || "") || null,
           verifyGtin: form.get("verifyGtin") === "on",
+          changeReason: String(form.get("changeReason") || ""),
         }),
       });
       const payload = (await response.json()) as { error?: { message?: string } };
@@ -119,7 +126,7 @@ export function ProductTechnicalSheet({
         {query.error instanceof Error ? query.error.message : "Fișa nu poate fi încărcată."}
       </p>
     );
-  const { variant, source, levels, sales, invoices, documents } = query.data;
+  const { variant, source, levels, sales, invoices, documents, barcodeTestSamples } = query.data;
   const available = levels.reduce(
     (sum, level) =>
       sum +
@@ -133,6 +140,7 @@ export function ProductTechnicalSheet({
           <Barcode className="mb-3 h-5 w-5 text-cyan-200" aria-hidden />
           <p className="text-xs uppercase tracking-widest text-slate-400">SKU intern</p>
           <p className="mt-1 break-all font-mono text-lg text-white">{variant.sku}</p>
+          <p className="mt-1 text-xs text-slate-400">Eticheta Code 128 folosește acest cod.</p>
         </div>
         <div className={card}>
           <Boxes className="mb-3 h-5 w-5 text-amber-200" aria-hidden />
@@ -178,7 +186,7 @@ export function ProductTechnicalSheet({
           </div>
           <form key={variant.version} onSubmit={save} className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm text-slate-300">
-              GTIN / EAN
+              GTIN oficial / EAN-8 sau EAN-13
               <input
                 name="eanGtin"
                 inputMode="numeric"
@@ -189,7 +197,7 @@ export function ProductTechnicalSheet({
                 className={field}
               />
               <span className="mt-1 block text-xs text-slate-500">
-                Introdu codul exact de pe ambalaj; nu inventa un EAN.
+                Acest spațiu acceptă și codul de 8 cifre când este alocat produsului de GS1.
               </span>
             </label>
             <label className="text-sm text-slate-300">
@@ -256,6 +264,17 @@ export function ProductTechnicalSheet({
                 className={field}
               />
             </label>
+            {(variant.ean_gtin || variant.mpn) && (
+              <label className="text-sm text-slate-300">
+                Motivul retragerii sau schimbării unui cod
+                <input
+                  name="changeReason"
+                  maxLength={500}
+                  placeholder="Obligatoriu dacă modifici codul existent"
+                  className={field}
+                />
+              </label>
+            )}
             <div className="flex items-end">
               <button
                 type="submit"
@@ -267,6 +286,31 @@ export function ProductTechnicalSheet({
               </button>
             </div>
           </form>
+          {barcodeTestSamples && (
+            <div className="mt-5 rounded-xl border border-amber-300/25 bg-amber-300/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[.14em] text-amber-200">
+                Coduri generate · alocare GS1 necesară
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Numerele generate pe generate.plus sunt păstrate în fișa internă. Platforma nu alocă
+                identificatori GS1, așa că aceste numere nu se exportă ca GTIN comercial.
+              </p>
+              <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs text-slate-400">EAN-13 generat</dt>
+                  <dd className="mt-1 break-all font-mono text-base text-white">
+                    {barcodeTestSamples.ean13_sample}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-400">EAN-8 generat</dt>
+                  <dd className="mt-1 break-all font-mono text-base text-white">
+                    {barcodeTestSamples.ean8_sample}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          )}
           <div className="mt-4 border-t border-white/10 pt-4">
             <a
               href={`/admin/products/identification?product=${encodeURIComponent(productId)}`}

@@ -8,6 +8,8 @@ import {
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
 import { credential } from "@/server/services/growth-settings";
+import { readSetting } from "@/server/services/growth-settings";
+import { financeSettingsSchema } from "@/lib/growth-contracts";
 
 export interface StripeCheckoutInput {
   orderId: string;
@@ -21,11 +23,51 @@ export interface StripeCheckoutInput {
 
 type StripeSession = { id?: string; url?: string; payment_intent?: string };
 
+export async function verifyStripeMerchantAccount(env: CommerceEnv, key: string) {
+  const finance = await readSetting(env.DB, "finance", financeSettingsSchema);
+  if (!finance.stripeAccount)
+    throw new ProviderError(
+      "Completează Stripe Account ID al firmei Cutiuța Magică în Conexiuni financiare.",
+      "STRIPE_ACCOUNT_ID_MISSING",
+      409,
+    );
+  const response = await fetchWithTimeout("https://api.stripe.com/v1/account", {
+    method: "GET",
+    redirect: "manual",
+    headers: { authorization: `Bearer ${key}`, accept: "application/json" },
+  });
+  const account = (await readProviderJson(response).catch(() => null)) as {
+    id?: string;
+    country?: string;
+    charges_enabled?: boolean;
+  } | null;
+  if (!response.ok || !account?.id)
+    throw new ProviderError(
+      "Contul Stripe nu a putut fi verificat.",
+      "STRIPE_ACCOUNT_UNVERIFIED",
+      409,
+    );
+  if (account.id !== finance.stripeAccount || account.country !== "RO")
+    throw new ProviderError(
+      "Cheia Stripe aparține altui cont decât cel Cutiuța Magică configurat în magazin.",
+      "STRIPE_ACCOUNT_MISMATCH",
+      409,
+    );
+  if (env.APP_ENV === "production" && account.charges_enabled !== true)
+    throw new ProviderError(
+      "Contul Stripe Cutiuța Magică nu poate încasa încă plăți live.",
+      "STRIPE_CHARGES_UNAVAILABLE",
+      409,
+    );
+  return account.id;
+}
+
 export async function createStripeCheckoutSession(
   env: CommerceEnv,
   input: StripeCheckoutInput,
 ): Promise<{ id: string; url: string; paymentIntentId: string | null }> {
   const key = requiredSecret((await credential(env, "stripe")) ?? undefined, "STRIPE_SECRET_KEY");
+  if (env.APP_ENV === "production") await verifyStripeMerchantAccount(env, key);
   const params = new URLSearchParams();
   params.set("mode", "payment");
   params.set("success_url", `${env.PUBLIC_SITE_URL}/comanda?payment=return`);

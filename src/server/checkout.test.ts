@@ -15,7 +15,8 @@ import type { CheckoutSettings } from "@/lib/checkout-settings";
 import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { shippingFingerprint } from "./services/shipping-fingerprint";
 import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
-import { verifyStripeWebhook } from "./integrations/stripe";
+import { createStripeCheckoutSession, verifyStripeWebhook } from "./integrations/stripe";
+import { checkoutReadiness } from "./services/checkout-readiness";
 import { issueSmartShipAwb, reconcileSmartShipAwb } from "./services/smartship-fulfillment";
 import {
   createStripeCardSetup,
@@ -217,6 +218,42 @@ function storedPayment(id: string) {
 }
 
 describe("secure checkout", () => {
+  it("recognizes a restricted Stripe key only in its matching environment", async () => {
+    env.APP_ENV = "production";
+    env.STRIPE_SECRET_KEY = "rk_live_fixture";
+    sqlite
+      .prepare(
+        "INSERT INTO operational_settings(key,value_json,updated_at) VALUES('finance',?,strftime('%Y-%m-%dT%H:%M:%fZ','now'))",
+      )
+      .run(JSON.stringify({ stripeAccount: "acct_CutiutaMagica" }));
+    expect((await checkoutReadiness(env)).configured.stripe).toBe(true);
+    env.STRIPE_SECRET_KEY = "rk_test_fixture";
+    expect((await checkoutReadiness(env)).configured.stripe).toBe(false);
+  });
+  it("never starts a live Stripe payment with a key from another account", async () => {
+    env.APP_ENV = "production";
+    env.STRIPE_SECRET_KEY = "sk_live_fixture";
+    sqlite
+      .prepare(
+        "INSERT INTO operational_settings(key,value_json,updated_at) VALUES('finance',?,strftime('%Y-%m-%dT%H:%M:%fZ','now'))",
+      )
+      .run(JSON.stringify({ stripeAccount: "acct_CutiutaMagica" }));
+    const fetcher = vi.fn(async () =>
+      Response.json({ id: "acct_Avyron", country: "RO", charges_enabled: true }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    await expect(
+      createStripeCheckoutSession(env, {
+        orderId: crypto.randomUUID(),
+        orderNumber: "CM-TEST",
+        customerEmail: "client@example.test",
+        amountBani: 12000,
+        currency: "RON",
+        description: "Comandă test",
+      }),
+    ).rejects.toMatchObject({ code: "STRIPE_ACCOUNT_MISMATCH" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it("keeps the operational schema marker aligned with the latest D1 migration", () => {
     const latest = readdirSync(resolve("cloudflare/d1/migrations"))
       .filter((file) => /^\d{4}_.*\.sql$/.test(file))
@@ -604,6 +641,74 @@ describe("delivery quote integrity", () => {
     expect(data).toHaveLength(1);
     expect(data[0].price).toBe(17.55);
     expect(data[0]).not.toHaveProperty("ownContract");
+  });
+  it("requires the encrypted payout IBAN before asking SmartShip for a cash-on-delivery quote", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET use_live_quotes=1,sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.includes("/counties"))
+        return Response.json({ counties: [{ id: 13, county: "Cluj" }] });
+      if (url.includes("/cities"))
+        return Response.json({ cities: [{ id: 256212, city: "Cluj-Napoca" }] });
+      if (url.includes("/cost")) {
+        const payload = JSON.parse(String(options?.body)) as {
+          content: { cash_on_delivery: number; iban: string };
+        };
+        expect(payload.content.cash_on_delivery).toBeGreaterThan(0);
+        expect(payload.content.iban).toBe("RO49AAAA1B31007593840000");
+        return Response.json({ costs: [{ courier_id: 1, courier_name: "Cargus", cost: 20 }] });
+      }
+      throw new Error("Unexpected URL");
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const body = { ...input(), paymentMethod: "cash_on_delivery", paymentProvider: undefined };
+    const missing = await handleShippingCheckout(request("/api/v1/shipping/quotes", body), env);
+    expect(missing?.status).toBe(409);
+    expect(fetcher.mock.calls.filter(([url]) => url.includes("/cost"))).toHaveLength(0);
+    env.SMARTSHIP_COD_IBAN = "ro49 aaaa 1b31 0075 9384 0000";
+    const ready = await handleShippingCheckout(request("/api/v1/shipping/quotes", body), env);
+    expect(ready?.status).toBe(200);
+    expect(fetcher.mock.calls.filter(([url]) => url.includes("/cost"))).toHaveLength(1);
+  });
+  it("shows every eligible home courier without requiring a printed label", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET use_live_quotes=1,sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        Response.json(
+          url.includes("/counties")
+            ? { counties: [{ id: 13, county: "Cluj" }] }
+            : url.includes("/cities")
+              ? { cities: [{ id: 256212, city: "Cluj-Napoca" }] }
+              : {
+                  costs: [
+                    { courier_id: 5, courier_name: "DragonStar", cost: 17 },
+                    { courier_id: 1, courier_name: "Cargus", cost: 21 },
+                    { courier_id: 2, courier_name: "SameDay", cost: 18 },
+                    { courier_id: 1, courier_name: "Cargus propriu", cost: 19, own_contract: true },
+                    { courier_id: 8, courier_name: "PTT", cost: 20 },
+                    { courier_id: 6, courier_name: "DPD", cost: 21.5 },
+                    { courier_id: 19, courier_name: "FedEx", cost: 22 },
+                  ],
+                },
+        ),
+      ),
+    );
+    const response = await handleShippingCheckout(request("/api/v1/shipping/quotes", input()), env);
+    expect(response?.status).toBe(200);
+    const offers = ((await response!.json()) as { data: Array<{ courier: string; price: number }> })
+      .data;
+    expect(offers.map(({ courier, price }) => [courier, price])).toEqual([
+      ["SameDay", 18],
+      ["Cargus propriu", 19],
+      ["PTT", 20],
+      ["DPD", 21.5],
+    ]);
   });
   it("selects an official Easybox, applies the fixed tariff and stores the canonical pickup address", async () => {
     env.SMARTSHIP_API_KEY = "private";

@@ -152,6 +152,7 @@ type StudioData = {
     media_id: string;
     document_type: string;
     review_status: string;
+    notes: string | null;
   }>;
   variant: {
     id: string;
@@ -236,6 +237,7 @@ function AssetEditor({
   const [alt, setAlt] = useState(asset.alt_text ?? "");
   const [order, setOrder] = useState(asset.sort_order);
   const [status, setStatus] = useState(asset.status);
+  const [changeReason, setChangeReason] = useState("");
 
   async function update(publish: boolean) {
     setBusy(true);
@@ -251,13 +253,16 @@ function AssetEditor({
           status: publish ? "active" : status,
           ...(status !== "active" ? { publicAccess: false, syncToAvyron: false } : {}),
           expectedVersion: asset.version,
+          changeReason,
           ...(publish
-            ? {
-                ...(developmentPreview
-                  ? { syncToAvyron: false }
-                  : { marketingApproved: true, rightsStatus: "cleared" }),
-                publicAccess: asset.media_type === "document" ? false : true,
-              }
+            ? asset.media_type === "document"
+              ? { publicAccess: false, syncToAvyron: false }
+              : {
+                  ...(developmentPreview
+                    ? { syncToAvyron: false }
+                    : { marketingApproved: true, rightsStatus: "cleared" }),
+                  publicAccess: true,
+                }
             : {}),
         }),
       });
@@ -304,11 +309,10 @@ function AssetEditor({
         ) : asset.media_type === "document" ? (
           <a
             href={previewUrl}
-            target="_blank"
-            rel="noreferrer"
+            download
             className="flex h-full flex-col items-center justify-center gap-2 text-xs text-cyan-200 hover:text-cyan-100"
           >
-            <FileText className="h-10 w-10" /> Deschide documentul PDF
+            <FileText className="h-10 w-10" /> Descarcă documentul
           </a>
         ) : (
           <div className="grid h-full place-items-center text-xs text-slate-500">
@@ -348,6 +352,19 @@ function AssetEditor({
           <option value="archived">Arhivat</option>
         </select>
       </Field>
+      {asset.media_type === "document" && status === "archived" && asset.status !== "archived" && (
+        <Field label="Motivul arhivării">
+          <textarea
+            className={inputClass}
+            rows={2}
+            minLength={10}
+            maxLength={500}
+            value={changeReason}
+            onChange={(event) => setChangeReason(event.target.value)}
+            placeholder="Explică de ce documentul este retras"
+          />
+        </Field>
+      )}
       <Field label="Titlu">
         <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>
@@ -790,7 +807,13 @@ export default function ProductStudio({ productId }: { productId: string }) {
       return api(`/api/v1/admin/products/${productId}/media`, {
         method: "POST",
         headers: {
-          "content-type": file.type,
+          "content-type":
+            file.type ||
+            (file.name.toLowerCase().endsWith(".docx")
+              ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              : file.name.toLowerCase().endsWith(".pdf")
+                ? "application/pdf"
+                : "application/octet-stream"),
           "x-media-size": String(file.size),
           "x-media-filename": encodeURIComponent(file.name),
           "x-media-metadata": encodeURIComponent(JSON.stringify(metadata)),
@@ -1013,6 +1036,12 @@ export default function ProductStudio({ productId }: { productId: string }) {
                     {data.documents.find((document) => document.media_id === asset.id)
                       ?.document_type ?? "document"}
                   </p>
+                  {data.documents.find((document) => document.media_id === asset.id)?.notes && (
+                    <p className="mb-3 text-xs text-amber-200">
+                      Motiv:{" "}
+                      {data.documents.find((document) => document.media_id === asset.id)?.notes}
+                    </p>
+                  )}
                   <AssetEditor
                     asset={asset}
                     developmentPreview={data.developmentPreview}
@@ -1034,6 +1063,22 @@ export default function ProductStudio({ productId }: { productId: string }) {
                 Documentele rămân private în R2 și nu sunt publicate în magazin.
               </p>
             </div>
+            <div className="grid gap-2">
+              <a
+                href={`/templates/parteneri/${data.product.slug}-dosar-produs.docx`}
+                download
+                className="rounded-lg border border-cyan-400/40 px-3 py-2 text-center text-xs font-medium text-cyan-200 hover:bg-cyan-400/10"
+              >
+                Descarcă dosarul editabil pentru acest produs
+              </a>
+              <a
+                href="/templates/parteneri/model-universal-dosar-produs.docx"
+                download
+                className="text-center text-xs text-slate-400 underline hover:text-slate-200"
+              >
+                Model universal pentru produse viitoare
+              </a>
+            </div>
             <Field label="Tip document">
               <select
                 value={documentType}
@@ -1052,9 +1097,9 @@ export default function ProductStudio({ productId }: { productId: string }) {
               </select>
             </Field>
             <UploadButton
-              accept="application/pdf"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               busy={uploading === "document"}
-              label="Încarcă PDF privat"
+              label="Încarcă PDF sau DOCX privat"
               onFiles={(files) =>
                 uploadFiles(files, "document", {
                   mediaType: "document",
@@ -1064,8 +1109,8 @@ export default function ProductStudio({ productId }: { productId: string }) {
               }
             />
             <p className="text-[11px] leading-5 text-slate-500">
-              Maxim 10 MB. Fișierul este verificat după semnătura PDF, jurnalizat și legat de
-              produs.
+              Maxim 10 MB. Fiecare încărcare creează o nouă versiune privată, jurnalizată și legată
+              de produs.
             </p>
           </aside>
         </div>

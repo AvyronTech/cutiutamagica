@@ -7,6 +7,7 @@ import {
 } from "@/server/integrations/provider-runtime";
 import { credential } from "@/server/services/growth-settings";
 import type { EasyboxLocker } from "@/lib/easybox";
+import { normalizeIban } from "@/lib/iban";
 
 export interface SmartShipParty {
   name: string;
@@ -68,6 +69,18 @@ function content(value: SmartShipContent) {
     locker_id: value.lockerId,
     order_id: value.orderId,
   };
+}
+
+async function contentWithCodIban(env: CommerceEnv, value: SmartShipContent) {
+  if (value.cashOnDeliveryRon <= 0) return content(value);
+  const iban = normalizeIban(value.iban || (await credential(env, "smartship_cod_iban")) || "");
+  if (!iban)
+    throw new ProviderError(
+      "Rambursul prin curier nu este disponibil momentan. Alege plata online sau contactează-ne.",
+      "SMARTSHIP_COD_IBAN_MISSING",
+      409,
+    );
+  return content({ ...value, iban });
 }
 
 async function smartShipFetch(
@@ -228,7 +241,7 @@ export async function quoteSmartShip(
       show_byoc: 1,
       sender: party(input.sender),
       recipient: party(input.recipient),
-      content: content(input.content),
+      content: await contentWithCodIban(env, input.content),
     }),
   });
   const result = (await readProviderJson(response).catch(() => null)) as {
@@ -286,7 +299,7 @@ export async function createSmartShipAwb(
       use_own_contract: input.useOwnContract ? 1 : 0,
       sender: party(input.sender),
       recipient: party(input.recipient),
-      content: content(input.content),
+      content: await contentWithCodIban(env, input.content),
     }),
   });
   const result = (await readProviderJson(response).catch(() => null)) as Record<

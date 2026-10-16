@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { type CheckoutSettings } from "@/lib/checkout-settings";
 import { CredentialPanel } from "./GrowthSettings";
+import { ProviderSetupGuide } from "./ProviderSetupGuide";
 const labels = {
   stripe: "Stripe",
   revolut_pay: "Revolut Pay · Merchant",
@@ -79,6 +80,7 @@ export function CheckoutConnections() {
       <CredentialPanel
         providers={["stripe", "stripe_webhook", "revolut_merchant", "revolut_merchant_webhook"]}
       />
+      <ProviderSetupGuide provider="stripe" />
       {query.isError && (
         <p role="alert">
           Setările nu pot fi încărcate.{" "}

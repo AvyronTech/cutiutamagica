@@ -44,7 +44,7 @@ const actionSchema = z.discriminatedUnion("action", [
     locationId: id,
     sourceKind: z.enum(["supplier", "in_house"]),
     supplierReference: z.string().trim().max(240).optional(),
-    documentId: z.string().uuid().nullable().optional(),
+    documentId: z.string().trim().min(1).max(128).nullable().optional(),
     receivedAt: z.string().date(),
     quantity: z.number().int().min(1).max(1_000_000),
     notes: z.string().trim().max(1000).optional(),
@@ -792,6 +792,19 @@ async function importIdentities(
     if (row.gtin) {
       if (!gtinType(row.gtin))
         errors.push({ row: index + 1, message: "GTIN invalid: lungime sau cifră de control." });
+      const generatedSample = await db
+        .prepare(
+          `SELECT product_id FROM product_barcode_test_samples
+           WHERE ean13_sample=?1 OR ean8_sample=?1 LIMIT 1`,
+        )
+        .bind(row.gtin)
+        .first();
+      if (generatedSample)
+        errors.push({
+          row: index + 1,
+          message:
+            "Codul generat pe generate.plus nu are alocare GS1 și nu poate fi importat ca GTIN comercial.",
+        });
       if (seenGtins.has(row.gtin))
         errors.push({ row: index + 1, message: "GTIN repetat în fișier." });
       seenGtins.add(row.gtin);

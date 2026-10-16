@@ -377,6 +377,7 @@ async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | 
     [
       "checkout.session.completed",
       "checkout.session.async_payment_succeeded",
+      "checkout.session.async_payment_failed",
       "checkout.session.expired",
     ].includes(type)
   ) {
@@ -393,7 +394,10 @@ async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | 
         )
           .bind(object.id)
           .run();
-    } else if (type === "checkout.session.expired")
+    } else if (
+      type === "checkout.session.expired" ||
+      type === "checkout.session.async_payment_failed"
+    )
       await expireAttempt(env, provider, object.id, eventId);
     else if (object.payment_status === "paid")
       await settle(env, provider, object.id, object.amount_total, object.currency, eventId);

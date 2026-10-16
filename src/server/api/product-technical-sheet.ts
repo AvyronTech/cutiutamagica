@@ -17,8 +17,9 @@ const updateSchema = z.object({
   cost: z.number().finite().min(0).max(1_000_000).nullable(),
   identifierSource: z.enum(["gs1", "manufacturer", "supplier"]),
   sourceReference: z.string().trim().max(240),
-  documentId: z.string().uuid().nullable().optional(),
+  documentId: z.string().trim().min(1).max(128).nullable().optional(),
   verifyGtin: z.boolean().optional(),
+  changeReason: z.string().trim().max(500).default(""),
 });
 
 type VariantRow = {
@@ -37,6 +38,12 @@ type SourceRow = {
   gtin_type: string | null;
   assigned_at: string | null;
   document_id: string | null;
+};
+type BarcodeTestSamples = {
+  ean13_sample: string;
+  ean8_sample: string;
+  source_url: string;
+  usage_status: "test_only";
 };
 
 function json(data: unknown, status = 200): Response {
@@ -61,62 +68,69 @@ export async function handleProductTechnicalSheet(
       request.method === "PATCH" ? "catalog.write" : "catalog.read",
     );
     if (request.method === "GET") {
-      const [variant, source, levels, sales, invoices, documents] = await Promise.all([
-        env.DB.prepare(
-          `SELECT pv.id,pv.sku,pv.ean_gtin,pv.mpn,pv.cost_bani,pv.version
+      const [variant, source, levels, sales, invoices, documents, barcodeTestSamples] =
+        await Promise.all([
+          env.DB.prepare(
+            `SELECT pv.id,pv.sku,pv.ean_gtin,pv.mpn,pv.cost_bani,pv.version
           FROM product_variants pv JOIN products p ON p.id=pv.product_id
           WHERE p.id=?1 AND p.product_type='music_box' AND pv.status!='archived'
           ORDER BY pv.sort_order LIMIT 1`,
-        )
-          .bind(productId)
-          .first<VariantRow>(),
-        env.DB.prepare(
-          `SELECT pis.source_type,pis.source_reference,pis.verification_status,pis.verified_at,
+          )
+            .bind(productId)
+            .first<VariantRow>(),
+          env.DB.prepare(
+            `SELECT pis.source_type,pis.source_reference,pis.verification_status,pis.verified_at,
                   pis.gtin_type,pis.assigned_at,pis.document_id
           FROM product_identifier_sources pis
           WHERE pis.variant_id=(SELECT id FROM product_variants
             WHERE product_id=?1 AND status!='archived' ORDER BY sort_order LIMIT 1)
             AND pis.identifier_type IN ('EAN','GTIN')
           ORDER BY pis.created_at DESC LIMIT 1`,
-        )
-          .bind(productId)
-          .first<SourceRow>(),
-        env.DB.prepare(
-          `SELECT sl.name,il.on_hand_quantity,il.reserved_quantity,il.safety_stock_quantity
+          )
+            .bind(productId)
+            .first<SourceRow>(),
+          env.DB.prepare(
+            `SELECT sl.name,il.on_hand_quantity,il.reserved_quantity,il.safety_stock_quantity
           FROM inventory_levels il JOIN stock_locations sl ON sl.id=il.location_id
           WHERE il.variant_id=(SELECT id FROM product_variants
             WHERE product_id=?1 AND status!='archived' ORDER BY sort_order LIMIT 1)
           ORDER BY sl.name`,
-        )
-          .bind(productId)
-          .all(),
-        admin.permissions.includes("orders.read")
-          ? env.DB.prepare(
-              `SELECT COUNT(DISTINCT o.id) AS orders_count,
+          )
+            .bind(productId)
+            .all(),
+          admin.permissions.includes("orders.read")
+            ? env.DB.prepare(
+                `SELECT COUNT(DISTINCT o.id) AS orders_count,
               COALESCE(SUM(oi.quantity),0) AS units_sold,
               COALESCE(SUM(oi.line_total_bani),0) AS sales_bani
             FROM order_items oi JOIN orders o ON o.id=oi.order_id
             WHERE oi.product_id=?1 AND o.order_status NOT IN ('draft','cancelled')`,
-            )
-              .bind(productId)
-              .first()
-          : Promise.resolve(null),
-        admin.permissions.includes("orders.read")
-          ? env.DB.prepare(
-              `SELECT COUNT(DISTINCT i.id) AS invoice_count
+              )
+                .bind(productId)
+                .first()
+            : Promise.resolve(null),
+          admin.permissions.includes("orders.read")
+            ? env.DB.prepare(
+                `SELECT COUNT(DISTINCT i.id) AS invoice_count
             FROM invoices i JOIN order_items oi ON oi.order_id=i.order_id
             WHERE oi.product_id=?1 AND i.invoice_type='invoice' AND i.status IN ('issued','paid')`,
-            )
-              .bind(productId)
-              .first()
-          : Promise.resolve(null),
-        env.DB.prepare(
-          `SELECT id,document_type,document_number,review_status FROM product_documents
+              )
+                .bind(productId)
+                .first()
+            : Promise.resolve(null),
+          env.DB.prepare(
+            `SELECT id,document_type,document_number,review_status FROM product_documents
            WHERE product_id=?1 ORDER BY created_at DESC LIMIT 30`,
-        )
-          .bind(productId)
-          .all(),
-      ]);
+          )
+            .bind(productId)
+            .all(),
+          env.DB.prepare(
+            `SELECT ean13_sample,ean8_sample,source_url,usage_status
+           FROM product_barcode_test_samples WHERE product_id=?1`,
+          )
+            .bind(productId)
+            .first<BarcodeTestSamples>(),
+        ]);
       if (!variant)
         return json(
           { error: { code: "PRODUCT_NOT_FOUND", message: "Produsul nu are o variantă activă." } },
@@ -130,6 +144,7 @@ export async function handleProductTechnicalSheet(
           sales,
           invoices,
           documents: documents.results,
+          barcodeTestSamples,
         },
       });
     }
@@ -177,6 +192,22 @@ export async function handleProductTechnicalSheet(
         );
     }
     if (data.eanGtin) {
+      const generatedSample = await env.DB.prepare(
+        `SELECT product_id FROM product_barcode_test_samples
+         WHERE ean13_sample=?1 OR ean8_sample=?1 LIMIT 1`,
+      )
+        .bind(data.eanGtin)
+        .first();
+      if (generatedSample)
+        return json(
+          {
+            error: {
+              code: "TEST_ONLY_EAN",
+              message: "Codul generat nu are alocare GS1 și nu poate fi salvat ca GTIN comercial.",
+            },
+          },
+          400,
+        );
       const duplicate = await env.DB.prepare(
         `SELECT variant_id FROM product_gtin_registry WHERE gtin=?1 AND variant_id!=?2 LIMIT 1`,
       )
@@ -210,6 +241,20 @@ export async function handleProductTechnicalSheet(
           },
         },
         409,
+      );
+    if (
+      ((current.ean_gtin && current.ean_gtin !== (data.eanGtin || null)) ||
+        (current.mpn && current.mpn !== (data.mpn || null))) &&
+      data.changeReason.length < 10
+    )
+      return json(
+        {
+          error: {
+            code: "REASON_REQUIRED",
+            message: "Retragerea sau schimbarea unui cod cere un motiv de cel puțin 10 caractere.",
+          },
+        },
+        400,
       );
     const source = await env.DB.prepare(
       `SELECT source_type,source_reference,verification_status,verified_at,gtin_type,assigned_at,document_id
@@ -247,13 +292,18 @@ export async function handleProductTechnicalSheet(
         data.expectedVersion,
       ),
       env.DB.prepare(
-        `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,after_json,metadata_json)
-        SELECT ?1,?2,?3,'product.identifier.update','product_variant',?4,?5,'{}' WHERE changes()=1`,
+        `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,before_json,after_json,metadata_json)
+        SELECT ?1,?2,?3,'product.identifier.update','product_variant',?4,?5,?6,?7 WHERE changes()=1`,
       ).bind(
         auditId,
         admin.id,
         admin.email,
         data.variantId,
+        JSON.stringify({
+          eanGtin: current.ean_gtin,
+          mpn: current.mpn,
+          costBani: current.cost_bani,
+        }),
         JSON.stringify({
           eanGtin: nextEan,
           mpn: data.mpn,
@@ -261,6 +311,7 @@ export async function handleProductTechnicalSheet(
           identifierSource: nextEan ? data.identifierSource : null,
           sourceReference: nextEan ? data.sourceReference : null,
         }),
+        JSON.stringify({ reason: data.changeReason || null }),
       ),
     ];
     if (sourceChanged) {
@@ -325,6 +376,7 @@ export async function handleProductTechnicalSheet(
             sourceReference: data.sourceReference,
             documentId: data.documentId ?? null,
             status: nextStatus,
+            reason: data.changeReason || null,
           }),
           admin.id,
           auditId,

@@ -21,6 +21,7 @@ import { buildOwnerReport } from "@/server/services/owner-reports";
 import { researchProduct } from "@/server/services/supplier-research";
 import { checkConnection, syncTraffic } from "@/server/services/traffic-integrations";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
+import { normalizeIban } from "./iban";
 
 function sameOrigin() {
   const request = getRequest(),
@@ -76,7 +77,9 @@ export const saveIntegrationCredential = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     sameOrigin();
     assertPermission(context.admin, "integrations.write");
-    await storeCredential(env as CommerceEnv, data.provider, data.value, context.admin.id);
+    const value = data.provider === "smartship_cod_iban" ? normalizeIban(data.value) : data.value;
+    if (!value) throw new Error("Introdu un IBAN valid pentru virarea rambursului SmartShip.");
+    await storeCredential(env as CommerceEnv, data.provider, value, context.admin.id);
     return { ok: true };
   });
 export const verifyIntegration = createServerFn({ method: "POST" })

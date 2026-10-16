@@ -12,6 +12,9 @@ import {
 import type { EasyboxLocker } from "@/lib/easybox";
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
+// The /cost API does not document a printing-required flag. SmartShip's quote UI
+// currently marks these courier IDs as requiring a printed label.
+const PRINT_REQUIRED_COURIER_IDS = new Set([5, 19]);
 
 function searchKey(value: string): string {
   return value
@@ -225,7 +228,7 @@ export async function handleShippingCheckout(
           courierId: 0,
           courierName: "SAMEDAY Easybox",
           costRon: Number(policy.locker_price_bani) / 100,
-          deliveryDate: "1–2 zile lucrătoare",
+          deliveryDate: null,
           ownContract: true,
         },
       ];
@@ -239,7 +242,21 @@ export async function handleShippingCheckout(
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
     const hash = await shippingFingerprint(input.data, total);
     const free = policy.free_over_bani != null && total >= Number(policy.free_over_bani);
-    const offers = quotes.slice(0, 15).map((q) => ({
+    // SmartShip can return the same courier twice when a private contract is connected.
+    // Keep the lowest-priced offer for each eligible courier.
+    const rankedQuotes = [...quotes]
+      .filter(
+        (quote) =>
+          input.data.shippingOption === "easybox" ||
+          !PRINT_REQUIRED_COURIER_IDS.has(quote.courierId),
+      )
+      .sort((left, right) => left.costRon - right.costRon)
+      .filter(
+        (quote, index, all) =>
+          input.data.shippingOption === "easybox" ||
+          all.findIndex((candidate) => candidate.courierId === quote.courierId) === index,
+      );
+    const offers = rankedQuotes.map((q) => ({
       id: crypto.randomUUID(),
       courier: q.courierName,
       price: free ? 0 : Math.round(q.costRon * 100) / 100,
@@ -253,7 +270,9 @@ export async function handleShippingCheckout(
         {
           error: {
             message:
-              "Nu avem o ofertă de curierat pentru această adresă. Verifică datele sau contactează-ne.",
+              input.data.shippingOption === "easybox"
+                ? "Nu avem o ofertă Easybox pentru punctul ales. Alege un alt punct sau contactează-ne."
+                : "Nu avem o ofertă de curierat fără imprimarea etichetei pentru această adresă. Verifică datele sau contactează-ne.",
           },
         },
         409,

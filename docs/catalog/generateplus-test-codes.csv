@@ -1,0 +1,6 @@
+slug,sku,ean13_sample,ean8_sample,gs1_gtin_official,code128_internal_payload,usage,source
+hp-keeper,CM-HP-KEEPER,4641770966880,31705806,,CM-HP-KEEPER,TEST_ONLY,https://generate.plus/en/number/ean
+got-winter,CM-GOT-WINTER,1820120011330,19409665,,CM-GOT-WINTER,TEST_ONLY,https://generate.plus/en/number/ean
+kitten,CM-KITTEN,2129412865682,90987359,,CM-KITTEN,TEST_ONLY,https://generate.plus/en/number/ean
+halloween,CM-HALLOWEEN,5404119057132,41602942,,CM-HALLOWEEN,TEST_ONLY,https://generate.plus/en/number/ean
+sunshine,CM-SUNSHINE,7026278963444,78336223,,CM-SUNSHINE,TEST_ONLY,https://generate.plus/en/number/ean

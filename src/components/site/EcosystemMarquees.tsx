@@ -23,8 +23,18 @@ type EcosystemItem = {
 };
 
 const shoppingExperience: EcosystemItem[] = [
-  { name: "Easybox", note: "Ridicare din locker · 15 lei", tone: "ocean", mark: <MapPinned /> },
-  { name: "Curier", note: "Livrare la adresă · 25 lei", tone: "amber", mark: <Truck /> },
+  {
+    name: "Easybox",
+    note: "Ridicare din locker · ofertă în checkout",
+    tone: "ocean",
+    mark: <MapPinned />,
+  },
+  {
+    name: "Curier",
+    note: "Livrare la adresă · preț final în checkout",
+    tone: "amber",
+    mark: <Truck />,
+  },
   { name: "Ramburs", note: "Plată la predarea coletului", tone: "blue", mark: <Banknote /> },
   { name: "Fără cont", note: "Checkout rapid și clar", tone: "green", mark: <UserCheck /> },
   { name: "Retur", note: "Drept de retragere în 14 zile", tone: "silver", mark: <RotateCcw /> },

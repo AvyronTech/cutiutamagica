@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { emitOblioInvoice } from "./integrations/oblio";
+import { emitOblioInvoice, oblioIssueDate, verifyOblioSetup } from "./integrations/oblio";
 
 vi.mock("@/server/services/growth-settings", () => ({
   credential: vi.fn(async (_env: unknown, provider: string) =>
@@ -10,6 +10,40 @@ vi.mock("@/server/services/growth-settings", () => ({
 describe("Oblio invoice adapter", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it("uses the Bucharest calendar date for the fiscal issue date", () => {
+    expect(oblioIssueDate(new Date("2026-10-17T22:30:00Z"))).toBe("2026-10-18");
+    expect(oblioIssueDate(new Date("2026-01-17T22:30:00Z"))).toBe("2026-01-18");
+  });
+
+  it("verifies the company, invoice series and non-VAT rate without issuing a document", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json({ access_token: "temporary-access-token" }))
+      .mockResolvedValueOnce(Response.json({ status: 200, data: [{ cif: "55055976" }] }))
+      .mockResolvedValueOnce(
+        Response.json({
+          status: 200,
+          data: [{ type: "Factura", name: "CM", start: "0001", next: "0001" }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ status: 200, data: [{ name: "Neplatitor TVA", percent: 0 }] }),
+      );
+
+    await expect(
+      verifyOblioSetup({} as never, {
+        accountEmail: "billing@example.test",
+        taxId: "55055976",
+        series: "CM",
+        expectedNextNumber: 1,
+      }),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock.mock.calls.every(([url]) => !String(url).endsWith("/docs/invoice"))).toBe(
+      true,
+    );
+  });
+
   it("authorizes separately and sends an idempotent product/service invoice", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
@@ -18,6 +52,26 @@ describe("Oblio invoice adapter", () => {
           status: 200,
           headers: { "content-type": "application/json" },
         }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: 200, data: [{ cif: "55055976" }] }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: 200,
+            data: [{ type: "Factura", name: "CM", start: "0001", next: "0042" }],
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ status: 200, data: [{ name: "Neplatitor TVA", percent: 0 }] }),
+          {
+            status: 200,
+          },
+        ),
       )
       .mockResolvedValueOnce(
         new Response(
@@ -35,6 +89,7 @@ describe("Oblio invoice adapter", () => {
       accountEmail: "billing@example.test",
       taxId: "55055976",
       series: "CM",
+      expectedNextNumber: 42,
       currency: "RON",
       customer: {
         name: "Client Test",
@@ -70,17 +125,57 @@ describe("Oblio invoice adapter", () => {
       series: "CM",
       pdfUrl: "https://www.oblio.eu/invoice.pdf",
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
     const tokenBody = fetchMock.mock.calls[0]?.[1]?.body as URLSearchParams;
     expect(tokenBody.get("client_secret")).toBe("secret-oblio-test");
-    const invoiceBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    const invoiceBody = JSON.parse(String(fetchMock.mock.calls[4]?.[1]?.body));
     expect(invoiceBody.idempotencyKey).toBe("cutiuta-magica/order-42/invoice-v1");
     expect(invoiceBody.products.map((line: { productType: string }) => line.productType)).toEqual([
       "Marfa",
       "Serviciu",
     ]);
-    expect(fetchMock.mock.calls[1]?.[1]?.headers).toMatchObject({
+    expect(invoiceBody.products.map((line: { vatName: string }) => line.vatName)).toEqual([
+      "Neplatitor TVA",
+      "Neplatitor TVA",
+    ]);
+    expect(fetchMock.mock.calls[4]?.[1]?.headers).toMatchObject({
       authorization: "Bearer temporary-access-token",
     });
+  });
+
+  it("does not issue when the connected Oblio account belongs to another company", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json({ access_token: "temporary-access-token" }))
+      .mockResolvedValueOnce(Response.json({ status: 200, data: [{ cif: "99999999" }] }));
+
+    await expect(
+      emitOblioInvoice({} as never, {
+        orderId: "order-42",
+        accountEmail: "billing@example.test",
+        taxId: "55055976",
+        series: "CM",
+        expectedNextNumber: 1,
+        currency: "RON",
+        customer: {
+          name: "Client Test",
+          phone: "0700000000",
+          country: "RO",
+          city: "București",
+          address: "Adresă test",
+        },
+        lines: [
+          {
+            name: "Cutiuță muzicală",
+            sku: "CM-01",
+            quantity: 1,
+            unitPrice: 99,
+            vatRate: 0,
+            itemType: "product",
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "OBLIO_COMPANY_MISMATCH" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

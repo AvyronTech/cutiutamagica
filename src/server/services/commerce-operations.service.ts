@@ -71,6 +71,13 @@ export async function issueInvoiceForOrder(
       409,
     );
   }
+  if (value(entity, "vat_status") !== "non_vat_payer") {
+    throw new ProviderError(
+      "Verifică regimul TVA al firmei înainte de emiterea în Oblio.",
+      "LEGAL_VAT_STATUS_MISMATCH",
+      409,
+    );
+  }
   if (!lineResult.results.length) {
     throw new ProviderError("Comanda nu conține linii facturabile.", "ORDER_ITEMS_MISSING", 409);
   }
@@ -90,21 +97,40 @@ export async function issueInvoiceForOrder(
   }
   const environment = env.APP_ENV === "production" ? "production" : "sandbox";
   const idempotencyKey = `invoice/${orderId}/v1`;
-  await logProviderOperation(env.DB, {
-    provider: "oblio",
-    operationType: "invoice.issue",
-    entityType: "order",
-    entityId: orderId,
-    idempotencyKey,
-    environment,
-    status: "processing",
-  });
+  const claim = await env.DB.prepare(
+    `INSERT OR IGNORE INTO provider_operations(
+       id,provider,operation_type,entity_type,entity_id,idempotency_key,
+       environment,status,attempt_count
+     ) VALUES(?1,'oblio','invoice.issue','order',?2,?3,?4,'processing',1)`,
+  )
+    .bind(crypto.randomUUID(), orderId, idempotencyKey, environment)
+    .run();
+  if (claim.meta.changes !== 1) {
+    const retry = await env.DB.prepare(
+      `UPDATE provider_operations SET status='processing',attempt_count=attempt_count+1,
+       error_code=NULL,error_message=NULL,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE provider='oblio' AND idempotency_key=?1 AND status='failed'
+       AND error_code IN (
+         'OBLIO_AUTH_FAILED','OBLIO_SETUP_UNVERIFIED','OBLIO_COMPANY_MISMATCH',
+         'OBLIO_SERIES_MISMATCH','OBLIO_VAT_MISMATCH','OBLIO_NON_VAT_RATE_MISSING'
+       )`,
+    )
+      .bind(idempotencyKey)
+      .run();
+    if (retry.meta.changes !== 1)
+      throw new ProviderError(
+        "Emiterea a fost deja inițiată. Verifică factura în Oblio după numărul comenzii înainte de o nouă încercare.",
+        "OBLIO_RECONCILIATION_REQUIRED",
+        409,
+      );
+  }
   try {
     const result = await emitOblioInvoice(env, {
       orderId,
       accountEmail: settings.oblioEmail,
       taxId: value(entity, "tax_id"),
       series: value(series, "prefix"),
+      expectedNextNumber: amount(series, "next_number"),
       currency: value(order, "currency") || "RON",
       customer: {
         name: value(order, "company_name") || value(order, "customer_name"),
@@ -209,9 +235,9 @@ export async function issueInvoiceForOrder(
         nowIso,
       ),
       env.DB.prepare(
-        `UPDATE invoice_series SET next_number = next_number + 1,
-         updated_at = ?1 WHERE id = ?2`,
-      ).bind(nowIso, series.id),
+        `UPDATE invoice_series SET next_number = ?1,
+         updated_at = ?2 WHERE id = ?3 AND next_number = ?4`,
+      ).bind(Number(result.number) + 1, nowIso, series.id, series.next_number),
     ];
     for (const line of lineResult.results) {
       statements.push(

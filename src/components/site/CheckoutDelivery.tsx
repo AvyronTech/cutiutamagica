@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { WebsiteOrderInput } from "@/lib/order-contracts";
 export type DeliveryOffer = {
   id: string;
@@ -22,33 +22,49 @@ export function CheckoutDelivery({
   const [offers, setOffers] = useState<DeliveryOffer[]>([]),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  async function calculate() {
-    setBusy(true);
-    setError("");
+  const requestKey = JSON.stringify(request);
+  const calculate = useCallback(
+    async (signal?: AbortSignal) => {
+      setBusy(true);
+      setError("");
+      setOffers([]);
+      try {
+        const r = await fetch("/api/v1/shipping/quotes", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: requestKey,
+          signal,
+        });
+        const data = (await r.json()) as { data?: DeliveryOffer[]; error?: { message: string } };
+        if (!r.ok || !data.data)
+          throw new Error(data.error?.message ?? "Nu am putut calcula livrarea.");
+        if (!signal?.aborted) setOffers(data.data);
+      } catch (e) {
+        if (!signal?.aborted) setError((e as Error).message);
+      } finally {
+        if (!signal?.aborted) setBusy(false);
+      }
+    },
+    [requestKey],
+  );
+  useEffect(() => {
+    const controller = new AbortController();
     setOffers([]);
-    try {
-      const r = await fetch("/api/v1/shipping/quotes", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(request),
-      });
-      const data = (await r.json()) as { data?: DeliveryOffer[]; error?: { message: string } };
-      if (!r.ok || !data.data)
-        throw new Error(data.error?.message ?? "Nu am putut calcula livrarea.");
-      setOffers(data.data);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
+    setError("");
+    setBusy(true);
+    const timer = setTimeout(() => void calculate(controller.signal), 1_100);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [calculate]);
   return (
     <div className="min-w-0 sm:col-span-2">
       <p className="text-sm text-muted-foreground">
         {request.shippingOption === "easybox"
           ? "Confirmăm disponibilitatea punctului ales și tariful final înainte de comandă."
-          : "Completează adresa pentru a vedea curierii și costurile disponibile. La calcul, datele de livrare sunt transmise serviciului de curierat."}
+          : "După completarea adresei, afișăm toate ofertele disponibile fără imprimarea etichetei, cu prețul final și termenul estimat. Datele de livrare sunt transmise serviciului de curierat."}
       </p>
       <button
         type="button"
@@ -60,7 +76,7 @@ export function CheckoutDelivery({
           ? "Căutăm livrarea potrivită…"
           : request.shippingOption === "easybox"
             ? "Confirmă tariful Easybox"
-            : "Vezi opțiunile de curierat"}
+            : "Actualizează ofertele de curierat"}
       </button>
       {error && (
         <p role="alert" className="mt-3 text-sm text-amber-700 dark:text-amber-200">
@@ -86,7 +102,17 @@ export function CheckoutDelivery({
                 {request.shippingOption === "easybox" ? "SAMEDAY Easybox" : offer.courier}
               </strong>
               {offer.estimate && (
-                <span className="text-xs text-muted-foreground">Estimare: {offer.estimate}</span>
+                <span className="text-xs text-muted-foreground">
+                  Transport estimat după predare:{" "}
+                  {/^\d{4}-\d{2}-\d{2}$/.test(offer.estimate)
+                    ? new Intl.DateTimeFormat("ro-RO", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        timeZone: "Europe/Bucharest",
+                      }).format(new Date(`${offer.estimate}T12:00:00+03:00`))
+                    : offer.estimate}
+                </span>
               )}
             </span>
             <span className="shrink-0 whitespace-nowrap text-sm font-medium">
@@ -101,7 +127,8 @@ export function CheckoutDelivery({
       </div>
       {offers.length > 0 && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Ofertele sunt valabile 10 minute. Termenul estimat poate varia în funcție de curier.
+          Ofertele sunt valabile 10 minute. Pregătirea modelelor realizate la comandă poate adăuga
+          timp înainte de predarea către curier.
         </p>
       )}
     </div>

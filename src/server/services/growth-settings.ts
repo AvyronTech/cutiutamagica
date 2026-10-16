@@ -52,6 +52,7 @@ const secretNames = {
   olx: "OLX_ACCESS_TOKEN",
   okazii: "OKAZII_API_KEY",
   smartship: "SMARTSHIP_API_KEY",
+  smartship_cod_iban: "SMARTSHIP_COD_IBAN",
   stripe: "STRIPE_SECRET_KEY",
   stripe_webhook: "STRIPE_WEBHOOK_SECRET",
   revolut: "REVOLUT_API_KEY",
