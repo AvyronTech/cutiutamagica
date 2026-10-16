@@ -7,7 +7,7 @@ const guides: Record<
   stripe: {
     title: "Configurare Stripe · Cutiuța Magică",
     steps: [
-      "Verifică în Stripe că firma și contul sunt ale Cutiuța Magică; nu folosi cheile AVYRON.",
+      "Verifică în Stripe că firma și contul sunt ale Cutiuța Magică; salvează Account ID în Conexiuni financiare. Cheile AVYRON nu trebuie folosite.",
       "Salvează cheia secretă a mediului ales în câmpul Stripe și secretul de semnare în Stripe · webhook. Valorile nu apar în pagina publică.",
       "În Stripe creează endpointul https://cutiutamagica.eu/api/v1/webhooks/stripe pentru checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed și checkout.session.expired.",
       "Testează o comandă cu card, revenirea în magazin și evenimentul semnat. Notează referința testului, apoi activează metoda în Încasări cu cardul.",
@@ -31,7 +31,7 @@ const guides: Record<
     title: "Configurare SmartShip · livrări",
     steps: [
       "Verifică în SmartShip că profilul expeditorului și cheia API aparțin Cutiuța Magică.",
-      "Salvează cheia în SmartShip · cheie API și completează expeditorul, localitatea numerică, greutatea și dimensiunile reale ale coletului.",
+      "Salvează cheia API, iar pentru ramburs IBAN-ul firmei în câmpul separat criptat. Completează expeditorul, localitatea numerică, greutatea și dimensiunile reale ale coletului.",
       "Activează cotațiile live și Easybox după verificarea contului. Clientul vede până la trei curieri distincți la adresă și opțiunea Easybox separată, dacă furnizorul le oferă pentru rută.",
       "Testează costul, data estimată, suma ramburs și un AWB controlat. Emiterea AWB se confirmă explicit în Comenzi; verifică după numărul comenzii dacă răspunsul este incert.",
     ],

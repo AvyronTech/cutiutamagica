@@ -4,6 +4,7 @@ import {
   type PaymentProvider,
 } from "@/lib/checkout-settings";
 import { credential, readSetting } from "./growth-settings";
+import { financeSettingsSchema } from "@/lib/growth-contracts";
 import type { CommerceEnv } from "../integrations/provider-runtime";
 export function paymentEnvironment(env: CommerceEnv) {
   return env.APP_ENV === "production" ? "production" : "sandbox";
@@ -16,6 +17,7 @@ export const adapterReady: Record<PaymentProvider, boolean> = {
 export async function checkoutReadiness(env: CommerceEnv) {
   const settings = await readSetting(env.DB, "commerce.checkout", checkoutSettingsSchema);
   const environment = paymentEnvironment(env);
+  const finance = await readSetting(env.DB, "finance", financeSettingsSchema);
   const [stripe, stripeWebhook, revolut, revolutWebhook, netopia, netopiaKey] = await Promise.all([
     credential(env, "stripe"),
     credential(env, "stripe_webhook"),
@@ -28,6 +30,7 @@ export async function checkoutReadiness(env: CommerceEnv) {
     stripe: Boolean(
       stripe &&
       stripeWebhook &&
+      (environment !== "production" || Boolean(finance.stripeAccount)) &&
       stripe.startsWith(environment === "production" ? "sk_live_" : "sk_test_"),
     ),
     revolut_pay: Boolean(revolut && revolutWebhook),

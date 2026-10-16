@@ -9,6 +9,18 @@ import { credential } from "@/server/services/growth-settings";
 
 const OBLIO_API = "https://www.oblio.eu/api";
 
+export function oblioIssueDate(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Bucharest",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: "year" | "month" | "day") =>
+    parts.find((value) => value.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
 export interface OblioInvoiceInput {
   orderId: string;
   accountEmail: string;
@@ -109,11 +121,10 @@ async function accessToken(env: CommerceEnv, accountEmail: string): Promise<stri
   return result.access_token;
 }
 
-export async function emitOblioInvoice(
-  env: CommerceEnv,
-  input: OblioInvoiceInput,
-): Promise<OblioInvoiceResult> {
-  const token = await accessToken(env, input.accountEmail);
+async function verifyOblioNomenclature(
+  token: string,
+  input: { taxId: string; series: string; expectedNextNumber: number },
+): Promise<string> {
   const cif = input.taxId.replace(/^RO/i, "").replace(/\D/g, "");
   const companies = await nomenclature<{ cif?: string }>(token, "companies");
   if (
@@ -145,12 +156,6 @@ export async function emitOblioInvoice(
       "OBLIO_SERIES_MISMATCH",
       409,
     );
-  if (input.lines.some((line) => line.vatRate !== 0))
-    throw new ProviderError(
-      "Regimul neplătitor de TVA cere linii fără TVA colectată.",
-      "OBLIO_VAT_MISMATCH",
-      409,
-    );
   const vatRates = await nomenclature<{ name?: string; percent?: number | string }>(
     token,
     `vat_rates?${query}`,
@@ -164,7 +169,30 @@ export async function emitOblioInvoice(
       "OBLIO_NON_VAT_RATE_MISSING",
       409,
     );
-  const today = new Date().toISOString().slice(0, 10);
+  return nonVatRate.name;
+}
+
+export async function verifyOblioSetup(
+  env: CommerceEnv,
+  input: { accountEmail: string; taxId: string; series: string; expectedNextNumber: number },
+): Promise<void> {
+  const token = await accessToken(env, input.accountEmail);
+  await verifyOblioNomenclature(token, input);
+}
+
+export async function emitOblioInvoice(
+  env: CommerceEnv,
+  input: OblioInvoiceInput,
+): Promise<OblioInvoiceResult> {
+  const token = await accessToken(env, input.accountEmail);
+  if (input.lines.some((line) => line.vatRate !== 0))
+    throw new ProviderError(
+      "Regimul neplătitor de TVA cere linii fără TVA colectată.",
+      "OBLIO_VAT_MISMATCH",
+      409,
+    );
+  const nonVatRateName = await verifyOblioNomenclature(token, input);
+  const today = oblioIssueDate();
   const payload = {
     cif: input.taxId,
     client: {
@@ -192,7 +220,7 @@ export async function emitOblioInvoice(
       code: line.sku,
       price: Number(line.unitPrice.toFixed(2)),
       measuringUnit: line.itemType === "service" ? "serv" : "buc",
-      vatName: nonVatRate.name,
+      vatName: nonVatRateName,
       vatPercentage: 0,
       vatIncluded: 1,
       quantity: line.quantity,

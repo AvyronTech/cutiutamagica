@@ -87,6 +87,7 @@ export const credentialProviderSchema = z.enum([
   "olx",
   "okazii",
   "smartship",
+  "smartship_cod_iban",
   "stripe",
   "stripe_webhook",
   "revolut",

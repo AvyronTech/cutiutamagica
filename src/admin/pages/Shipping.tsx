@@ -83,7 +83,7 @@ export default function Shipping() {
           politică.
         </p>
       </header>
-      <CredentialPanel providers={["smartship"]} />
+      <CredentialPanel providers={["smartship", "smartship_cod_iban"]} />
       <ProviderSetupGuide provider="smartship" />
       <div
         className={`flex gap-3 rounded-lg border p-4 text-sm ${smartship?.secretConfigured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-amber-400/30 bg-amber-400/10 text-amber-100"}`}

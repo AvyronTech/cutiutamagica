@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { emitOblioInvoice } from "./integrations/oblio";
+import { emitOblioInvoice, oblioIssueDate, verifyOblioSetup } from "./integrations/oblio";
 
 vi.mock("@/server/services/growth-settings", () => ({
   credential: vi.fn(async (_env: unknown, provider: string) =>
@@ -9,6 +9,40 @@ vi.mock("@/server/services/growth-settings", () => ({
 
 describe("Oblio invoice adapter", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it("uses the Bucharest calendar date for the fiscal issue date", () => {
+    expect(oblioIssueDate(new Date("2026-10-17T22:30:00Z"))).toBe("2026-10-18");
+    expect(oblioIssueDate(new Date("2026-01-17T22:30:00Z"))).toBe("2026-01-18");
+  });
+
+  it("verifies the company, invoice series and non-VAT rate without issuing a document", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json({ access_token: "temporary-access-token" }))
+      .mockResolvedValueOnce(Response.json({ status: 200, data: [{ cif: "55055976" }] }))
+      .mockResolvedValueOnce(
+        Response.json({
+          status: 200,
+          data: [{ type: "Factura", name: "CM", start: "0001", next: "0001" }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ status: 200, data: [{ name: "Neplatitor TVA", percent: 0 }] }),
+      );
+
+    await expect(
+      verifyOblioSetup({} as never, {
+        accountEmail: "billing@example.test",
+        taxId: "55055976",
+        series: "CM",
+        expectedNextNumber: 1,
+      }),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock.mock.calls.every(([url]) => !String(url).endsWith("/docs/invoice"))).toBe(
+      true,
+    );
+  });
 
   it("authorizes separately and sends an idempotent product/service invoice", async () => {
     const fetchMock = vi

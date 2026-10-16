@@ -1,11 +1,14 @@
 import { z } from "zod";
 import { trafficSettingsSchema, type CredentialProvider } from "@/lib/growth-contracts";
+import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { credential, readSetting } from "./growth-settings";
 import {
   fetchWithTimeout,
   readProviderJson,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
+import { verifyStripeMerchantAccount } from "@/server/integrations/stripe";
+import { verifyOblioSetup } from "@/server/integrations/oblio";
 
 const providerAliases: Partial<Record<CredentialProvider, string>> = {
   stripe_webhook: "stripe",
@@ -62,19 +65,68 @@ async function recordConnectionCheck(
 export async function checkConnection(env: CommerceEnv, provider: CredentialProvider) {
   const key = await credential(env, provider);
   if (!key) throw new Error("Cheia sau tokenul nu este configurat.");
-  if (provider === "oblio" || provider === "stripe_webhook") {
+  if (provider === "oblio") {
+    const settings = await readSetting(env.DB, "commerce.checkout", checkoutSettingsSchema);
+    const [entity, series] = await Promise.all([
+      env.DB.prepare("SELECT tax_id FROM legal_entities WHERE id='legal_entity_main'").first<{
+        tax_id: string;
+      }>(),
+      env.DB.prepare(
+        "SELECT prefix,next_number FROM invoice_series WHERE document_type='invoice' ORDER BY updated_at DESC LIMIT 1",
+      ).first<{ prefix: string; next_number: number }>(),
+    ]);
+    if (!settings.oblioEmail || !entity?.tax_id || !series?.prefix) {
+      await recordConnectionCheck(env, provider, "unverified");
+      return {
+        ok: false,
+        message:
+          "Completează e-mailul contului Oblio, CUI-ul și seria de facturi înainte de verificare.",
+      };
+    }
+    try {
+      await verifyOblioSetup(env, {
+        accountEmail: settings.oblioEmail,
+        taxId: entity.tax_id,
+        series: series.prefix,
+        expectedNextNumber: series.next_number,
+      });
+      await recordConnectionCheck(env, provider, "verified");
+      return {
+        ok: true,
+        message:
+          "Contul Oblio, firma, seria și cota pentru neplătitor de TVA sunt verificate fără emiterea unei facturi.",
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Contul Oblio nu a putut fi verificat.";
+      await recordConnectionCheck(env, provider, "failed", message);
+      return { ok: false, message };
+    }
+  }
+  if (provider === "stripe_webhook" || provider === "smartship_cod_iban") {
     await recordConnectionCheck(env, provider, "unverified");
     return {
       ok: false,
       message:
-        provider === "oblio"
-          ? "Secretul Oblio este stocat. Validarea completă se face fără emiterea unei facturi de test, la prima operație aprobată."
+        provider === "smartship_cod_iban"
+          ? "IBAN-ul este stocat criptat. SmartShip îl validează la prima cotație ramburs; verifică titularul contului înainte de activare."
           : "Secretul webhook Stripe este stocat. Semnătura va fi validată la primul eveniment primit de la Stripe.",
     };
   }
+  if (provider === "stripe") {
+    try {
+      const accountId = await verifyStripeMerchantAccount(env, key);
+      await recordConnectionCheck(env, provider, "verified");
+      return { ok: true, message: `Contul Stripe Cutiuța Magică (${accountId}) este verificat.` };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Contul Stripe nu a putut fi verificat.";
+      await recordConnectionCheck(env, provider, "failed", message);
+      return { ok: false, message };
+    }
+  }
   const endpoints: Partial<Record<CredentialProvider, string>> = {
     smartship: "https://api.smartship.ro/account/balance",
-    stripe: "https://api.stripe.com/v1/account",
     revolut: "https://b2b.revolut.com/api/1.0/accounts",
     resend: "https://api.resend.com/domains",
     google: "https://www.googleapis.com/webmasters/v3/sites",

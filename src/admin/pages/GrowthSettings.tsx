@@ -31,6 +31,7 @@ const labels: Record<CredentialProvider, string> = {
   olx: "OLX · token acces",
   okazii: "Okazii · cheie API",
   smartship: "SmartShip",
+  smartship_cod_iban: "SmartShip · IBAN pentru ramburs",
   stripe: "Stripe",
   stripe_webhook: "Stripe · secret webhook",
   revolut: "Revolut Business (token OAuth)",
