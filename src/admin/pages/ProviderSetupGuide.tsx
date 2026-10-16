@@ -32,7 +32,7 @@ const guides: Record<
     steps: [
       "Verifică în SmartShip că profilul expeditorului și cheia API aparțin Cutiuța Magică.",
       "Salvează cheia API, iar pentru ramburs IBAN-ul firmei în câmpul separat criptat. Completează expeditorul, localitatea numerică, greutatea și dimensiunile reale ale coletului.",
-      "Activează cotațiile live și Easybox după verificarea contului. Clientul vede până la trei curieri distincți la adresă și opțiunea Easybox separată, dacă furnizorul le oferă pentru rută.",
+      "Activează cotațiile live și Easybox după verificarea contului. Clientul vede toți curierii distincți disponibili la adresă care nu cer imprimarea etichetei, plus opțiunea Easybox separată, dacă furnizorul le oferă pentru rută.",
       "Testează costul, data estimată, suma ramburs și un AWB controlat. Emiterea AWB se confirmă explicit în Comenzi; verifică după numărul comenzii dacă răspunsul este incert.",
     ],
     docs: [{ label: "API SmartShip", url: "https://smartship.ro/api-docs" }],

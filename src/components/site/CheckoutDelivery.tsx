@@ -64,7 +64,7 @@ export function CheckoutDelivery({
       <p className="text-sm text-muted-foreground">
         {request.shippingOption === "easybox"
           ? "Confirmăm disponibilitatea punctului ales și tariful final înainte de comandă."
-          : "După completarea adresei, comparăm până la trei curieri disponibili, cu prețul final și termenul estimat. Datele de livrare sunt transmise serviciului de curierat."}
+          : "După completarea adresei, afișăm toate ofertele disponibile fără imprimarea etichetei, cu prețul final și termenul estimat. Datele de livrare sunt transmise serviciului de curierat."}
       </p>
       <button
         type="button"

@@ -31,7 +31,9 @@ export async function checkoutReadiness(env: CommerceEnv) {
       stripe &&
       stripeWebhook &&
       (environment !== "production" || Boolean(finance.stripeAccount)) &&
-      stripe.startsWith(environment === "production" ? "sk_live_" : "sk_test_"),
+      ["sk", "rk"].some((kind) =>
+        stripe.startsWith(`${kind}_${environment === "production" ? "live" : "test"}_`),
+      ),
     ),
     revolut_pay: Boolean(revolut && revolutWebhook),
     netopia: Boolean(

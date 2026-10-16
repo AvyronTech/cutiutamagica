@@ -16,6 +16,7 @@ import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { shippingFingerprint } from "./services/shipping-fingerprint";
 import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
 import { createStripeCheckoutSession, verifyStripeWebhook } from "./integrations/stripe";
+import { checkoutReadiness } from "./services/checkout-readiness";
 import { issueSmartShipAwb, reconcileSmartShipAwb } from "./services/smartship-fulfillment";
 import {
   createStripeCardSetup,
@@ -217,6 +218,18 @@ function storedPayment(id: string) {
 }
 
 describe("secure checkout", () => {
+  it("recognizes a restricted Stripe key only in its matching environment", async () => {
+    env.APP_ENV = "production";
+    env.STRIPE_SECRET_KEY = "rk_live_fixture";
+    sqlite
+      .prepare(
+        "INSERT INTO operational_settings(key,value_json,updated_at) VALUES('finance',?,strftime('%Y-%m-%dT%H:%M:%fZ','now'))",
+      )
+      .run(JSON.stringify({ stripeAccount: "acct_CutiutaMagica" }));
+    expect((await checkoutReadiness(env)).configured.stripe).toBe(true);
+    env.STRIPE_SECRET_KEY = "rk_test_fixture";
+    expect((await checkoutReadiness(env)).configured.stripe).toBe(false);
+  });
   it("never starts a live Stripe payment with a key from another account", async () => {
     env.APP_ENV = "production";
     env.STRIPE_SECRET_KEY = "sk_live_fixture";
@@ -659,7 +672,7 @@ describe("delivery quote integrity", () => {
     expect(ready?.status).toBe(200);
     expect(fetcher.mock.calls.filter(([url]) => url.includes("/cost"))).toHaveLength(1);
   });
-  it("shows the three lowest-priced distinct home couriers", async () => {
+  it("shows every eligible home courier without requiring a printed label", async () => {
     env.SMARTSHIP_API_KEY = "private";
     sqlite.exec(
       "UPDATE shipping_policy_configs SET use_live_quotes=1,sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
@@ -674,10 +687,12 @@ describe("delivery quote integrity", () => {
               ? { cities: [{ id: 256212, city: "Cluj-Napoca" }] }
               : {
                   costs: [
+                    { courier_id: 5, courier_name: "DragonStar", cost: 17 },
                     { courier_id: 1, courier_name: "Cargus", cost: 21 },
                     { courier_id: 2, courier_name: "SameDay", cost: 18 },
                     { courier_id: 1, courier_name: "Cargus propriu", cost: 19, own_contract: true },
                     { courier_id: 8, courier_name: "PTT", cost: 20 },
+                    { courier_id: 6, courier_name: "DPD", cost: 21.5 },
                     { courier_id: 19, courier_name: "FedEx", cost: 22 },
                   ],
                 },
@@ -692,6 +707,7 @@ describe("delivery quote integrity", () => {
       ["SameDay", 18],
       ["Cargus propriu", 19],
       ["PTT", 20],
+      ["DPD", 21.5],
     ]);
   });
   it("selects an official Easybox, applies the fixed tariff and stores the canonical pickup address", async () => {
