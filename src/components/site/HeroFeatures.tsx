@@ -26,6 +26,34 @@ const features = [
 export function HeroFeatures() {
   return (
     <div className="hero-features" aria-label="Trei lucruri de descoperit despre cutiuțe">
+      <svg
+        className="hero-story-thread hero-story-thread--desktop"
+        viewBox="0 0 1000 100"
+        preserveAspectRatio="none"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path className="hero-thread-guide" d="M0 3 C0 72 24 98 155 98 S760 98 1000 98" />
+        <path
+          className="hero-thread-light"
+          pathLength="1"
+          d="M0 3 C0 72 24 98 155 98 S760 98 1000 98"
+        />
+      </svg>
+      <svg
+        className="hero-story-thread hero-story-thread--mobile"
+        viewBox="0 0 100 1000"
+        preserveAspectRatio="none"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path className="hero-thread-guide" d="M3 0 C3 300 3 690 3 935 Q3 1000 97 1000" />
+        <path
+          className="hero-thread-light"
+          pathLength="1"
+          d="M3 0 C3 300 3 690 3 935 Q3 1000 97 1000"
+        />
+      </svg>
       {features.map(({ label, lines, detail, Icon, to }, i) => (
         <Link
           to={to}

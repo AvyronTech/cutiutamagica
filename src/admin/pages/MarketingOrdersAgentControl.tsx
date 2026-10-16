@@ -643,7 +643,10 @@ export default function MarketingOrdersAgentControl() {
           <Link2 className="h-4 w-4 text-cyan-300" />
         </div>
         <div className="grid gap-3 p-4 lg:grid-cols-2">
-          <article className="rounded-lg border border-[#28364d] bg-[#0d1727] p-4">
+          <article
+            id="search-console"
+            className="rounded-lg border border-[#28364d] bg-[#0d1727] p-4"
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold text-white">Google Search Console</p>

@@ -5,14 +5,23 @@ import { worldBlend } from "@/lib/landing-motion";
 import { currentVisualEffectsTier } from "@/lib/visual-performance";
 const scenes = [
   {
-    key: "story",
+    key: "hero",
     source: "/scenes/music-box-world.webp",
     mobile: "/scenes/music-box-world-mobile.webp",
   },
+  {
+    key: "story",
+    source: "/scenes/library.webp",
+    mobile: "/scenes/library-mobile.webp",
+  },
   { key: "emotion", source: bgEmotie },
   { key: "dedicated", source: "/scenes/dedicated.webp" },
-  { key: "personalize" },
-  { key: "future" },
+  { key: "personalize", source: "/scenes/footer-atelier.webp" },
+  {
+    key: "future",
+    source: "/scenes/catalog-atelier.webp",
+    mobile: "/scenes/catalog-atelier-mobile.webp",
+  },
   {
     key: "atelier",
     source: "/scenes/footer-atelier.webp",
@@ -36,7 +45,7 @@ export function LandingBackdrop() {
       index: i + 1,
       node: world.querySelector<HTMLElement>(`[data-world="${scene.key}"]`),
     }));
-    const ready = new Set([0, 3, 4]);
+    const ready = new Set([0]);
     const renderedOpacity: number[] = layers.map((_, index) => (index === 0 ? 1 : 0));
     let frame = 0,
       visible = false;

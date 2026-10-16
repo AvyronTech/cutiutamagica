@@ -34,6 +34,8 @@ import {
   createAdminOrderEntry,
   getAdminOrders,
   getAdminProducts,
+  issueAdminSmartShipAwb,
+  reconcileAdminSmartShipAwb,
   updateAdminOrderStatus,
 } from "@/lib/admin.functions";
 import { canTransitionOrderStatus } from "@/lib/order-status";
@@ -133,14 +135,33 @@ function OrderDetailPanel({
   order,
   onClose,
   onUpdateStatus,
+  onAwbAction,
 }: {
   order: AdminOrder;
   onClose: () => void;
   onUpdateStatus: (status: AdminOrderStatus) => Promise<void>;
+  onAwbAction: (reconcile: boolean) => Promise<void>;
 }) {
   const [currentStatus, setCurrentStatus] = useState(order.status);
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [awbBusy, setAwbBusy] = useState(false);
+
+  async function handleAwb(reconcile: boolean) {
+    if (
+      !reconcile &&
+      !window.confirm(
+        `Emiți AWB-ul SmartShip pentru ${order.orderNumber}? Operația poate avea cost și poate comanda ridicarea coletului.`,
+      )
+    )
+      return;
+    setAwbBusy(true);
+    try {
+      await onAwbAction(reconcile);
+    } finally {
+      setAwbBusy(false);
+    }
+  }
 
   const save = async () => {
     if (currentStatus === order.status) {
@@ -235,6 +256,51 @@ function OrderDetailPanel({
               className="mt-2 flex w-full items-center justify-end gap-1.5 text-xs font-mono text-purple-300"
             >
               {order.awb} <Copy className="h-3 w-3" /> {copied && "Copiat"}
+            </button>
+          )}
+          {order.trackingUrl && (
+            <a
+              href={order.trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex min-h-10 items-center text-xs font-medium text-cyan-300 underline underline-offset-4"
+            >
+              Urmărește coletul la SmartShip
+            </a>
+          )}
+          {order.awbRequestStatus === "issued" && order.awb && (
+            <a
+              href={`/api/v1/admin/shipping/orders/${order.id}/label`}
+              className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg border border-cyan-300/30 px-3 text-xs font-medium text-cyan-200"
+            >
+              <Download className="h-3.5 w-3.5" /> Descarcă eticheta AWB
+            </a>
+          )}
+          {!order.awb && order.awbRequestStatus && (
+            <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
+              Emiterea AWB necesită verificare după numărul comenzii la SmartShip.
+            </p>
+          )}
+          {!order.awb && order.awbRequestStatus && (
+            <button
+              type="button"
+              disabled={awbBusy}
+              onClick={() => void handleAwb(true)}
+              className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 text-xs font-medium text-amber-200 disabled:opacity-50"
+            >
+              {awbBusy ? "Verificăm…" : "Verifică AWB după numărul comenzii"}
+            </button>
+          )}
+          {!order.awb && !order.awbRequestStatus && Boolean(order.smartshipCourierId) && (
+            <button
+              type="button"
+              disabled={
+                awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+              }
+              onClick={() => void handleAwb(false)}
+              className="mt-3 min-h-10 w-full rounded-lg bg-cyan-300 px-3 text-xs font-semibold text-[#07111f] disabled:opacity-50"
+            >
+              {awbBusy ? "Emitem AWB…" : "Emite AWB SmartShip"}
             </button>
           )}
         </section>
@@ -499,6 +565,8 @@ export default function Orders() {
   const fetchProducts = useServerFn(getAdminProducts);
   const createOrder = useServerFn(createAdminOrderEntry);
   const changeOrderStatus = useServerFn(updateAdminOrderStatus);
+  const issueAwb = useServerFn(issueAdminSmartShipAwb);
+  const reconcileAwb = useServerFn(reconcileAdminSmartShipAwb);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("Toate");
   const [selectedStatus, setSelectedStatus] = useState("Toate");
@@ -750,6 +818,23 @@ export default function Orders() {
           onClose={() => setSelectedOrder(null)}
           onUpdateStatus={async (status) => {
             await statusMutation.mutateAsync({ order: selectedOrder, status });
+          }}
+          onAwbAction={async (reconcile) => {
+            try {
+              const result = await (reconcile ? reconcileAwb : issueAwb)({
+                data: { orderId: selectedOrder.id },
+              });
+              setSelectedOrder({ ...selectedOrder, awb: result.awb, awbRequestStatus: "issued" });
+              await queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+              await queryClient.invalidateQueries({ queryKey: ["admin", "business-hub"] });
+              toast.success(`AWB ${result.awb} a fost înregistrat.`);
+            } catch (error) {
+              setSelectedOrder(null);
+              await ordersQuery.refetch();
+              toast.error("AWB-ul nu a fost confirmat", {
+                description: error instanceof Error ? error.message : "Verifică la SmartShip.",
+              });
+            }
           }}
         />
       )}

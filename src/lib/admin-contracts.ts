@@ -21,10 +21,14 @@ export interface AdminOrder {
   currency: string;
   status: AdminOrderStatus;
   paymentStatus: string;
+  paymentMethod: string;
   fulfillmentStatus: string;
   date: string;
   deliveryMethod: string;
   awb?: string;
+  trackingUrl?: string;
+  awbRequestStatus?: "issuing" | "needs_review" | "issued";
+  smartshipCourierId?: number;
   phone: string;
   email: string;
   address: string;

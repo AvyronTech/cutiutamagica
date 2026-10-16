@@ -30,10 +30,15 @@ const ORDER_SELECT = `
   SELECT
     vo.*,
     o.version,
+    o.payment_method_requested AS payment_method,
     oa.line1,
     oa.line2,
     oa.city,
     oa.county,
+    (SELECT status FROM smartship_awb_requests WHERE order_id=vo.id) AS awb_request_status,
+    (SELECT q.courier_id FROM shipping_quotes q WHERE q.id=o.shipping_quote_id) AS smartship_courier_id,
+    (SELECT tracking_url FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_tracking_url,
     (
       SELECT sm.name
       FROM shipments sh
@@ -107,10 +112,25 @@ function mapOrder(row: DbRow): AdminOrder {
       fulfillmentStatus: stringValue(row.fulfillment_status),
     }),
     paymentStatus: stringValue(row.payment_status),
+    paymentMethod: stringValue(row.payment_method),
     fulfillmentStatus: stringValue(row.fulfillment_status),
     date: stringValue(row.placed_at).slice(0, 10),
     deliveryMethod: stringValue(row.shipping_method_name) || "Nealocata",
     awb: nullableString(row.awb) ?? undefined,
+    trackingUrl: (() => {
+      const value = nullableString(row.smartship_tracking_url);
+      if (!value) return undefined;
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" && url.hostname === "smartship.ro" ? url.href : undefined;
+      } catch {
+        return undefined;
+      }
+    })(),
+    awbRequestStatus:
+      (nullableString(row.awb_request_status) as AdminOrder["awbRequestStatus"]) ?? undefined,
+    smartshipCourierId:
+      row.smartship_courier_id == null ? undefined : numberValue(row.smartship_courier_id),
     phone: stringValue(row.customer_phone_e164),
     email: stringValue(row.customer_email),
     address: [line1, line2].filter(Boolean).join(", "),

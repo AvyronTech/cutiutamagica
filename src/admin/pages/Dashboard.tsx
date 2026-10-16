@@ -13,6 +13,7 @@ import {
   Mail,
   Package,
   PackageCheck,
+  Search,
   ShoppingBag,
   ShoppingCart,
   ShieldCheck,
@@ -201,6 +202,38 @@ export default function Dashboard() {
               </span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section
+        aria-label="SEO și indexare"
+        className="rounded-2xl border border-white/10 bg-white/[.045] p-4 md:p-5"
+      >
+        <div className="mb-4 flex items-center gap-2">
+          <Search className="h-4 w-4 text-amber-200" />
+          <h2 className="text-base font-semibold text-white">SEO și indexare</h2>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <a
+            href="/sitemap.xml"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl border border-white/10 bg-[#0e1a2b] p-3 text-sm text-white transition hover:border-amber-200/30 focus-visible:outline-2 focus-visible:outline-amber-200"
+          >
+            Verifică sitemapul public <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
+          </a>
+          <Link
+            to="/admin/products"
+            className="rounded-xl border border-white/10 bg-[#0e1a2b] p-3 text-sm text-white transition hover:border-amber-200/30 focus-visible:outline-2 focus-visible:outline-amber-200"
+          >
+            Completează SEO pentru produse <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
+          </Link>
+          <a
+            href="/admin/ai#search-console"
+            className="rounded-xl border border-white/10 bg-[#0e1a2b] p-3 text-sm text-white transition hover:border-amber-200/30 focus-visible:outline-2 focus-visible:outline-amber-200"
+          >
+            Verifică Search Console <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
+          </a>
         </div>
       </section>
 

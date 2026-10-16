@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cake, CalendarDays, Gift, Sparkles, Star, Trash2 } from "lucide-react";
+import { Bell, BellOff, Cake, CalendarDays, Gift, Sparkles, Star, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { reviewApi } from "@/lib/reviews";
@@ -152,7 +152,7 @@ export function CustomerMagicCenter() {
           personName: form.get("personName"),
           eventMonth: parsed.getMonth() + 1,
           eventDay: parsed.getDate(),
-          reminderDays: [12, 3],
+          reminderDays: [7, 3],
           emailEnabled: form.get("emailEnabled") === "on",
         }),
       });
@@ -227,7 +227,7 @@ export function CustomerMagicCenter() {
               </select>
               <input name="date" type="date" required />
               <label>
-                <input name="emailEnabled" type="checkbox" defaultChecked /> E-mail cu 12 și 3 zile
+                <input name="emailEnabled" type="checkbox" defaultChecked /> E-mail cu 7 și 3 zile
                 înainte
               </label>
               <button className="magic-button">Salvează momentul</button>
@@ -242,28 +242,62 @@ export function CustomerMagicCenter() {
                     <small>
                       {occasions[event.occasion]} · {String(event.eventDay).padStart(2, "0")}/
                       {String(event.eventMonth).padStart(2, "0")}
-                      {event.emailEnabled ? " · reminder e-mail" : ""}
+                      {event.emailEnabled ? " · e-mail cu 7 și 3 zile înainte" : ""}
                     </small>
                   </span>
-                  <button
-                    type="button"
-                    aria-label={`Șterge momentul pentru ${event.personName}`}
-                    onClick={async () => {
-                      try {
-                        await reviewApi(`/api/v1/customer/gift-calendar/${event.id}`, {
-                          method: "DELETE",
-                        });
-                        await refresh();
-                        toast.success("Momentul a fost șters.");
-                      } catch (error) {
-                        toast.error(
-                          error instanceof Error ? error.message : "Momentul nu a putut fi șters.",
-                        );
+                  <span className="customer-calendar-actions">
+                    <button
+                      type="button"
+                      aria-label={
+                        event.emailEnabled
+                          ? `Oprește mementourile pentru ${event.personName}`
+                          : `Activează mementourile pentru ${event.personName}`
                       }
-                    }}
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                      onClick={async () => {
+                        try {
+                          await reviewApi(`/api/v1/customer/gift-calendar/${event.id}`, {
+                            method: "PATCH",
+                            body: JSON.stringify({ emailEnabled: !event.emailEnabled }),
+                          });
+                          await refresh();
+                          toast.success(
+                            event.emailEnabled
+                              ? "Mementourile au fost oprite."
+                              : "Mementourile au fost activate.",
+                          );
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error
+                              ? error.message
+                              : "Preferința nu a putut fi salvată.",
+                          );
+                        }
+                      }}
+                    >
+                      {event.emailEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Șterge momentul pentru ${event.personName}`}
+                      onClick={async () => {
+                        try {
+                          await reviewApi(`/api/v1/customer/gift-calendar/${event.id}`, {
+                            method: "DELETE",
+                          });
+                          await refresh();
+                          toast.success("Momentul a fost șters.");
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error
+                              ? error.message
+                              : "Momentul nu a putut fi șters.",
+                          );
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </span>
                 </div>
               ))
             ) : (

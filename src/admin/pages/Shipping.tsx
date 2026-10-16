@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Loader2, MapPin, Save, Truck } from "lucide-react";
@@ -273,9 +274,21 @@ export default function Shipping() {
               3. Pentru Easybox păstrează identificatorul lockerului și limita de greutate a
               serviciului.
             </li>
-            <li>4. Creează AWB numai după confirmarea plății sau aprobarea rambursului.</li>
-            <li>5. Procesează statusurile idempotent și păstrează erorile pentru retry.</li>
+            <li>
+              4. Emite AWB din detaliile comenzii numai după plata confirmată sau aprobarea
+              rambursului.
+            </li>
+            <li>
+              5. Dacă răspunsul este incert, verifică AWB după numărul comenzii înainte de orice
+              reemitere.
+            </li>
           </ol>
+          <Link
+            to="/admin/orders"
+            className="mt-5 inline-flex min-h-10 items-center rounded-lg border border-cyan-300/40 px-4 text-xs font-semibold text-cyan-200"
+          >
+            Deschide comenzile și AWB-urile
+          </Link>
           <p className="mt-5 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-xs leading-5 text-amber-200">
             Până la completarea contractului, adreselor de expediere și zonelor active, politica
             poate fi salvată ca neverificată; checkout-ul va cere confirmare manuală și nu va încasa

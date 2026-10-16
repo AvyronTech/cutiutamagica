@@ -302,13 +302,62 @@ export async function createSmartShipAwb(
       response.status >= 500,
     );
   }
-  const tracking = result?.tracking_link;
+  const tracking = result?.tracking_url ?? result?.tracking_link;
   const cost = result?.cost;
   return {
     awb,
     trackingUrl: typeof tracking === "string" ? tracking : null,
     costRon: typeof cost === "number" ? cost : null,
   };
+}
+
+export async function findSmartShipAwbByOrderId(
+  env: CommerceEnv,
+  orderNumber: string,
+): Promise<{ awb: string; trackingUrl: string | null } | null> {
+  const response = await smartShipFetch(env, `/awb/order_id/${encodeURIComponent(orderNumber)}`, {
+    method: "GET",
+  });
+  const result = (await readProviderJson(response).catch(() => null)) as Record<
+    string,
+    unknown
+  > | null;
+  if (!response.ok) {
+    if (response.status === 404) return null;
+    throw new ProviderError(
+      "Nu am putut verifica AWB-ul la SmartShip.",
+      "SMARTSHIP_AWB_LOOKUP_FAILED",
+      502,
+    );
+  }
+  if (typeof result?.awb !== "string" || !result.awb.trim()) return null;
+  return {
+    awb: result.awb,
+    trackingUrl: typeof result.tracking_link === "string" ? result.tracking_link : null,
+  };
+}
+
+export async function getSmartShipLabel(env: CommerceEnv, awb: string): Promise<Response> {
+  if (!/^[A-Za-z0-9-]{3,80}$/.test(awb))
+    throw new ProviderError("AWB-ul nu este valid.", "SMARTSHIP_AWB_INVALID", 400);
+  const response = await smartShipFetch(env, `/awb/print/${encodeURIComponent(awb)}/A4`, {
+    method: "GET",
+  });
+  if (!response.ok || !response.body || !response.headers.get("content-type")?.includes("pdf"))
+    throw new ProviderError(
+      "Eticheta nu este disponibilă momentan.",
+      "SMARTSHIP_LABEL_UNAVAILABLE",
+      502,
+    );
+  return new Response(response.body, {
+    status: 200,
+    headers: {
+      "content-type": "application/pdf",
+      "content-disposition": `attachment; filename="AWB-${awb}.pdf"`,
+      "cache-control": "private, no-store",
+      "x-content-type-options": "nosniff",
+    },
+  });
 }
 
 function localityKey(value: string) {
