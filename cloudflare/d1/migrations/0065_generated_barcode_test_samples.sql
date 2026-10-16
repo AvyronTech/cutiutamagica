@@ -49,5 +49,5 @@ BEGIN
   SELECT RAISE(ABORT, 'test_only_gtin');
 END;
 
-UPDATE schema_metadata SET value='64',updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+UPDATE schema_metadata SET value='65',updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
 WHERE key='schema_version';

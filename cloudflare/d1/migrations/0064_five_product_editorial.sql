@@ -71,4 +71,4 @@ AND NOT EXISTS (SELECT 1 FROM audit_log a WHERE a.entity_type='product' AND a.en
 UPDATE products SET name='Cutiuță muzicală „You Are My Sunshine”', version=version+1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
 WHERE slug='sunshine' AND name IN ('Cutiuță Muzicală „You Are My Sunshine” cu Manivelă – Cadou de Colecție 14+', 'Cutiuță Muzicală „You Are My Sunshine” cu Manivelă – Cadou de Colecție', 'Cutiuță Muzicală „You Are My Sunshine” cu Manivelă')
 AND NOT EXISTS (SELECT 1 FROM audit_log a WHERE a.entity_type='product' AND a.entity_id=products.id AND a.action='product.update');
-UPDATE schema_metadata SET value='63',updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE key='schema_version';
+UPDATE schema_metadata SET value='64',updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE key='schema_version';

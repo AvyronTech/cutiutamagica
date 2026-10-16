@@ -1,5 +1,9 @@
 # Stripe, Oblio și SmartShip — pregătirea integrărilor
 
+## Aliniere cu producția înaintea publicării
+
+În verificarea D1 remote din 17 octombrie, jurnalul conținea deja `0063_halloween_social_revision.sql`, iar Workerul fusese publicat după ramura de referință a acestui PR. Ramura comercială a integrat revizia Halloween fără modificări și a renumerotat propriile migrații append-only la `0064_five_product_editorial.sql` și `0065_generated_barcode_test_samples.sql`. Testele după integrare: 49 de fișiere, 267 de teste, typecheck, lint, build și `cf:deploy:dry` trecute. PR: https://github.com/AvyronTech/cutiutamagica/pull/13. Acest paragraf descrie pregătirea; aplicarea remote și deployul se consemnează separat după confirmare.
+
 ## Scop și stare
 
 Checkoutul folosește Stripe Checkout pentru card, Oblio pentru facturi și SmartShip pentru cotații și AWB. Cheile sunt citite exclusiv din secretele criptate ale magazinului. Acest handoff nu confirmă activarea plăților sau o plată reală. Identitatea celor trei conturi a fost comparată cu firma Cutiuța Magică; nu se folosesc acreditări din alte conturi de furnizor.
