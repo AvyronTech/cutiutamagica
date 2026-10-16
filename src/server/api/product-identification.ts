@@ -803,7 +803,7 @@ async function importIdentities(
         errors.push({
           row: index + 1,
           message:
-            "Codul generat pe generate.plus este doar pentru test, nu pentru import comercial.",
+            "Codul generat pe generate.plus nu are alocare GS1 și nu poate fi importat ca GTIN comercial.",
         });
       if (seenGtins.has(row.gtin))
         errors.push({ row: index + 1, message: "GTIN repetat în fișier." });

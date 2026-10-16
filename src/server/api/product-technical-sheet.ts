@@ -203,7 +203,7 @@ export async function handleProductTechnicalSheet(
           {
             error: {
               code: "TEST_ONLY_EAN",
-              message: "Codul generat pentru test nu poate fi salvat ca GTIN comercial.",
+              message: "Codul generat nu are alocare GS1 și nu poate fi salvat ca GTIN comercial.",
             },
           },
           400,

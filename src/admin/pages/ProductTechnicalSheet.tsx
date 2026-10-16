@@ -289,21 +289,21 @@ export function ProductTechnicalSheet({
           {barcodeTestSamples && (
             <div className="mt-5 rounded-xl border border-amber-300/25 bg-amber-300/5 p-4">
               <p className="text-xs font-semibold uppercase tracking-[.14em] text-amber-200">
-                Exemple generate · doar pentru test
+                Coduri generate · alocare GS1 necesară
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                generate.plus produce numere fictive. Sunt păstrate aici pentru verificări vizuale
-                și tehnice; nu pot fi salvate ca GTIN oficial sau exportate în listări.
+                Numerele generate pe generate.plus sunt păstrate în fișa internă. Platforma nu alocă
+                identificatori GS1, așa că aceste numere nu se exportă ca GTIN comercial.
               </p>
               <dl className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs text-slate-400">EAN-13 de test</dt>
+                  <dt className="text-xs text-slate-400">EAN-13 generat</dt>
                   <dd className="mt-1 break-all font-mono text-base text-white">
                     {barcodeTestSamples.ean13_sample}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-400">EAN-8 de test</dt>
+                  <dt className="text-xs text-slate-400">EAN-8 generat</dt>
                   <dd className="mt-1 break-all font-mono text-base text-white">
                     {barcodeTestSamples.ean8_sample}
                   </dd>
