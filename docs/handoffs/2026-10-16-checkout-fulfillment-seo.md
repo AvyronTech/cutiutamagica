@@ -13,6 +13,7 @@
 - Expediere și administrare: `src/server/services/smartship-fulfillment.ts`, `src/server/integrations/smartship.ts`, `src/server/api/admin-shipping-label.ts`, `src/server/api/router.ts`, `src/server/db/admin.repository.ts`, `src/lib/admin.functions.ts`, `src/lib/admin-contracts.ts`, `src/admin/pages/Orders.tsx`, `src/admin/pages/Shipping.tsx`.
 - SEO navigabil: `src/admin/pages/Dashboard.tsx`, `src/admin/pages/MarketingOrdersAgentControl.tsx`.
 - Migrare D1 append-only: `cloudflare/d1/migrations/0061_smartship_awb_requests.sql`. Se aplică înaintea versiunii Worker care citește această tabelă.
+- Migrarea ulterioară `0062_smartship_schema_version.sql` aliniază markerul `schema_metadata` la versiunea ultimei migrații, fără a modifica 0061 deja aplicată. Testul de checkout verifică de acum această corespondență pentru toate migrările viitoare.
 - Verificări automate adăugate în `src/server/checkout.test.ts` pentru tariful live, metodele Stripe, emiterea unică și verificarea AWB, precum și accesul la etichetă.
 
 ## Verificare

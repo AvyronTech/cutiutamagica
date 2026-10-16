@@ -217,6 +217,17 @@ function storedPayment(id: string) {
 }
 
 describe("secure checkout", () => {
+  it("keeps the operational schema marker aligned with the latest D1 migration", () => {
+    const latest = readdirSync(resolve("cloudflare/d1/migrations"))
+      .filter((file) => /^\d{4}_.*\.sql$/.test(file))
+      .sort()
+      .at(-1)!;
+    const marker = sqlite
+      .prepare("SELECT value FROM schema_metadata WHERE key='schema_version'")
+      .get()?.value;
+    expect(Number(marker)).toBe(Number(latest.slice(0, 4)));
+  });
+
   it("keeps guest orders separate when two buyers provide the same phone number", async () => {
     const first = await createWebsiteOrder(env.DB, input());
     const second = await createWebsiteOrder(env.DB, {
