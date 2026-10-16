@@ -16,9 +16,9 @@ export async function shippingFingerprint(
     JSON.stringify({
       items: [...items].sort(([a], [b]) => a.localeCompare(b)),
       totalBani,
-      customer: [c.name, c.email, c.phone, c.address, c.city, c.county, c.postalCode].map((v) =>
-        v.trim().toLowerCase(),
-      ),
+      customer: [c.name, c.email, c.phone, c.address, c.city, c.county, c.postalCode]
+        .map((v) => v.trim().toLowerCase())
+        .concat(String(c.sector)),
       payment: input.paymentMethod,
       shipping: input.shippingOption,
       easyboxLockerId: input.easyboxLockerId ?? null,

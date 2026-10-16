@@ -2,6 +2,7 @@ import { shippingFingerprint } from "../services/shipping-fingerprint";
 import { MAX_CART_QUANTITY, STORE_CURRENCY } from "@/lib/pricing";
 import type { WebsiteOrderInput, WebsiteOrderPublicResult } from "@/lib/order-contracts";
 import { evaluateCheckoutCode, PromotionCodeError } from "../services/referrals";
+import { deliverySector } from "@/lib/bucharest-sector";
 
 type DbValue = string | number | null;
 type DbRow = Record<string, DbValue>;
@@ -318,6 +319,7 @@ export async function createWebsiteOrder(
       city: input.customer.city.trim(),
       county: input.customer.county.trim(),
       postalCode: input.customer.postalCode.trim(),
+      sector: input.customer.sector,
       notes: input.customer.notes.trim(),
     },
     paymentMethod: input.paymentMethod,
@@ -395,6 +397,7 @@ export async function createWebsiteOrder(
     locker_city: string | null;
     locker_county: string | null;
     locker_postal_code: string | null;
+    recipient_sector: number;
   } | null = null;
   if (input.shippingOption === "easybox" && !input.shippingQuoteId)
     throw new CheckoutError(
@@ -417,7 +420,7 @@ export async function createWebsiteOrder(
     const quote = await db
       .prepare(
         `SELECT amount_bani,request_hash,method_code,locker_id,locker_name,locker_address,
-                locker_city,locker_county,locker_postal_code
+                locker_city,locker_county,locker_postal_code,recipient_sector
          FROM shipping_quotes
          WHERE id=?1 AND order_id IS NULL AND expires_at>?2 AND currency='RON'`,
       )
@@ -432,6 +435,7 @@ export async function createWebsiteOrder(
         locker_city: string | null;
         locker_county: string | null;
         locker_postal_code: string | null;
+        recipient_sector: number;
       }>();
     if (
       !quote ||
@@ -591,8 +595,8 @@ export async function createWebsiteOrder(
         `
       INSERT INTO order_addresses (
         id, order_id, address_type, full_name, phone_e164, line1, city, county,
-        postal_code, country_code, pickup_point_provider, pickup_point_id, created_at
-      ) VALUES (?1, ?2, 'shipping', ?3, ?4, ?5, ?6, ?7, ?8, 'RO', ?9, ?10, ?11)
+        postal_code, country_code, pickup_point_provider, pickup_point_id, sector, created_at
+      ) VALUES (?1, ?2, 'shipping', ?3, ?4, ?5, ?6, ?7, ?8, 'RO', ?9, ?10, ?11, ?12)
     `,
       )
       .bind(
@@ -606,6 +610,13 @@ export async function createWebsiteOrder(
         selectedQuote?.locker_postal_code ?? (normalizedRequest.customer.postalCode || null),
         input.shippingOption === "easybox" ? "sameday" : null,
         input.shippingOption === "easybox" ? String(input.easyboxLockerId) : null,
+        selectedQuote?.recipient_sector ??
+          deliverySector(
+            input.customer.city,
+            input.customer.county,
+            input.customer.sector,
+            input.customer.postalCode,
+          ),
         nowIso,
       ),
   );

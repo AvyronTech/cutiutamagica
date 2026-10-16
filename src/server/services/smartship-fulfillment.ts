@@ -20,7 +20,7 @@ async function orderForAwb(env: CommerceEnv, orderId: string, mode: "issue" | "r
     `SELECT o.id,o.order_number,o.order_status,o.payment_status,
             o.payment_method_requested AS payment_method,
             o.shipping_option_requested,o.total_bani,o.customer_name,o.customer_email,
-            o.customer_phone_e164,a.line1,a.city,a.county,a.postal_code,
+            o.customer_phone_e164,a.line1,a.city,a.county,a.postal_code,a.sector,
             q.courier_id,q.own_contract,q.locker_id,
             p.validation_status,p.sender_name,p.sender_address,p.sender_email,p.sender_phone,
             p.sender_city_id,p.sender_sector,p.default_weight_g,p.default_length_cm,
@@ -150,9 +150,7 @@ export async function issueSmartShipAwb(env: CommerceEnv, orderId: string, actor
         email: String(row.customer_email ?? ""),
         phone: String(row.customer_phone_e164),
         cityId,
-        sector: /^0[1-6]\d{4}$/.test(String(row.postal_code ?? ""))
-          ? Number(String(row.postal_code)[1])
-          : 0,
+        sector: Number(row.sector ?? 0),
       },
       content: {
         packageContent: "Cutiuțe muzicale",

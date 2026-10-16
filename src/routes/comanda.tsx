@@ -1,5 +1,6 @@
 import type { PaymentProvider } from "@/lib/checkout-settings";
 import { CheckoutDelivery, type DeliveryOffer } from "@/components/site/CheckoutDelivery";
+import { isBucharest, sectorFromPostalCode } from "@/lib/bucharest-sector";
 import { EasyboxPicker } from "@/components/site/EasyboxPicker";
 import { PaymentRecovery } from "@/components/site/PaymentRecovery";
 import { pendingPaymentKey, openSecureCheckout, type PendingPayment } from "@/lib/checkout-client";
@@ -70,6 +71,7 @@ const emptyForm = {
   city: "",
   county: "",
   postalCode: "",
+  sector: 0,
   notes: "",
 };
 const inputClass =
@@ -153,6 +155,10 @@ function OrderPage() {
     promotionCode: activePromotion?.code,
   };
   const deliveryContext = JSON.stringify({ ...deliveryRequest, total: productsAfterCode });
+  const sectorLocation = shippingOption === "easybox" && easyboxLocker ? easyboxLocker : form;
+  const needsSector =
+    isBucharest(sectorLocation.city, sectorLocation.county) &&
+    !(shippingOption === "easybox" && sectorFromPostalCode(easyboxLocker?.postalCode ?? ""));
   const activeQuote =
     quote?.context === deliveryContext && Date.parse(quote.offer.expiresAt) > Date.now()
       ? quote.offer
@@ -1011,6 +1017,25 @@ function OrderPage() {
                             className={inputClass}
                           />
                         </label>
+                        {needsSector && (
+                          <label className="block text-xs font-medium text-muted-foreground">
+                            Sectorul livrării
+                            <select
+                              required={!sectorFromPostalCode(form.postalCode)}
+                              aria-label="Sectorul livrării"
+                              value={form.sector}
+                              onChange={(e) => setForm({ ...form, sector: Number(e.target.value) })}
+                              className={inputClass}
+                            >
+                              <option value={0}>Alege sectorul</option>
+                              {[1, 2, 3, 4, 5, 6].map((sector) => (
+                                <option key={sector} value={sector}>
+                                  Sector {sector}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
                         <label className="block text-xs font-medium text-muted-foreground sm:col-span-2">
                           Adresă
                           <input
