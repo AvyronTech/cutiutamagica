@@ -239,7 +239,17 @@ export async function handleShippingCheckout(
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
     const hash = await shippingFingerprint(input.data, total);
     const free = policy.free_over_bani != null && total >= Number(policy.free_over_bani);
-    const offers = quotes.slice(0, 15).map((q) => ({
+    // SmartShip can return the same courier twice when a private contract is connected.
+    // Show at most three distinct home couriers; locker quotes are a separate choice.
+    const rankedQuotes = [...quotes]
+      .sort((left, right) => left.costRon - right.costRon)
+      .filter(
+        (quote, index, all) =>
+          input.data.shippingOption === "easybox" ||
+          all.findIndex((candidate) => candidate.courierId === quote.courierId) === index,
+      )
+      .slice(0, input.data.shippingOption === "easybox" ? 1 : 3);
+    const offers = rankedQuotes.map((q) => ({
       id: crypto.randomUUID(),
       courier: q.courierName,
       price: free ? 0 : Math.round(q.costRon * 100) / 100,

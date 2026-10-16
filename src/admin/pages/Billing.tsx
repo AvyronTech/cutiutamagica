@@ -10,6 +10,7 @@ import {
   saveLegalEntity,
 } from "@/lib/admin.functions";
 import { OblioSetup } from "@/admin/pages/CheckoutConnections";
+import { ProviderSetupGuide } from "@/admin/pages/ProviderSetupGuide";
 import type { CheckoutSettings } from "@/lib/checkout-settings";
 
 const inputClass =
@@ -103,6 +104,7 @@ export default function Billing() {
         </p>
       </header>
       <OblioSetup />
+      <ProviderSetupGuide provider="oblio" />
       <div
         className={`flex gap-3 rounded-lg border p-4 text-sm ${ready ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-amber-400/30 bg-amber-400/10 text-amber-100"}`}
       >
@@ -113,7 +115,7 @@ export default function Billing() {
         )}
         <span>
           {ready
-            ? "Fluxul de emitere Oblio este pregătit."
+            ? "Configurarea locală este completă. Firma, seria și cota se verifică în Oblio la emitere."
             : `Blocaje: ${entity.status !== "verified" ? "profil juridic neverificat; " : ""}${activeSeries?.status !== "active" ? "serie inactivă; " : ""}${!oblio?.secretConfigured ? "secret Oblio lipsă; " : ""}${checkoutQuery.data?.settings.invoiceProvider !== "oblio" || !checkoutQuery.data?.settings.oblioEmail ? "cont Oblio neconfigurat." : ""}`}
         </span>
       </div>
@@ -209,8 +211,8 @@ export default function Billing() {
             ))}
           </div>
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            Numerotarea este rezervată tranzacțional în D1. Documentul extern și răspunsul Oblio
-            sunt jurnalizate fără a stoca cheia API.
+            Seria CM pornește intern de la 1. Numărul real vine din Oblio; aplicația verifică
+            înainte de emitere că următorul număr coincide cu registrul local.
           </p>
         </section>
       </div>
@@ -337,7 +339,7 @@ function SeriesEditor({
         Salvează
       </button>
       <p className="col-span-3 text-[11px] text-slate-500">
-        Următorul număr intern: {series.nextNumber}
+        Următorul număr intern: {String(series.nextNumber).padStart(4, "0")}
       </p>
     </form>
   );

@@ -605,6 +605,41 @@ describe("delivery quote integrity", () => {
     expect(data[0].price).toBe(17.55);
     expect(data[0]).not.toHaveProperty("ownContract");
   });
+  it("shows the three lowest-priced distinct home couriers", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET use_live_quotes=1,sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        Response.json(
+          url.includes("/counties")
+            ? { counties: [{ id: 13, county: "Cluj" }] }
+            : url.includes("/cities")
+              ? { cities: [{ id: 256212, city: "Cluj-Napoca" }] }
+              : {
+                  costs: [
+                    { courier_id: 1, courier_name: "Cargus", cost: 21 },
+                    { courier_id: 2, courier_name: "SameDay", cost: 18 },
+                    { courier_id: 1, courier_name: "Cargus propriu", cost: 19, own_contract: true },
+                    { courier_id: 8, courier_name: "PTT", cost: 20 },
+                    { courier_id: 19, courier_name: "FedEx", cost: 22 },
+                  ],
+                },
+        ),
+      ),
+    );
+    const response = await handleShippingCheckout(request("/api/v1/shipping/quotes", input()), env);
+    expect(response?.status).toBe(200);
+    const offers = ((await response!.json()) as { data: Array<{ courier: string; price: number }> })
+      .data;
+    expect(offers.map(({ courier, price }) => [courier, price])).toEqual([
+      ["SameDay", 18],
+      ["Cargus propriu", 19],
+      ["PTT", 20],
+    ]);
+  });
   it("selects an official Easybox, applies the fixed tariff and stores the canonical pickup address", async () => {
     env.SMARTSHIP_API_KEY = "private";
     sqlite.exec(

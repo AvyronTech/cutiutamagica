@@ -6,6 +6,7 @@ import { AlertTriangle, CheckCircle2, Loader2, MapPin, Save, Truck } from "lucid
 import { toast } from "sonner";
 import { getCommerceOperations, saveShippingPolicy } from "@/lib/admin.functions";
 import { CredentialPanel } from "@/admin/pages/GrowthSettings";
+import { ProviderSetupGuide } from "@/admin/pages/ProviderSetupGuide";
 
 const inputClass =
   "w-full rounded-lg border border-[#334155] bg-[#0b1526] px-3 py-2.5 text-sm text-slate-100 focus:border-cyan-400/60 focus:outline-none";
@@ -83,6 +84,7 @@ export default function Shipping() {
         </p>
       </header>
       <CredentialPanel providers={["smartship"]} />
+      <ProviderSetupGuide provider="smartship" />
       <div
         className={`flex gap-3 rounded-lg border p-4 text-sm ${smartship?.secretConfigured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-amber-400/30 bg-amber-400/10 text-amber-100"}`}
       >
