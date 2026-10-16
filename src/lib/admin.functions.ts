@@ -16,6 +16,7 @@ import {
   sendReferralReward,
 } from "@/server/integrations/resend";
 import { awardMagicStarsForDeliveredOrder } from "@/server/services/magic-rewards";
+import { issueSmartShipAwb, reconcileSmartShipAwb } from "@/server/services/smartship-fulfillment";
 import {
   getAdminDashboardData,
   getAdminIntegrationsData,
@@ -683,6 +684,24 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
       }
     }
     return { order };
+  });
+
+const smartShipOrderInput = z.object({ orderId: z.string().uuid() });
+
+export const issueAdminSmartShipAwb = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(smartShipOrderInput)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "orders.write");
+    return issueSmartShipAwb(env as CommerceEnv, data.orderId, context.admin.id);
+  });
+
+export const reconcileAdminSmartShipAwb = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(smartShipOrderInput)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "orders.write");
+    return reconcileSmartShipAwb(env as CommerceEnv, data.orderId, context.admin.id);
   });
 
 const updateProductStatusInput = z.object({

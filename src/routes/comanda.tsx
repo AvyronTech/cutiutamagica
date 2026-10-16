@@ -322,6 +322,7 @@ function OrderPage() {
     if (activeQuote) return activeQuote.price;
     if (shippingOption === "easybox") return null;
     if (!config || config.shipping.requiresConfirmation) return null;
+    if (config.shipping.liveQuotesEnabled) return null;
     if (config.shipping.freeOver != null && productsAfterCode >= config.shipping.freeOver) return 0;
     return config.shipping.standardPrice;
   }, [config, shippingOption, productsAfterCode, activeQuote]);
@@ -488,6 +489,8 @@ function OrderPage() {
     if (submitting) return;
     if (shippingOption === "easybox" && (!easyboxLocker || !activeQuote))
       return toast.error("Alege un easybox și confirmă tariful înainte de comandă.");
+    if (shippingOption === "home_delivery" && config.shipping.liveQuotesEnabled && !activeQuote)
+      return toast.error("Alege un curier și confirmă oferta de livrare înainte de comandă.");
     if (!submissionLocked && paymentMethod === "card" && shippingCost == null)
       return toast.error("Confirmă costul livrării înainte de plata online.");
     if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID();
@@ -1074,7 +1077,7 @@ function OrderPage() {
                     >
                       <Choice
                         name="shipping-method"
-                        selected={shippingOption === "home_delivery" && !activeQuote}
+                        selected={shippingOption === "home_delivery"}
                         onChange={() => {
                           setShippingOption("home_delivery");
                           setQuote(null);
@@ -1083,9 +1086,11 @@ function OrderPage() {
                         title="Curier la adresă"
                         note={
                           shippingCost == null
-                            ? "Îți confirmăm costul înainte de expediere"
+                            ? config?.shipping.liveQuotesEnabled
+                              ? "Vezi curierii și tarifele disponibile"
+                              : "Îți confirmăm costul înainte de expediere"
                             : activeQuote
-                              ? "Tarif standard"
+                              ? `${activeQuote.courier} · ${money(activeQuote.price)}`
                               : shippingCost === 0
                                 ? "Livrare gratuită"
                                 : money(shippingCost)

@@ -43,7 +43,7 @@ export async function createStripeCheckoutSession(
   params.set("client_reference_id", input.orderId);
   params.set("metadata[order_id]", input.orderId);
   params.set("metadata[order_number]", input.orderNumber);
-  params.set("payment_method_types[0]", "card");
+  // Stripe shows the eligible methods enabled for this account and currency.
   params.set("locale", "ro");
   params.set("line_items[0][quantity]", "1");
   params.set("line_items[0][price_data][currency]", input.currency.toLowerCase());

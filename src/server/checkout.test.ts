@@ -9,12 +9,14 @@ import { digest } from "./review-accounts";
 import { handleCommerceApi } from "./api/commerce";
 import { handleCheckoutAdmin } from "./api/checkout-admin";
 import { handleShippingCheckout } from "./api/shipping-checkout";
+import { handleAdminShippingLabel } from "./api/admin-shipping-label";
 import type { CommercePublicConfig } from "@/lib/commerce-operations-contracts";
 import type { CheckoutSettings } from "@/lib/checkout-settings";
 import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { shippingFingerprint } from "./services/shipping-fingerprint";
 import { hmacHex, type CommerceEnv } from "./integrations/provider-runtime";
 import { verifyStripeWebhook } from "./integrations/stripe";
+import { issueSmartShipAwb, reconcileSmartShipAwb } from "./services/smartship-fulfillment";
 import {
   createStripeCardSetup,
   completeStripeCardSetup,
@@ -166,7 +168,9 @@ async function order() {
   return createWebsiteOrder(env.DB, input());
 }
 function stripeFetch(url = "https://checkout.stripe.com/c/pay/cs_test_local") {
-  const fetcher = vi.fn(async () => Response.json({ id: "cs_test_local", url }));
+  const fetcher = vi.fn(async (_request: string | URL | Request, _options?: RequestInit) =>
+    Response.json({ id: "cs_test_local", url }),
+  );
   vi.stubGlobal("fetch", fetcher);
   return fetcher;
 }
@@ -485,6 +489,16 @@ describe("secure checkout", () => {
       409,
     );
   });
+  it("lets Stripe choose eligible checkout methods without restricting the session to cards", async () => {
+    const created = await order();
+    const fetcher = stripeFetch();
+    const response = await handlePayments(request("/api/v1/payments/checkout", created), env);
+    expect(response!.status).toBe(200);
+    const options = fetcher.mock.calls[0][1] as RequestInit;
+    const params = options.body as URLSearchParams;
+    expect(params.get("mode")).toBe("payment");
+    expect(params.has("payment_method_types[0]")).toBe(false);
+  });
   it("does not permit online orders with an unknown delivery cost", async () => {
     sqlite.exec("UPDATE shipping_policy_configs SET validation_status='requires_approval'");
     await expect(order()).rejects.toThrow("Costul livrării");
@@ -514,6 +528,21 @@ describe("delivery quote integrity", () => {
     await expect(
       createWebsiteOrder(env.DB, { ...body, idempotencyKey: crypto.randomUUID() }),
     ).rejects.toThrow("Oferta de livrare");
+  });
+  it("requires a selected live courier offer for both card and cash orders, including free delivery", async () => {
+    sqlite.exec("UPDATE shipping_policy_configs SET use_live_quotes=1,free_over_bani=0");
+    for (const paymentMethod of ["card", "cash_on_delivery"] as const) {
+      await expect(
+        createWebsiteOrder(env.DB, {
+          ...input(),
+          paymentMethod,
+          paymentProvider: paymentMethod === "card" ? "stripe" : undefined,
+        }),
+      ).rejects.toThrow("Alege un curier");
+    }
+    const { id, body } = await savedQuote();
+    const created = await createWebsiteOrder(env.DB, { ...body, shippingQuoteId: id });
+    expect(created.shipping).toBe(12.34);
   });
   it("rejects changed destination, quantity, method and expired quotes", async () => {
     const { id, body } = await savedQuote();
@@ -647,6 +676,108 @@ describe("delivery quote integrity", () => {
       pickup_point_provider: "sameday",
       pickup_point_id: "7123",
     });
+  });
+  it("issues one audited SmartShip AWB after payment and never sends a duplicate request", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    const { id, body } = await savedQuote();
+    sqlite
+      .prepare("UPDATE shipping_quotes SET courier_id=1,courier_name='Curier test' WHERE id=?")
+      .run(id);
+    const created = await createWebsiteOrder(env.DB, { ...body, shippingQuoteId: id });
+    sqlite
+      .prepare("UPDATE orders SET payment_status='paid',paid_bani=total_bani WHERE id=?")
+      .run(created.orderId);
+    const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.includes("/counties"))
+        return Response.json({ counties: [{ id: 13, county: "Cluj" }] });
+      if (url.includes("/cities"))
+        return Response.json({ cities: [{ id: 256212, city: "Cluj-Napoca" }] });
+      if (url.includes("/awb/new")) {
+        const payload = JSON.parse(String(options?.body)) as {
+          content: { order_id: string; cash_on_delivery: number };
+        };
+        expect(payload.content.order_id).toBe(created.orderNumber);
+        expect(payload.content.cash_on_delivery).toBe(0);
+        return Response.json({
+          status: 200,
+          awb: "874156063265",
+          tracking_url: "https://smartship.ro/t/test",
+        });
+      }
+      if (url.includes("/awb/print/"))
+        return new Response("%PDF-1.4 local", { headers: { "content-type": "application/pdf" } });
+      throw new Error("Unexpected URL");
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const result = await issueSmartShipAwb(env, created.orderId, "test-admin");
+    expect(result.awb).toBe("874156063265");
+    expect(
+      sqlite.prepare("SELECT awb FROM shipments WHERE order_id=?").get(created.orderId)?.awb,
+    ).toBe(result.awb);
+    expect(
+      sqlite
+        .prepare("SELECT status FROM smartship_awb_requests WHERE order_id=?")
+        .get(created.orderId)?.status,
+    ).toBe("issued");
+    await expect(issueSmartShipAwb(env, created.orderId, "test-admin")).rejects.toThrow(
+      "există deja",
+    );
+    expect(fetcher.mock.calls.filter(([url]) => url.includes("/awb/new"))).toHaveLength(1);
+    const label = await handleAdminShippingLabel(
+      new Request(`https://shop.test/api/v1/admin/shipping/orders/${created.orderId}/label`),
+      env,
+    );
+    expect(label?.status).toBe(200);
+    expect(label?.headers.get("content-type")).toBe("application/pdf");
+    expect(label?.headers.get("cache-control")).toBe("private, no-store");
+    expect(await label?.text()).toBe("%PDF-1.4 local");
+  });
+  it("reconciles an uncertain AWB by order number without issuing it again", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    const { id, body } = await savedQuote();
+    sqlite
+      .prepare("UPDATE shipping_quotes SET courier_id=1,courier_name='Curier test' WHERE id=?")
+      .run(id);
+    const created = await createWebsiteOrder(env.DB, { ...body, shippingQuoteId: id });
+    sqlite
+      .prepare("UPDATE orders SET payment_status='paid',paid_bani=total_bani WHERE id=?")
+      .run(created.orderId);
+    let sends = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("/counties"))
+          return Response.json({ counties: [{ id: 13, county: "Cluj" }] });
+        if (url.includes("/cities"))
+          return Response.json({ cities: [{ id: 256212, city: "Cluj-Napoca" }] });
+        if (url.includes("/awb/new")) {
+          sends += 1;
+          throw new Error("connection lost");
+        }
+        if (url.includes("/awb/order_id/"))
+          return Response.json({
+            awb: "874156063266",
+            tracking_link: "https://smartship.ro/t/recovered",
+          });
+        throw new Error("Unexpected URL");
+      }),
+    );
+    await expect(issueSmartShipAwb(env, created.orderId, "test-admin")).rejects.toThrow(
+      "Nu am confirmarea",
+    );
+    await expect(issueSmartShipAwb(env, created.orderId, "test-admin")).rejects.toThrow(
+      "deja inițiată",
+    );
+    sqlite.prepare("UPDATE orders SET order_status='cancelled' WHERE id=?").run(created.orderId);
+    const recovered = await reconcileSmartShipAwb(env, created.orderId, "test-admin");
+    expect(recovered.awb).toBe("874156063266");
+    expect(sends).toBe(1);
   });
 });
 
