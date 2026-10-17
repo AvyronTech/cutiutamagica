@@ -582,7 +582,9 @@ async function updateSettings(request: Request, env: Env): Promise<Response> {
 }
 
 async function aggregatedStatistics(db: D1Database) {
-  const [social, approvals, runs, catalog, orders] = await db.batch<Record<string, number>>([
+  const [social, approvals, runs, catalog, orders, storage] = await db.batch<
+    Record<string, number>
+  >([
     db.prepare(
       `SELECT COUNT(*) AS total,
               SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) AS published,
@@ -611,6 +613,14 @@ async function aggregatedStatistics(db: D1Database) {
               SUM(CASE WHEN order_status IN ('pending','confirmed','processing') THEN 1 ELSE 0 END) AS open
        FROM orders`,
     ),
+    db.prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN status = 'approval_pending' THEN 1 ELSE 0 END) AS awaiting_approval,
+              SUM(CASE WHEN status = 'deleted' THEN 1 ELSE 0 END) AS processed,
+              SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+              COALESCE(SUM(CASE WHEN status = 'deleted' THEN byte_size ELSE 0 END), 0) AS reclaimed_bytes
+       FROM storage_retention_items`,
+    ),
   ]);
   return {
     social: social.results[0] ?? {},
@@ -618,6 +628,7 @@ async function aggregatedStatistics(db: D1Database) {
     agentRuns: runs.results[0] ?? {},
     catalog: catalog.results[0] ?? {},
     orders: orders.results[0] ?? {},
+    storage: storage.results[0] ?? {},
   };
 }
 

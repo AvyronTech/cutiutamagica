@@ -11,6 +11,7 @@ type MonitorSnapshot = {
   lastGscImportAt: string | null;
   failedSocialPosts: number;
   failedExchanges: number;
+  failedRetentionItems: number;
   pendingApprovals: number;
 };
 
@@ -67,7 +68,7 @@ export function evaluateMarketingAgentHealth(
       blockers.push("gsc_data_stale");
     }
   }
-  if (snapshot.failedSocialPosts + snapshot.failedExchanges > 0) {
+  if (snapshot.failedSocialPosts + snapshot.failedExchanges + snapshot.failedRetentionItems > 0) {
     blockers.push("failed_operations");
   }
   return blockers;
@@ -134,39 +135,50 @@ export async function processMarketingAgentMonitoring(db: D1Database, now = new 
 
   const expiredApprovals = await expireStaleApprovalRequests(db, now);
 
-  const [social, metricool, google, gsc, failedSocial, failedExchanges, approvals] =
-    await Promise.all([
-      db
-        .prepare("SELECT COUNT(*) AS total FROM social_accounts WHERE status = 'active'")
-        .first<{ total: number }>(),
-      db
-        .prepare(
-          `SELECT COUNT(*) AS total FROM account_connections
+  const [
+    social,
+    metricool,
+    google,
+    gsc,
+    failedSocial,
+    failedExchanges,
+    failedRetention,
+    approvals,
+  ] = await Promise.all([
+    db
+      .prepare("SELECT COUNT(*) AS total FROM social_accounts WHERE status = 'active'")
+      .first<{ total: number }>(),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS total FROM account_connections
            WHERE owner = 'cutiuta_magica' AND provider = 'metricool' AND status = 'active'`,
-        )
-        .first<{ total: number }>(),
-      db
-        .prepare("SELECT check_status FROM integration_credentials WHERE provider = 'google'")
-        .first<{ check_status: string }>(),
-      db
-        .prepare(
-          `SELECT MAX(imported_at) AS last_imported_at FROM traffic_daily_metrics
+      )
+      .first<{ total: number }>(),
+    db
+      .prepare("SELECT check_status FROM integration_credentials WHERE provider = 'google'")
+      .first<{ check_status: string }>(),
+    db
+      .prepare(
+        `SELECT MAX(imported_at) AS last_imported_at FROM traffic_daily_metrics
            WHERE source = 'gsc' AND property_id = 'sc-domain:cutiutamagica.eu'`,
-        )
-        .first<{ last_imported_at: string | null }>(),
-      db
-        .prepare("SELECT COUNT(*) AS total FROM social_posts WHERE status = 'failed'")
-        .first<{ total: number }>(),
-      db
-        .prepare(
-          `SELECT COUNT(*) AS total FROM agent_exchange_items
+      )
+      .first<{ last_imported_at: string | null }>(),
+    db
+      .prepare("SELECT COUNT(*) AS total FROM social_posts WHERE status = 'failed'")
+      .first<{ total: number }>(),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS total FROM agent_exchange_items
            WHERE agent_id = 'agent_marketing_orders' AND status IN ('failed','uncertain')`,
-        )
-        .first<{ total: number }>(),
-      db
-        .prepare("SELECT COUNT(*) AS total FROM approval_requests WHERE status = 'pending'")
-        .first<{ total: number }>(),
-    ]);
+      )
+      .first<{ total: number }>(),
+    db
+      .prepare("SELECT COUNT(*) AS total FROM storage_retention_items WHERE status = 'failed'")
+      .first<{ total: number }>(),
+    db
+      .prepare("SELECT COUNT(*) AS total FROM approval_requests WHERE status = 'pending'")
+      .first<{ total: number }>(),
+  ]);
 
   const snapshot: MonitorSnapshot = {
     activeSocialAccounts: Number(social?.total ?? 0),
@@ -175,6 +187,7 @@ export async function processMarketingAgentMonitoring(db: D1Database, now = new 
     lastGscImportAt: gsc?.last_imported_at ?? null,
     failedSocialPosts: Number(failedSocial?.total ?? 0),
     failedExchanges: Number(failedExchanges?.total ?? 0),
+    failedRetentionItems: Number(failedRetention?.total ?? 0),
     pendingApprovals: Number(approvals?.total ?? 0),
   };
   const blockers = evaluateMarketingAgentHealth(snapshot, settings.staleAfterHours, now);

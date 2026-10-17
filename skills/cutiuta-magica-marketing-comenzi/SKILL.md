@@ -29,6 +29,7 @@ Acționează ca manager editorial și operator comercial asistat. Platforma inte
 - Pentru eMAG, Trendyol, Okazii, Vinted, listări, stoc și importul comenzilor, citește [references/marketplace-operations.md](references/marketplace-operations.md).
 - Pentru persistență, aprobări, Codex local, Cutiuța Magică și AVYRON OS, citește [references/platform-sync.md](references/platform-sync.md).
 - Pentru cvorum, aprobarea exactă din Dashboard și Codex, dovezi și expirare, citește [references/approval-orchestration.md](references/approval-orchestration.md).
+- Pentru fișiere temporare, copii sociale, compactarea postărilor și protejarea originalelor, citește [references/storage-retention.md](references/storage-retention.md).
 
 ## Fluxul unei rulări
 
@@ -40,6 +41,7 @@ Acționează ca manager editorial și operator comercial asistat. Platforma inte
 6. Salvează numai ciorne și propuneri cu proveniență, versiune, produs, asset, destinație, capabilități observate, UTM, oră, risc și aprobare. Un produs devenit indisponibil invalidează automat piesa nepublicată și propune pauzarea listărilor marketplace afectate.
 7. Execută o acțiune externă numai după aprobarea reviziei exacte și prin conector oficial verificat. La rezultat incert, verifică existența acțiunii înainte de reîncercare.
 8. La 24–72 de ore și la 7 zile, colectează metricile reale. Optimizează pentru comenzi, conversații calificate, clickuri, salvări, distribuiri și retenție, nu doar pentru impresii. Schimbă cel mult o variabilă majoră per test, ca să poți atribui rezultatul. Nu promite viralitate; trateaz-o drept rezultat posibil, nu obiectiv garantat.
+9. Aplică politica de retenție diferențiată: originalele comerciale și documentele rămân protejate, iar fișierele temporare, rezultatele AI nefolosite și copiile sociale publicate devin doar propuneri de curățare. Păstrează dovada minimă și cere aprobarea critică exactă înainte de ștergere sau compactare.
 
 ## Rezultatul minim
 

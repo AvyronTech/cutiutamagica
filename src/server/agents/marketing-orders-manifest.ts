@@ -7,8 +7,9 @@ import platformSync from "../../../skills/cutiuta-magica-marketing-comenzi/refer
 import marketplaceOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/marketplace-operations.md?raw";
 import platformNativeProduction from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-native-production.md?raw";
 import approvalOrchestration from "../../../skills/cutiuta-magica-marketing-comenzi/references/approval-orchestration.md?raw";
+import storageRetention from "../../../skills/cutiuta-magica-marketing-comenzi/references/storage-retention.md?raw";
 
-export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.17.2";
+export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.17.3";
 
 const documents = [
   { path: "SKILL.md", content: skill },
@@ -20,6 +21,7 @@ const documents = [
   { path: "references/marketplace-operations.md", content: marketplaceOperations },
   { path: "references/platform-native-production.md", content: platformNativeProduction },
   { path: "references/platform-sync.md", content: platformSync },
+  { path: "references/storage-retention.md", content: storageRetention },
 ] as const;
 
 function hex(buffer: ArrayBuffer): string {

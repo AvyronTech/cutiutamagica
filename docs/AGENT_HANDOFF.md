@@ -204,3 +204,15 @@ Descrierea pull requestului trebuie să includă:
 - Migrare nouă, append-only: `0068_marketplace_social_agent_strategy.sql`; validată prin aplicarea integrală a migrărilor în D1 local. Schema locală este 68, cu eMAG/Trendyol/Okazii `setup_required`, Vinted `disabled` și Workers AI `setup_required`.
 - Verificări: validatorul skillului, typecheck, 52 fișiere / 277 teste, lint, build, `cf:types:check`, `git diff --check` și `cf:deploy:dry` au trecut. Migrarea completă a fost aplicată numai în D1 local, iar o interogare read-only a confirmat schema 68 și stările conectorilor.
 - Verificare vizuală: ruta locală `/admin/ai` redirecționează corect la autentificarea administrativă. Panoul autentificat nu a fost verificat vizual deoarece worktree-ul local nu are o sesiune sau acreditări admin; nu s-a copiat și nu s-a resetat nicio parolă.
+
+## Handoff 2026-10-17 — retenție R2 și compactarea postărilor
+
+- Migrare append-only: `0070_storage_retention.sql`; adaugă registrul și rulările de retenție, politica `storage.retention`, hashul de conținut și data compactării postărilor. Schema țintă este 70.
+- Cron: jobul orar verifică aprobările deja finalizate și face inventarul eligibil cel mult o dată la 24 de ore. Nu listează și nu șterge obiecte R2 necunoscute; pornește numai din referințe D1 controlate.
+- Retenție implicită: upload temporar la expirare, AI respins 7 zile, AI abandonat 14 zile, AI aprobat și nefolosit 90 de zile, copie socială publicată 30 de zile, copie socială arhivată 7 zile, payload complet al postării 90 de zile.
+- Protecții: originalele de produs, vizualurile AI de tip `product_visual`, hero, audio, 360°, documentele, facturile, personalizările și backupurile nu intră în curățarea socială automată.
+- Aprobare: fiecare lot are lista exactă, dimensiunile și `revisionHash`; ștergerea/compactarea este `critical` și cere cvorum Dashboard + Codex. Sursa este revalidată imediat înaintea execuției, iar eșecurile devin vizibile în monitorizarea agentului.
+- După publicare: R2 poate fi eliminat după termen, dar D1 păstrează ID-ul extern, data, campania, produsul, platforma, plasamentul, UTM-ul, referințele media minime și SHA-256 al payloadului complet.
+- Staging local: `.local-artifacts/` este ignorat de Git; noile randări intermediare trebuie create acolo sau în `/tmp`, iar repository-ul păstrează numai manifestul și sursele originale justificate.
+- Verificări: typecheck, 54 fișiere / 285 teste, lint, build, `cf:types:check`, `git diff --check` și `cf:deploy:dry` trecute. Avertismentele de chunk Vite sunt preexistente și nu blochează buildul.
+- Fără efecte externe: nu s-au șters obiecte din R2, nu s-a aplicat migrarea remote și nu s-au făcut push, deploy sau schimbări de lifecycle pe bucket.
