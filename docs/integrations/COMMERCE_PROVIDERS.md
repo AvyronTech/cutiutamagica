@@ -1,14 +1,15 @@
 # Infrastructură comercială și integrări
 
-Actualizat: 2026-10-09
+Actualizat: 2026-10-17
 
 ## Decizie curentă
 
 - FGO este retras din fluxul activ. Istoricul facturilor și jurnalelor rămâne intact.
-- Oblio este furnizorul pregătit pentru facturare, dar emiterea rămâne blocată până la configurarea și verificarea explicită a contului.
-- Stripe și Revolut Pay sunt pregătite arhitectural, însă rămân dezactivate și neconectate în această etapă.
+- Oblio este conectat pentru firma DIGITAL ECOTECH SOLUTIONS S.R.L.; seria CM începe de la 0001. Nu s-a emis o factură de acceptanță.
+- Stripe are cheia și webhookul configurate pentru Cutiuța Magică, dar plata cu cardul rămâne dezactivată până la testul complet de checkout.
+- Revolut Business este un cont bancar distinct. Fluxul bancar nativ Revolut–Oblio și API-ul Merchant nu erau conectate la verificarea din 17 octombrie. Contul Merchant cere verificarea firmei înainte de emiterea unei chei.
 - NETOPIA este rezervat pentru o etapă ulterioară și va folosi Payment API v2.
-- SmartShip rămâne agregatorul pentru livrările magazinului. Pentru comenzile eMAG, AWB-ul și curierii se tratează prin API-ul eMAG Marketplace, nu prin fluxul direct al magazinului.
+- SmartShip este configurat, dar cotațiile live rămân dezactivate: cererea de cost a întors codul furnizorului `91929`. Pentru comenzile eMAG, AWB-ul și curierii se tratează prin API-ul eMAG Marketplace, nu prin fluxul direct al magazinului.
 
 ## Model intern
 
@@ -34,7 +35,7 @@ O integrare nu este considerată activă doar pentru că există o cheie. Activa
 5. test de acceptanță documentat pentru plată, revenire, anulare și reconciliere;
 6. aprobare explicită înainte de activarea în checkout.
 
-## Stripe — etapă ulterioară
+## Stripe
 
 Documentație oficială:
 
@@ -43,17 +44,21 @@ Documentație oficială:
 - [Payment methods](https://docs.stripe.com/api/payment_methods/attach)
 - [Subscriptions](https://docs.stripe.com/billing/subscriptions/overview)
 
-Implementarea viitoare trebuie să creeze un `Customer`, să colecteze consimțământ explicit, să salveze numai ID-urile Stripe și datele mascate și să trateze plățile `off_session` care cer autentificare suplimentară. Cheile și webhookul nu se configurează în această etapă.
+Pentru carduri salvate, implementarea trebuie să colecteze consimțământ explicit, să salveze numai ID-urile Stripe și datele mascate și să trateze plățile `off_session` care cer autentificare suplimentară. Existența cheilor nu activează checkoutul; confirmarea semnată și testul de acceptanță sunt necesare.
 
-## Revolut Pay — etapă ulterioară
+## Revolut Business și Revolut Pay
 
 Documentație oficială:
 
 - [Merchant API](https://developer.revolut.com/docs/api/merchant)
+- [Conectarea Revolut Business la Oblio](https://help.revolut.com/en-RO/business/help/integrating-with-external-apps/using-the-oblio-integration/bank-feed/how-do-i-connect-my-revolut-business-account-with-oblio-oblio-bank-feed/)
+- [Ce sincronizează integrarea Oblio](https://help.revolut.com/en-RO/business/help/integrating-with-external-apps/using-the-oblio-integration/bank-feed/how-does-the-oblio-integration-work-oblio-bank-feed/)
 - [Metode de plată salvate](https://developer.revolut.com/docs/guides/merchant/optimise-checkout/save-payment-methods/charge-saved-payment-method)
 - [Subscriptions API](https://developer.revolut.com/docs/guides/merchant/billing-subscriptions/api/get-started)
 
-Comanda nu este considerată plătită pe baza revenirii în site. Starea finală vine din webhookul verificat și este reconciliată cu suma, moneda, mediul și ID-ul tentativei. Cheile și webhookul nu se configurează în această etapă.
+Pentru reconcilierea bancară, folosește integrarea nativă Revolut–Oblio și selectează numai contul RON al magazinului. Aceasta sincronizează tranzacțiile bancare în Oblio, nu facturile, cheltuielile sau plățile checkoutului. La verificarea din 17 octombrie, sesiunea Oblio era „Utilizator Operator”, fără drept de acces la conturile bancare, iar pagina integrării a cerut planul „Oblio Nelimitat”. Reia configurarea din sesiunea administratorului, verifică planul firmei și nu comanda un abonament fără aprobare separată. Un token Business API temporar nu este o conexiune bancară durabilă; integrarea nativă nu cere cheia API a magazinului.
+
+Revolut Pay necesită un cont Merchant aprobat, cheie Merchant și secret webhook separate. Comanda nu este considerată plătită pe baza revenirii în site. Starea finală vine din webhookul verificat și este reconciliată cu suma, moneda, mediul și ID-ul tentativei. Nu activa Revolut Pay înainte de un test complet documentat.
 
 ## Oblio
 
