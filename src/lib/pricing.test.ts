@@ -1,29 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { calculateDisplayedTotals, getVolumeUnitPriceBani } from "@/lib/pricing";
+import { calculateDisplayedTotals } from "@/lib/pricing";
 
 describe("pricing", () => {
-  it("keeps the regular price for one music box", () => {
-    expect(getVolumeUnitPriceBani(1)).toBeNull();
-    expect(calculateDisplayedTotals(1)).toEqual({
-      baseSubtotal: 119,
-      discount: 0,
-      subtotal: 119,
-      total: 119,
+  it("adds up each product at its own price", () => {
+    expect(calculateDisplayedTotals([{ unitPriceBani: 14_900, quantity: 1 }])).toEqual({
+      subtotal: 149,
+      total: 149,
     });
+    expect(
+      calculateDisplayedTotals([
+        { unitPriceBani: 14_900, quantity: 2 },
+        { unitPriceBani: 12_900, quantity: 1 },
+      ]),
+    ).toEqual({ subtotal: 427, total: 427 });
   });
 
-  it("applies 75 RON per item from two units", () => {
-    expect(getVolumeUnitPriceBani(2)).toBe(7_500);
-    expect(calculateDisplayedTotals(2)).toEqual({
-      baseSubtotal: 238,
-      discount: 88,
-      subtotal: 150,
-      total: 150,
-    });
+  it("returns zero for an empty cart", () => {
+    expect(calculateDisplayedTotals([])).toEqual({ subtotal: 0, total: 0 });
   });
 
-  it("normalizes invalid quantities before display", () => {
-    expect(calculateDisplayedTotals(-3).total).toBe(0);
-    expect(calculateDisplayedTotals(2.9).total).toBe(150);
+  it("normalizes invalid quantities and prices before display", () => {
+    expect(calculateDisplayedTotals([{ unitPriceBani: 12_900, quantity: 2.9 }]).total).toBe(258);
+    expect(calculateDisplayedTotals([{ unitPriceBani: -100, quantity: -3 }]).total).toBe(0);
   });
 });

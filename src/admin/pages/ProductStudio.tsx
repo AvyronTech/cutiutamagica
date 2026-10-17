@@ -1,3 +1,10 @@
+import { readProductDiscovery } from "@/lib/product-discovery";
+import { ProductSalesChannels } from "./ProductSalesChannels";
+import { ProductScenePanel } from "./ProductScenePanel";
+import { ProductInventory } from "./ProductInventory";
+import { ProductTechnicalSheet } from "./ProductTechnicalSheet";
+import { AudioClipUpload } from "./AudioClipUpload";
+import { ProductInterestPanel } from "./ProductInterestPanel";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -15,9 +22,12 @@ import {
   Search,
   Send,
   ShieldCheck,
+  Barcode,
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import SupplierResearch from "./SupplierResearch";
+import { productPath } from "@/lib/product-url";
 
 const SLOT_GUIDE = [
   {
@@ -65,8 +75,20 @@ const SLOT_GUIDE = [
 ] as const;
 
 type TabId =
-  "general" | "media" | "documents" | "audio" | "spin360" | "animation" | "seo" | "avyron";
+  | "technical"
+  | "general"
+  | "media"
+  | "documents"
+  | "audio"
+  | "spin360"
+  | "animation"
+  | "seo"
+  | "avyron"
+  | "suppliers";
 type MediaAsset = {
+  source_url: string | null;
+  sort_order: number;
+  duration_seconds: number | null;
   id: string;
   media_type: "image" | "audio" | "video" | "spin_360" | "model_3d" | "document";
   slot_code: string | null;
@@ -85,6 +107,15 @@ type MediaAsset = {
 };
 
 type ProductData = {
+  discovery_json: string | null;
+  short_name: string;
+  landing_collection: string;
+  landing_order: number;
+  storefront_state: string;
+  is_featured: number;
+  preorder_enabled: number;
+  release_note: string;
+  details_json: string;
   id: string;
   slug: string;
   name: string;
@@ -106,6 +137,7 @@ type ProductData = {
 };
 
 type StudioData = {
+  developmentPreview?: boolean;
   product: ProductData;
   media: MediaAsset[];
   audio: Record<string, string | number | null> | null;
@@ -120,6 +152,7 @@ type StudioData = {
     media_id: string;
     document_type: string;
     review_status: string;
+    notes: string | null;
   }>;
   variant: {
     id: string;
@@ -158,8 +191,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function AssetStatus({ asset }: { asset: MediaAsset }) {
-  const ready = asset.status === "active" && asset.public_access === 1;
+function AssetStatus({
+  asset,
+  developmentPreview,
+}: {
+  asset: MediaAsset;
+  developmentPreview?: boolean;
+}) {
+  const ready =
+    asset.status === "active" &&
+    asset.public_access === 1 &&
+    (developmentPreview || (asset.marketing_approved === 1 && asset.rights_status === "cleared"));
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium ${
@@ -169,7 +211,13 @@ function AssetStatus({ asset }: { asset: MediaAsset }) {
       }`}
     >
       {ready ? <CheckCircle2 className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
-      {ready ? "Public" : asset.status === "draft" ? "În verificare" : asset.status}
+      {ready
+        ? developmentPreview
+          ? "Vizibil local"
+          : "Public"
+        : asset.status === "draft"
+          ? "În verificare"
+          : "Neactivat public"}
     </span>
   );
 }
@@ -177,7 +225,9 @@ function AssetStatus({ asset }: { asset: MediaAsset }) {
 function AssetEditor({
   asset,
   onChanged,
+  developmentPreview,
 }: {
+  developmentPreview?: boolean;
   asset: MediaAsset;
   onChanged: () => Promise<unknown>;
 }) {
@@ -185,6 +235,9 @@ function AssetEditor({
   const [title, setTitle] = useState(asset.title ?? "");
   const [promo, setPromo] = useState(asset.promo_text_ro ?? "");
   const [alt, setAlt] = useState(asset.alt_text ?? "");
+  const [order, setOrder] = useState(asset.sort_order);
+  const [status, setStatus] = useState(asset.status);
+  const [changeReason, setChangeReason] = useState("");
 
   async function update(publish: boolean) {
     setBusy(true);
@@ -196,23 +249,31 @@ function AssetEditor({
           title,
           promoTextRo: promo,
           altText: alt,
+          sortOrder: order,
+          status: publish ? "active" : status,
+          ...(status !== "active" ? { publicAccess: false, syncToAvyron: false } : {}),
           expectedVersion: asset.version,
+          changeReason,
           ...(publish
-            ? {
-                marketingApproved: true,
-                rightsStatus: "cleared",
-                publicAccess: asset.media_type === "document" ? false : true,
-                status: "active",
-              }
+            ? asset.media_type === "document"
+              ? { publicAccess: false, syncToAvyron: false }
+              : {
+                  ...(developmentPreview
+                    ? { syncToAvyron: false }
+                    : { marketingApproved: true, rightsStatus: "cleared" }),
+                  publicAccess: true,
+                }
             : {}),
         }),
       });
       await onChanged();
       toast.success(
         publish
-          ? asset.media_type === "document"
-            ? "Document validat intern"
-            : "Asset aprobat și publicat"
+          ? developmentPreview
+            ? "Fișier activat pentru previzualizarea locală"
+            : asset.media_type === "document"
+              ? "Document validat intern"
+              : "Asset aprobat și publicat"
           : "Metadate salvate",
       );
     } catch (error) {
@@ -222,7 +283,9 @@ function AssetEditor({
     }
   }
 
-  const previewUrl = `/api/v1/admin/media/${asset.id}/content`;
+  const previewUrl = asset.source_url?.startsWith("/produse/")
+    ? asset.source_url
+    : `/api/v1/admin/media/${asset.id}/content`;
   return (
     <div className="space-y-3">
       <div className="relative aspect-square overflow-hidden rounded-lg border border-[#334155] bg-[#07111f]">
@@ -246,11 +309,10 @@ function AssetEditor({
         ) : asset.media_type === "document" ? (
           <a
             href={previewUrl}
-            target="_blank"
-            rel="noreferrer"
+            download
             className="flex h-full flex-col items-center justify-center gap-2 text-xs text-cyan-200 hover:text-cyan-100"
           >
-            <FileText className="h-10 w-10" /> Deschide documentul PDF
+            <FileText className="h-10 w-10" /> Descarcă documentul
           </a>
         ) : (
           <div className="grid h-full place-items-center text-xs text-slate-500">
@@ -259,9 +321,50 @@ function AssetEditor({
         )}
       </div>
       <div className="flex items-center justify-between gap-2">
-        <AssetStatus asset={asset} />
+        <AssetStatus asset={asset} developmentPreview={developmentPreview} />
         <span className="truncate font-mono text-[10px] text-slate-600">{asset.id}</span>
       </div>
+      {asset.media_type === "audio" && asset.duration_seconds != null && (
+        <p className="text-xs text-slate-400">
+          Fragment: {Math.round(asset.duration_seconds)} secunde
+        </p>
+      )}
+      {asset.media_type === "image" && (
+        <Field label="Ordine în galerie (valoarea mai mică apare prima)">
+          <input
+            type="number"
+            min={-10000}
+            max={10000}
+            value={order}
+            onChange={(e) => setOrder(Number(e.target.value))}
+            className={inputClass}
+          />
+        </Field>
+      )}
+      <Field label="Starea fișierului">
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as MediaAsset["status"])}
+          className={inputClass}
+        >
+          <option value="draft">Ciornă — ascuns de pe site</option>
+          <option value="active">Publicat</option>
+          <option value="archived">Arhivat</option>
+        </select>
+      </Field>
+      {asset.media_type === "document" && status === "archived" && asset.status !== "archived" && (
+        <Field label="Motivul arhivării">
+          <textarea
+            className={inputClass}
+            rows={2}
+            minLength={10}
+            maxLength={500}
+            value={changeReason}
+            onChange={(event) => setChangeReason(event.target.value)}
+            placeholder="Explică de ce documentul este retras"
+          />
+        </Field>
+      )}
       <Field label="Titlu">
         <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
       </Field>
@@ -302,7 +405,9 @@ function AssetEditor({
             ? "Se salvează..."
             : asset.media_type === "document"
               ? "Validează intern"
-              : "Aprobă și publică"}
+              : developmentPreview
+                ? "Activează local"
+                : "Aprobă și publică"}
         </button>
       </div>
     </div>
@@ -355,6 +460,18 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
         body: JSON.stringify({
           expectedVersion: data.product.version,
           name: form.get("name"),
+          shortName: form.get("shortName"),
+          collection: form.get("collection"),
+          landingOrder: Number(form.get("landingOrder")),
+          storefrontState: form.get("storefrontState"),
+          featured: form.get("featured") === "on",
+          preorderEnabled: form.get("preorderEnabled") === "on",
+          releaseNote: form.get("releaseNote"),
+          details: String(form.get("details") || "")
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          status: form.get("status"),
           tagline: form.get("tagline"),
           shortDescription: form.get("shortDescription"),
           description: form.get("description"),
@@ -368,16 +485,6 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
           seoTitle: data.product.seo_title ?? "",
           seoDescription: data.product.seo_description ?? "",
           searchTerms: data.product.search_terms ?? "",
-          variant: data.variant
-            ? {
-                id: data.variant.id,
-                expectedVersion: data.variant.version,
-                eanGtin: String(form.get("eanGtin") ?? ""),
-                mpn: String(form.get("mpn") ?? ""),
-                cost: form.get("cost") ? Number(form.get("cost")) : null,
-                identifierSource: form.get("identifierSource"),
-              }
-            : undefined,
         }),
       });
       await onChanged();
@@ -394,6 +501,67 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
       <Field label="Nume">
         <input name="name" required defaultValue={p.name} className={inputClass} />
       </Field>
+      <Field label="Nume scurt pe carduri">
+        <input name="shortName" maxLength={90} defaultValue={p.short_name} className={inputClass} />
+      </Field>
+      <Field label="Colecția principală">
+        <select name="collection" defaultValue={p.landing_collection} className={inputClass}>
+          <option value="story">Descoperă povestea</option>
+          <option value="emotion">Trăiește emoția</option>
+          <option value="dedicated">Cutiuțe dedicate</option>
+        </select>
+      </Field>
+      <Field label="Ordinea în colecție">
+        <input
+          name="landingOrder"
+          type="number"
+          min={0}
+          max={10000}
+          defaultValue={p.landing_order}
+          className={inputClass}
+        />
+      </Field>
+      <Field label="Disponibilitate">
+        <select name="storefrontState" defaultValue={p.storefront_state} className={inputClass}>
+          <option value="available">Disponibil — necesită preț și stoc eligibil</option>
+          <option value="coming_soon">În curând</option>
+          <option value="out_of_stock">Stoc epuizat</option>
+        </select>
+      </Field>
+      <Field label="Publicare">
+        <select name="status" defaultValue={p.status} className={inputClass}>
+          <option value="draft">Ciornă</option>
+          <option value="active">Publicat</option>
+          <option value="archived">Arhivat</option>
+        </select>
+      </Field>
+      <Field label="Informație despre revenire / lansare">
+        <input
+          name="releaseNote"
+          maxLength={240}
+          defaultValue={p.release_note}
+          placeholder="Doar informații confirmate"
+          className={inputClass}
+        />
+      </Field>
+      <label className="flex gap-2 text-sm text-slate-200">
+        <input type="checkbox" name="featured" defaultChecked={!!p.is_featured} /> Recomandat în
+        hero când este disponibil
+      </label>
+      <label className="flex gap-2 text-sm text-slate-200">
+        <input type="checkbox" name="preorderEnabled" defaultChecked={!!p.preorder_enabled} />{" "}
+        Acceptă solicitări de precomandă fără plată
+      </label>
+      <div className="lg:col-span-2">
+        <Field label="Detalii tehnice (un detaliu pe linie)">
+          <textarea
+            name="details"
+            rows={4}
+            defaultValue={(JSON.parse(p.details_json || "[]") as string[]).join("\n")}
+            className={inputClass}
+          />
+        </Field>
+      </div>
       <Field label="Categorie">
         <input name="category" required defaultValue={p.category} className={inputClass} />
       </Field>
@@ -423,43 +591,6 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
           type="number"
           min="1"
           defaultValue={p.weight_g ?? ""}
-          className={inputClass}
-        />
-      </Field>
-      <Field label="SKU (read-only)">
-        <input value={data.variant?.sku ?? ""} readOnly className={`${inputClass} opacity-70`} />
-      </Field>
-      <Field label="GTIN / EAN">
-        <input
-          name="eanGtin"
-          inputMode="numeric"
-          pattern="[0-9]{8,14}"
-          defaultValue={data.variant?.ean_gtin ?? ""}
-          placeholder="8–14 cifre"
-          className={inputClass}
-        />
-      </Field>
-      <Field label="Sursa GTIN / EAN">
-        <select
-          name="identifierSource"
-          defaultValue={data.variant?.identifier_source ?? "supplier"}
-          className={inputClass}
-        >
-          <option value="gs1">GS1</option>
-          <option value="manufacturer">Producător</option>
-          <option value="supplier">Furnizor</option>
-        </select>
-      </Field>
-      <Field label="MPN / cod producător">
-        <input name="mpn" defaultValue={data.variant?.mpn ?? ""} className={inputClass} />
-      </Field>
-      <Field label="Cost unitar (RON)">
-        <input
-          name="cost"
-          type="number"
-          min="0"
-          step="0.01"
-          defaultValue={data.variant?.cost_bani == null ? "" : data.variant.cost_bani / 100}
           className={inputClass}
         />
       </Field>
@@ -527,6 +658,19 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
           weightG: p.weight_g,
           rightsStatus: p.rights_status,
           rightsNotes: p.rights_notes ?? "",
+          discovery: {
+            intro: form.get("discoveryIntro"),
+            audience: form.get("discoveryAudience"),
+            occasions: String(form.get("discoveryOccasions") ?? "")
+              .split("\n")
+              .map((s) => s.trim())
+              .filter(Boolean),
+            moments: String(form.get("discoveryMoments") ?? "")
+              .split("\n")
+              .map((s) => s.trim())
+              .filter(Boolean),
+            guides: form.getAll("discoveryGuides"),
+          },
           seoTitle: form.get("seoTitle"),
           seoDescription: form.get("seoDescription"),
           searchTerms: form.get("searchTerms"),
@@ -541,6 +685,7 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
     }
   }
   const p = data.product;
+  const discovery = readProductDiscovery(p.discovery_json);
   return (
     <form key={p.version} onSubmit={submit} className="max-w-3xl space-y-4">
       <Field label="Titlu SEO (max. 70)">
@@ -568,6 +713,61 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
           className={inputClass}
         />
       </Field>
+      <fieldset className="space-y-4 rounded-xl border border-slate-700 p-4">
+        <legend className="px-2 text-sm text-cyan-200">Ghid vizibil pe pagina produsului</legend>
+        <Field label="Introducere">
+          <textarea
+            name="discoveryIntro"
+            defaultValue={discovery?.intro ?? ""}
+            maxLength={900}
+            rows={4}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Cui i se potrivește">
+          <textarea
+            name="discoveryAudience"
+            defaultValue={discovery?.audience ?? ""}
+            maxLength={500}
+            rows={3}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Ocazii de cadou — o idee pe rând, maximum 6">
+          <textarea
+            name="discoveryOccasions"
+            defaultValue={discovery?.occasions.join("\n") ?? ""}
+            rows={5}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Momente de folosire — o idee pe rând, maximum 6">
+          <textarea
+            name="discoveryMoments"
+            defaultValue={discovery?.moments.join("\n") ?? ""}
+            rows={4}
+            className={inputClass}
+          />
+        </Field>
+        <div className="flex flex-wrap gap-4">
+          {[
+            ["halloween", "Halloween"],
+            ["secret-santa", "Secret Santa"],
+            ["mos-nicolae", "Moș Nicolae"],
+            ["craciun", "Crăciun"],
+          ].map(([value, label]) => (
+            <label key={value} className="flex items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                name="discoveryGuides"
+                value={value}
+                defaultChecked={discovery?.guides.some((slug) => slug === value)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-4 text-xs leading-5 text-slate-400">
         Include natural: cutiuță muzicală cu manivelă, mecanism clasic/mecanic, cutiuță cadou, tema
         melodiei și ocazia potrivită. Nu repeta mecanic aceleași expresii.
@@ -584,7 +784,7 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
 }
 
 export default function ProductStudio({ productId }: { productId: string }) {
-  const [tab, setTab] = useState<TabId>("media");
+  const [tab, setTab] = useState<TabId>("technical");
   const [uploading, setUploading] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState("origin");
   const query = useQuery({
@@ -607,7 +807,13 @@ export default function ProductStudio({ productId }: { productId: string }) {
       return api(`/api/v1/admin/products/${productId}/media`, {
         method: "POST",
         headers: {
-          "content-type": file.type,
+          "content-type":
+            file.type ||
+            (file.name.toLowerCase().endsWith(".docx")
+              ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              : file.name.toLowerCase().endsWith(".pdf")
+                ? "application/pdf"
+                : "application/octet-stream"),
           "x-media-size": String(file.size),
           "x-media-filename": encodeURIComponent(file.name),
           "x-media-metadata": encodeURIComponent(JSON.stringify(metadata)),
@@ -675,6 +881,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
   const documentAssets = data.media.filter((asset) => asset.media_type === "document");
 
   const tabs: Array<{ id: TabId; label: string; icon: typeof Library }> = [
+    { id: "technical", label: "Fișă tehnică", icon: Barcode },
     { id: "general", label: "General", icon: Search },
     { id: "media", label: "Media 01–06", icon: Library },
     { id: "documents", label: "Documente", icon: FileText },
@@ -682,6 +889,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
     { id: "spin360", label: "360°", icon: Rotate3D },
     { id: "animation", label: "Animație", icon: Film },
     { id: "seo", label: "SEO", icon: Search },
+    { id: "suppliers", label: "Relevanță / furnizori", icon: Search },
     { id: "avyron", label: "Sync AVYRON", icon: Send },
   ];
 
@@ -695,13 +903,19 @@ export default function ProductStudio({ productId }: { productId: string }) {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Catalog
           </a>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+            Mini-dashboard produs
+          </p>
           <h1 className="text-2xl font-semibold text-white">{data.product.name}</h1>
           <p className="mt-1 font-mono text-xs text-slate-500">
             {data.product.id} · v{data.product.version}
           </p>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-400">
+            Conținut, imagini, stoc, canale, documente și SEO într-un singur spațiu de lucru.
+          </p>
         </div>
         <a
-          href={`/produs/${data.product.slug}`}
+          href={productPath(data.product.slug)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#334155] px-3 py-2 text-xs text-slate-200 hover:border-cyan-400/40"
@@ -710,6 +924,12 @@ export default function ProductStudio({ productId }: { productId: string }) {
         </a>
       </div>
 
+      {data.developmentPreview && (
+        <p className="rounded-lg border border-cyan-400/30 p-3 text-sm text-cyan-200">
+          Mod local: verificările de licență nu blochează previzualizarea fișierelor activate pentru
+          site.
+        </p>
+      )}
       <div className="flex gap-1 overflow-x-auto border-b border-[#25334a] pb-px">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
@@ -723,8 +943,33 @@ export default function ProductStudio({ productId }: { productId: string }) {
         ))}
       </div>
 
-      {tab === "general" && <GeneralForm data={data} onChanged={() => query.refetch()} />}
+      {tab === "general" && (
+        <>
+          <GeneralForm data={data} onChanged={() => query.refetch()} />
+          <ProductScenePanel productId={productId} />
+          <ProductInterestPanel productId={productId} />
+        </>
+      )}
+      {tab === "technical" && (
+        <div className="space-y-5">
+          <ProductTechnicalSheet
+            productId={productId}
+            onSaved={() => query.refetch()}
+            onOpenGeneral={() => setTab("general")}
+            onOpenSuppliers={() => setTab("suppliers")}
+          />
+          <ProductInventory productId={productId} onChanged={() => query.refetch()} />
+          <ProductSalesChannels productId={productId} />
+        </div>
+      )}
+      <a
+        href={`/admin/reviews?product=${encodeURIComponent(data.product.slug)}`}
+        className="inline-flex text-sm text-cyan-300"
+      >
+        Recenzii și moderare pentru această cutiuță ↗
+      </a>
       {tab === "seo" && <SeoForm data={data} onChanged={() => query.refetch()} />}
+      {tab === "suppliers" && <SupplierResearch productId={data.product.id} />}
 
       {tab === "media" && (
         <div className="space-y-5">
@@ -752,7 +997,13 @@ export default function ProductStudio({ productId }: { productId: string }) {
                   </div>
                   <p className="min-h-10 text-xs leading-5 text-slate-500">{slot.hint}</p>
                   <p className="mb-3 mt-1 text-xs italic text-slate-400">„{slot.example}”</p>
-                  {asset && <AssetEditor asset={asset} onChanged={() => query.refetch()} />}
+                  {asset && (
+                    <AssetEditor
+                      asset={asset}
+                      developmentPreview={data.developmentPreview}
+                      onChanged={() => query.refetch()}
+                    />
+                  )}
                   <div className="mt-3">
                     <UploadButton
                       accept="image/jpeg,image/png,image/webp,image/avif"
@@ -785,7 +1036,17 @@ export default function ProductStudio({ productId }: { productId: string }) {
                     {data.documents.find((document) => document.media_id === asset.id)
                       ?.document_type ?? "document"}
                   </p>
-                  <AssetEditor asset={asset} onChanged={() => query.refetch()} />
+                  {data.documents.find((document) => document.media_id === asset.id)?.notes && (
+                    <p className="mb-3 text-xs text-amber-200">
+                      Motiv:{" "}
+                      {data.documents.find((document) => document.media_id === asset.id)?.notes}
+                    </p>
+                  )}
+                  <AssetEditor
+                    asset={asset}
+                    developmentPreview={data.developmentPreview}
+                    onChanged={() => query.refetch()}
+                  />
                 </div>
               ))}
             </div>
@@ -801,6 +1062,22 @@ export default function ProductStudio({ productId }: { productId: string }) {
               <p className="mt-1 text-xs leading-5 text-slate-400">
                 Documentele rămân private în R2 și nu sunt publicate în magazin.
               </p>
+            </div>
+            <div className="grid gap-2">
+              <a
+                href={`/templates/parteneri/${data.product.slug}-dosar-produs.docx`}
+                download
+                className="rounded-lg border border-cyan-400/40 px-3 py-2 text-center text-xs font-medium text-cyan-200 hover:bg-cyan-400/10"
+              >
+                Descarcă dosarul editabil pentru acest produs
+              </a>
+              <a
+                href="/templates/parteneri/model-universal-dosar-produs.docx"
+                download
+                className="text-center text-xs text-slate-400 underline hover:text-slate-200"
+              >
+                Model universal pentru produse viitoare
+              </a>
             </div>
             <Field label="Tip document">
               <select
@@ -820,9 +1097,9 @@ export default function ProductStudio({ productId }: { productId: string }) {
               </select>
             </Field>
             <UploadButton
-              accept="application/pdf"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               busy={uploading === "document"}
-              label="Încarcă PDF privat"
+              label="Încarcă PDF sau DOCX privat"
               onFiles={(files) =>
                 uploadFiles(files, "document", {
                   mediaType: "document",
@@ -832,8 +1109,8 @@ export default function ProductStudio({ productId }: { productId: string }) {
               }
             />
             <p className="text-[11px] leading-5 text-slate-500">
-              Maxim 10 MB. Fișierul este verificat după semnătura PDF, jurnalizat și legat de
-              produs.
+              Maxim 10 MB. Fiecare încărcare creează o nouă versiune privată, jurnalizată și legată
+              de produs.
             </p>
           </aside>
         </div>
@@ -846,13 +1123,13 @@ export default function ProductStudio({ productId }: { productId: string }) {
           assets={audioAssets}
           onChanged={() => query.refetch()}
           upload={
-            <UploadButton
-              accept="audio/mpeg,audio/wav,audio/ogg"
+            <AudioClipUpload
               busy={uploading === "audio"}
-              label="Încarcă MP3, WAV sau OGG"
-              onFiles={(files) =>
-                uploadFiles(files, "audio", { mediaType: "audio", usageType: "audio" })
-              }
+              onUpload={(file) => {
+                void uploadFiles([file], "audio", { mediaType: "audio", usageType: "audio" }).catch(
+                  () => undefined,
+                );
+              }}
             />
           }
         />
@@ -1152,7 +1429,12 @@ function ExperiencePanel({
         <div>{upload}</div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {assets.map((asset) => (
-            <AssetEditor key={asset.id} asset={asset} onChanged={onChanged} />
+            <AssetEditor
+              key={asset.id}
+              asset={asset}
+              developmentPreview={data.developmentPreview}
+              onChanged={onChanged}
+            />
           ))}
         </div>
         {assets.length === 0 && (
@@ -1251,8 +1533,9 @@ function ExperiencePanel({
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
         </label>
         <p className="text-[11px] leading-5 text-slate-500">
-          Activarea este acceptată numai când toate asset-urile selectate sunt aprobate, publice și
-          au drepturile validate.
+          {data.developmentPreview
+            ? "Pentru testare, activează local fișierele alese. Validarea drepturilor nu blochează previzualizarea."
+            : "Activarea este acceptată numai când toate fișierele selectate sunt aprobate, publice și au drepturile validate."}
         </p>
         <button
           disabled={busy}

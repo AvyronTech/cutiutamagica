@@ -1,0 +1,64 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { ShoppingBag, ArrowUpRight } from "lucide-react";
+import { useShop } from "@/store/shop";
+import {
+  oppositeSide,
+  showFloatingCart,
+  useChatPlacement,
+  type WidgetSide,
+} from "@/lib/floating-widgets";
+
+export function FloatingCartButton({
+  pathname,
+  open,
+  onOpen,
+  forceVisible = false,
+}: {
+  pathname: string;
+  open: boolean;
+  onOpen: (trigger: HTMLButtonElement, side: WidgetSide) => void;
+  forceVisible?: boolean;
+}) {
+  const { totalQty, totals } = useShop();
+  const chat = useChatPlacement();
+  const [mounted, setMounted] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (pathname !== "/") return;
+    const footer = document.querySelector(".magic-footer");
+    if (!footer) return;
+    const observer = new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting));
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [pathname]);
+  if (!mounted || (!forceVisible && !showFloatingCart(pathname, totalQty))) return null;
+  const side = forceVisible ? "right" : oppositeSide(chat.side);
+  return createPortal(
+    <button
+      type="button"
+      hidden={open || chat.open}
+      className="floating-cart-button"
+      data-side={side}
+      data-after-hero={forceVisible || undefined}
+      data-footer-visible={(pathname === "/" && footerVisible) || undefined}
+      data-cart-target="floating"
+      aria-label={`Deschide coșul: ${totalQty} ${totalQty === 1 ? "cutiuță" : "cutiuțe"}, ${totals.total.toLocaleString("ro-RO")} lei`}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onClick={(event) => onOpen(event.currentTarget, side)}
+    >
+      <span className="floating-cart-icon">
+        <ShoppingBag size={21} aria-hidden="true" />
+        <span>{totalQty}</span>
+      </span>
+      <span>
+        <strong>Coșul tău</strong>
+        <small>{totals.total.toLocaleString("ro-RO")} lei · preț final</small>
+      </span>
+      <ArrowUpRight size={16} aria-hidden="true" />
+    </button>,
+    document.body,
+  );
+}

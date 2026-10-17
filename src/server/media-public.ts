@@ -1,3 +1,4 @@
+import { localMediaPreview, mediaApprovalSql } from "./media-policy";
 interface PublicMediaRow {
   r2_key: string;
   mime_type: string | null;
@@ -57,11 +58,11 @@ export async function handlePublicMediaRequest(
   const media = await env.DB.prepare(
     `
     SELECT r2_key, mime_type, updated_at
-    FROM product_media
+    FROM product_media pm
     WHERE id = ?1
       AND r2_key IS NOT NULL
       AND status = 'active'
-      AND public_access = 1
+      AND public_access = 1 AND ${mediaApprovalSql("pm", localMediaPreview(env))}
     LIMIT 1
   `,
   )

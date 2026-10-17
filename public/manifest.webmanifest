@@ -1,26 +1,53 @@
 {
-  "name": "Cutiuța Magică Admin",
-  "short_name": "Cutiuta Admin",
-  "description": "Administrarea magazinului Cutiuța Magică",
-  "start_url": "/admin",
+  "name": "Cutiuța Magică",
+  "short_name": "Cutiuța Magică",
+  "description": "Cutiuțe muzicale din lemn cu manivelă, melodii și cadouri cu poveste.",
+  "id": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#0b1120",
   "theme_color": "#0b1120",
   "lang": "ro",
-  "categories": ["business", "shopping"],
+  "categories": ["business", "productivity", "shopping"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Descoperă colecția",
+      "short_name": "Colecția",
+      "url": "/produse?source=pwa"
+    },
+    {
+      "name": "Idei de cadouri",
+      "short_name": "Cadouri",
+      "url": "/cadouri?source=pwa"
+    },
+    {
+      "name": "Contul meu",
+      "short_name": "Cont",
+      "url": "/cont?source=pwa"
+    }
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

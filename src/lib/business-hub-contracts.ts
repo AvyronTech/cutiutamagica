@@ -4,6 +4,7 @@ export type BusinessArea =
   | "shipping"
   | "platforms"
   | "posts"
+  | "traffic"
   | "customers"
   | "notifications"
   | "newsletter"

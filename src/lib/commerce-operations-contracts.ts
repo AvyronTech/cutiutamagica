@@ -1,3 +1,4 @@
+import type { CheckoutOption } from "./checkout-settings";
 import { z } from "zod";
 
 export const PAYMENT_METHODS = ["cash_on_delivery", "card", "bank_transfer"] as const;
@@ -36,12 +37,12 @@ export interface CommercePublicConfig {
     taxId: string;
     vatStatus: string;
     countryCode: string;
-    profileComplete: boolean;
   };
-  currencies: { active: string[]; planned: string[] };
+  currencies: { active: string[] };
   payments: {
     card: { enabled: boolean; provider: "stripe" };
-    cashOnDelivery: { enabled: boolean; reviewMayApply: boolean };
+    options: CheckoutOption[];
+    cashOnDelivery: { enabled: boolean };
     bankTransfer: { enabled: boolean };
   };
   shipping: {
@@ -50,6 +51,7 @@ export interface CommercePublicConfig {
     standardPrice: number | null;
     lockerPrice: number | null;
     freeOver: number | null;
+    allowedCountries: string[];
     currency: string;
     requiresConfirmation: boolean;
   };
@@ -94,6 +96,23 @@ export interface AdminCommerceOperations {
     lastHealthcheckAt: string | null;
     lastError: string | null;
   }>;
+  financialAccounts: Array<{
+    id: string;
+    provider: string;
+    accountType: string;
+    label: string;
+    currency: string;
+    maskedIdentifier: string | null;
+    status: string;
+    secretConfigured: boolean;
+    lastSyncedAt: string | null;
+  }>;
+  trafficReadiness: {
+    googleAnalyticsReady: boolean;
+    gscReady: boolean;
+    socialReady: boolean;
+    lastSyncAt: string | null;
+  };
   pendingInvoiceOrders: Array<{
     id: string;
     orderNumber: string;
@@ -127,8 +146,21 @@ export interface AdminCommerceOperations {
     standardPriceBani: number | null;
     lockerPriceBani: number | null;
     freeOverBani: number | null;
+    defaultWeightG: number;
+    defaultLengthCm: number;
+    defaultWidthCm: number;
+    defaultHeightCm: number;
+    allowedCountries: string[];
+    internationalReady: boolean;
     easyboxEnabled: boolean;
     useLiveQuotes: boolean;
     validationStatus: string;
+    senderName: string;
+    senderAddress: string;
+    senderEmail: string;
+    senderPhone: string;
+    senderCityId: number | null;
+    senderSector: number;
+    senderCountryCode: string;
   };
 }

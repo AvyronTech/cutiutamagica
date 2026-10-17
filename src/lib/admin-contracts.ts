@@ -21,10 +21,17 @@ export interface AdminOrder {
   currency: string;
   status: AdminOrderStatus;
   paymentStatus: string;
+  paymentMethod: string;
   fulfillmentStatus: string;
   date: string;
   deliveryMethod: string;
   awb?: string;
+  trackingUrl?: string;
+  shipmentId?: string;
+  shipmentStatus?: string;
+  shipmentUpdatedAt?: string;
+  awbRequestStatus?: "issuing" | "needs_review" | "issued";
+  smartshipCourierId?: number;
   phone: string;
   email: string;
   address: string;
@@ -52,10 +59,13 @@ export interface AdminProduct {
   imageUrl: string;
   url: string;
   sku: string;
+  eanGtin: string | null;
   mechanismType: string;
   rightsStatus: string;
   missingFieldsCount: number;
   listingCount: number;
+  storefrontState: "available" | "coming_soon" | "out_of_stock";
+  releaseNote: string;
   updatedAt: string;
   version: number;
 }
@@ -95,6 +105,39 @@ export interface AdminDashboardData {
   stats: AdminDashboardStats;
   recentOrders: AdminOrder[];
   channels: AdminChannelMetric[];
+  shipping: AdminShippingInsights["summary"];
+}
+
+export interface AdminShippingShipment {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  awb: string;
+  status: string;
+  trackingUrl: string | null;
+  courier: string;
+  createdAt: string;
+  updatedAt: string;
+  deliveredAt: string | null;
+  events: Array<{ status: string; description: string; location: string; occurredAt: string }>;
+}
+
+export interface AdminShippingInsights {
+  summary: {
+    total: number;
+    labels: number;
+    inTransit: number;
+    delivered: number;
+    exceptions: number;
+    cancelled: number;
+    stale: number;
+    averageDeliveryHours: number | null;
+    quotes30d: number;
+    selectedQuotes30d: number;
+    averageQuoteRon: number | null;
+  };
+  couriers: Array<{ name: string; count: number }>;
+  shipments: AdminShippingShipment[];
 }
 
 export interface AdminNotification {
@@ -130,6 +173,13 @@ export interface AdminDeliveryMetric {
   orders: number;
 }
 
+export interface AdminGrowthMetric {
+  event: string;
+  count: number;
+  value: number;
+  quantity: number;
+}
+
 export interface AdminStatisticsData {
   summary: {
     netRevenue: number;
@@ -143,10 +193,20 @@ export interface AdminStatisticsData {
     shippingRevenue: number;
     estimatedCost: number | null;
   };
+  inventory: {
+    onHand: number;
+    reserved: number;
+    safety: number;
+    available: number;
+    trackedProducts: number;
+    lowStockProducts: number;
+    outOfStockProducts: number;
+  };
   monthly: AdminMonthlyMetric[];
   channels: AdminChannelMetric[];
   topProducts: AdminProductMetric[];
   deliveries: AdminDeliveryMetric[];
+  growth: AdminGrowthMetric[];
 }
 
 export interface AdminIntegrationAccount {
@@ -155,6 +215,9 @@ export interface AdminIntegrationAccount {
   provider: string;
   environment: string;
   label: string;
+  externalAccountId: string | null;
+  apiBaseUrl: string | null;
+  secretReference: string | null;
   status: string;
   lastHealthcheckAt: string | null;
   lastSuccessAt: string | null;
