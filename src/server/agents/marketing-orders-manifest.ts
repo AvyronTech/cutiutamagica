@@ -6,11 +6,13 @@ import dailySocialOperations from "../../../skills/cutiuta-magica-marketing-come
 import platformSync from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-sync.md?raw";
 import marketplaceOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/marketplace-operations.md?raw";
 import platformNativeProduction from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-native-production.md?raw";
+import approvalOrchestration from "../../../skills/cutiuta-magica-marketing-comenzi/references/approval-orchestration.md?raw";
 
-export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.17.1";
+export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.17.2";
 
 const documents = [
   { path: "SKILL.md", content: skill },
+  { path: "references/approval-orchestration.md", content: approvalOrchestration },
   { path: "references/brand-product-truth.md", content: brandProductTruth },
   { path: "references/content-conversion-playbook.md", content: contentConversionPlaybook },
   { path: "references/customer-conversations-orders.md", content: customerConversationsOrders },

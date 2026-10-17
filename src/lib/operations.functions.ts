@@ -17,6 +17,7 @@ import { listPublicCatalog } from "@/server/db/catalog.repository";
 import { rankUnfollowCandidates } from "@/lib/social-analysis";
 import { createApplicationBackup, readBackupPolicy } from "@/server/services/backup-center";
 import { activity } from "@/server/services/growth-settings";
+import { recordApprovalDecision } from "@/server/services/approval-orchestrator";
 
 function sameOrigin(): void {
   const request = getRequest();
@@ -220,7 +221,7 @@ export const createSocialDraft = createServerFn({ method: "POST" })
         `INSERT INTO approval_requests(
           id,request_type,entity_type,entity_id,risk_level,summary,proposed_action_json,
           status,requested_by_agent_id,requested_by_admin_id,created_at
-        ) VALUES(?1,'social_publish','social_post',?2,'high',?3,?4,'pending',
+        ) VALUES(?1,'social_publish','social_post',?2,'critical',?3,?4,'pending',
           'agent_marketing_content',?5,?6)`,
       ).bind(
         approvalId,
@@ -242,28 +243,60 @@ export const reviewSocialDraft = createServerFn({ method: "POST" })
     sameOrigin();
     assertPermission(context.admin, "marketing.write");
     const now = new Date().toISOString();
+    const approval = await env.DB.prepare(
+      `SELECT request.id, requirement.approval_code, requirement.revision_ref
+       FROM approval_requests AS request
+       JOIN approval_requirements AS requirement
+         ON requirement.approval_request_id = request.id
+       WHERE request.entity_type = 'social_post' AND request.entity_id = ?1
+         AND request.status = 'pending'
+       ORDER BY request.created_at DESC LIMIT 1`,
+    )
+      .bind(data.postId)
+      .first<{ id: string; approval_code: string; revision_ref: string }>();
+    if (!approval) throw new Error("Cererea de aprobare nu mai este activă.");
+
+    const decision = data.decision === "approved" ? "approved" : "rejected";
+    const approvalResult = await recordApprovalDecision(env.DB, {
+      approvalId: approval.id,
+      source: "admin_dashboard",
+      decision,
+      approvalCode: approval.approval_code,
+      revisionRef: approval.revision_ref,
+      evidenceReference: "/admin/marketing",
+      idempotencyKey: `dashboard:${approval.id}:${decision}`,
+      actorAdminUserId: context.admin.id,
+      actorLabel: context.admin.email,
+    });
+    const postStatus =
+      decision === "rejected"
+        ? "cancelled"
+        : approvalResult.status === "approved"
+          ? "approved"
+          : "review";
     const result = await env.DB.batch([
       env.DB.prepare(
         `UPDATE social_posts SET status=?2,
          approved_by=CASE WHEN ?2='approved' THEN ?3 ELSE approved_by END,updated_at=?4
          WHERE id=?1 AND status IN ('draft','review','approved')`,
-      ).bind(data.postId, data.decision, context.admin.id, now),
-      env.DB.prepare(
-        `UPDATE approval_requests SET status=?2,reviewed_by=?3,reviewed_at=?4
-         WHERE entity_type='social_post' AND entity_id=?1 AND status='pending'`,
-      ).bind(
-        data.postId,
-        data.decision === "approved" ? "approved" : "rejected",
+      ).bind(data.postId, postStatus, context.admin.id, now),
+      activity(
+        env.DB,
         context.admin.id,
+        approvalResult.status === "pending"
+          ? "social.dashboard_approval_recorded"
+          : `social.${data.decision}`,
+        data.postId,
         now,
       ),
-      activity(env.DB, context.admin.id, `social.${data.decision}`, data.postId, now),
     ]);
     if (!result[0].meta.changes) throw new Error("Draftul nu mai poate fi modificat.");
     return {
       ok: true,
-      status: data.decision,
-      publication: data.decision === "approved" ? "awaiting_official_connector" : "cancelled",
+      status: approvalResult.status === "pending" ? "awaiting_codex_approval" : postStatus,
+      approval: approvalResult,
+      publication:
+        approvalResult.status === "approved" ? "awaiting_official_connector" : "not_authorized",
     };
   });
 

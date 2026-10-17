@@ -28,6 +28,7 @@ Acționează ca manager editorial și operator comercial asistat. Platforma inte
 - Pentru DM/chat, întrebări despre magazin, colectarea datelor, comanda ramburs și confirmări, citește [references/customer-conversations-orders.md](references/customer-conversations-orders.md).
 - Pentru eMAG, Trendyol, Okazii, Vinted, listări, stoc și importul comenzilor, citește [references/marketplace-operations.md](references/marketplace-operations.md).
 - Pentru persistență, aprobări, Codex local, Cutiuța Magică și AVYRON OS, citește [references/platform-sync.md](references/platform-sync.md).
+- Pentru cvorum, aprobarea exactă din Dashboard și Codex, dovezi și expirare, citește [references/approval-orchestration.md](references/approval-orchestration.md).
 
 ## Fluxul unei rulări
 

@@ -1,5 +1,16 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-17 — aprobări multisursă și auditul automatizării
+
+- Ramură locală: `codex/marketplace-social-agent`, worktree separat pornit din `codex/cutiuta-cloudflare-final`; nu s-au făcut push, deploy ori migrare D1 remote.
+- Migrarea append-only `0069_multisource_approval_orchestration.sql` adaugă cerințe legate de cod/revizie/snapshot și chitanțe imuabile pentru `admin_dashboard` și `codex_conversation`. Publicarea socială și celelalte efecte critice cer 2 din 2; respingerea este terminală, iar aprobarea nu execută acțiunea.
+- API și Dashboard: `/api/v1/admin/marketing-agent` expune ultimele cereri și chitanțe; `POST /api/v1/admin/marketing-agent/approvals/:id/decision` înregistrează decizii idempotente. `/admin/ai` arată cvorumul, sursele, codul, revizia și poate copia formularea exactă pentru Codex.
+- Compatibilitate: deciziile vechi necritice sunt convertite în chitanțe Dashboard. Fluxul de draft social din Marketing Center salvează acum prima aprobare și rămâne `review` până la aprobarea Codex; bypassul direct al cvorumului critic este blocat în D1.
+- Automatizare sigură: monitorul orar expiră cererile vechi și păstrează `externalCalls: 0`. Skillul `cutiuta-magica-marketing-comenzi` este versiunea `2026.10.17.2` și include contractul multisursă. Auditul complet al cerințelor realizate/blocate este în `docs/marketing/automation-gap-audit-2026-10-17.md`.
+- Verificări: migrarea D1 locală a ajuns la schema 69 și are trigger-ele de imutabilitate/cvorum; `npm run typecheck`, 53 fișiere / 282 teste, `npm run lint`, `npm run build`, `npm run cf:types:check`, `git diff --check` și `npm run cf:deploy:dry` au trecut. Buildul confirmă bindingul Workers AI `AI`; folosirea lui de către agent rămâne dezactivată prin setare.
+- Verificare vizuală rămasă: noua zonă din `/admin/ai` necesită o sesiune admin locală; nu a fost declarată verificată desktop/mobil în această sesiune. Înainte de release trebuie verificată la 390 px și desktop cu cereri pending/noncritical/critical.
+- Activări rămase: conectorii live sociali, inboxurile, GSC backend, eMAG, Trendyol și Okazii cer identitate, secrete și test live separat. Vinted rămâne dezactivat. Migrarea 0069 trebuie aplicată remote înaintea codului la un release aprobat.
+
 ## Handoff 2026-10-17 — fișe pentru cinci produse și dosare parteneri
 
 - Completare identificatori de test: `docs/catalog/generateplus-test-codes.csv` conține câte un EAN-13 și EAN-8 generat efectiv pe `generate.plus` pentru fiecare dintre cele cinci produse. Sunt exemple fictive, separate de GTIN-ul comercial și păstrate numai în zona administrativă. Migrarea append-only `0065_generated_barcode_test_samples.sql` le înregistrează cu statut `test_only` și împiedică salvarea lor în câmpul GTIN oficial. Fișa și modelele DOCX au spațiu explicit pentru GTIN-8 și GTIN-13 oficial; eticheta Code 128 continuă să folosească SKU-ul intern. Versiunea anterioară a acestei migrări fusese verificată doar în D1 local, înainte de renumerotarea cerută de migrarea Halloween deja aplicată în producție.

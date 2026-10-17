@@ -132,6 +132,8 @@ export async function processMarketingAgentMonitoring(db: D1Database, now = new 
     return { skipped: true, reason: "interval" as const };
   }
 
+  const expiredApprovals = await expireStaleApprovalRequests(db, now);
+
   const [social, metricool, google, gsc, failedSocial, failedExchanges, approvals] =
     await Promise.all([
       db
@@ -211,11 +213,12 @@ export async function processMarketingAgentMonitoring(db: D1Database, now = new 
       .bind(
         runId,
         JSON.stringify({ operation: "flow_monitor", settings }),
-        JSON.stringify({ snapshot, blockers, externalCalls: 0 }),
+        JSON.stringify({ snapshot, blockers, expiredApprovals, externalCalls: 0 }),
         createdAt,
       ),
     ...notificationStatements,
   ]);
 
-  return { skipped: false, runId, snapshot, blockers };
+  return { skipped: false, runId, snapshot, blockers, expiredApprovals };
 }
+import { expireStaleApprovalRequests } from "./approval-orchestrator";
