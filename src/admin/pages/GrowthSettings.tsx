@@ -13,6 +13,7 @@ import {
   importTrafficMetrics,
 } from "@/lib/growth.functions";
 import type { CredentialProvider } from "@/lib/growth-contracts";
+import { ProviderSetupGuide } from "./ProviderSetupGuide";
 
 const input = "w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white";
 const button =
@@ -34,7 +35,7 @@ const labels: Record<CredentialProvider, string> = {
   smartship_cod_iban: "SmartShip · IBAN pentru ramburs",
   stripe: "Stripe",
   stripe_webhook: "Stripe · secret webhook",
-  revolut: "Revolut Business (token OAuth)",
+  revolut: "Revolut Business · token OAuth temporar",
   resend: "Resend",
   brave: "Brave Search",
   google: "Google Analytics și Search Console · token OAuth read-only",
@@ -341,6 +342,23 @@ export default function GrowthSettings({
               autorizare ANAF și certificat. Tokenurile OAuth expiră și trebuie reînnoite.
               Transmiterea către AVYRON este dezactivată; sinteza poate fi exportată local.
             </p>
+            <div className="space-y-3 rounded-xl border border-slate-700 bg-slate-900/40 p-4 text-sm text-slate-300">
+              <h3 className="font-semibold text-white">Revolut Business → Oblio</h3>
+              <p>
+                Fluxul bancar nativ se autorizează și se verifică în Oblio. Referința de cont de mai
+                sus este doar informativă; nu dovedește sincronizarea. API-ul Business și Revolut
+                Merchant sunt conexiuni separate.
+              </p>
+              <a
+                href="https://www.oblio.eu/report/integration_banks"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-200 underline underline-offset-4"
+              >
+                Verifică tranzacțiile în Oblio
+              </a>
+              <ProviderSetupGuide provider="revolut_business" />
+            </div>
           </>
         )}
         {section === "supplier_research" && (

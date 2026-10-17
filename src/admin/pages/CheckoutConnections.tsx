@@ -81,6 +81,7 @@ export function CheckoutConnections() {
         providers={["stripe", "stripe_webhook", "revolut_merchant", "revolut_merchant_webhook"]}
       />
       <ProviderSetupGuide provider="stripe" />
+      <ProviderSetupGuide provider="revolut_merchant" />
       {query.isError && (
         <p role="alert">
           Setările nu pot fi încărcate.{" "}

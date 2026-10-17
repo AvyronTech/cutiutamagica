@@ -1,4 +1,4 @@
-type Provider = "stripe" | "oblio" | "smartship";
+type Provider = "stripe" | "oblio" | "smartship" | "revolut_business" | "revolut_merchant";
 
 const guides: Record<
   Provider,
@@ -36,6 +36,45 @@ const guides: Record<
       "Testează costul, data estimată, suma ramburs și un AWB controlat. Emiterea AWB se confirmă explicit în Comenzi; verifică după numărul comenzii dacă răspunsul este incert.",
     ],
     docs: [{ label: "API SmartShip", url: "https://smartship.ro/api-docs" }],
+  },
+  revolut_business: {
+    title: "Revolut Business · flux bancar în Oblio",
+    steps: [
+      "Verifică firma DIGITAL ECOTECH SOLUTIONS în Revolut și Oblio, apoi contul RON dedicat Cutiuța Magică în Revolut. Conectarea bancară nu activează plata Revolut în magazin.",
+      "În Oblio, verifică disponibilitatea planului Nelimitat și folosește un administrator cu drept de acces la conturi bancare. Deschide Rapoarte → Tranzacții bancare → Integrează cu Banca și selectează Revolut Business. În Revolut există și intrarea Setări → Integrări → Contabilitate → Oblio.",
+      "La autorizare, selectează numai contul RON al magazinului. Fluxul transmite către Oblio datele contului, soldul și tranzacțiile selectate; nu sincronizează facturile, cheltuielile sau plățile din magazin.",
+      "Verifică apariția contului în Oblio și, când există tranzacții, potrivirea lor cu extrasele Revolut. Asociază încasarea cu factura corectă și gestionează drepturile utilizatorilor și revocarea conexiunii din cele două aplicații.",
+      "API-ul Business separat cere certificat X509 și OAuth. Nu introduce în magazin un token temporar ca substitut pentru un flux OAuth cu reînnoire; integrarea nativă Oblio nu are nevoie de cheia API a magazinului.",
+    ],
+    docs: [
+      {
+        label: "Ghid Revolut–Oblio",
+        url: "https://help.revolut.com/en-RO/business/help/integrating-with-external-apps/using-the-oblio-integration/bank-feed/how-do-i-connect-my-revolut-business-account-with-oblio-oblio-bank-feed/",
+      },
+      {
+        label: "Tranzacții bancare în Oblio",
+        url: "https://www.oblio.eu/integrari/tranzactii-bancare",
+      },
+    ],
+  },
+  revolut_merchant: {
+    title: "Revolut Merchant · plăți online",
+    steps: [
+      "Contul Business și fluxul bancar către Oblio nu activează automat Merchant. Finalizează verificarea firmei în Revolut, apoi activează API pentru comercianți în profilul Cutiuța Magică.",
+      "Salvează separat cheia Merchant a mediului ales și secretul webhook în câmpurile criptate de mai sus. Nu folosi certificatul sau tokenul API Business pentru checkout.",
+      "Configurează în Revolut webhookul https://cutiutamagica.eu/api/v1/webhooks/revolut pentru evenimentele comenzii și verifică semnătura, suma, moneda și mediul printr-o plată controlată.",
+      "După un test complet de plată, revenire și confirmare prin webhook, notează referința testului și activează Revolut Pay. Până atunci cumpărătorii nu văd această metodă.",
+    ],
+    docs: [
+      {
+        label: "Activare Merchant",
+        url: "https://developer.revolut.com/docs/guides/merchant/get-started",
+      },
+      {
+        label: "Webhook Merchant",
+        url: "https://developer.revolut.com/docs/guides/merchant/monitor-and-observe/webhooks/verify-the-payload-signature",
+      },
+    ],
   },
 };
 
