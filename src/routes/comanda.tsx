@@ -495,6 +495,12 @@ function OrderPage() {
     if (submitting) return;
     if (shippingOption === "easybox" && (!easyboxLocker || !activeQuote))
       return toast.error("Alege un easybox și confirmă tariful înainte de comandă.");
+    if (
+      shippingOption === "easybox" &&
+      easyboxLocker?.supportsCashOnDelivery === false &&
+      paymentMethod === "cash_on_delivery"
+    )
+      return toast.error("Acest Easybox nu acceptă ramburs. Alege alt punct sau plata online.");
     if (shippingOption === "home_delivery" && config.shipping.liveQuotesEnabled && !activeQuote)
       return toast.error("Alege un curier și confirmă oferta de livrare înainte de comandă.");
     if (!submissionLocked && paymentMethod === "card" && shippingCost == null)
@@ -1171,11 +1177,20 @@ function OrderPage() {
                     >
                       <Choice
                         name="payment-method"
+                        disabled={
+                          shippingOption === "easybox" &&
+                          easyboxLocker?.supportsCashOnDelivery === false
+                        }
                         selected={paymentMethod === "cash_on_delivery"}
                         onChange={() => setPaymentMethod("cash_on_delivery")}
                         icon={<PackageCheck className="h-5 w-5" />}
                         title="Ramburs"
-                        note="Achită coletul la predare"
+                        note={
+                          shippingOption === "easybox" &&
+                          easyboxLocker?.supportsCashOnDelivery === false
+                            ? "Indisponibil la Easybox-ul ales"
+                            : "Achită coletul la predare"
+                        }
                       />
                       {config?.payments.options.map((option) => (
                         <Choice

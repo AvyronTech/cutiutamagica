@@ -355,6 +355,24 @@ function OrderDetailPanel({
               {awbBusy ? "Emitem AWB…" : "Emite AWB SmartShip"}
             </button>
           )}
+          {!order.awb && !order.awbRequestStatus && order.smartshipCourierId === 0 && (
+            <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
+              <p>
+                Pentru acest Easybox, creează AWB-ul în SmartShip cu numărul comenzii{" "}
+                <strong>{order.orderNumber}</strong>, apoi sincronizează-l aici.
+              </p>
+              <button
+                type="button"
+                disabled={
+                  awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+                }
+                onClick={() => void handleAwb(true)}
+                className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 font-medium disabled:opacity-50"
+              >
+                {awbBusy ? "Verificăm…" : "Sincronizează AWB-ul SmartShip"}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">

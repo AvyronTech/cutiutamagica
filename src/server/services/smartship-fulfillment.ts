@@ -186,11 +186,31 @@ export async function reconcileSmartShipAwb(env: CommerceEnv, orderId: string, a
   )
     .bind(orderId)
     .first<{ status: string }>();
-  if (!request) throw new FulfillmentError("Nu există o cerere AWB de verificat.");
+  const manualEasybox =
+    !request && row.shipping_option_requested === "easybox" && Number(row.courier_id) === 0;
+  if (!request && !manualEasybox)
+    throw new FulfillmentError("Nu există o cerere AWB de verificat.");
+  if (
+    manualEasybox &&
+    (!["pending", "confirmed", "processing"].includes(String(row.order_status)) ||
+      (row.payment_method === "card" && row.payment_status !== "paid") ||
+      !["card", "cash_on_delivery"].includes(String(row.payment_method)))
+  )
+    throw new FulfillmentError("Comanda nu este eligibilă pentru sincronizarea AWB.");
   const result = await findSmartShipAwbByOrderId(env, String(row.order_number));
   if (!result)
     throw new FulfillmentError(
       "SmartShip nu confirmă încă un AWB. Verifică manual înainte de orice reemitere.",
     );
+  if (manualEasybox) {
+    const claim = await env.DB.prepare(
+      `INSERT INTO smartship_awb_requests(order_id,status,requested_by)
+       VALUES(?1,'issuing',?2) ON CONFLICT(order_id) DO NOTHING`,
+    )
+      .bind(orderId, actorId)
+      .run();
+    if (claim.meta.changes !== 1)
+      throw new FulfillmentError("AWB-ul este deja în curs de sincronizare. Reîncarcă comanda.");
+  }
   return saveIssued(env, row, actorId, result.awb, result.trackingUrl);
 }
