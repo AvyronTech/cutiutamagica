@@ -10,6 +10,9 @@
     "enabled": true,
     "head_sampling_rate": 1,
   },
+  "ai": {
+    "binding": "AI",
+  },
   "vars": {
     "APP_ENV": "local",
     "PUBLIC_SITE_URL": "http://localhost:3000",
@@ -40,11 +43,8 @@
   "send_email": [
     {
       "name": "EMAIL",
-      "allowed_sender_addresses": [
-        "contact@cutiutamagica.eu",
-        "comenzi@cutiutamagica.eu"
-      ]
-    }
+      "allowed_sender_addresses": ["contact@cutiutamagica.eu", "comenzi@cutiutamagica.eu"],
+    },
   ],
   "queues": {
     "producers": [
@@ -102,6 +102,9 @@
         "enabled": true,
         "head_sampling_rate": 0.1,
       },
+      "ai": {
+        "binding": "AI",
+      },
       "d1_databases": [
         {
           "binding": "DB",
@@ -125,11 +128,8 @@
       "send_email": [
         {
           "name": "EMAIL",
-          "allowed_sender_addresses": [
-            "contact@cutiutamagica.eu",
-            "comenzi@cutiutamagica.eu"
-          ]
-        }
+          "allowed_sender_addresses": ["contact@cutiutamagica.eu", "comenzi@cutiutamagica.eu"],
+        },
       ],
       "queues": {
         "producers": [

@@ -112,86 +112,96 @@ export function ProductSalesChannels({ productId }: { productId: string }) {
                 </span>
               </summary>
               <p className="my-3 text-xs text-slate-400">{salesChannelDefinitions[c.code].help}</p>
+              {salesChannelDefinitions[c.code].listingPolicy === "blocked" && (
+                <p className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                  Listarea comercială este blocată de politica actuală a platformei. Contul nu va fi
+                  folosit pentru produse, stoc sau comenzi.
+                </p>
+              )}
               <form key={c.version} onSubmit={(e) => save(e, c)} className="space-y-3">
-                <label className="block text-sm">
-                  Titlu pentru canal
-                  <input
-                    name="title"
-                    defaultValue={c.title}
-                    required
-                    maxLength={200}
-                    className={input}
-                  />
-                </label>
-                <label className="block text-sm">
-                  Descriere pentru canal
-                  <textarea
-                    name="description"
-                    rows={4}
-                    defaultValue={c.description}
-                    required
-                    maxLength={8000}
-                    className={input}
-                  />
-                </label>
-                <label className="block text-sm">
-                  Link anunț publicat
-                  <input
-                    name="listingUrl"
-                    type="url"
-                    defaultValue={c.listingUrl}
-                    maxLength={500}
-                    className={input}
-                  />
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    disabled={busy}
-                    value="save"
-                    className="rounded-lg border border-slate-600 px-3 py-2 text-sm"
-                  >
-                    Salvează ciorna
-                  </button>
-                  <button
-                    disabled={busy}
-                    value="prepare"
-                    className="rounded-lg bg-amber-200 px-3 py-2 text-sm text-slate-950"
-                  >
-                    {c.publishedAt ? "Pregătește republicarea" : "Pregătește publicarea"}
-                  </button>
-                  <button
-                    disabled={busy}
-                    value="confirm_manual"
-                    className="rounded-lg border border-slate-600 px-3 py-2 text-sm"
-                  >
-                    Confirmă publicarea manuală
-                  </button>
-                  <a
-                    href={salesChannelDefinitions[c.code].portal}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 text-sm text-amber-200 underline"
-                  >
-                    Deschide platforma ↗
-                  </a>
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      const f = new FormData(e.currentTarget.form!);
-                      try {
-                        await navigator.clipboard.writeText(
-                          `${f.get("title")}\n\n${f.get("description")}\n\n${query.data?.product.price ?? "Preț de stabilit"} lei\n${query.data?.product.url}`,
-                        );
-                        toast.success("Text copiat.");
-                      } catch {
-                        toast.error("Selectează și copiază textul din câmpuri.");
-                      }
-                    }}
-                    className="px-3 py-2 text-sm underline"
-                  >
-                    Copiază anunțul
-                  </button>
-                </div>
+                <fieldset disabled={salesChannelDefinitions[c.code].listingPolicy === "blocked"}>
+                  <label className="block text-sm">
+                    Titlu pentru canal
+                    <input
+                      name="title"
+                      defaultValue={c.title}
+                      required
+                      maxLength={200}
+                      className={input}
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    Descriere pentru canal
+                    <textarea
+                      name="description"
+                      rows={4}
+                      defaultValue={c.description}
+                      required
+                      maxLength={8000}
+                      className={input}
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    Link anunț publicat
+                    <input
+                      name="listingUrl"
+                      type="url"
+                      defaultValue={c.listingUrl}
+                      maxLength={500}
+                      className={input}
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      disabled={busy}
+                      value="save"
+                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm"
+                    >
+                      Salvează ciorna
+                    </button>
+                    <button
+                      disabled={busy}
+                      value="prepare"
+                      className="rounded-lg bg-amber-200 px-3 py-2 text-sm text-slate-950"
+                    >
+                      {c.publishedAt ? "Pregătește republicarea" : "Pregătește publicarea"}
+                    </button>
+                    <button
+                      disabled={busy}
+                      value="confirm_manual"
+                      className="rounded-lg border border-slate-600 px-3 py-2 text-sm"
+                    >
+                      Confirmă publicarea manuală
+                    </button>
+                    {salesChannelDefinitions[c.code].listingPolicy !== "blocked" && (
+                      <a
+                        href={salesChannelDefinitions[c.code].portal}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 text-sm text-amber-200 underline"
+                      >
+                        Deschide platforma ↗
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        const f = new FormData(e.currentTarget.form!);
+                        try {
+                          await navigator.clipboard.writeText(
+                            `${f.get("title")}\n\n${f.get("description")}\n\n${query.data?.product.price ?? "Preț de stabilit"} lei\n${query.data?.product.url}`,
+                          );
+                          toast.success("Text copiat.");
+                        } catch {
+                          toast.error("Selectează și copiază textul din câmpuri.");
+                        }
+                      }}
+                      className="px-3 py-2 text-sm underline"
+                    >
+                      Copiază anunțul
+                    </button>
+                  </div>
+                </fieldset>
               </form>
             </details>
           ))}

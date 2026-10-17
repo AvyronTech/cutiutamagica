@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Bot,
   CheckCircle2,
+  ClipboardCopy,
   Cloud,
   Database,
   Fingerprint,
@@ -38,6 +39,16 @@ type AgentState = {
     mode: "draft_approval" | "paused";
     controlPlane: string;
     publication: { requiresApproval: boolean; requiresVerifiedConnector: boolean };
+    approvals: {
+      sources: ["admin_dashboard", "codex_conversation"];
+      defaultMinApprovals: number;
+      criticalMinApprovals: number;
+      criticalRequiredSources: string[];
+      codexEvidenceRequired: boolean;
+      exactRevisionRequired: boolean;
+      autoExpire: boolean;
+      autoExecute: boolean;
+    };
     contentPlaybook: {
       version: string;
       feedDaily: boolean;
@@ -49,7 +60,30 @@ type AgentState = {
       requireSpecificProductLink: boolean;
       requireNativeVariants: boolean;
       requireOriginalProductLayer: boolean;
+      requireNativePreview: boolean;
+      requireCapabilitySnapshot: boolean;
+      noveltyWindowPosts: number;
       measurementWindowsHours: number[];
+    };
+    freeResources: {
+      metricoolPublishedPostsPerMonth: number;
+      metricoolAnalyticsHistoryDays: number;
+      workersAiNeuronsPerDay: number;
+      workersAiPaidOverageAllowed: boolean;
+    };
+    marketplaces: {
+      syncOrder: string[];
+      emag: { mode: string; version: string; status: string };
+      trendyol: { mode: string; productVersion: string; orderVersion: string; status: string };
+      okazii: { mode: string; status: string };
+      vinted: { mode: string; status: string };
+    };
+    workersAi: {
+      enabled: boolean;
+      role: string;
+      binding: string;
+      personalDataAllowed: boolean;
+      autoPublish: boolean;
     };
     connectorContract: {
       metricoolBrandId: string;
@@ -125,6 +159,28 @@ type AgentState = {
     last_error?: string | null;
     reviewPayload?: unknown;
   }>;
+  approvals: Array<{
+    id: string;
+    request_type: string;
+    entity_type: string;
+    entity_id: string;
+    risk_level: string;
+    summary: string;
+    status: string;
+    created_at: string;
+    expires_at: string | null;
+    approval_code: string;
+    revision_ref: string;
+    min_approvals: number;
+    requiredSources: string[];
+    receipts: Array<{
+      source: "admin_dashboard" | "codex_conversation";
+      decision: "approved" | "rejected";
+      actor_label: string;
+      evidence_reference: string | null;
+      created_at: string;
+    }>;
+  }>;
 };
 
 type EditableSettings = {
@@ -146,6 +202,7 @@ const statusLabels: Record<string, string> = {
   disabled: "Dezactivat",
   paused: "În pauză",
   pending_approval: "În aprobare",
+  pending: "În așteptare",
   approved: "Aprobat, neexpediat",
   queued: "În coadă",
   processing: "În curs",
@@ -300,6 +357,41 @@ export default function MarketingOrdersAgentControl() {
       setNotice(error instanceof Error ? error.message : "Expedierea nu este disponibilă."),
   });
 
+  const decideApproval = useMutation({
+    mutationFn: ({
+      approval,
+      decision,
+    }: {
+      approval: AgentState["approvals"][number];
+      decision: "approved" | "rejected";
+    }) =>
+      api<{
+        status: string;
+        quorum: { approvedCount: number; missingSources: string[] };
+      }>(`/api/v1/admin/marketing-agent/approvals/${approval.id}/decision`, {
+        method: "POST",
+        body: JSON.stringify({
+          source: "admin_dashboard",
+          decision,
+          approvalCode: approval.approval_code,
+          revisionRef: approval.revision_ref,
+          evidenceReference: "/admin/ai",
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      }),
+    onSuccess: async (result) => {
+      setNotice(
+        result.status === "pending"
+          ? `Decizia Dashboard a fost jurnalizată. Mai lipsesc: ${result.quorum.missingSources.join(", ") || "alte aprobări"}.`
+          : `Cererea este acum ${statusLabels[result.status]?.toLowerCase() ?? result.status}. Execuția externă rămâne separată.`,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["admin", "marketing-orders-agent"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "business-hub"] });
+    },
+    onError: (error) =>
+      setNotice(error instanceof Error ? error.message : "Aprobarea nu a putut fi salvată."),
+  });
+
   if (query.isLoading || !form) {
     return <p className="text-sm text-slate-400">Se încarcă centrul de control al agentului…</p>;
   }
@@ -353,7 +445,7 @@ export default function MarketingOrdersAgentControl() {
           <div className="flex items-center gap-2 text-cyan-300">
             <ShieldCheck className="h-5 w-5" />
             <h2 className="text-base font-semibold text-white">
-              Social Media Agent · control Codex
+              Marketing + Marketplace Agent · control Codex
             </h2>
           </div>
           <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
@@ -597,10 +689,70 @@ export default function MarketingOrdersAgentControl() {
         <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-emerald-200/80">
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">Link specific produsului</span>
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">Variante native</span>
+          <span className="rounded-full bg-emerald-400/8 px-2 py-1">Previzualizare nativă</span>
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">Descrieri complete</span>
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">
             Conversii înainte de impresii
           </span>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
+          <h3 className="text-sm font-semibold text-white">Marketplace-uri guvernate</h3>
+          <p className="mt-1 text-[11px] leading-5 text-slate-500">
+            Ordinea sincronizării: {data.settings.marketplaces.syncOrder.join(" → ")}. Activarea
+            cere identitatea sellerului, conector oficial și aprobare.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {[
+              [
+                "eMAG",
+                `API ${data.settings.marketplaces.emag.version}`,
+                data.settings.marketplaces.emag.status,
+              ],
+              [
+                "Trendyol",
+                `Product ${data.settings.marketplaces.trendyol.productVersion} · Order ${data.settings.marketplaces.trendyol.orderVersion}`,
+                data.settings.marketplaces.trendyol.status,
+              ],
+              ["Okazii", "XML + comenzi manuale", data.settings.marketplaces.okazii.status],
+              ["Vinted", "neeligibil comercial RO", data.settings.marketplaces.vinted.status],
+            ].map(([label, detail, status]) => (
+              <article key={label} className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-slate-200">{label}</p>
+                  <span className="text-[9px] text-slate-500">
+                    {statusLabels[status] ?? status}
+                  </span>
+                </div>
+                <p className="mt-1 text-[10px] text-slate-500">{detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
+          <h3 className="text-sm font-semibold text-white">Buget Free și asistență AI</h3>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <article className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+              <p className="text-xs font-medium text-slate-200">Metricool Free</p>
+              <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                {data.settings.freeResources.metricoolPublishedPostsPerMonth} publicări/lună ·{" "}
+                {data.settings.freeResources.metricoolAnalyticsHistoryDays} zile analytics.
+              </p>
+            </article>
+            <article className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+              <p className="text-xs font-medium text-slate-200">Workers AI</p>
+              <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                {data.settings.freeResources.workersAiNeuronsPerDay.toLocaleString("ro-RO")}{" "}
+                neuroni/zi; depășirea plătită este blocată. Stare:{" "}
+                {data.settings.workersAi.enabled ? "activ" : "neactivat"}.
+              </p>
+            </article>
+          </div>
+          <p className="mt-3 text-[11px] leading-5 text-slate-500">
+            Modelele pot propune și verifica ciorne, fără date personale și fără publicare directă.
+          </p>
         </div>
       </div>
 
@@ -730,6 +882,129 @@ export default function MarketingOrdersAgentControl() {
         >
           <RefreshCw className="h-4 w-4" />
         </button>
+      </div>
+
+      <div className="rounded-lg border border-cyan-400/20 bg-[#111c2e]">
+        <div className="flex flex-col gap-1 border-b border-[#28364d] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Aprobări din Dashboard + Codex</h3>
+            <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+              Deciziile sunt legate de cod, revizie și acțiunea exactă. Riscul critic cere ambele
+              surse; aprobarea nu execută automat acțiunea externă.
+            </p>
+          </div>
+          <span className="text-[10px] text-cyan-300">
+            {data.approvals.filter((approval) => approval.status === "pending").length} în așteptare
+          </span>
+        </div>
+        <div className="divide-y divide-[#28364d]">
+          {data.approvals.length === 0 ? (
+            <p className="px-4 py-6 text-center text-xs text-slate-500">
+              Nu există cereri de aprobare.
+            </p>
+          ) : (
+            data.approvals.map((approval) => {
+              const approvedCount = new Set(
+                approval.receipts
+                  .filter((receipt) => receipt.decision === "approved")
+                  .map((receipt) => receipt.source),
+              ).size;
+              const codexPrompt = `Aprob codul ${approval.approval_code} pentru revizia ${approval.revision_ref}`;
+              return (
+                <article key={approval.id} className="space-y-3 px-4 py-4">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-slate-100">{approval.summary}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">
+                        {approval.request_type} · risc {approval.risk_level} · creată{" "}
+                        {formatMoment(approval.created_at)}
+                      </p>
+                    </div>
+                    <span className="w-fit rounded-full bg-slate-700/50 px-2 py-1 text-[10px] text-slate-300">
+                      {statusLabels[approval.status] ?? approval.status}
+                    </span>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-md bg-[#0d1727] p-2.5">
+                      <p className="text-[9px] uppercase tracking-wide text-slate-600">Cod</p>
+                      <p className="mt-1 break-all font-mono text-[10px] text-cyan-200">
+                        {approval.approval_code}
+                      </p>
+                    </div>
+                    <div className="rounded-md bg-[#0d1727] p-2.5 sm:col-span-2">
+                      <p className="text-[9px] uppercase tracking-wide text-slate-600">Revizie</p>
+                      <p className="mt-1 break-all font-mono text-[10px] text-violet-200">
+                        {approval.revision_ref}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                    <span>
+                      Cvorum {approvedCount}/{approval.min_approvals}
+                    </span>
+                    {approval.receipts.map((receipt) => (
+                      <span
+                        key={`${approval.id}:${receipt.source}`}
+                        className={`rounded-full px-2 py-1 ${
+                          receipt.decision === "approved"
+                            ? "bg-emerald-400/10 text-emerald-300"
+                            : "bg-red-400/10 text-red-300"
+                        }`}
+                      >
+                        {receipt.source === "admin_dashboard" ? "Dashboard" : "Codex"}:{" "}
+                        {receipt.decision === "approved" ? "aprobat" : "respins"}
+                      </span>
+                    ))}
+                  </div>
+                  {approval.status === "pending" && (
+                    <div className="flex flex-wrap gap-2">
+                      {!approval.receipts.some(
+                        (receipt) => receipt.source === "admin_dashboard",
+                      ) && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={decideApproval.isPending}
+                            onClick={() =>
+                              decideApproval.mutate({ approval, decision: "approved" })
+                            }
+                            className="rounded-md border border-emerald-400/30 px-2.5 py-1 text-[11px] text-emerald-300"
+                          >
+                            Aprobă din Dashboard
+                          </button>
+                          <button
+                            type="button"
+                            disabled={decideApproval.isPending}
+                            onClick={() =>
+                              decideApproval.mutate({ approval, decision: "rejected" })
+                            }
+                            className="rounded-md border border-red-400/30 px-2.5 py-1 text-[11px] text-red-300"
+                          >
+                            Respinge
+                          </button>
+                        </>
+                      )}
+                      {!approval.receipts.some(
+                        (receipt) => receipt.source === "codex_conversation",
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(codexPrompt);
+                            setNotice("Comanda exactă pentru aprobarea din Codex a fost copiată.");
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-cyan-400/30 px-2.5 py-1 text-[11px] text-cyan-300"
+                        >
+                          <ClipboardCopy className="h-3 w-3" /> Copiază pentru Codex
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-[#28364d] bg-[#111c2e]">

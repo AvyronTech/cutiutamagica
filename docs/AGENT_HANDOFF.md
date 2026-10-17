@@ -1,5 +1,16 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-17 — aprobări multisursă și auditul automatizării
+
+- Ramură locală: `codex/marketplace-social-agent`, worktree separat pornit din `codex/cutiuta-cloudflare-final`; nu s-au făcut push, deploy ori migrare D1 remote.
+- Migrarea append-only `0069_multisource_approval_orchestration.sql` adaugă cerințe legate de cod/revizie/snapshot și chitanțe imuabile pentru `admin_dashboard` și `codex_conversation`. Publicarea socială și celelalte efecte critice cer 2 din 2; respingerea este terminală, iar aprobarea nu execută acțiunea.
+- API și Dashboard: `/api/v1/admin/marketing-agent` expune ultimele cereri și chitanțe; `POST /api/v1/admin/marketing-agent/approvals/:id/decision` înregistrează decizii idempotente. `/admin/ai` arată cvorumul, sursele, codul, revizia și poate copia formularea exactă pentru Codex.
+- Compatibilitate: deciziile vechi necritice sunt convertite în chitanțe Dashboard. Fluxul de draft social din Marketing Center salvează acum prima aprobare și rămâne `review` până la aprobarea Codex; bypassul direct al cvorumului critic este blocat în D1.
+- Automatizare sigură: monitorul orar expiră cererile vechi și păstrează `externalCalls: 0`. Skillul `cutiuta-magica-marketing-comenzi` este versiunea `2026.10.17.2` și include contractul multisursă. Auditul complet al cerințelor realizate/blocate este în `docs/marketing/automation-gap-audit-2026-10-17.md`.
+- Verificări: migrarea D1 locală a ajuns la schema 69 și are trigger-ele de imutabilitate/cvorum; `npm run typecheck`, 53 fișiere / 282 teste, `npm run lint`, `npm run build`, `npm run cf:types:check`, `git diff --check` și `npm run cf:deploy:dry` au trecut. Buildul confirmă bindingul Workers AI `AI`; folosirea lui de către agent rămâne dezactivată prin setare.
+- Verificare vizuală rămasă: noua zonă din `/admin/ai` necesită o sesiune admin locală; nu a fost declarată verificată desktop/mobil în această sesiune. Înainte de release trebuie verificată la 390 px și desktop cu cereri pending/noncritical/critical.
+- Activări rămase: conectorii live sociali, inboxurile, GSC backend, eMAG, Trendyol și Okazii cer identitate, secrete și test live separat. Vinted rămâne dezactivat. Migrarea 0069 trebuie aplicată remote înaintea codului la un release aprobat.
+
 ## Handoff 2026-10-17 — fișe pentru cinci produse și dosare parteneri
 
 - Completare identificatori de test: `docs/catalog/generateplus-test-codes.csv` conține câte un EAN-13 și EAN-8 generat efectiv pe `generate.plus` pentru fiecare dintre cele cinci produse. Sunt exemple fictive, separate de GTIN-ul comercial și păstrate numai în zona administrativă. Migrarea append-only `0065_generated_barcode_test_samples.sql` le înregistrează cu statut `test_only` și împiedică salvarea lor în câmpul GTIN oficial. Fișa și modelele DOCX au spațiu explicit pentru GTIN-8 și GTIN-13 oficial; eticheta Code 128 continuă să folosească SKU-ul intern. Versiunea anterioară a acestei migrări fusese verificată doar în D1 local, înainte de renumerotarea cerută de migrarea Halloween deja aplicată în producție.
@@ -181,3 +192,27 @@ Descrierea pull requestului trebuie să includă:
 - Migrare nouă, append-only: `0054_marketing_agent_connector_monitoring.sql`; adaugă referințe fără secrete pentru Metricool, Metricool Web, GSC și profilul Opera, păstrate `setup_required` până la verificarea backend/live repetabilă.
 - Separare: Opera este executorul nativ pentru Cutiuța Magică; profilurile și filele AVYRON nu sunt fallback. AVYRON rămâne numai schimb asincron aprobat de statistici agregate și pachete de skill.
 - Activare rămasă: după push/deploy și migrarea remote aprobate, se reia „Verify” în Metricool Web și se confirmă prima vizită. Tokenul GSC readonly trebuie salvat criptat în Seiful de conturi înaintea importului backend. Nu s-au făcut push, deploy sau migrare remote în acest handoff.
+
+## Handoff 2026-10-17 — agent social nativ și marketplace-uri
+
+- Ramură locală: `codex/marketplace-social-agent`, pornită din `codex/cutiuta-cloudflare-final`; nu s-au făcut push, pull request, deploy sau migrări remote.
+- Skillul `cutiuta-magica-marketing-comenzi` include acum contracte distincte pentru producție nativă, previzualizare reală, limite Free, noutatea conținutului și operațiuni marketplace.
+- Social: fiecare variantă trebuie generată și verificată în formatul destinației; elementele interactive există numai dacă sunt adăugate prin compositorul nativ și sunt funcționale. Metricool rămâne limitat la bugetul real al planului Free.
+- Marketplace: eMAG folosește contractul API v4.5.1, Trendyol numai Product V2 și Order V2, iar Okazii este pregătit ca feed XML cu import manual auditat al comenzilor până la verificarea unui API oficial. Toate rămân `setup_required` până la verificarea sellerului și a conectorului.
+- Vinted: listarea comercială este blocată în API și în dashboard; contul standard nu este folosit pentru produsele Cutiuța Magică, iar starea se reevaluează numai când Vinted Pro devine eligibil pentru o firmă înregistrată în România.
+- Workers AI: bindingul `AI` este declarat, dar asistentul editorial rămâne neactivat, fără date personale, fără publicare automată și fără depășire plătită. Activarea cere verificarea limitei Free și aprobare administrativă separată.
+- Migrare nouă, append-only: `0068_marketplace_social_agent_strategy.sql`; validată prin aplicarea integrală a migrărilor în D1 local. Schema locală este 68, cu eMAG/Trendyol/Okazii `setup_required`, Vinted `disabled` și Workers AI `setup_required`.
+- Verificări: validatorul skillului, typecheck, 52 fișiere / 277 teste, lint, build, `cf:types:check`, `git diff --check` și `cf:deploy:dry` au trecut. Migrarea completă a fost aplicată numai în D1 local, iar o interogare read-only a confirmat schema 68 și stările conectorilor.
+- Verificare vizuală: ruta locală `/admin/ai` redirecționează corect la autentificarea administrativă. Panoul autentificat nu a fost verificat vizual deoarece worktree-ul local nu are o sesiune sau acreditări admin; nu s-a copiat și nu s-a resetat nicio parolă.
+
+## Handoff 2026-10-17 — retenție R2 și compactarea postărilor
+
+- Migrare append-only: `0070_storage_retention.sql`; adaugă registrul și rulările de retenție, politica `storage.retention`, hashul de conținut și data compactării postărilor. Schema țintă este 70.
+- Cron: jobul orar verifică aprobările deja finalizate și face inventarul eligibil cel mult o dată la 24 de ore. Nu listează și nu șterge obiecte R2 necunoscute; pornește numai din referințe D1 controlate.
+- Retenție implicită: upload temporar la expirare, AI respins 7 zile, AI abandonat 14 zile, AI aprobat și nefolosit 90 de zile, copie socială publicată 30 de zile, copie socială arhivată 7 zile, payload complet al postării 90 de zile.
+- Protecții: originalele de produs, vizualurile AI de tip `product_visual`, hero, audio, 360°, documentele, facturile, personalizările și backupurile nu intră în curățarea socială automată.
+- Aprobare: fiecare lot are lista exactă, dimensiunile și `revisionHash`; ștergerea/compactarea este `critical` și cere cvorum Dashboard + Codex. Sursa este revalidată imediat înaintea execuției, iar eșecurile devin vizibile în monitorizarea agentului.
+- După publicare: R2 poate fi eliminat după termen, dar D1 păstrează ID-ul extern, data, campania, produsul, platforma, plasamentul, UTM-ul, referințele media minime și SHA-256 al payloadului complet.
+- Staging local: `.local-artifacts/` este ignorat de Git; noile randări intermediare trebuie create acolo sau în `/tmp`, iar repository-ul păstrează numai manifestul și sursele originale justificate.
+- Verificări: typecheck, 54 fișiere / 285 teste, lint, build, `cf:types:check`, `git diff --check` și `cf:deploy:dry` trecute. Avertismentele de chunk Vite sunt preexistente și nu blochează buildul.
+- Fără efecte externe: nu s-au șters obiecte din R2, nu s-a aplicat migrarea remote și nu s-au făcut push, deploy sau schimbări de lifecycle pe bucket.

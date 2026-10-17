@@ -2,6 +2,7 @@ import { boundedJson } from "./bounded-json";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import {
+  channelAllowsCommercialListings,
   salesChannelCodes,
   salesChannelDefinitions,
   validChannelUrl,
@@ -142,6 +143,16 @@ export async function handleSalesWorkbench(request: Request, env: Env): Promise<
           400,
         );
       const d = parsed.data;
+      if (!channelAllowsCommercialListings(d.code))
+        return json(
+          {
+            error: {
+              message:
+                "Canalul nu este eligibil pentru vânzarea comercială a produselor Cutiuța Magică.",
+            },
+          },
+          409,
+        );
       const results = await env.DB.batch([
         env.DB.prepare(
           `INSERT INTO sales_channel_profiles(code,account_url,seller_id,data_source_id) SELECT ?1,?2,?3,?4 WHERE ?5=0 OR EXISTS(SELECT 1 FROM sales_channel_profiles WHERE code=?1 AND version=?5) ON CONFLICT(code) DO UPDATE SET account_url=excluded.account_url,seller_id=excluded.seller_id,data_source_id=excluded.data_source_id,version=version+1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE version=?5`,
@@ -168,6 +179,16 @@ export async function handleSalesWorkbench(request: Request, env: Env): Promise<
       entity = `${match![1]}:${d.code}`,
       snapshot = publicSnapshot(product!),
       catalogHash = await hash(snapshot);
+    if (!channelAllowsCommercialListings(d.code))
+      return json(
+        {
+          error: {
+            message:
+              "Regulile curente ale canalului nu permit listarea comercială a acestui produs.",
+          },
+        },
+        409,
+      );
     if (catalogHash !== d.catalogHash)
       return json(
         { error: { message: "Catalogul s-a schimbat. Reîncarcă prețul și disponibilitatea." } },
