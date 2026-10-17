@@ -76,6 +76,20 @@ export async function handleCustomerLoyalty(request: Request, env: Env): Promise
     if (url.pathname === "/api/v1/customer/rewards" && request.method === "GET")
       return reviewJson({ data: await magicRewardsDashboard(env.DB, account) });
     if (request.method !== "GET") sameOrigin(request);
+    if (url.pathname === "/api/v1/customer/rewards/email-preference" && request.method === "PUT") {
+      const data = z.object({ enabled: z.boolean() }).parse(await boundedJson(request, 1_000));
+      await env.DB.prepare(
+        `UPDATE review_accounts
+         SET reward_email_enabled=?2,
+             reward_email_opted_in_at=CASE WHEN ?2=1
+               THEN COALESCE(reward_email_opted_in_at,strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+               ELSE NULL END
+         WHERE id=?1 AND status='active'`,
+      )
+        .bind(account.id, data.enabled ? 1 : 0)
+        .run();
+      return reviewJson({ data: { enabled: data.enabled } });
+    }
     if (url.pathname === "/api/v1/customer/gift-profile" && request.method === "PUT") {
       const data = profileSchema.parse(await boundedJson(request, 12_000));
       await saveGiftProfile(env.DB, account.id, data);

@@ -14,6 +14,7 @@ import {
   processBirthdayRewards,
   processGiftCalendarReminders,
 } from "./server/services/magic-rewards";
+import { processRewardEmailDigests } from "./server/services/reward-emails";
 
 type ServerEntry = {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response> | Response;
@@ -247,6 +248,7 @@ export default {
         processScheduledBackup(env),
         processGiftCalendarReminders(env),
         processBirthdayRewards(env.DB),
+        processRewardEmailDigests(env),
         processMarketingAgentMonitoring(env.DB),
       ]).then(() => undefined),
     );

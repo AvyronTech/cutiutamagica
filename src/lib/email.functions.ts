@@ -176,6 +176,7 @@ export const sendEmailTest = createServerFn({ method: "POST" })
     await sendEmail(env as CommerceEnv, {
       to: context.admin.email,
       channel: data.channel,
+      resendOnly: data.resendOnly,
       subject: `Test ${data.channel} · Cutiuța Magică`,
       text: `Acesta este un test al canalului ${data.channel}. Dacă mesajul a ajuns, expeditorul și serviciul tranzacțional funcționează.`,
       html: emailTextToHtml(

@@ -92,6 +92,7 @@ export const credentialProviderSchema = z.enum([
   "stripe_webhook",
   "revolut",
   "resend",
+  "resend_marketing",
   "brave",
   "google",
   "meta",

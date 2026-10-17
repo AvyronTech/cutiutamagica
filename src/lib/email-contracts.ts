@@ -59,6 +59,7 @@ export const partnerMessageSchema = z.object({
 
 export const emailTestSchema = z.object({
   channel: z.enum(["default", "orders", "returns", "partners"]),
+  resendOnly: z.boolean().default(false),
 });
 
 export type EmailChannel = z.infer<typeof emailTestSchema>["channel"];
