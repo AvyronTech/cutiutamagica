@@ -832,6 +832,8 @@ describe("delivery quote integrity", () => {
 
     const easyboxInput = websiteOrderInputSchema.parse({
       ...input(),
+      paymentMethod: "cash_on_delivery",
+      paymentProvider: undefined,
       shippingOption: "easybox",
       easyboxLockerId: 7123,
     });
@@ -859,6 +861,29 @@ describe("delivery quote integrity", () => {
       pickup_point_provider: "sameday",
       pickup_point_id: "7123",
     });
+    expect(
+      sqlite.prepare("SELECT courier_id FROM shipping_quotes WHERE id=?").get(quote.id)?.courier_id,
+    ).toBe(0);
+    const lookup = vi.fn(async (url: string) => {
+      if (url.includes("/awb/order_id/"))
+        return Response.json({
+          awb: "874156063267",
+          tracking_link: "https://smartship.ro/t/easybox",
+        });
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    vi.stubGlobal("fetch", lookup);
+    const imported = await reconcileSmartShipAwb(env, created.orderId, "test-admin");
+    expect(imported.awb).toBe("874156063267");
+    expect(lookup.mock.calls.some(([url]) => url.includes("/awb/new"))).toBe(false);
+    expect(
+      sqlite
+        .prepare("SELECT status,awb FROM smartship_awb_requests WHERE order_id=?")
+        .get(created.orderId),
+    ).toMatchObject({ status: "issued", awb: imported.awb });
+    await expect(reconcileSmartShipAwb(env, created.orderId, "test-admin")).rejects.toThrow(
+      "există deja",
+    );
   });
   it("issues one audited SmartShip AWB after payment and never sends a duplicate request", async () => {
     env.SMARTSHIP_API_KEY = "private";

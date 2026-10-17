@@ -36,9 +36,21 @@ import {
   getAdminProducts,
   issueAdminSmartShipAwb,
   reconcileAdminSmartShipAwb,
+  refreshAdminSmartShipTracking,
   updateAdminOrderStatus,
 } from "@/lib/admin.functions";
 import { canTransitionOrderStatus } from "@/lib/order-status";
+
+const localDateTime = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("ro-RO", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "Europe/Bucharest",
+      }).format(date);
+};
 
 const PLATFORM_COLORS: Record<string, string> = {
   "Cutiuța Magică": "platform-cutiuta",
@@ -136,16 +148,19 @@ function OrderDetailPanel({
   onClose,
   onUpdateStatus,
   onAwbAction,
+  onTrackingRefresh,
 }: {
   order: AdminOrder;
   onClose: () => void;
   onUpdateStatus: (status: AdminOrderStatus) => Promise<void>;
   onAwbAction: (reconcile: boolean) => Promise<void>;
+  onTrackingRefresh: () => Promise<void>;
 }) {
   const [currentStatus, setCurrentStatus] = useState(order.status);
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [awbBusy, setAwbBusy] = useState(false);
+  const [trackingBusy, setTrackingBusy] = useState(false);
 
   async function handleAwb(reconcile: boolean) {
     if (
@@ -268,6 +283,43 @@ function OrderDetailPanel({
               Urmărește coletul la SmartShip
             </a>
           )}
+          {order.shipmentStatus && (
+            <p className="mt-2 text-xs text-slate-300">
+              Status SmartShip:{" "}
+              <strong className="text-white">
+                {{
+                  label_created: "AWB emis",
+                  picked_up: "Ridicat",
+                  in_transit: "În tranzit",
+                  delivered: "Livrat",
+                  returned: "Returnat",
+                  cancelled: "Anulat",
+                  exception: "Necesită verificare",
+                }[order.shipmentStatus] ?? order.shipmentStatus}
+              </strong>
+              {order.shipmentUpdatedAt
+                ? ` · actualizat ${localDateTime(order.shipmentUpdatedAt)}`
+                : ""}
+            </p>
+          )}
+          {order.shipmentId && (
+            <button
+              type="button"
+              disabled={trackingBusy}
+              onClick={async () => {
+                setTrackingBusy(true);
+                try {
+                  await onTrackingRefresh();
+                } finally {
+                  setTrackingBusy(false);
+                }
+              }}
+              className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-cyan-300/30 px-3 text-xs font-semibold text-cyan-200 disabled:opacity-50"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />{" "}
+              {trackingBusy ? "Verificăm…" : "Actualizează trackingul"}
+            </button>
+          )}
           {order.awbRequestStatus === "issued" && order.awb && (
             <a
               href={`/api/v1/admin/shipping/orders/${order.id}/label`}
@@ -302,6 +354,24 @@ function OrderDetailPanel({
             >
               {awbBusy ? "Emitem AWB…" : "Emite AWB SmartShip"}
             </button>
+          )}
+          {!order.awb && !order.awbRequestStatus && order.smartshipCourierId === 0 && (
+            <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
+              <p>
+                Pentru acest Easybox, creează AWB-ul în SmartShip cu numărul comenzii{" "}
+                <strong>{order.orderNumber}</strong>, apoi sincronizează-l aici.
+              </p>
+              <button
+                type="button"
+                disabled={
+                  awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+                }
+                onClick={() => void handleAwb(true)}
+                className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 font-medium disabled:opacity-50"
+              >
+                {awbBusy ? "Verificăm…" : "Sincronizează AWB-ul SmartShip"}
+              </button>
+            </div>
           )}
         </section>
 
@@ -567,6 +637,7 @@ export default function Orders() {
   const changeOrderStatus = useServerFn(updateAdminOrderStatus);
   const issueAwb = useServerFn(issueAdminSmartShipAwb);
   const reconcileAwb = useServerFn(reconcileAdminSmartShipAwb);
+  const refreshTracking = useServerFn(refreshAdminSmartShipTracking);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("Toate");
   const [selectedStatus, setSelectedStatus] = useState("Toate");
@@ -832,6 +903,29 @@ export default function Orders() {
               setSelectedOrder(null);
               await ordersQuery.refetch();
               toast.error("AWB-ul nu a fost confirmat", {
+                description: error instanceof Error ? error.message : "Verifică la SmartShip.",
+              });
+            }
+          }}
+          onTrackingRefresh={async () => {
+            if (!selectedOrder.shipmentId) return;
+            try {
+              const result = await refreshTracking({
+                data: { shipmentId: selectedOrder.shipmentId },
+              });
+              setSelectedOrder({
+                ...selectedOrder,
+                shipmentStatus: result.status,
+                shipmentUpdatedAt: result.checkedAt,
+              });
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["admin", "orders"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "shipping-insights"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
+              ]);
+              toast.success("Trackingul AWB a fost actualizat.");
+            } catch (error) {
+              toast.error("Trackingul nu a putut fi actualizat", {
                 description: error instanceof Error ? error.message : "Verifică la SmartShip.",
               });
             }

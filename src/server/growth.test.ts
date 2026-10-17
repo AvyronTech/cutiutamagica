@@ -10,6 +10,11 @@ import { previousMonth, reportSettingsSchema, marketplaceForUrl } from "@/lib/gr
 import type { CommerceEnv } from "./integrations/provider-runtime";
 import { readProviderJson } from "./integrations/provider-runtime";
 import { checkConnection, syncTraffic } from "./services/traffic-integrations";
+import {
+  getAdminShippingInsightsData,
+  refreshSmartShipTracking,
+} from "./services/shipping-insights";
+import { getSmartShipAccountOverview } from "./integrations/smartship";
 
 const databases: DatabaseSync[] = [];
 function database() {
@@ -61,6 +66,150 @@ afterEach(() => {
   for (const db of databases.splice(0)) db.close();
 });
 describe("growth and commerce integration", () => {
+  it("returns honest empty shipping statistics before the first AWB", async () => {
+    const { db } = database();
+    const insights = await getAdminShippingInsightsData(db);
+    expect(insights.summary).toMatchObject({
+      total: 0,
+      inTransit: 0,
+      delivered: 0,
+      quotes30d: 0,
+    });
+    expect(insights.shipments).toEqual([]);
+  });
+  it("reads bounded SmartShip account statistics without exposing recipient or IBAN data", async () => {
+    const { db, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    const fixtures: Record<string, unknown> = {
+      "/account/balance": {
+        status: 200,
+        balance: 10,
+        credit_limit: 50,
+        available_for_shipping: 60,
+        currency: "RON",
+      },
+      "/awbs?per_page=10": {
+        status: 200,
+        total_awbs_count: 2,
+        awbs: [
+          {
+            awb: "AWB123",
+            status: 1,
+            courier_name: "Cargus",
+            order_id: "CM-1",
+            recipient_name: "Private",
+          },
+        ],
+      },
+      "/payouts?per_page=5": {
+        status: 200,
+        total_payouts_count: 1,
+        payouts: [
+          { number: "PN1", date: "2026-10-17", valoare: 100, awb_count: 1, iban: "PRIVATE" },
+        ],
+      },
+      "/invoices?per_page=5": {
+        status: 200,
+        total_invoices_count: 1,
+        invoices: [
+          {
+            number: "SS1",
+            date: "2026-10-17",
+            total: 20,
+            currency: "RON",
+            pdf_link: "https://smartship.ro/factura/example",
+          },
+        ],
+      },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string) => {
+        const path = new URL(input).pathname + new URL(input).search;
+        return Promise.resolve(
+          new Response(JSON.stringify(fixtures[path] ?? { status: 404 }), {
+            status: fixtures[path] ? 200 : 404,
+          }),
+        );
+      }),
+    );
+    const overview = await getSmartShipAccountOverview(env);
+    expect(overview).toMatchObject({
+      balance: { availableForShipping: 60 },
+      shipments: { total: 2, recent: [{ awb: "AWB123" }] },
+      payouts: { total: 1 },
+      invoices: { total: 1 },
+      errors: [],
+    });
+    expect(JSON.stringify(overview)).not.toContain("Private");
+    expect(JSON.stringify(overview)).not.toContain("PRIVATE");
+  });
+  it("refreshes one AWB twice without duplicating tracking events", async () => {
+    const { db, sql, actor } = database();
+    const channel = sql.prepare("SELECT id FROM sales_channels LIMIT 1").get() as { id: string };
+    sql
+      .prepare(
+        `INSERT INTO orders(id,order_number,public_token,idempotency_key,channel_id,
+       order_status,fulfillment_status,subtotal_bani,total_bani,customer_name,customer_phone_e164)
+       VALUES('order-tracking','CM-TRACK-1','token-tracking','idem-tracking',?1,
+       'confirmed','packed',1000,1000,'Client Test','+40712345678')`,
+      )
+      .run(channel.id);
+    sql
+      .prepare(
+        `INSERT INTO shipments(id,order_id,provider,external_shipment_id,awb,status)
+       VALUES('shipment-tracking','order-tracking','smartship','AWB123','AWB123','label_created')`,
+      )
+      .run();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              status: 200,
+              awb: "AWB123",
+              awb_status: 1,
+              awb_status_desc: "În tranzit",
+              carrier: "Cargus",
+              tracking_link: "https://smartship.ro/tracking/AWB123",
+              tracking: [
+                {
+                  date: "2026-10-17 11:20:00",
+                  event_id: "received",
+                  description: "Ridicat",
+                  locality: "Iași",
+                },
+              ],
+            }),
+            { status: 200 },
+          ),
+        ),
+      ),
+    );
+    await refreshSmartShipTracking(env, "shipment-tracking", actor);
+    await refreshSmartShipTracking(env, "shipment-tracking", actor);
+    expect(
+      sql.prepare("SELECT status,tracking_url FROM shipments WHERE id='shipment-tracking'").get(),
+    ).toMatchObject({ status: "in_transit", tracking_url: "https://smartship.ro/tracking/AWB123" });
+    expect(
+      sql
+        .prepare(
+          "SELECT COUNT(*) AS count FROM shipment_events WHERE shipment_id='shipment-tracking'",
+        )
+        .get(),
+    ).toMatchObject({ count: 1 });
+    expect(
+      sql
+        .prepare(
+          "SELECT COUNT(*) AS count FROM audit_log WHERE action='shipping.smartship_tracking.refresh'",
+        )
+        .get(),
+    ).toMatchObject({ count: 2 });
+  });
   it("rejects oversized provider bodies", async () => {
     await expect(
       readProviderJson(new Response(JSON.stringify({ text: "x".repeat(100) })), 20),

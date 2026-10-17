@@ -17,6 +17,11 @@ import {
 } from "@/server/integrations/resend";
 import { awardMagicStarsForDeliveredOrder } from "@/server/services/magic-rewards";
 import { issueSmartShipAwb, reconcileSmartShipAwb } from "@/server/services/smartship-fulfillment";
+import { getSmartShipAccountOverview } from "@/server/integrations/smartship";
+import {
+  getAdminShippingInsightsData,
+  refreshSmartShipTracking,
+} from "@/server/services/shipping-insights";
 import {
   getAdminDashboardData,
   getAdminIntegrationsData,
@@ -67,6 +72,32 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     assertPermission(context.admin, "dashboard.read");
     return getAdminDashboardData(env.DB);
+  });
+
+export const getAdminShippingInsights = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    assertPermission(context.admin, "orders.read");
+    return getAdminShippingInsightsData(env.DB);
+  });
+
+export const getAdminSmartShipAccountOverview = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    assertPermission(context.admin, "integrations.read");
+    assertPermission(context.admin, "reports.read");
+    return getSmartShipAccountOverview(env as CommerceEnv);
+  });
+
+export const refreshAdminSmartShipTracking = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(z.object({ shipmentId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin)
+      throw new Error("Cerere de administrare nepermisă.");
+    assertPermission(context.admin, "orders.write");
+    return refreshSmartShipTracking(env as CommerceEnv, data.shipmentId, context.admin.id);
   });
 
 const createOrderInput = z.object({

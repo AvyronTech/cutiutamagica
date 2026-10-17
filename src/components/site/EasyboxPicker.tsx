@@ -230,6 +230,11 @@ export function EasyboxPicker({
                       <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
                         {lockerAddress(locker)}
                       </span>
+                      {locker.supportsCashOnDelivery === false && (
+                        <span className="mt-1 block text-xs font-medium text-amber-900 dark:text-amber-200">
+                          Plata ramburs nu este disponibilă la acest punct
+                        </span>
+                      )}
                     </span>
                     {draft?.id === locker.id && (
                       <Check className="h-4 w-4 shrink-0 text-amber-800" />
@@ -259,7 +264,9 @@ export function EasyboxPicker({
 
           <div className="flex flex-col gap-3 border-t border-amber-900/10 bg-white/55 px-5 py-4 dark:bg-black/15 sm:flex-row sm:items-center sm:justify-between sm:px-7">
             <p className="min-w-0 text-xs text-muted-foreground">
-              {draft ? lockerAddress(draft) : "Selectează un punct pentru a continua."}
+              {draft
+                ? `${lockerAddress(draft)}${draft.supportsCashOnDelivery === false ? " · fără ramburs" : ""}`
+                : "Selectează un punct pentru a continua."}
             </p>
             <button
               type="button"
