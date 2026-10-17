@@ -206,6 +206,47 @@ export default function Dashboard() {
       </section>
 
       <section
+        aria-label="Urmărirea livrărilor"
+        className="rounded-2xl border border-cyan-300/15 bg-[#101e2d] p-4 md:p-5"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-cyan-200">
+              <Truck className="h-4 w-4" />
+              <h2 className="text-base font-semibold text-white">Livrări și AWB-uri</h2>
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              Statusuri salvate din SmartShip pentru expedierile magazinului.
+            </p>
+          </div>
+          <Link
+            to="/admin/shipping"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-cyan-300/30 px-3 text-xs font-semibold text-cyan-200"
+          >
+            Tracking și cont SmartShip <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            ["AWB emise", data?.shipping.total],
+            ["În tranzit", data?.shipping.inTransit],
+            ["Livrate", data?.shipping.delivered],
+            ["De verificat", data?.shipping.exceptions],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-xl border border-white/10 bg-[#0b1526] p-3">
+              <p className="text-xl font-semibold tabular-nums text-white">{value ?? "—"}</p>
+              <p className="mt-1 text-[11px] text-slate-400">{label}</p>
+            </div>
+          ))}
+        </div>
+        {Boolean(data?.shipping.stale) && (
+          <p className="mt-3 text-xs text-amber-200">
+            {data?.shipping.stale} AWB-uri active fără verificare de peste 48 de ore.
+          </p>
+        )}
+      </section>
+
+      <section
         aria-label="SEO și indexare"
         className="rounded-2xl border border-white/10 bg-white/[.045] p-4 md:p-5"
       >
@@ -327,6 +368,17 @@ export default function Dashboard() {
               { label: "Adaugă un produs", path: "/admin/products", icon: PackageCheck },
               { label: "Deschide Social Media Agent", path: "/admin/ai", icon: Bot },
               { label: "Vezi situația financiară", path: "/admin/financiar", icon: TrendingUp },
+              {
+                label: "Verifică livrările și deconturile SmartShip",
+                path: "/admin/shipping",
+                icon: Truck,
+              },
+              {
+                label: "Starea tuturor integrărilor",
+                path: "/admin/integrations",
+                icon: ShieldCheck,
+              },
+              { label: "Rapoarte și statistici", path: "/admin/statistics", icon: TrendingUp },
             ].map(({ label, path, icon: Icon }) => (
               <Link
                 key={label}

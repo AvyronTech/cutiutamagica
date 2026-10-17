@@ -22,6 +22,7 @@ import {
 } from "@/lib/order-status";
 import { productPath } from "@/lib/product-url";
 import { formatSku, skuPrefix } from "@/lib/product-identification";
+import { getAdminShippingSummary } from "@/server/services/shipping-insights";
 
 type DbValue = string | number | null;
 type DbRow = Record<string, DbValue>;
@@ -40,6 +41,12 @@ const ORDER_SELECT = `
     (SELECT q.courier_id FROM shipping_quotes q WHERE q.id=o.shipping_quote_id) AS smartship_courier_id,
     (SELECT tracking_url FROM shipments WHERE order_id=vo.id AND provider='smartship'
       AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_tracking_url,
+    (SELECT id FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_shipment_id,
+    (SELECT status FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_shipment_status,
+    (SELECT updated_at FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_shipment_updated_at,
     (
       SELECT sm.name
       FROM shipments sh
@@ -118,12 +125,18 @@ function mapOrder(row: DbRow): AdminOrder {
     date: stringValue(row.placed_at).slice(0, 10),
     deliveryMethod: stringValue(row.shipping_method_name) || "Nealocata",
     awb: nullableString(row.awb) ?? undefined,
+    shipmentId: nullableString(row.smartship_shipment_id) ?? undefined,
+    shipmentStatus: nullableString(row.smartship_shipment_status) ?? undefined,
+    shipmentUpdatedAt: nullableString(row.smartship_shipment_updated_at) ?? undefined,
     trackingUrl: (() => {
       const value = nullableString(row.smartship_tracking_url);
       if (!value) return undefined;
       try {
         const url = new URL(value);
-        return url.protocol === "https:" && url.hostname === "smartship.ro" ? url.href : undefined;
+        return url.protocol === "https:" &&
+          (url.hostname === "smartship.ro" || url.hostname.endsWith(".smartship.ro"))
+          ? url.href
+          : undefined;
       } catch {
         return undefined;
       }
@@ -580,16 +593,21 @@ export async function updateProductStatus(
 }
 
 export async function getAdminDashboardData(db: D1Database): Promise<AdminDashboardData> {
-  const [dashboardResult, ordersResult, channelsResult] = await db.batch<DbRow>([
-    db.prepare("SELECT * FROM v_admin_dashboard LIMIT 1"),
-    db.prepare(`${ORDER_SELECT} ORDER BY vo.placed_at DESC LIMIT 7`),
-    db.prepare("SELECT * FROM v_admin_channel_metrics ORDER BY name ASC"),
+  const [results, shipping] = await Promise.all([
+    db.batch<DbRow>([
+      db.prepare("SELECT * FROM v_admin_dashboard LIMIT 1"),
+      db.prepare(`${ORDER_SELECT} ORDER BY vo.placed_at DESC LIMIT 7`),
+      db.prepare("SELECT * FROM v_admin_channel_metrics ORDER BY name ASC"),
+    ]),
+    getAdminShippingSummary(db),
   ]);
+  const [dashboardResult, ordersResult, channelsResult] = results;
 
   return {
     stats: mapDashboard(dashboardResult.results[0] ?? null),
     recentOrders: ordersResult.results.map(mapOrder),
     channels: channelsResult.results.map(mapChannel),
+    shipping,
   };
 }
 

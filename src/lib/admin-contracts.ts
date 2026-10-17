@@ -27,6 +27,9 @@ export interface AdminOrder {
   deliveryMethod: string;
   awb?: string;
   trackingUrl?: string;
+  shipmentId?: string;
+  shipmentStatus?: string;
+  shipmentUpdatedAt?: string;
   awbRequestStatus?: "issuing" | "needs_review" | "issued";
   smartshipCourierId?: number;
   phone: string;
@@ -102,6 +105,39 @@ export interface AdminDashboardData {
   stats: AdminDashboardStats;
   recentOrders: AdminOrder[];
   channels: AdminChannelMetric[];
+  shipping: AdminShippingInsights["summary"];
+}
+
+export interface AdminShippingShipment {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  awb: string;
+  status: string;
+  trackingUrl: string | null;
+  courier: string;
+  createdAt: string;
+  updatedAt: string;
+  deliveredAt: string | null;
+  events: Array<{ status: string; description: string; location: string; occurredAt: string }>;
+}
+
+export interface AdminShippingInsights {
+  summary: {
+    total: number;
+    labels: number;
+    inTransit: number;
+    delivered: number;
+    exceptions: number;
+    cancelled: number;
+    stale: number;
+    averageDeliveryHours: number | null;
+    quotes30d: number;
+    selectedQuotes30d: number;
+    averageQuoteRon: number | null;
+  };
+  couriers: Array<{ name: string; count: number }>;
+  shipments: AdminShippingShipment[];
 }
 
 export interface AdminNotification {

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { getCommerceOperations, saveShippingPolicy } from "@/lib/admin.functions";
 import { CredentialPanel } from "@/admin/pages/GrowthSettings";
 import { ProviderSetupGuide } from "@/admin/pages/ProviderSetupGuide";
+import ShippingInsightsPanel from "@/admin/pages/ShippingInsightsPanel";
 
 const inputClass =
   "w-full rounded-lg border border-[#334155] bg-[#0b1526] px-3 py-2.5 text-sm text-slate-100 focus:border-cyan-400/60 focus:outline-none";
@@ -99,6 +100,7 @@ export default function Shipping() {
             : "Secretul SMARTSHIP_API_KEY lipsește. Cotațiile live și AWB-urile rămân dezactivate."}
         </span>
       </div>
+      <ShippingInsightsPanel />
       <div className="grid gap-5 xl:grid-cols-[1fr_.8fr]">
         <form onSubmit={submit} className="rounded-lg border border-[#28364d] bg-[#111c2e] p-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-white">

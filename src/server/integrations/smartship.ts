@@ -42,6 +42,237 @@ export interface SmartShipQuote {
   deliveryDate: string | null;
 }
 
+export interface SmartShipTrackingEvent {
+  date: string;
+  eventId: string;
+  description: string;
+  locality: string;
+}
+
+export interface SmartShipTracking {
+  awb: string;
+  status: "label_created" | "in_transit" | "delivered" | "exception" | "returned" | "cancelled";
+  statusDescription: string;
+  carrier: string;
+  trackingUrl: string | null;
+  events: SmartShipTrackingEvent[];
+}
+
+export function smartShipTrackingUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      (url.hostname === "smartship.ro" || url.hostname.endsWith(".smartship.ro"))
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function parseSmartShipTracking(payload: unknown, expectedAwb: string): SmartShipTracking {
+  const source = record(payload);
+  const awb = source ? textValue(source, ["awb"]) : "";
+  const code = source ? Number(source.awb_status) : NaN;
+  const status = (
+    {
+      0: "label_created",
+      1: "in_transit",
+      2: "delivered",
+      5: "exception",
+      6: "returned",
+      10: "cancelled",
+    } as Record<number, SmartShipTracking["status"]>
+  )[code];
+  if (!source || source.status !== 200 || awb !== expectedAwb || !status)
+    throw new ProviderError(
+      "SmartShip nu a confirmat statusul acestui AWB.",
+      "SMARTSHIP_TRACKING_INVALID",
+      502,
+    );
+  const events = Array.isArray(source.tracking)
+    ? source.tracking.slice(0, 50).flatMap((item) => {
+        const event = record(item);
+        if (!event) return [];
+        const date = textValue(event, ["date"]).slice(0, 32);
+        const description = textValue(event, ["description"]).slice(0, 500);
+        if (!/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2})?$/.test(date) || !description) return [];
+        return [
+          {
+            date,
+            eventId: textValue(event, ["event_id"]).slice(0, 80),
+            description,
+            locality: textValue(event, ["locality"]).slice(0, 120),
+          },
+        ];
+      })
+    : [];
+  return {
+    awb,
+    status,
+    statusDescription: textValue(source, ["awb_status_desc"]).slice(0, 120),
+    carrier: textValue(source, ["carrier"]).slice(0, 120),
+    trackingUrl: smartShipTrackingUrl(source.tracking_link),
+    events,
+  };
+}
+
+export async function getSmartShipTracking(
+  env: CommerceEnv,
+  awb: string,
+): Promise<SmartShipTracking> {
+  if (!/^[A-Za-z0-9-]{3,80}$/.test(awb))
+    throw new ProviderError("AWB-ul nu este valid.", "SMARTSHIP_AWB_INVALID", 400);
+  const response = await smartShipFetch(env, `/awb/status/${encodeURIComponent(awb)}`, {
+    method: "GET",
+  });
+  if (!response.ok)
+    throw new ProviderError(
+      "Statusul AWB nu este disponibil momentan la SmartShip.",
+      "SMARTSHIP_TRACKING_FAILED",
+      502,
+      response.status >= 500,
+    );
+  return parseSmartShipTracking(await readProviderJson(response, 256_000), awb);
+}
+
+export interface SmartShipAccountOverview {
+  checkedAt: string;
+  balance: {
+    amount: number;
+    availableForShipping: number;
+    creditLimit: number;
+    currency: string;
+  } | null;
+  shipments: {
+    total: number;
+    recent: Array<{ awb: string; status: number; courier: string; orderId: string }>;
+  } | null;
+  payouts: {
+    total: number;
+    recent: Array<{ number: string; date: string; amount: number; awbCount: number }>;
+  } | null;
+  invoices: {
+    total: number;
+    recent: Array<{
+      number: string;
+      date: string;
+      amount: number;
+      currency: string;
+      pdfUrl: string | null;
+    }>;
+  } | null;
+  errors: string[];
+}
+
+export async function getSmartShipAccountOverview(
+  env: CommerceEnv,
+): Promise<SmartShipAccountOverview> {
+  const paths = [
+    "/account/balance",
+    "/awbs?per_page=10",
+    "/payouts?per_page=5",
+    "/invoices?per_page=5",
+  ] as const;
+  const results = await Promise.allSettled(
+    paths.map(async (path) => {
+      const response = await smartShipFetch(env, path, { method: "GET" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = record(await readProviderJson(response, 256_000));
+      if (!payload || payload.status !== 200) throw new Error("Răspuns invalid");
+      return payload;
+    }),
+  );
+  const [balance, shipments, payouts, invoices] = results.map((result) =>
+    result.status === "fulfilled" ? result.value : null,
+  );
+  const errors = results.flatMap((result, index) =>
+    result.status === "rejected" ? [paths[index]] : [],
+  );
+  const safeNumber = (value: unknown) =>
+    typeof value === "number" && Number.isFinite(value) ? value : null;
+  return {
+    checkedAt: new Date().toISOString(),
+    balance:
+      balance &&
+      safeNumber(balance.balance) != null &&
+      safeNumber(balance.available_for_shipping) != null &&
+      safeNumber(balance.credit_limit) != null
+        ? {
+            amount: safeNumber(balance.balance)!,
+            availableForShipping: safeNumber(balance.available_for_shipping)!,
+            creditLimit: safeNumber(balance.credit_limit)!,
+            currency: ["RON", "EUR"].includes(textValue(balance, ["currency"]))
+              ? textValue(balance, ["currency"])
+              : "RON",
+          }
+        : null,
+    shipments: shipments
+      ? {
+          total: Math.max(0, safeNumber(shipments.total_awbs_count) ?? 0),
+          recent: (Array.isArray(shipments.awbs) ? shipments.awbs : [])
+            .slice(0, 10)
+            .flatMap((value) => {
+              const row = record(value);
+              const awb = row ? textValue(row, ["awb"]) : "";
+              if (!row || !/^[A-Za-z0-9-]{3,80}$/.test(awb)) return [];
+              return [
+                {
+                  awb,
+                  status: safeNumber(row.status) ?? -1,
+                  courier: textValue(row, ["courier_name"]).slice(0, 120),
+                  orderId: textValue(row, ["order_id"]).slice(0, 120),
+                },
+              ];
+            }),
+        }
+      : null,
+    payouts: payouts
+      ? {
+          total: Math.max(0, safeNumber(payouts.total_payouts_count) ?? 0),
+          recent: (Array.isArray(payouts.payouts) ? payouts.payouts : [])
+            .slice(0, 5)
+            .flatMap((value) => {
+              const row = record(value);
+              if (!row) return [];
+              return [
+                {
+                  number: textValue(row, ["number"]).slice(0, 80),
+                  date: textValue(row, ["date"]).slice(0, 32),
+                  amount: safeNumber(row.valoare) ?? 0,
+                  awbCount: safeNumber(row.awb_count) ?? 0,
+                },
+              ];
+            }),
+        }
+      : null,
+    invoices: invoices
+      ? {
+          total: Math.max(0, safeNumber(invoices.total_invoices_count) ?? 0),
+          recent: (Array.isArray(invoices.invoices) ? invoices.invoices : [])
+            .slice(0, 5)
+            .flatMap((value) => {
+              const row = record(value);
+              if (!row) return [];
+              return [
+                {
+                  number: textValue(row, ["number"]).slice(0, 80),
+                  date: textValue(row, ["date"]).slice(0, 32),
+                  amount: safeNumber(row.total) ?? 0,
+                  currency: ["RON", "EUR"].includes(textValue(row, ["currency"]))
+                    ? textValue(row, ["currency"])
+                    : "RON",
+                  pdfUrl: smartShipTrackingUrl(row.pdf_link),
+                },
+              ];
+            }),
+        }
+      : null,
+    errors,
+  };
+}
+
 function party(value: SmartShipParty) {
   return {
     name: value.name,
