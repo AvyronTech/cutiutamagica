@@ -44,6 +44,7 @@ export type MagicRewardsDashboard = {
   account: { availableStars: number; lifetimeStars: number; redeemedStars: number };
   activities: MagicRewardActivity[];
   birthday: { month: number; day: number } | null;
+  rewardEmailEnabled: boolean;
   ledger: Array<Record<string, string | number | null>>;
   rewards: Array<Record<string, string | number | null>>;
   profile: { preferences: Record<string, unknown>; completed: boolean } | null;
@@ -412,9 +413,15 @@ export async function magicRewardsDashboard(
         .first<{ available_stars: number; lifetime_stars: number; redeemed_stars: number }>(),
       listMagicRewardActivities(db, true),
       db
-        .prepare("SELECT birth_month,birth_day FROM review_accounts WHERE id=?1")
+        .prepare(
+          "SELECT birth_month,birth_day,reward_email_enabled FROM review_accounts WHERE id=?1",
+        )
         .bind(account.id)
-        .first<{ birth_month: number | null; birth_day: number | null }>(),
+        .first<{
+          birth_month: number | null;
+          birth_day: number | null;
+          reward_email_enabled: number;
+        }>(),
       db
         .prepare(
           `SELECT l.id,l.delta,l.reason,l.source_type,l.source_id,
@@ -466,6 +473,7 @@ export async function magicRewardsDashboard(
       birthday?.birth_month && birthday.birth_day
         ? { month: Number(birthday.birth_month), day: Number(birthday.birth_day) }
         : null,
+    rewardEmailEnabled: birthday?.reward_email_enabled === 1,
     ledger: ledger.results,
     rewards: rewards.results,
     profile: profile

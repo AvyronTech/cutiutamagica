@@ -16,6 +16,7 @@ type Dashboard = {
     enabled: boolean;
   }>;
   birthday: { month: number; day: number } | null;
+  rewardEmailEnabled: boolean;
   ledger: Array<{
     id: string;
     delta: number;
@@ -376,6 +377,35 @@ export function CustomerMagicCenter() {
             ))}
             {!data.ledger.length && <p>Prima stea apare după un moment eligibil confirmat.</p>}
           </div>
+          <label className="mt-4 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={data.rewardEmailEnabled}
+              onChange={async (event) => {
+                const enabled = event.currentTarget.checked;
+                try {
+                  await reviewApi("/api/v1/customer/rewards/email-preference", {
+                    method: "PUT",
+                    body: JSON.stringify({ enabled }),
+                  });
+                  await refresh();
+                  toast.success(
+                    enabled
+                      ? "Noutățile despre stelele tale sunt active."
+                      : "Noutățile despre stele au fost oprite.",
+                  );
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error ? error.message : "Preferința nu a putut fi salvată.",
+                  );
+                }
+              }}
+            />
+            <span>
+              Primește un singur e-mail despre stelele câștigate într-o zi. Poți opri oricând
+              mesajele.
+            </span>
+          </label>
           {data.rewards.some((reward) => reward.status === "active") && (
             <div className="customer-reward-codes">
               {data.rewards

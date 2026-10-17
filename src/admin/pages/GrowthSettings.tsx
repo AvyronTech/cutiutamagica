@@ -37,6 +37,7 @@ const labels: Record<CredentialProvider, string> = {
   stripe_webhook: "Stripe · secret webhook",
   revolut: "Revolut Business · token OAuth temporar",
   resend: "Resend",
+  resend_marketing: "Resend · contacte și campanii (Full access)",
   brave: "Brave Search",
   google: "Google Analytics și Search Console · token OAuth read-only",
   meta: "Meta (token de acces)",

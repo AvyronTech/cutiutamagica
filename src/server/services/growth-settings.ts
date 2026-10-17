@@ -57,6 +57,7 @@ const secretNames = {
   stripe_webhook: "STRIPE_WEBHOOK_SECRET",
   revolut: "REVOLUT_API_KEY",
   resend: "RESEND_API_KEY",
+  resend_marketing: "RESEND_MARKETING_API_KEY",
   brave: "BRAVE_SEARCH_API_KEY",
   google: "GOOGLE_ACCESS_TOKEN",
   meta: "META_ACCESS_TOKEN",

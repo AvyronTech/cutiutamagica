@@ -145,10 +145,10 @@ export default function EmailHub() {
     });
   }
 
-  async function runTest(channel: EmailChannel) {
+  async function runTest(channel: EmailChannel, resendOnly = false) {
     setTestChannel(channel);
     try {
-      await testEmail({ data: { channel } });
+      await testEmail({ data: { channel, resendOnly } });
       await invalidate();
       toast.success("Mesajul de test a fost trimis către contul tău de administrator");
     } catch (error) {
@@ -168,7 +168,7 @@ export default function EmailHub() {
           <h1 className="mt-1 text-2xl font-semibold text-white">Centru e-mail</h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
             Identitatea Cutiuța Magică, mesaje tranzacționale pentru clienți, contacte de parteneri,
-            teste de livrare și istoric pentru Cloudflare Email Service.
+            teste de livrare și istoric pentru Cloudflare Email Sending și Resend.
           </p>
         </div>
         <button className={secondaryButton} onClick={() => query.refetch()}>
@@ -193,8 +193,8 @@ export default function EmailHub() {
             <p className="mt-1 text-sm text-slate-400">
               Cloudflare Email Sending: {data.emailService ? "binding activ" : "neconfigurat"}.
               {data.resend?.configured
-                ? ` Resend rămâne fallback (${data.resend.status}).`
-                : " Resend nu este configurat ca fallback."}
+                ? ` Resend: cheie configurată (${data.resend.status}).`
+                : " Resend nu este configurat."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -208,8 +208,29 @@ export default function EmailHub() {
                 <Send size={14} /> Test {channel}
               </button>
             ))}
+            <button
+              className={secondaryButton}
+              disabled={!data.resend?.configured || testChannel !== null}
+              onClick={() => runTest("default", true)}
+            >
+              <Send size={14} /> Test Resend
+            </button>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-lg border border-cyan-300/20 bg-cyan-300/5 p-5 text-sm text-slate-300">
+        <h2 className="font-semibold text-white">Campanii și Magic Rewards</h2>
+        <p className="mt-2">
+          Campaniile se pregătesc doar pentru abonații confirmați. Cele {counts.subscribers} adrese
+          confirmate nu includ automat clienții magazinului sau membrii Magic Rewards. Notificările
+          despre Magic Stars se activează separat de fiecare client, în contul său.
+        </p>
+        <p className="mt-2 text-xs text-slate-400">
+          Resend Free: 100 mesaje tranzacționale pe zi, 3.000 pe lună și 1.000 de contacte de
+          marketing. Trimiterile automate Magic Rewards au un plafon intern mai mic și se opresc
+          înainte de limita planului.
+        </p>
       </section>
 
       <form onSubmit={submitSettings} className="space-y-5 rounded-lg border border-slate-700 p-5">
@@ -314,7 +335,7 @@ export default function EmailHub() {
         </button>
       </form>
 
-      <CredentialPanel providers={["resend"]} />
+      <CredentialPanel providers={["resend", "resend_marketing"]} />
 
       <section className="space-y-4">
         <div>

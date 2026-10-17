@@ -129,6 +129,7 @@ export async function checkConnection(env: CommerceEnv, provider: CredentialProv
     smartship: "https://api.smartship.ro/account/balance",
     revolut: "https://b2b.revolut.com/api/1.0/accounts",
     resend: "https://api.resend.com/domains",
+    resend_marketing: "https://api.resend.com/contacts?limit=1",
     google: "https://www.googleapis.com/webmasters/v3/sites",
     google_merchant: "https://merchantapi.googleapis.com/accounts/v1/accounts?pageSize=1",
   };
@@ -153,6 +154,27 @@ export async function checkConnection(env: CommerceEnv, provider: CredentialProv
     throw error;
   }
   const payload = await readProviderJson(response).catch(() => null);
+  if (provider === "resend" && [401, 403].includes(response.status)) {
+    // A sending-only key cannot list domains. Prove it through a successful
+    // branded message instead of granting broad Resend account access.
+    const sent = await env.DB.prepare(
+      `SELECT 1 AS ok FROM provider_operations
+       WHERE provider='resend' AND operation_type='email.send'
+         AND entity_type='email_test' AND status='succeeded'
+         AND created_at >= COALESCE(
+           (SELECT updated_at FROM integration_credentials WHERE provider='resend'),
+           '9999-12-31'
+         )
+       LIMIT 1`,
+    ).first<{ ok: number }>();
+    await recordConnectionCheck(env, provider, sent ? "verified" : "unverified");
+    return {
+      ok: Boolean(sent),
+      message: sent
+        ? "Cheia Resend cu drept de trimitere a fost verificată printr-un mesaj de test."
+        : "Cheia are doar drept de trimitere. Trimite un test Resend către administrator, apoi verifică din nou conexiunea.",
+    };
+  }
   const resendDomain =
     provider === "resend"
       ? z

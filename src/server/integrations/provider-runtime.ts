@@ -23,6 +23,7 @@ export type CommerceEnv = Env & {
   SMARTSHIP_API_KEY?: string;
   SMARTSHIP_COD_IBAN?: string;
   RESEND_API_KEY?: string;
+  RESEND_MARKETING_API_KEY?: string;
   RESEND_WEBHOOK_SECRET?: string;
   REVOLUT_API_KEY?: string;
   REVOLUT_CLIENT_SECRET?: string;

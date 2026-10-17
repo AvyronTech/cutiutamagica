@@ -20,6 +20,7 @@ type SendEmailInput = {
   html: string;
   text: string;
   channel?: EmailChannel;
+  resendOnly?: boolean;
   idempotencyKey: string;
   entityType: string;
   entityId: string;
@@ -118,6 +119,19 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
   const resend = async () => {
     const apiKey = await credential(env, "resend");
     requiredSecret(apiKey ?? undefined, "RESEND_API_KEY");
+    const usage = await env.DB.prepare(
+      `SELECT
+         SUM(CASE WHEN substr(created_at,1,10)=substr(strftime('%Y-%m-%dT%H:%M:%fZ','now'),1,10)
+           THEN 1 ELSE 0 END) AS today,
+         COUNT(*) AS month
+       FROM provider_operations
+       WHERE provider='resend' AND operation_type='email.send' AND status='succeeded'
+         AND substr(created_at,1,7)=substr(strftime('%Y-%m-%dT%H:%M:%fZ','now'),1,7)`,
+    ).first<{ today: number | null; month: number }>();
+    // Keep a small buffer below Resend Free (100/day, 3,000/month). The
+    // provider's disabled pay-as-you-go setting remains the final cost gate.
+    if (Number(usage?.today ?? 0) >= 95 || Number(usage?.month ?? 0) >= 2900)
+      throw new Error("Limita gratuită Resend este aproape atinsă; trimiterea a fost amânată.");
     const response = await fetchWithTimeout("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -157,7 +171,11 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
       throw new Error(`Resend HTTP ${response.status}: trimitere neconfirmată`);
   };
 
-  const attempts = settings.provider === "resend" ? [resend, cloudflare] : [cloudflare, resend];
+  const attempts = input.resendOnly
+    ? [resend]
+    : settings.provider === "resend"
+      ? [resend, cloudflare]
+      : [cloudflare, resend];
   let lastError: unknown;
   for (const attempt of attempts) {
     try {
