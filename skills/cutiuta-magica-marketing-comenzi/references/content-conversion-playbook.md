@@ -4,6 +4,8 @@
 
 Nu produce conținut generic și nu transforma calendarul într-o obligație de volum. Pornește de la un produs cumpărabil, o întrebare reală a clientului sau o ocazie apropiată și construiește un pachet nativ, verificabil și măsurabil.
 
+Nu promite că un material va deveni viral. Definește o ipoteză de distribuire — de exemplu utilitate, identificare, surpriză sau demonstrație — și măsoară retenția, salvările, distribuirile și conversia. Un material cu mai puține vizualizări, dar cu mai multe comenzi calificate, poate fi câștigătorul.
+
 Pentru fiecare concept combină, când sunt potrivite, patru mecanisme:
 
 1. **Curiozitate reală:** prima propoziție sau primul cadru deschide un gol de informație fără clickbait fals.
@@ -18,12 +20,14 @@ Ideea centrală trebuie să fie clară în primele trei secunde. Repetă promisi
 Înainte de copy sau design, păstrează în revizia campaniei:
 
 - `campaignId`, `productId`, produsul și URL-ul canonic;
+- `noveltyScore` și diferențele față de ultimele 30 de materiale;
 - obiectivul și metrica principală;
 - audiența, persoana și ocazia;
 - părerea greșită ori întrebarea la care răspunde;
 - dovada vizibilă și sursa factuală;
 - hook-ul, CTA-ul unic și UTM-ul intern;
 - asset-urile, drepturile, platforma, formatul și ora propusă;
+- snapshotul capabilităților contului, ruta de publicare și costul în limita Metricool;
 - ipoteza testată și o singură variabilă majoră schimbată;
 - versiunea și `approvalRequired=true`.
 
@@ -39,6 +43,8 @@ O campanie zilnică eligibilă conține variații distincte pentru:
 - variantă personală separată pentru profilul Facebook numai când profilul este autorizat și revizia este aprobată separat.
 
 Nu considera pachetul complet dacă există doar imaginea sau doar descrierea. Fiecare plasament are asset, copy, CTA, link sau indicație legitimă de navigare, hashtaguri când se justifică, text alternativ ori subtitrări și un brief muzical.
+
+Elementele native sunt specificații de publicare, nu pixeli în asset. Poll-ul, întrebarea, link stickerul, countdown-ul, muzica, locația și eticheta de produs se adaugă numai în compozitorul care le poate crea funcțional. Dacă ruta aleasă nu le suportă, schimbă ruta sau elimină elementul din revizie.
 
 ## Descrierea lungă pentru feed
 
@@ -137,6 +143,7 @@ Verifică la 24–72 de ore și la 7 zile. Compară mediane pe canal și format,
 - linkul este specific, canonic și scurt;
 - textul alternativ, diacriticele și hashtagurile sunt corecte;
 - materialul diferă clar de ultimele nouă piese;
+- previzualizarea nativă nu acoperă produsul, textul ori CTA-ul și nu conține controale artificiale;
 - revizia, asset-ul, contul, destinația și ora au aprobare exactă.
 
 ## Excluderi

@@ -11,6 +11,8 @@ Construiește un `campaign_id` comun și variații native pentru:
 
 Reelul și TikTok-ul pot porni din același concept și același master fără text, dar au montaj, hook, sunet, copertă și descriere native. Intervalul de trei zile este determinist și se păstrează în platforma internă, ca să nu existe dubluri după o rulare ratată.
 
+Fiecare piesă trebuie să aibă o diferență editorială demonstrabilă față de ultimele 30 de materiale: produs, audiență, ocazie, întrebare, dovadă, hook, cadru dominant ori CTA. Schimbarea fundalului sau reformularea primelor cuvinte nu este suficientă. Calculează un scor de noutate înainte de review și blochează duplicarea mecanică.
+
 ## Pachet video TikTok și Reel
 
 - master vertical `1080×1920`, raport `9:16`, minimum 720p; păstrează produsul și mesajele importante în zona sigură, departe de bara de sus, descrierea de jos și acțiunile din dreapta;
@@ -50,11 +52,13 @@ Păstrează cel puțin 90 de minute între formatele principale și mută gradua
 ## Rutare publicare Metricool și browser nativ
 
 - folosește Metricool pentru Facebook Page, Instagram și TikTok cât timp identitatea brandului este verificată, formatul este suportat și limita planului permite publicarea;
-- planul Free are o limită lunară de publicări. Citește contorul real din cont înainte de programare și nu presupune numărul rămas numai din calendarul local;
+- planul Free are maximum 20 de publicări efective pe lună, iar fiecare rețea selectată consumă separat. Citește contorul real din cont înainte de programare, calculează costul lotului și nu presupune numărul rămas numai din calendarul local;
+- nu planifica pe baza funcțiilor absente din Free: SmartLinks, aprobări Metricool, Post Library, Canva/Google Drive, hashtag finder, Make/Zapier sau API direct. Aprobarea și UTM-urile rămân în platforma internă;
 - când limita este epuizată sau formatul cere funcții native, folosește numai profilul Opera dedicat Cutiuța Magică, verificat vizual înaintea fiecărei sesiuni. Nu reutiliza profilul ori filele AVYRON;
 - Facebook Page și profilul Facebook sunt destinații distincte. Pagina poate folosi Metricool sau browserul nativ; profilul autorizat se publică numai nativ, cu o versiune personală distinctă și după verificarea numelui/identității contului;
 - pentru Instagram Notes, muzică, stickere interactive și alte funcții indisponibile prin conector, folosește fluxul nativ numai dacă acea funcție este vizibilă pe cont;
 - pentru TikTok alege sunetul din biblioteca disponibilă legitim în cont la momentul publicării; nu încărca aceeași piesă cu watermark din alt canal;
+- pentru conturile Meta business cu biblioteca muzicală restricționată folosește Meta Sound Collection sau audio cu drepturi comerciale confirmate; existența unei melodii în biblioteca personală nu dovedește dreptul brandului de a o folosi;
 - la challenge, CAPTCHA, 2FA, profil ambiguu sau selector care nu afișează identitatea așteptată, oprește publicarea și cere intervenția administratorului;
 - aprobarea rămâne legată de revizie, asset, destinație și oră. O aprobare pentru Facebook Page nu aprobă automat profilul Facebook, Instagram ori TikTok.
 
@@ -88,3 +92,5 @@ Clasifică: întrebare produs, intenție de cumpărare, feedback, reclamație, s
 ## QA înainte de aprobare
 
 Verifică produsul și stocul din nou, revizia asset-ului, drepturile, diacriticele, textul alternativ, contrastul, subtitrările, coperta, safe zones, CTA-ul, linkul/UTM, hashtagurile, muzica și diferența față de ultimele nouă materiale. Dacă produsul sau prețul s-a schimbat, invalidează ciorna și regenerează din sursa actuală.
+
+QA-ul include o previzualizare cu chrome-ul interfeței platformei: nume de utilizator, bare superioare/inferioare, acțiuni laterale, caption și decupare de grilă. Nu aproba un asset pe baza fișierului brut dacă elementul principal, textul sau CTA-ul este acoperit în plasamentul real.

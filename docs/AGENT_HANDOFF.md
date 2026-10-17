@@ -181,3 +181,15 @@ Descrierea pull requestului trebuie să includă:
 - Migrare nouă, append-only: `0054_marketing_agent_connector_monitoring.sql`; adaugă referințe fără secrete pentru Metricool, Metricool Web, GSC și profilul Opera, păstrate `setup_required` până la verificarea backend/live repetabilă.
 - Separare: Opera este executorul nativ pentru Cutiuța Magică; profilurile și filele AVYRON nu sunt fallback. AVYRON rămâne numai schimb asincron aprobat de statistici agregate și pachete de skill.
 - Activare rămasă: după push/deploy și migrarea remote aprobate, se reia „Verify” în Metricool Web și se confirmă prima vizită. Tokenul GSC readonly trebuie salvat criptat în Seiful de conturi înaintea importului backend. Nu s-au făcut push, deploy sau migrare remote în acest handoff.
+
+## Handoff 2026-10-17 — agent social nativ și marketplace-uri
+
+- Ramură locală: `codex/marketplace-social-agent`, pornită din `codex/cutiuta-cloudflare-final`; nu s-au făcut push, pull request, deploy sau migrări remote.
+- Skillul `cutiuta-magica-marketing-comenzi` include acum contracte distincte pentru producție nativă, previzualizare reală, limite Free, noutatea conținutului și operațiuni marketplace.
+- Social: fiecare variantă trebuie generată și verificată în formatul destinației; elementele interactive există numai dacă sunt adăugate prin compositorul nativ și sunt funcționale. Metricool rămâne limitat la bugetul real al planului Free.
+- Marketplace: eMAG folosește contractul API v4.5.1, Trendyol numai Product V2 și Order V2, iar Okazii este pregătit ca feed XML cu import manual auditat al comenzilor până la verificarea unui API oficial. Toate rămân `setup_required` până la verificarea sellerului și a conectorului.
+- Vinted: listarea comercială este blocată în API și în dashboard; contul standard nu este folosit pentru produsele Cutiuța Magică, iar starea se reevaluează numai când Vinted Pro devine eligibil pentru o firmă înregistrată în România.
+- Workers AI: bindingul `AI` este declarat, dar asistentul editorial rămâne neactivat, fără date personale, fără publicare automată și fără depășire plătită. Activarea cere verificarea limitei Free și aprobare administrativă separată.
+- Migrare nouă, append-only: `0068_marketplace_social_agent_strategy.sql`; validată prin aplicarea integrală a migrărilor în D1 local. Schema locală este 68, cu eMAG/Trendyol/Okazii `setup_required`, Vinted `disabled` și Workers AI `setup_required`.
+- Verificări: validatorul skillului, typecheck, 52 fișiere / 277 teste, lint, build, `cf:types:check`, `git diff --check` și `cf:deploy:dry` au trecut. Migrarea completă a fost aplicată numai în D1 local, iar o interogare read-only a confirmat schema 68 și stările conectorilor.
+- Verificare vizuală: ruta locală `/admin/ai` redirecționează corect la autentificarea administrativă. Panoul autentificat nu a fost verificat vizual deoarece worktree-ul local nu are o sesiune sau acreditări admin; nu s-a copiat și nu s-a resetat nicio parolă.

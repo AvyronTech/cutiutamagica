@@ -26,7 +26,30 @@ type AgentSettings = {
     requireSpecificProductLink: true;
     requireNativeVariants: true;
     requireOriginalProductLayer: true;
+    requireNativePreview: true;
+    requireCapabilitySnapshot: true;
+    noveltyWindowPosts: number;
     measurementWindowsHours: number[];
+  };
+  freeResources: {
+    metricoolPublishedPostsPerMonth: number;
+    metricoolAnalyticsHistoryDays: number;
+    workersAiNeuronsPerDay: number;
+    workersAiPaidOverageAllowed: false;
+  };
+  marketplaces: {
+    syncOrder: string[];
+    emag: { mode: "api"; version: string; status: string };
+    trendyol: { mode: "api"; productVersion: "v2"; orderVersion: "v2"; status: string };
+    okazii: { mode: "catalog_xml_manual_orders"; status: string };
+    vinted: { mode: "disabled_policy"; status: "disabled" };
+  };
+  workersAi: {
+    enabled: boolean;
+    role: "draft_and_second_pass_review";
+    binding: "AI";
+    personalDataAllowed: false;
+    autoPublish: false;
   };
   connectorContract: {
     metricoolBrandId: "7230540";
@@ -132,14 +155,14 @@ function sameOrigin(request: Request): boolean {
 
 function defaultSettings(): AgentSettings {
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     timezone: "Europe/Bucharest",
     mode: "draft_approval",
     enabled: true,
     controlPlane: "cutiuta_magic_platform",
     publication: { requiresApproval: true, requiresVerifiedConnector: true },
     contentPlaybook: {
-      version: "2026.10.10.1",
+      version: "2026.10.17.1",
       feedDaily: true,
       storyDaily: true,
       storyFramesMin: 3,
@@ -149,7 +172,35 @@ function defaultSettings(): AgentSettings {
       requireSpecificProductLink: true,
       requireNativeVariants: true,
       requireOriginalProductLayer: true,
+      requireNativePreview: true,
+      requireCapabilitySnapshot: true,
+      noveltyWindowPosts: 30,
       measurementWindowsHours: [24, 72, 168],
+    },
+    freeResources: {
+      metricoolPublishedPostsPerMonth: 20,
+      metricoolAnalyticsHistoryDays: 30,
+      workersAiNeuronsPerDay: 10_000,
+      workersAiPaidOverageAllowed: false,
+    },
+    marketplaces: {
+      syncOrder: ["orders", "inventory", "prices", "catalog", "reconcile"],
+      emag: { mode: "api", version: "4.5.1", status: "setup_required" },
+      trendyol: {
+        mode: "api",
+        productVersion: "v2",
+        orderVersion: "v2",
+        status: "setup_required",
+      },
+      okazii: { mode: "catalog_xml_manual_orders", status: "setup_required" },
+      vinted: { mode: "disabled_policy", status: "disabled" },
+    },
+    workersAi: {
+      enabled: false,
+      role: "draft_and_second_pass_review",
+      binding: "AI",
+      personalDataAllowed: false,
+      autoPublish: false,
     },
     connectorContract: expectedConnectorContract,
     monitoring: {
@@ -183,7 +234,7 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
     return {
       ...fallback,
       ...value,
-      schemaVersion: 4,
+      schemaVersion: 5,
       controlPlane: "cutiuta_magic_platform",
       publication: {
         ...publication,
@@ -193,12 +244,30 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
       contentPlaybook: {
         ...fallback.contentPlaybook,
         ...((value.contentPlaybook ?? {}) as Partial<AgentSettings["contentPlaybook"]>),
-        version: "2026.10.10.1",
+        version: "2026.10.17.1",
         feedDaily: true,
         storyDaily: true,
         requireSpecificProductLink: true,
         requireNativeVariants: true,
         requireOriginalProductLayer: true,
+        requireNativePreview: true,
+        requireCapabilitySnapshot: true,
+      },
+      freeResources: {
+        ...fallback.freeResources,
+        ...((value.freeResources ?? {}) as Partial<AgentSettings["freeResources"]>),
+        workersAiPaidOverageAllowed: false,
+      },
+      marketplaces: {
+        ...fallback.marketplaces,
+        ...((value.marketplaces ?? {}) as Partial<AgentSettings["marketplaces"]>),
+        vinted: fallback.marketplaces.vinted,
+      },
+      workersAi: {
+        ...fallback.workersAi,
+        ...((value.workersAi ?? {}) as Partial<AgentSettings["workersAi"]>),
+        personalDataAllowed: false,
+        autoPublish: false,
       },
       connectorContract: expectedConnectorContract,
       monitoring: monitoring.success ? monitoring.data : fallback.monitoring,
@@ -390,7 +459,7 @@ async function updateSettings(request: Request, env: Env): Promise<Response> {
   }
   const next: AgentSettings = {
     ...current.settings,
-    schemaVersion: 4,
+    schemaVersion: 5,
     enabled: parsed.data.enabled,
     mode: parsed.data.enabled ? parsed.data.mode : "paused",
     controlPlane: "cutiuta_magic_platform",

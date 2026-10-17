@@ -4,8 +4,10 @@ import customerConversationsOrders from "../../../skills/cutiuta-magica-marketin
 import contentConversionPlaybook from "../../../skills/cutiuta-magica-marketing-comenzi/references/content-conversion-playbook.md?raw";
 import dailySocialOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/daily-social-operations.md?raw";
 import platformSync from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-sync.md?raw";
+import marketplaceOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/marketplace-operations.md?raw";
+import platformNativeProduction from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-native-production.md?raw";
 
-export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.12.1";
+export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.17.1";
 
 const documents = [
   { path: "SKILL.md", content: skill },
@@ -13,6 +15,8 @@ const documents = [
   { path: "references/content-conversion-playbook.md", content: contentConversionPlaybook },
   { path: "references/customer-conversations-orders.md", content: customerConversationsOrders },
   { path: "references/daily-social-operations.md", content: dailySocialOperations },
+  { path: "references/marketplace-operations.md", content: marketplaceOperations },
+  { path: "references/platform-native-production.md", content: platformNativeProduction },
   { path: "references/platform-sync.md", content: platformSync },
 ] as const;
 

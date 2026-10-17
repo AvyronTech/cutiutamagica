@@ -49,7 +49,30 @@ type AgentState = {
       requireSpecificProductLink: boolean;
       requireNativeVariants: boolean;
       requireOriginalProductLayer: boolean;
+      requireNativePreview: boolean;
+      requireCapabilitySnapshot: boolean;
+      noveltyWindowPosts: number;
       measurementWindowsHours: number[];
+    };
+    freeResources: {
+      metricoolPublishedPostsPerMonth: number;
+      metricoolAnalyticsHistoryDays: number;
+      workersAiNeuronsPerDay: number;
+      workersAiPaidOverageAllowed: boolean;
+    };
+    marketplaces: {
+      syncOrder: string[];
+      emag: { mode: string; version: string; status: string };
+      trendyol: { mode: string; productVersion: string; orderVersion: string; status: string };
+      okazii: { mode: string; status: string };
+      vinted: { mode: string; status: string };
+    };
+    workersAi: {
+      enabled: boolean;
+      role: string;
+      binding: string;
+      personalDataAllowed: boolean;
+      autoPublish: boolean;
     };
     connectorContract: {
       metricoolBrandId: string;
@@ -353,7 +376,7 @@ export default function MarketingOrdersAgentControl() {
           <div className="flex items-center gap-2 text-cyan-300">
             <ShieldCheck className="h-5 w-5" />
             <h2 className="text-base font-semibold text-white">
-              Social Media Agent · control Codex
+              Marketing + Marketplace Agent · control Codex
             </h2>
           </div>
           <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
@@ -597,10 +620,70 @@ export default function MarketingOrdersAgentControl() {
         <div className="mt-3 flex flex-wrap gap-2 text-[10px] text-emerald-200/80">
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">Link specific produsului</span>
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">Variante native</span>
+          <span className="rounded-full bg-emerald-400/8 px-2 py-1">Previzualizare nativă</span>
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">Descrieri complete</span>
           <span className="rounded-full bg-emerald-400/8 px-2 py-1">
             Conversii înainte de impresii
           </span>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
+          <h3 className="text-sm font-semibold text-white">Marketplace-uri guvernate</h3>
+          <p className="mt-1 text-[11px] leading-5 text-slate-500">
+            Ordinea sincronizării: {data.settings.marketplaces.syncOrder.join(" → ")}. Activarea
+            cere identitatea sellerului, conector oficial și aprobare.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {[
+              [
+                "eMAG",
+                `API ${data.settings.marketplaces.emag.version}`,
+                data.settings.marketplaces.emag.status,
+              ],
+              [
+                "Trendyol",
+                `Product ${data.settings.marketplaces.trendyol.productVersion} · Order ${data.settings.marketplaces.trendyol.orderVersion}`,
+                data.settings.marketplaces.trendyol.status,
+              ],
+              ["Okazii", "XML + comenzi manuale", data.settings.marketplaces.okazii.status],
+              ["Vinted", "neeligibil comercial RO", data.settings.marketplaces.vinted.status],
+            ].map(([label, detail, status]) => (
+              <article key={label} className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-slate-200">{label}</p>
+                  <span className="text-[9px] text-slate-500">
+                    {statusLabels[status] ?? status}
+                  </span>
+                </div>
+                <p className="mt-1 text-[10px] text-slate-500">{detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
+          <h3 className="text-sm font-semibold text-white">Buget Free și asistență AI</h3>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <article className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+              <p className="text-xs font-medium text-slate-200">Metricool Free</p>
+              <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                {data.settings.freeResources.metricoolPublishedPostsPerMonth} publicări/lună ·{" "}
+                {data.settings.freeResources.metricoolAnalyticsHistoryDays} zile analytics.
+              </p>
+            </article>
+            <article className="rounded-md border border-[#28364d] bg-[#0d1727] p-3">
+              <p className="text-xs font-medium text-slate-200">Workers AI</p>
+              <p className="mt-1 text-[10px] leading-4 text-slate-500">
+                {data.settings.freeResources.workersAiNeuronsPerDay.toLocaleString("ro-RO")}{" "}
+                neuroni/zi; depășirea plătită este blocată. Stare:{" "}
+                {data.settings.workersAi.enabled ? "activ" : "neactivat"}.
+              </p>
+            </article>
+          </div>
+          <p className="mt-3 text-[11px] leading-5 text-slate-500">
+            Modelele pot propune și verifica ciorne, fără date personale și fără publicare directă.
+          </p>
         </div>
       </div>
 
