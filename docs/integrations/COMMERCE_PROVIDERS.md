@@ -2,14 +2,14 @@
 
 Actualizat: 2026-10-19
 
-Verificarea live și starea PR-urilor din 19 octombrie sunt documentate în [handofful de integrări](../handoffs/2026-10-19-pr-integrations-readiness.md). Oblio Nelimitat este acum activ, dar verificarea cotei neplătitorului de TVA a eșuat și fluxul bancar cere SMS 2FA activat de administrator. Stripe Account ID a fost salvat și cheia a fost reverificată; checkoutul cu cardul rămâne oprit până la testul complet.
+Verificarea live și starea PR-urilor din 19 octombrie sunt documentate în [handofful de integrări](../handoffs/2026-10-19-pr-integrations-readiness.md). Oblio Nelimitat este activ, SMS 2FA a fost activat de titular, iar cota de 0% pentru neplătitor a fost verificată prin API. Conexiunea bancară RON așteaptă autentificarea titularului în Revolut. Stripe Account ID a fost salvat și cheia a fost reverificată; checkoutul cu cardul rămâne oprit până la testul complet.
 
 ## Decizie curentă
 
 - FGO este retras din fluxul activ. Istoricul facturilor și jurnalelor rămâne intact.
-- Oblio are cheia configurată pentru DIGITAL ECOTECH SOLUTIONS S.R.L.; seria CM începe de la 0001. Verificarea completă din 19 octombrie este blocată la cota de TVA pentru neplătitor; nu s-a emis o factură de acceptanță.
+- Oblio are cheia configurată pentru DIGITAL ECOTECH SOLUTIONS S.R.L.; seria CM începe de la 0001. Verificarea API a contului, firmei, seriei și cotei de 0% a reușit la 19 octombrie, 02:56; nu s-a emis o factură de acceptanță. Corectarea numărului Registrului Comerțului din Oblio așteaptă confirmarea titularului prin e-mail.
 - Stripe are cheia și webhookul configurate pentru Cutiuța Magică, dar plata cu cardul rămâne dezactivată până la testul complet de checkout.
-- Revolut Business este un cont bancar distinct. Fluxul bancar nativ Revolut–Oblio și API-ul Merchant nu sunt conectate. Oblio Nelimitat este activ; fluxul bancar cere SMS 2FA pentru administrator înainte de autorizare. Contul Merchant cere verificarea firmei înainte de emiterea unei chei.
+- Revolut Business este un cont bancar distinct. Fluxul bancar GoCardless Revolut–Oblio a fost pornit după acordul titularului, dar așteaptă codul de acces Revolut și selectarea exclusivă a contului RON; API-ul Merchant nu este conectat. Oblio Nelimitat și SMS 2FA sunt active. Contul Merchant cere verificarea firmei înainte de emiterea unei chei.
 - NETOPIA este rezervat pentru o etapă ulterioară și va folosi Payment API v2.
 - SmartShip este configurat, dar cotațiile live rămân dezactivate: cererea de cost a întors codul furnizorului `91929`. Pentru comenzile eMAG, AWB-ul și curierii se tratează prin API-ul eMAG Marketplace, nu prin fluxul direct al magazinului.
 
@@ -58,7 +58,7 @@ Documentație oficială:
 - [Metode de plată salvate](https://developer.revolut.com/docs/guides/merchant/optimise-checkout/save-payment-methods/charge-saved-payment-method)
 - [Subscriptions API](https://developer.revolut.com/docs/guides/merchant/billing-subscriptions/api/get-started)
 
-Pentru reconcilierea bancară, folosește integrarea nativă Revolut–Oblio și selectează numai contul RON al magazinului. Aceasta sincronizează tranzacțiile bancare în Oblio, nu facturile, cheltuielile sau plățile checkoutului. La verificarea din 17 octombrie, sesiunea Oblio era „Utilizator Operator”, fără drept de acces la conturile bancare, iar pagina integrării a cerut planul „Oblio Nelimitat”. Reia configurarea din sesiunea administratorului, verifică planul firmei și nu comanda un abonament fără aprobare separată. Un token Business API temporar nu este o conexiune bancară durabilă; integrarea nativă nu cere cheia API a magazinului.
+Pentru reconcilierea bancară, folosește integrarea nativă Revolut–Oblio și selectează numai contul RON al magazinului. Aceasta sincronizează tranzacțiile bancare în Oblio, nu facturile, cheltuielile sau plățile checkoutului. La 19 octombrie, planul Nelimitat și contul de administrator au fost verificate, SMS 2FA a fost activat de titular, iar fluxul GoCardless a ajuns la autentificarea Revolut; finalizarea și selecția contului RON rămân de făcut. Un token Business API temporar nu este o conexiune bancară durabilă; integrarea nativă nu cere cheia API a magazinului.
 
 Revolut Pay necesită un cont Merchant aprobat, cheie Merchant și secret webhook separate. Comanda nu este considerată plătită pe baza revenirii în site. Starea finală vine din webhookul verificat și este reconciliată cu suma, moneda, mediul și ID-ul tentativei. Nu activa Revolut Pay înainte de un test complet documentat.
 
