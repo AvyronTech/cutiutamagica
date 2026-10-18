@@ -20,6 +20,14 @@
 - Publicare: migrarea 0071 a fost aplicată manual în consola Cloudflare D1 pentru `cutiutamagica-db` înaintea Workerului, după un bookmark Time Travel. Consola a confirmat `schema_version=71`, trei rapoarte, înregistrarea `0071_social_analytics_snapshots.sql` în `d1_migrations` și `PRAGMA foreign_key_check(social_analytics_snapshots)` fără rezultate. SQL-ul aplicat are aceeași schemă și aceleași date ca migrarea versionată; `PRAGMA optimize` de la sfârșitul fișierului nu a fost executat. Workerul și ruta `/admin/social` nu erau încă publicate la această actualizare. După deploy, verificați pagina la 390 și 1440 px cu administratorul Cutiuța Magică și confruntați datele de bază cu Metricool. Nu au fost folosite chei API Metricool și nu a fost făcută publicare socială.
 - Verificare după publicare: Workerul încărcat din revizia `e9720f9` apare în Cloudflare ca versiunea `7e880872`, activă cu 100% din trafic. Comanda Wrangler a ieșit cu eroare după upload, la citirea configurației Queues nepermisă tokenului limitat; activarea a fost confirmată separat în consola Cloudflare și în pagina live. `/admin/social` afișează administratorului cele trei rapoarte, legăturile, contoarele, setările și formularul; la mobil 390 px `documentWidth=viewport=390`. Health public raportează schema 71 și status `ok`.
 
+## Handoff 2026-10-18 — carusele coerente și originalitate în lot
+
+- Skillul `cutiuta-magica-marketing-comenzi` include acum contractul `references/carousel-sequencing.md`: o singură postare multi-imagine, ordine narativă aprobată, rol și text alternativ per cadru, produs real protejat și un singur CTA.
+- Politica de link interzice controalele desenate artificial: linkul canonic intră în descriere, iar „link în bio” se folosește numai după verificarea destinației profilului în aceeași rulare. Story folosește stickerul nativ, nu un buton imprimat în imagine.
+- Fiecare piesă salvează `creativeFingerprint`; variantele din același lot trebuie să difere material prin rol, unghi, copertă, ordine, hook și CTA, nu doar prin text sau fundal.
+- Buildul local al agentului este `2026.10.18.1`; setările guvernate preferă caruselul când există minimum trei cadre eligibile și țintesc 3–7 cadre puternice, fără a trata limita tehnică drept obiectiv editorial.
+- Nu există migrare D1 ori schimbare vizuală în Dashboard. Release-ul publică numai buildul revizuit al agentului; nu activează conectori, nu publică postări și nu execută alte acțiuni sociale.
+
 ## Handoff 2026-10-17 — aprobări multisursă și auditul automatizării
 
 - Ramură locală: `codex/marketplace-social-agent`, worktree separat pornit din `codex/cutiuta-cloudflare-final`; nu s-au făcut push, deploy ori migrare D1 remote.

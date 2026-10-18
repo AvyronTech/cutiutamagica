@@ -23,8 +23,10 @@ Pentru fiecare asset construiește un `render contract`: dimensiune, raport, dur
 
 - Story/Reel/TikTok: master `1080×1920`, fără watermark și fără text permanent în afara zonei sigure.
 - Feed Instagram: export 4:5 `1080×1350`; verifică și decuparea din grila profilului.
+- Carusel Instagram: folosește același canvas și același profil de culoare pentru toate cadrele; verifică ordinea încărcată, coperta și tranziția dintre imagini.
 - Facebook feed: previzualizează imaginea și link preview; evită textul care repetă titlul cardului.
 - Nu imprima un sticker, buton, bară de progres, câmp de comentariu, player sau link aparent interactiv în imagine.
+- Când imaginea nu poate conține un link funcțional, mută URL-ul în descriere și folosește „link în bio” numai după ce destinația corectă a fost verificată în profil.
 - Dacă elementul nativ nu este vizibil în interfața contului, elimină-l din revizie și adaptează copy-ul.
 
 ## Funcții native
@@ -32,6 +34,7 @@ Pentru fiecare asset construiește un `render contract`: dimensiune, raport, dur
 - Instagram/Facebook Story: alege un singur sticker funcțional potrivit obiectivului. Link pentru conversie, poll pentru preferință, întrebare pentru cercetare, countdown numai pentru un moment real confirmat.
 - Reels: copertă separată, subtitrări, audio permis comercial și mesajele cheie în safe zone. Pentru conturile business cu acces muzical restricționat folosește Meta Sound Collection sau audio asupra căruia brandul are drepturi.
 - TikTok: structură `hook → corp → închidere`, produs în primele trei secunde, 9:16, minimum 720p, sunet activ și CTA coerent cu destinația. Folosește Commercial Music Library când conținutul este comercial.
+- TikTok Photo Mode: folosește o secvență foto numai dacă funcția este vizibilă pe cont și ruta păstrează ordinea, calitatea și CTA-ul aprobate.
 - Notes: text foarte scurt, contextual; muzică numai dacă funcția și piesa sunt disponibile legitim în acel cont.
 
 ## Calitate și probabilitate de distribuire
@@ -61,7 +64,10 @@ Modelele pot propune hook-uri, variante de copy, structură video și un al doil
 
 - Metricool Free și Planner: `https://help.metricool.com/main-differences-between-free-and-paid-plans-bl0v9`
 - Meta music library: `https://www.facebook.com/help/instagram/402084904469945`
+- Facebook multi-photo posts: `https://www.facebook.com/help/iphone-app/187741037945488`
 - TikTok Creative Codes: `https://ads.tiktok.com/business/en-US/creative-codes`
+- TikTok account types and website link: `https://support.tiktok.com/en/using-tiktok/growing-your-audience/switching-to-a-creator-or-business-account?lang=ro`
+- TikTok photo posts: `https://support.tiktok.com/en/using-tiktok/creating-videos/tiktok-notes`
 - Workers AI pricing: `https://developers.cloudflare.com/workers-ai/platform/pricing/`
 
-Reverifică înaintea unei schimbări de capabilitate sau plan; ultima cercetare a acestei referințe: `2026-10-17`.
+Reverifică înaintea unei schimbări de capabilitate sau plan; ultima cercetare a acestei referințe: `2026-10-18`.
