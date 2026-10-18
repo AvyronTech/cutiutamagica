@@ -21,6 +21,7 @@ Ideea centrală trebuie să fie clară în primele trei secunde. Repetă promisi
 
 - `campaignId`, `productId`, produsul și URL-ul canonic;
 - `noveltyScore` și diferențele față de ultimele 30 de materiale;
+- `creativeFingerprint`: produs, audiență, ocazie, unghi, hook, asset-uri și ordine, copertă, CTA, layout și brief audio;
 - obiectivul și metrica principală;
 - audiența, persoana și ocazia;
 - părerea greșită ori întrebarea la care răspunde;
@@ -28,6 +29,7 @@ Ideea centrală trebuie să fie clară în primele trei secunde. Repetă promisi
 - hook-ul, CTA-ul unic și UTM-ul intern;
 - asset-urile, drepturile, platforma, formatul și ora propusă;
 - snapshotul capabilităților contului, ruta de publicare și costul în limita Metricool;
+- pentru carusel, slide-urile ordonate cu `slideRole`, `assetId`, `sourceCrop`, `altText` și `position`;
 - ipoteza testată și o singură variabilă majoră schimbată;
 - versiunea și `approvalRequired=true`.
 
@@ -35,8 +37,8 @@ Ideea centrală trebuie să fie clară în primele trei secunde. Repetă promisi
 
 O campanie zilnică eligibilă conține variații distincte pentru:
 
-- feed Instagram `1080×1350`, cu imagine originală 4:5, descriere completă și text alternativ;
-- feed Facebook Page, cu text conversațional și link clicabil specific;
+- feed Instagram `1080×1350`, cu o imagine originală 4:5 sau un carusel coerent pe același canvas, descriere completă și text alternativ individual;
+- feed Facebook Page, cu o imagine sau o secvență multi-imagine ordonată, text conversațional și link clicabil specific;
 - Story Instagram/Facebook `1080×1920`, în 3–5 cadre cu text propriu pe fiecare cadru;
 - notă scurtă, dacă funcția este disponibilă legitim;
 - Reel Instagram/Facebook și TikTok în ziua eligibilă din cadența de trei zile;
@@ -45,6 +47,8 @@ O campanie zilnică eligibilă conține variații distincte pentru:
 Nu considera pachetul complet dacă există doar imaginea sau doar descrierea. Fiecare plasament are asset, copy, CTA, link sau indicație legitimă de navigare, hashtaguri când se justifică, text alternativ ori subtitrări și un brief muzical.
 
 Elementele native sunt specificații de publicare, nu pixeli în asset. Poll-ul, întrebarea, link stickerul, countdown-ul, muzica, locația și eticheta de produs se adaugă numai în compozitorul care le poate crea funcțional. Dacă ruta aleasă nu le suportă, schimbă ruta sau elimină elementul din revizie.
+
+Pentru carusele și postări multi-imagine urmează [ordinea narativă, regulile de link și diferențierea în lot](carousel-sequencing.md). Numărul de imagini rezultă din poveste și din media eligibilă, nu din limita maximă a platformei.
 
 ## Descrierea lungă pentru feed
 
@@ -56,7 +60,7 @@ Construiește descrierea în această ordine:
 4. semnificația produsului pentru persoana și ocazia alese;
 5. o explicație simplă care reduce fricțiunea;
 6. un singur CTA;
-7. linkul canonic al produsului, nu homepage-ul când produsul este subiectul;
+7. linkul canonic al produsului, nu homepage-ul când produsul este subiectul; pe Instagram folosește „link în bio” numai după verificarea linkului corect în profil în aceeași rulare;
 8. 5–10 hashtaguri specifice de brand, categorie, ocazie și pasiune.
 
 Revizuiește în trei treceri: adevăr și sens, ritm și claritate, apoi diacritice, link, CTA și hashtaguri. Nu afișa UTM-uri lungi în textul public.
@@ -137,10 +141,12 @@ Verifică la 24–72 de ore și la 7 zile. Compară mediane pe canal și format,
 - produsul este cumpărabil și media este eligibilă;
 - vizualul păstrează produsul identic cu sursa;
 - fiecare plasament are copy nativ și un singur CTA;
+- caruselul are ordine logică, aceeași orientare, rol distinct pentru fiecare cadru și nu conține duplicate;
 - Story-ul are text pe fiecare cadru și sticker funcțional;
 - video-ul are copertă, subtitrări, safe zones și nu are watermark încrucișat;
 - muzica este disponibilă legitim;
 - linkul este specific, canonic și scurt;
+- indicația „link în bio” este prezentă numai dacă destinația din profil a fost verificată în aceeași rulare;
 - textul alternativ, diacriticele și hashtagurile sunt corecte;
 - materialul diferă clar de ultimele nouă piese;
 - previzualizarea nativă nu acoperă produsul, textul ori CTA-ul și nu conține controale artificiale;

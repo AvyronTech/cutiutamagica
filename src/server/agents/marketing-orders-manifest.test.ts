@@ -12,7 +12,7 @@ describe("marketing orders agent build", () => {
     expect(manifest.agentCode).toBe("marketing-orders");
     expect(manifest.hash).toMatch(/^[a-f0-9]{64}$/);
     expect(manifest.byteSize).toBeGreaterThan(10_000);
-    expect(bundle.documents).toHaveLength(10);
+    expect(bundle.documents).toHaveLength(11);
     expect(bundle.documents[0].content).toContain("Cutiuța Magică");
     expect(
       bundle.documents.find((document) => document.path.endsWith("approval-orchestration.md"))
@@ -22,6 +22,10 @@ describe("marketing orders agent build", () => {
       bundle.documents.find((document) => document.path.endsWith("content-conversion-playbook.md"))
         ?.content,
     ).toContain("Story complet");
+    expect(
+      bundle.documents.find((document) => document.path.endsWith("carousel-sequencing.md"))
+        ?.content,
+    ).toContain("creativeFingerprint");
     expect(
       bundle.documents.find((document) => document.path.endsWith("marketplace-operations.md"))
         ?.content,
