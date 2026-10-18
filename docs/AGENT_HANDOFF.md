@@ -1,5 +1,13 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — reconciliere PR și integrări live
+
+- Baza curentă este `codex/cutiuta-cloudflare-final` la `77c7270`. PR #21 este pe această bază; PR #2 și #3 pornesc dintr-o bază veche și dublează funcții existente ori intră în conflict cu schema aplicată. PR #1 rămâne draft către `main` și nu trebuie îmbinat automat cu infrastructura Supabase de acolo.
+- Verificarea detaliată, starea providerilor și pașii rămași sunt în [docs/handoffs/2026-10-19-pr-integrations-readiness.md](handoffs/2026-10-19-pr-integrations-readiness.md).
+- În producție s-au salvat Account ID Stripe și proprietatea Search Console. Stripe a fost verificat prin API, dar plata cu cardul rămâne dezactivată până la testul complet. Verificarea Oblio a descoperit cota neplătitorului de TVA lipsă sau diferit denumită; nu emite facturi până la rezolvare. Oblio Nelimitat este activ, iar conectarea contului Revolut RON așteaptă activarea SMS 2FA de către titular.
+- Această ramură actualizează instrucțiunile pentru Oblio/Revolut și documentează blocajele; nu conține migrare D1, chei, tokenuri ori activări de provider. Push, merge, migrare remote și deploy necesită cerere explicită în conversația curentă.
+- Verificări locale: `npm run typecheck`, 54 fișiere / 285 teste, `npm run lint`, `npm run build` și `npm run cf:deploy:dry` au trecut. Schimbarea de UI este doar textul unui ghid extensibil din pagina Financiar; noul text necesită verificare vizuală desktop/mobil după publicare, deoarece versiunea live nu îl include încă.
+
 ## Handoff 2026-10-17 — aprobări multisursă și auditul automatizării
 
 - Ramură locală: `codex/marketplace-social-agent`, worktree separat pornit din `codex/cutiuta-cloudflare-final`; nu s-au făcut push, deploy ori migrare D1 remote.

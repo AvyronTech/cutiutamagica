@@ -1,13 +1,15 @@
 # Infrastructură comercială și integrări
 
-Actualizat: 2026-10-17
+Actualizat: 2026-10-19
+
+Verificarea live și starea PR-urilor din 19 octombrie sunt documentate în [handofful de integrări](../handoffs/2026-10-19-pr-integrations-readiness.md). Oblio Nelimitat este acum activ, dar verificarea cotei neplătitorului de TVA a eșuat și fluxul bancar cere SMS 2FA activat de administrator. Stripe Account ID a fost salvat și cheia a fost reverificată; checkoutul cu cardul rămâne oprit până la testul complet.
 
 ## Decizie curentă
 
 - FGO este retras din fluxul activ. Istoricul facturilor și jurnalelor rămâne intact.
-- Oblio este conectat pentru firma DIGITAL ECOTECH SOLUTIONS S.R.L.; seria CM începe de la 0001. Nu s-a emis o factură de acceptanță.
+- Oblio are cheia configurată pentru DIGITAL ECOTECH SOLUTIONS S.R.L.; seria CM începe de la 0001. Verificarea completă din 19 octombrie este blocată la cota de TVA pentru neplătitor; nu s-a emis o factură de acceptanță.
 - Stripe are cheia și webhookul configurate pentru Cutiuța Magică, dar plata cu cardul rămâne dezactivată până la testul complet de checkout.
-- Revolut Business este un cont bancar distinct. Fluxul bancar nativ Revolut–Oblio și API-ul Merchant nu erau conectate la verificarea din 17 octombrie. Contul Merchant cere verificarea firmei înainte de emiterea unei chei.
+- Revolut Business este un cont bancar distinct. Fluxul bancar nativ Revolut–Oblio și API-ul Merchant nu sunt conectate. Oblio Nelimitat este activ; fluxul bancar cere SMS 2FA pentru administrator înainte de autorizare. Contul Merchant cere verificarea firmei înainte de emiterea unei chei.
 - NETOPIA este rezervat pentru o etapă ulterioară și va folosi Payment API v2.
 - SmartShip este configurat, dar cotațiile live rămân dezactivate: cererea de cost a întors codul furnizorului `91929`. Pentru comenzile eMAG, AWB-ul și curierii se tratează prin API-ul eMAG Marketplace, nu prin fluxul direct al magazinului.
 
