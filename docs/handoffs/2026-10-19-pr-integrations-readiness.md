@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | [#21](https://github.com/AvyronTech/cutiutamagica/pull/21) carusele sociale | Head `065bacc`, bază `77c7270`, mergeable; 285 teste raportate în PR | Deja adaptat la ultima bază. Verifică din nou CI înainte de orice merge; nu activează publicarea socială. |
 | [#2](https://github.com/AvyronTech/cutiutamagica/pull/2) Metricool | Head `63c8fe6`, bază veche `4b8ddc1`, conflicte | Nu combina: baza curentă are `MetricoolTracker` legat de consimțământul central. PR-ul ar afișa un al doilea dialog și ar stoca o alegere separată. |
-| [#3](https://github.com/AvyronTech/cutiutamagica/pull/3) Studio AI | Head `24d774f`, bază veche `4b8ddc1`, conflicte | Nu aplica migrațiile vechi 0052–0053: schema curentă are deja Studio AI, modulul admin și migrații ulterioare. Orice funcție unică se portează punctual prin migrare nouă și test. |
+| [#3](https://github.com/AvyronTech/cutiutamagica/pull/3) Studio AI | Head `24d774f`, bază veche `4b8ddc1`, conflicte | Nu aplica migrațiile vechi 0052–0053 ori hashul de cont codificat acolo: schema curentă are deja Studio AI, runnerul local, modulul admin și migrații ulterioare. Orice funcție unică se portează punctual prin migrare nouă și test. |
 | [#1](https://github.com/AvyronTech/cutiutamagica/pull/1) spre `main` | Draft, altă bază | Păstrează draftul ca reconciliere separată. `main` conține infrastructură Supabase incompatibilă; nu face merge automat. |
 
 ## Starea integrărilor observată în producție
