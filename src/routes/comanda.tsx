@@ -1487,10 +1487,7 @@ function CartRecommendations({
       >
         <CarouselContent>
           {products.map((product) => (
-            <CarouselItem
-              key={product.id}
-              className="basis-[72%] min-[480px]:basis-[56%] sm:basis-[44%] lg:basis-[42%]"
-            >
+            <CarouselItem key={product.id} className="basis-[88%] xl:basis-[78%]">
               <article className="checkout-recommendation-card flex h-full overflow-hidden rounded-xl border border-[color:var(--gold)]/25 bg-card/90 shadow-sm">
                 <Link
                   {...productLink(product.id)}
@@ -1506,19 +1503,17 @@ function CartRecommendations({
                 </Link>
                 <div className="flex min-w-0 flex-1 flex-col p-2.5">
                   <Link {...productLink(product.id)} className="hover:underline">
-                    <h3 className="font-display text-sm leading-tight line-clamp-2">
-                      {product.name}
-                    </h3>
+                    <h3 className="font-display text-sm leading-tight">{product.name}</h3>
                   </Link>
-                  <p className="mt-1 hidden text-[11px] leading-snug text-muted-foreground line-clamp-2 sm:block">
+                  <p className="mt-1 hidden text-[11px] leading-snug text-muted-foreground sm:block">
                     {product.tagline}
                   </p>
-                  <div className="mt-auto flex items-end justify-between gap-1.5 pt-2">
+                  <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-2">
                     <ProductPrice product={product} size="compact" showSavings={false} />
                     <button
                       type="button"
                       onClick={() => onAdd(product)}
-                      className="inline-flex min-h-8 items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground transition hover:brightness-110"
+                      className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground transition hover:brightness-110"
                       aria-label={`Adaugă ${product.name} în coș`}
                     >
                       <Plus className="h-3.5 w-3.5" /> Adaugă
