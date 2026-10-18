@@ -984,8 +984,26 @@ describe("product worlds, public messages and sales workbench", () => {
     expect(first.data.channels.map((c) => c.code)).toEqual(
       expect.arrayContaining(["emag", "trendyol", "okazii", "olx", "vinted", "google_merchant"]),
     );
+    expect(
+      (await handleSalesWorkbench(
+        write(
+          path,
+          {
+            code: "vinted",
+            expectedVersion: 0,
+            action: "prepare",
+            title: "Cutiuța mea",
+            description: "O cutiuță cu manivelă.",
+            listingUrl: "",
+            catalogHash: first.data.catalogHash,
+          },
+          "POST",
+        ),
+        env,
+      ))!.status,
+    ).toBe(409);
     const data = {
-      code: "vinted",
+      code: "olx",
       expectedVersion: 0,
       action: "prepare",
       title: "Cutiuța mea",
@@ -1015,7 +1033,7 @@ describe("product worlds, public messages and sales workbench", () => {
             ...data,
             expectedVersion: 1,
             action: "confirm_manual",
-            listingUrl: "https://www.vinted.ro/items/123",
+            listingUrl: "https://www.olx.ro/d/oferta/cutiuta-magica-ID123.html",
           },
           "POST",
         ),
@@ -1029,7 +1047,7 @@ describe("product worlds, public messages and sales workbench", () => {
       new Request(`https://test.local${path}`),
       env,
     ))!.json()) as { data: { channels: { code: string; needsUpdate: boolean }[] } };
-    expect(next.data.channels.find((c) => c.code === "vinted")!.needsUpdate).toBe(true);
+    expect(next.data.channels.find((c) => c.code === "olx")!.needsUpdate).toBe(true);
     expect(
       (await handleSalesWorkbench(write(path, { ...data, expectedVersion: 2 }, "POST"), env))!
         .status,

@@ -7,6 +7,11 @@ import {
 } from "@/server/agents/marketing-orders-manifest";
 import { boundedBytes, boundedJson } from "@/server/api/bounded-json";
 import type { AvyronQueueMessage } from "@/server/queue/avyron-sync-consumer";
+import {
+  ApprovalDecisionError,
+  approvalSources,
+  recordApprovalDecision,
+} from "@/server/services/approval-orchestrator";
 
 type AgentSettings = {
   schemaVersion: number;
@@ -15,6 +20,16 @@ type AgentSettings = {
   enabled: boolean;
   controlPlane: "cutiuta_magic_platform";
   publication: { requiresApproval: true; requiresVerifiedConnector: true };
+  approvals: {
+    sources: ["admin_dashboard", "codex_conversation"];
+    defaultMinApprovals: 1;
+    criticalMinApprovals: 2;
+    criticalRequiredSources: ["admin_dashboard", "codex_conversation"];
+    codexEvidenceRequired: true;
+    exactRevisionRequired: true;
+    autoExpire: true;
+    autoExecute: false;
+  };
   contentPlaybook: {
     version: string;
     feedDaily: true;
@@ -26,7 +41,30 @@ type AgentSettings = {
     requireSpecificProductLink: true;
     requireNativeVariants: true;
     requireOriginalProductLayer: true;
+    requireNativePreview: true;
+    requireCapabilitySnapshot: true;
+    noveltyWindowPosts: number;
     measurementWindowsHours: number[];
+  };
+  freeResources: {
+    metricoolPublishedPostsPerMonth: number;
+    metricoolAnalyticsHistoryDays: number;
+    workersAiNeuronsPerDay: number;
+    workersAiPaidOverageAllowed: false;
+  };
+  marketplaces: {
+    syncOrder: string[];
+    emag: { mode: "api"; version: string; status: string };
+    trendyol: { mode: "api"; productVersion: "v2"; orderVersion: "v2"; status: string };
+    okazii: { mode: "catalog_xml_manual_orders"; status: string };
+    vinted: { mode: "disabled_policy"; status: "disabled" };
+  };
+  workersAi: {
+    enabled: boolean;
+    role: "draft_and_second_pass_review";
+    binding: "AI";
+    personalDataAllowed: false;
+    autoPublish: false;
   };
   connectorContract: {
     metricoolBrandId: "7230540";
@@ -112,6 +150,15 @@ const decisionSchema = z.object({
   decision: z.enum(["approved", "rejected"]),
 });
 
+const approvalDecisionSchema = z.object({
+  source: z.enum(approvalSources),
+  decision: z.enum(["approved", "rejected"]),
+  approvalCode: z.string().trim().min(8).max(64),
+  revisionRef: z.string().trim().min(1).max(160),
+  evidenceReference: z.string().trim().max(500).optional(),
+  idempotencyKey: z.string().uuid(),
+});
+
 const inboundExchangeSchema = z.object({
   exchangeId: z.string().uuid(),
   type: z.enum(["data_proposal", "skill_proposal"]),
@@ -132,14 +179,24 @@ function sameOrigin(request: Request): boolean {
 
 function defaultSettings(): AgentSettings {
   return {
-    schemaVersion: 4,
+    schemaVersion: 6,
     timezone: "Europe/Bucharest",
     mode: "draft_approval",
     enabled: true,
     controlPlane: "cutiuta_magic_platform",
     publication: { requiresApproval: true, requiresVerifiedConnector: true },
+    approvals: {
+      sources: ["admin_dashboard", "codex_conversation"],
+      defaultMinApprovals: 1,
+      criticalMinApprovals: 2,
+      criticalRequiredSources: ["admin_dashboard", "codex_conversation"],
+      codexEvidenceRequired: true,
+      exactRevisionRequired: true,
+      autoExpire: true,
+      autoExecute: false,
+    },
     contentPlaybook: {
-      version: "2026.10.10.1",
+      version: "2026.10.17.1",
       feedDaily: true,
       storyDaily: true,
       storyFramesMin: 3,
@@ -149,7 +206,35 @@ function defaultSettings(): AgentSettings {
       requireSpecificProductLink: true,
       requireNativeVariants: true,
       requireOriginalProductLayer: true,
+      requireNativePreview: true,
+      requireCapabilitySnapshot: true,
+      noveltyWindowPosts: 30,
       measurementWindowsHours: [24, 72, 168],
+    },
+    freeResources: {
+      metricoolPublishedPostsPerMonth: 20,
+      metricoolAnalyticsHistoryDays: 30,
+      workersAiNeuronsPerDay: 10_000,
+      workersAiPaidOverageAllowed: false,
+    },
+    marketplaces: {
+      syncOrder: ["orders", "inventory", "prices", "catalog", "reconcile"],
+      emag: { mode: "api", version: "4.5.1", status: "setup_required" },
+      trendyol: {
+        mode: "api",
+        productVersion: "v2",
+        orderVersion: "v2",
+        status: "setup_required",
+      },
+      okazii: { mode: "catalog_xml_manual_orders", status: "setup_required" },
+      vinted: { mode: "disabled_policy", status: "disabled" },
+    },
+    workersAi: {
+      enabled: false,
+      role: "draft_and_second_pass_review",
+      binding: "AI",
+      personalDataAllowed: false,
+      autoPublish: false,
     },
     connectorContract: expectedConnectorContract,
     monitoring: {
@@ -183,22 +268,41 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
     return {
       ...fallback,
       ...value,
-      schemaVersion: 4,
+      schemaVersion: 6,
       controlPlane: "cutiuta_magic_platform",
       publication: {
         ...publication,
         requiresApproval: true,
         requiresVerifiedConnector: true,
       },
+      approvals: fallback.approvals,
       contentPlaybook: {
         ...fallback.contentPlaybook,
         ...((value.contentPlaybook ?? {}) as Partial<AgentSettings["contentPlaybook"]>),
-        version: "2026.10.10.1",
+        version: "2026.10.17.1",
         feedDaily: true,
         storyDaily: true,
         requireSpecificProductLink: true,
         requireNativeVariants: true,
         requireOriginalProductLayer: true,
+        requireNativePreview: true,
+        requireCapabilitySnapshot: true,
+      },
+      freeResources: {
+        ...fallback.freeResources,
+        ...((value.freeResources ?? {}) as Partial<AgentSettings["freeResources"]>),
+        workersAiPaidOverageAllowed: false,
+      },
+      marketplaces: {
+        ...fallback.marketplaces,
+        ...((value.marketplaces ?? {}) as Partial<AgentSettings["marketplaces"]>),
+        vinted: fallback.marketplaces.vinted,
+      },
+      workersAi: {
+        ...fallback.workersAi,
+        ...((value.workersAi ?? {}) as Partial<AgentSettings["workersAi"]>),
+        personalDataAllowed: false,
+        autoPublish: false,
       },
       connectorContract: expectedConnectorContract,
       monitoring: monitoring.success ? monitoring.data : fallback.monitoring,
@@ -267,6 +371,8 @@ async function getState(request: Request, env: Env): Promise<Response> {
     accountConnections,
     gscImports,
     googleCredential,
+    approvals,
+    approvalReceipts,
   ] = await Promise.all([
     getMarketingOrdersAgentBuild(),
     readSettings(env.DB),
@@ -337,6 +443,28 @@ async function getState(request: Request, env: Env): Promise<Response> {
            FROM integration_credentials
            WHERE provider = 'google'`,
     ).first(),
+    env.DB.prepare(
+      `SELECT request.id, request.request_type, request.entity_type, request.entity_id,
+              request.risk_level, request.summary, request.status, request.created_at,
+              request.expires_at, requirement.approval_code, requirement.revision_ref,
+              requirement.min_approvals, requirement.required_sources_json
+       FROM approval_requests AS request
+       JOIN approval_requirements AS requirement
+         ON requirement.approval_request_id = request.id
+       ORDER BY CASE request.status WHEN 'pending' THEN 0 ELSE 1 END, request.created_at DESC
+       LIMIT 40`,
+    ).all(),
+    env.DB.prepare(
+      `SELECT receipt.approval_request_id, receipt.source, receipt.decision,
+              receipt.actor_label, receipt.evidence_reference, receipt.created_at
+       FROM approval_receipts AS receipt
+       WHERE receipt.approval_request_id IN (
+         SELECT request.id FROM approval_requests AS request
+         ORDER BY CASE request.status WHEN 'pending' THEN 0 ELSE 1 END, request.created_at DESC
+         LIMIT 40
+       )
+       ORDER BY receipt.created_at`,
+    ).all(),
   ]);
   const gscProperty = settingsResult.settings.connectorContract.gscProperty;
   const gscImport = gscImports.results.find(
@@ -365,6 +493,17 @@ async function getState(request: Request, env: Env): Promise<Response> {
         ...exchange,
         reviewPayload: review_payload_json ? (JSON.parse(review_payload_json) as unknown) : null,
       })),
+      approvals: approvals.results.map((approval) => ({
+        ...approval,
+        requiredSources: JSON.parse(
+          String((approval as { required_sources_json?: string }).required_sources_json ?? "[]"),
+        ) as string[],
+        receipts: approvalReceipts.results.filter(
+          (receipt) =>
+            (receipt as { approval_request_id?: string }).approval_request_id ===
+            (approval as { id?: string }).id,
+        ),
+      })),
       authority: {
         controller: "cutiuta_magic_platform",
         administrators: "owner",
@@ -390,11 +529,12 @@ async function updateSettings(request: Request, env: Env): Promise<Response> {
   }
   const next: AgentSettings = {
     ...current.settings,
-    schemaVersion: 4,
+    schemaVersion: 6,
     enabled: parsed.data.enabled,
     mode: parsed.data.enabled ? parsed.data.mode : "paused",
     controlPlane: "cutiuta_magic_platform",
     publication: { requiresApproval: true, requiresVerifiedConnector: true },
+    approvals: current.settings.approvals,
     connectorContract: expectedConnectorContract,
     monitoring: parsed.data.monitoring,
     avyron: {
@@ -442,7 +582,9 @@ async function updateSettings(request: Request, env: Env): Promise<Response> {
 }
 
 async function aggregatedStatistics(db: D1Database) {
-  const [social, approvals, runs, catalog, orders] = await db.batch<Record<string, number>>([
+  const [social, approvals, runs, catalog, orders, storage] = await db.batch<
+    Record<string, number>
+  >([
     db.prepare(
       `SELECT COUNT(*) AS total,
               SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) AS published,
@@ -471,6 +613,14 @@ async function aggregatedStatistics(db: D1Database) {
               SUM(CASE WHEN order_status IN ('pending','confirmed','processing') THEN 1 ELSE 0 END) AS open
        FROM orders`,
     ),
+    db.prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN status = 'approval_pending' THEN 1 ELSE 0 END) AS awaiting_approval,
+              SUM(CASE WHEN status = 'deleted' THEN 1 ELSE 0 END) AS processed,
+              SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+              COALESCE(SUM(CASE WHEN status = 'deleted' THEN byte_size ELSE 0 END), 0) AS reclaimed_bytes
+       FROM storage_retention_items`,
+    ),
   ]);
   return {
     social: social.results[0] ?? {},
@@ -478,6 +628,7 @@ async function aggregatedStatistics(db: D1Database) {
     agentRuns: runs.results[0] ?? {},
     catalog: catalog.results[0] ?? {},
     orders: orders.results[0] ?? {},
+    storage: storage.results[0] ?? {},
   };
 }
 
@@ -769,6 +920,35 @@ async function dispatchExchange(request: Request, env: Env, exchangeId: string):
   return json({ data: { exchangeId, status: "queued" } }, { status: 202 });
 }
 
+async function decideApproval(request: Request, env: Env, approvalId: string): Promise<Response> {
+  const admin = await authenticateAdminRequest(request, env, "marketing.agent.manage");
+  if (!sameOrigin(request)) return json({ error: { code: "ORIGIN_NOT_ALLOWED" } }, { status: 403 });
+  const parsed = approvalDecisionSchema.safeParse(await boundedJson(request, 8_192));
+  if (!parsed.success) {
+    return json(
+      { error: { code: "INVALID_APPROVAL_DECISION", issues: parsed.error.flatten() } },
+      { status: 400 },
+    );
+  }
+  try {
+    const result = await recordApprovalDecision(env.DB, {
+      approvalId,
+      ...parsed.data,
+      actorAdminUserId: admin.id,
+      actorLabel: admin.email,
+    });
+    return json({ data: result });
+  } catch (error) {
+    if (error instanceof ApprovalDecisionError) {
+      return json(
+        { error: { code: error.code, message: error.message } },
+        { status: error.statusCode },
+      );
+    }
+    throw error;
+  }
+}
+
 function bytesToHex(bytes: Uint8Array): string {
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
@@ -910,12 +1090,16 @@ export async function handleAdminMarketingAgentApi(
   const dispatchMatch = path.match(
     /^\/api\/v1\/admin\/marketing-agent\/exchanges\/([a-zA-Z0-9_-]+)\/dispatch$/,
   );
+  const approvalDecisionMatch = path.match(
+    /^\/api\/v1\/admin\/marketing-agent\/approvals\/([a-zA-Z0-9_-]+)\/decision$/,
+  );
   if (
     path !== base &&
     path !== `${base}/exports` &&
     path !== inbound &&
     !decisionMatch &&
-    !dispatchMatch
+    !dispatchMatch &&
+    !approvalDecisionMatch
   )
     return null;
   try {
@@ -958,6 +1142,11 @@ export async function handleAdminMarketingAgentApi(
       const unauthorized = missingAdminSession(request);
       if (unauthorized) return unauthorized;
       return dispatchExchange(request, env, dispatchMatch[1]);
+    }
+    if (approvalDecisionMatch && request.method === "POST") {
+      const unauthorized = missingAdminSession(request);
+      if (unauthorized) return unauthorized;
+      return decideApproval(request, env, approvalDecisionMatch[1]);
     }
     return json(
       { error: { code: "METHOD_NOT_ALLOWED" } },

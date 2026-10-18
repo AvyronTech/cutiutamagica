@@ -68,7 +68,12 @@ export function SalesConnections() {
             return (
               <details key={code} className="rounded-lg border border-slate-700 p-4">
                 <summary className="cursor-pointer">
-                  {def.name} · {p?.accountUrl ? "Date completate" : "Necesită configurare"}
+                  {def.name} ·{" "}
+                  {def.listingPolicy === "blocked"
+                    ? "Dezactivat prin politică"
+                    : p?.accountUrl
+                      ? "Date completate"
+                      : "Necesită configurare"}
                 </summary>
                 <p className="my-3 text-xs text-slate-400">{def.help}</p>
                 <form
@@ -76,51 +81,55 @@ export function SalesConnections() {
                   onSubmit={(e) => save(e, code, p?.version ?? 0)}
                   className="space-y-3"
                 >
-                  <label className="block text-sm">
-                    Link cont / magazin
-                    <input
-                      name="url"
-                      type="url"
-                      defaultValue={p?.accountUrl ?? ""}
-                      className={input}
-                    />
-                  </label>
-                  <label className="block text-sm">
-                    ID seller / cont
-                    <input
-                      name="seller"
-                      maxLength={100}
-                      pattern="[a-zA-Z0-9_-]*"
-                      defaultValue={p?.sellerId ?? ""}
-                      className={input}
-                    />
-                  </label>
-                  {code === "google_merchant" && (
+                  <fieldset disabled={def.listingPolicy === "blocked"} className="space-y-3">
                     <label className="block text-sm">
-                      ID sursă de date
+                      Link cont / magazin
                       <input
-                        name="dataSource"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        defaultValue={p?.dataSourceId ?? ""}
+                        name="url"
+                        type="url"
+                        defaultValue={p?.accountUrl ?? ""}
                         className={input}
                       />
                     </label>
-                  )}
-                  <button
-                    disabled={busy}
-                    className="rounded-lg bg-amber-200 px-3 py-2 text-sm text-slate-950"
-                  >
-                    Salvează contul
-                  </button>
-                  <a
-                    href={def.portal}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-4 text-sm text-amber-200 underline"
-                  >
-                    Conectează-te / creează cont ↗
-                  </a>
+                    <label className="block text-sm">
+                      ID seller / cont
+                      <input
+                        name="seller"
+                        maxLength={100}
+                        pattern="[a-zA-Z0-9_-]*"
+                        defaultValue={p?.sellerId ?? ""}
+                        className={input}
+                      />
+                    </label>
+                    {code === "google_merchant" && (
+                      <label className="block text-sm">
+                        ID sursă de date
+                        <input
+                          name="dataSource"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          defaultValue={p?.dataSourceId ?? ""}
+                          className={input}
+                        />
+                      </label>
+                    )}
+                    <button
+                      disabled={busy}
+                      className="rounded-lg bg-amber-200 px-3 py-2 text-sm text-slate-950"
+                    >
+                      Salvează contul
+                    </button>
+                    {def.listingPolicy !== "blocked" && (
+                      <a
+                        href={def.portal}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-4 text-sm text-amber-200 underline"
+                      >
+                        Conectează-te / creează cont ↗
+                      </a>
+                    )}
+                  </fieldset>
                 </form>
               </details>
             );

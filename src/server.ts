@@ -10,6 +10,7 @@ import { consumeCommerceEvents, type CommerceQueueMessage } from "./server/queue
 import { purgeExpiredChatConversations } from "./server/db/chat.repository";
 import { processScheduledBackup } from "./server/services/backup-center";
 import { processMarketingAgentMonitoring } from "./server/services/marketing-agent-monitor";
+import { processStorageRetention } from "./server/services/storage-retention";
 import {
   processBirthdayRewards,
   processGiftCalendarReminders,
@@ -250,6 +251,7 @@ export default {
         processBirthdayRewards(env.DB),
         processRewardEmailDigests(env),
         processMarketingAgentMonitoring(env.DB),
+        processStorageRetention(env),
       ]).then(() => undefined),
     );
   },
