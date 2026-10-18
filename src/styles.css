@@ -4502,6 +4502,14 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.35s ease;
 }
+.checkout-page .checkout-recommendation-card h3,
+.checkout-page .checkout-recommendation-card > div > p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-height: 2.8em;
+  overflow: hidden;
+}
 .checkout-recommendations [data-slot="carousel-content"] {
   will-change: transform;
 }
