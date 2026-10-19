@@ -1,5 +1,14 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — panou Rețele sociale și Metricool Free
+
+- Ramură: `codex/social-dashboard-work`, pornită din `origin/codex/cutiuta-cloudflare-final` la `77c7270`, în worktree separat. Nu au fost modificate celelalte ramuri sau schimbările locale existente.
+- Panou: `/admin/social` grupează Facebook, Instagram, TikTok, rapoarte datate din Metricool, numărul postărilor interne, statusul conectorilor și legături rapide spre postări, marketing, Agent Codex, conturi și integrări. Adăugarea rapoartelor este limitată la `marketing.write`, citirea la `marketing.read`.
+- Date: migrarea append-only `0071_social_analytics_snapshots.sql` adaugă istoricul agregatelor și un punct de plecare verificat prin Metricool MCP la 2026-10-19 pentru perioada 2026-09-20–2026-10-18. Sursa, intervalul și data ultimei observații de urmăritori sunt vizibile; lipsa unei cifre rămâne `NULL`. Importul identic este idempotent și cererile de import sunt auditate.
+- Limită Free: sesiunea Metricool din Codex/Opera nu este o conexiune API a Workerului. API-ul Metricool necesită plan Advanced/Custom; pagina oferă actualizare manuală verificată fără abonament nou și nu activează publicarea socială. Detalii: `docs/integrations/METRICOOL_SOCIAL_DASHBOARD.md`.
+- Verificări: `npm run typecheck`, 55 fișiere / 288 teste, `npm run lint`, `npm run build` și `git diff --check` trecute; migrarea 0071 executată în SQLite local cu schema 71, trei rapoarte și `foreign_key_check` curat. `npm run cf:deploy:dry` a ajuns la `--dry-run: exiting now`. Wrangler D1 local nu a putut porni în sandbox (`listen EPERM 127.0.0.1`), de aceea nu s-a declarat o migrare D1 completă. Capturile desktop/mobil pentru ruta autentificată sunt încă necesare după publicare, deoarece nu există o sesiune admin locală în această ramură.
+- Publicare: migrarea 0071 trebuie aplicată înaintea Workerului. După release, verificați `/admin/social` la 390 și 1440 px cu administratorul Cutiuța Magică și confruntați datele de bază cu Metricool. Nu au fost folosite chei API și nu a fost făcută publicare socială.
+
 ## Handoff 2026-10-17 — aprobări multisursă și auditul automatizării
 
 - Ramură locală: `codex/marketplace-social-agent`, worktree separat pornit din `codex/cutiuta-cloudflare-final`; nu s-au făcut push, deploy ori migrare D1 remote.
