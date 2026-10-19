@@ -91,7 +91,7 @@ export function CheckoutDelivery({
           >
             <input
               type="radio"
-              name="shipping-method"
+              name="shipping-offer"
               checked={selected === offer.id}
               onChange={() => onSelect(offer)}
               disabled={Date.parse(offer.expiresAt) <= Date.now()}
