@@ -200,29 +200,86 @@
   background: #171817;
 }
 .product-about-card {
-  margin-top: 20px;
-  padding: 18px 19px;
+  width: min(1240px, calc(100% - 32px));
+  margin: 24px auto 0;
+  padding: clamp(22px, 3vw, 38px);
   border: 1px solid color-mix(in srgb, var(--world-accent) 28%, transparent);
-  border-radius: 18px;
+  border-radius: 26px;
   color: #e9dfd0;
-  background: linear-gradient(145deg, #ffffff0a, #0709094f);
+  background: linear-gradient(145deg, #24211f, #111311);
   box-shadow: inset 0 1px #ffffff12;
 }
 .product-about-card .catalog-eyebrow {
   color: color-mix(in srgb, var(--world-accent) 82%, #fff);
-  font-size: 8px;
+  font-size: 11px;
 }
 .product-about-card h2 {
-  margin-top: 5px;
+  margin-top: 7px;
   color: #fff5e5;
   font-family: var(--font-display);
-  font-size: 23px;
+  font-size: clamp(29px, 3vw, 38px);
+  line-height: 1.12;
+  text-wrap: balance;
 }
-.product-about-card > p:not(.catalog-eyebrow) {
-  margin-top: 9px;
-  color: #c8bdac;
-  font-size: 12px;
-  line-height: 1.62;
+.product-about-card__chapters,
+.product-about-card__practical {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2.2vw, 30px);
+  margin-top: 27px;
+}
+.product-about-card__practical {
+  margin-top: 25px;
+  padding-top: 24px;
+  border-top: 1px solid #ffffff25;
+}
+.product-about-card h3 {
+  color: #f7e9d0;
+  font-family: var(--font-display);
+  font-size: clamp(19px, 1.7vw, 22px);
+  line-height: 1.24;
+  text-wrap: balance;
+}
+.product-about-card section p,
+.product-about-card__fallback p {
+  margin-top: 10px;
+  color: #d2c8b9;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.product-about-card__fallback p + p {
+  margin-top: 14px;
+}
+.product-about-card__closing {
+  margin-top: 27px;
+  color: #fff2da;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.2vw, 27px);
+  text-align: center;
+}
+.product-about-card__documents {
+  margin-top: 20px;
+  padding-top: 13px;
+  border-top: 1px solid #ffffff1a;
+  color: #b9b0a4;
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: center;
+}
+.product-about-card__documents a {
+  color: #ead9bc;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .product-about-card {
+    width: min(100% - 20px, 720px);
+  }
+  .product-about-card__chapters,
+  .product-about-card__practical {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
 }
 
 /* Clear quantity selection and a premium story-tech cart action. */

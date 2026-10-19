@@ -721,9 +721,14 @@ describe("dashboard writes and interest registration", () => {
     expect((await send(10))!.status).toBe(400);
   });
   it("rejects stale product edits without changing listing availability", async () => {
+    // This test stops at migration 0029; the product API also reads the later editorial column.
+    sqlite.exec("ALTER TABLE products ADD COLUMN editorial_json TEXT");
     const env = bindings(),
       id = productId(),
       row = sqlite.prepare("SELECT * FROM products WHERE id=?").get(id)!;
+    sqlite
+      .prepare("UPDATE products SET editorial_json=? WHERE id=?")
+      .run('{"story":"Old copy"}', id);
     const body = {
       expectedVersion: Number(row.version),
       name: "Admin title",
@@ -751,6 +756,9 @@ describe("dashboard writes and interest registration", () => {
     };
     const path = `/api/v1/admin/products/${id}`;
     expect((await handleAdminProductApi(patch(path, body), env))!.status).toBe(200);
+    expect(sqlite.prepare("SELECT editorial_json FROM products WHERE id=?").get(id)).toEqual({
+      editorial_json: null,
+    });
     expect((await catalog()).find((p) => p.id === id)!.discovery).toEqual(body.discovery);
     expect(
       (await handleAdminProductApi(patch(path, { ...body, storefrontState: "coming_soon" }), env))!

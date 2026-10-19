@@ -1,6 +1,7 @@
 import { readProductDiscovery, type ProductDiscovery } from "@/lib/product-discovery";
 import { mediaApprovalSql } from "../media-policy";
 import { productScene, type ProductScene } from "@/lib/product-themes";
+import type { ProductEditorial } from "@/data/products";
 type CatalogRow = Record<string, string | number | null>;
 export interface CatalogProduct {
   discovery: ProductDiscovery | null;
@@ -12,6 +13,8 @@ export interface CatalogProduct {
   tagline: string;
   description: string;
   story: string;
+  editorial: ProductEditorial | null;
+  dimensions: string | null;
   shortDescription: string;
   category: string;
   brand: string;
@@ -45,6 +48,21 @@ function array<T>(v: unknown): T[] {
     return Array.isArray(a) ? a : [];
   } catch {
     return [];
+  }
+}
+function editorial(v: unknown): ProductEditorial | null {
+  if (typeof v !== "string" || !v) return null;
+  try {
+    const result: unknown = JSON.parse(v);
+    if (!result || typeof result !== "object") return null;
+    const fields = result as Record<string, unknown>;
+    return ["story", "melody", "use", "gift", "closing"].every(
+      (key) => typeof fields[key] === "string" && Boolean(String(fields[key]).trim()),
+    )
+      ? (fields as ProductEditorial)
+      : null;
+  } catch {
+    return null;
   }
 }
 export async function listPublicCatalog(
@@ -94,6 +112,8 @@ export async function listPublicCatalog(
       tagline: str(r.tagline),
       description: str(r.description),
       story: str(r.story),
+      editorial: editorial(r.editorial_json),
+      dimensions: r.dimensions_text == null ? null : str(r.dimensions_text),
       shortDescription: str(r.short_description),
       category: str(r.category),
       brand: str(r.brand) || "Cutiuța Magică",

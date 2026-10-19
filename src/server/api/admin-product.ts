@@ -85,6 +85,7 @@ export async function handleAdminProductApi(request: Request, env: Env): Promise
           is_featured=COALESCE(?21,is_featured), preorder_enabled=COALESCE(?22,preorder_enabled),
           release_note=COALESCE(?23,release_note), details_json=COALESCE(?24,details_json),
           status=COALESCE(?25,status), published_at=CASE WHEN ?25='active' THEN COALESCE(published_at,strftime('%Y-%m-%dT%H:%M:%fZ','now')) ELSE published_at END,
+          editorial_json=CASE WHEN ?4 IS NOT description OR ?5 IS NOT story THEN NULL ELSE editorial_json END,
           name = ?1, tagline = ?2, short_description = ?3, description = ?4,
           story = ?5, category = ?6, material = ?7, dimensions_text = ?8,
           weight_g = ?9, rights_status = ?10, rights_notes = ?11,
