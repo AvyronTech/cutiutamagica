@@ -25,6 +25,7 @@ export interface AdminOrder {
   fulfillmentStatus: string;
   date: string;
   deliveryMethod: string;
+  shippingOption?: string;
   awb?: string;
   trackingUrl?: string;
   shipmentId?: string;

@@ -1,5 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — tarife publice calibrate și cotații în administrare
+
+- Politica publică va folosi 32 RON la adresă, calculat din ofertele SmartShip observate pentru coletul standard (25,74, 27,49 și 42,55 RON; media 31,93 RON), și 24 RON la Easybox, aproape de oferta observată de 23,81 RON. Tarifele sunt fixe pentru cumpărător, nu sunt etichetate drept cotații live. Valorile se salvează în `/admin/livrare`; nu necesită migrare D1.
+- Diagnosticul din `/admin/shipping` afișează cotațiile live eligibile, fără curierii care cer imprimarea etichetei. La emiterea unui AWB pentru o comandă la adresă cu tarif fix, administratorul obține atunci ofertele reale și sistemul selectează cel mai ieftin curier eligibil. Costul furnizorului și curierul ales intră în jurnal; prețul promis clientului rămâne cel din comandă. Dacă cotația eșuează, nu se creează o cerere AWB blocată și se poate încerca din nou. Rambursul este inclus în cererea către SmartShip.
+- Revizia pornește din `c387cd9` și se livrează prin PR către `codex/cutiuta-cloudflare-final`. Verificări locale: typecheck, lint, 291 teste, build și simulare deploy. Nu s-a emis un AWB real; creditul SmartShip trebuie alimentat pentru expediere.
+
 ## Handoff 2026-10-19 — remediere SmartShip 91929
 
 - SmartShip a confirmat în chatul contului DIGITAL ECOTECH SOLUTIONS că API-ul `/cost` respinge momentan textele cu diacritice cu codul `91929`, deși cheia și datele contului sunt corecte. Furnizorul pregătește corecția proprie; soluția recomandată între timp este textul fără diacritice.

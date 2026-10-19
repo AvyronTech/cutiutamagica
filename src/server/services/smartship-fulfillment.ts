@@ -1,9 +1,11 @@
 import {
   createSmartShipAwb,
   findSmartShipAwbByOrderId,
+  quoteSmartShip,
   resolveSmartShipCity,
 } from "@/server/integrations/smartship";
 import { credential } from "@/server/services/growth-settings";
+import { PRINT_REQUIRED_COURIER_IDS } from "@/server/services/smartship-couriers";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
 type Row = Record<string, string | number | null>;
@@ -21,16 +23,22 @@ async function orderForAwb(env: CommerceEnv, orderId: string, mode: "issue" | "r
             o.payment_method_requested AS payment_method,
             o.shipping_option_requested,o.total_bani,o.customer_name,o.customer_email,
             o.customer_phone_e164,a.line1,a.city,a.county,a.postal_code,a.sector,
-            q.courier_id,q.own_contract,q.locker_id,
+            q.courier_id,q.courier_name,q.own_contract,q.locker_id,
             p.validation_status,p.sender_name,p.sender_address,p.sender_email,p.sender_phone,
             p.sender_city_id,p.sender_sector,p.default_weight_g,p.default_length_cm,
             p.default_width_cm,p.default_height_cm,
             (SELECT COALESCE(SUM(quantity),0) FROM order_items WHERE order_id=o.id) AS quantity
      FROM orders o
      JOIN order_addresses a ON a.order_id=o.id AND a.address_type='shipping'
-     JOIN shipping_quotes q ON q.id=o.shipping_quote_id AND q.order_id=o.id
+     LEFT JOIN shipping_quotes q ON q.id=o.shipping_quote_id AND q.order_id=o.id
      JOIN shipping_policy_configs p ON p.code='RO_STANDARD'
-     WHERE o.id=?1 AND o.channel_id='channel_website' AND q.provider='smartship'`,
+     WHERE o.id=?1 AND o.channel_id='channel_website'
+       AND (q.provider='smartship' OR (
+         o.shipping_quote_id IS NULL AND o.shipping_option_requested='home_delivery'
+         AND NOT EXISTS (
+           SELECT 1 FROM order_tags t WHERE t.order_id=o.id AND t.tag='shipping_quote_required'
+         )
+       ))`,
   )
     .bind(orderId)
     .first<Row>();
@@ -55,7 +63,7 @@ async function orderForAwb(env: CommerceEnv, orderId: string, mode: "issue" | "r
       !row.sender_address ||
       !row.sender_phone ||
       !row.sender_city_id ||
-      Number(row.courier_id) <= 0 ||
+      (Number(row.courier_id) <= 0 && row.shipping_option_requested !== "home_delivery") ||
       Number(row.quantity) <= 0)
   )
     throw new FulfillmentError("Oferta sau datele expeditorului SmartShip sunt incomplete.");
@@ -112,7 +120,12 @@ async function saveIssued(
       actorId,
       shipmentId,
       JSON.stringify({ orderId, awb }),
-      JSON.stringify({ provider: "smartship" }),
+      JSON.stringify({
+        provider: "smartship",
+        courierId: Number(row.courier_id) || null,
+        courier: row.courier_name || null,
+        quotedProviderCostBani: row.quoted_provider_cost_bani ?? null,
+      }),
     ),
   ]);
   return { awb, trackingUrl };
@@ -121,6 +134,51 @@ async function saveIssued(
 export async function issueSmartShipAwb(env: CommerceEnv, orderId: string, actorId: string) {
   const row = await orderForAwb(env, orderId, "issue");
   const cityId = await resolveSmartShipCity(env, String(row.county ?? ""), String(row.city));
+  const quantity = Number(row.quantity);
+  const shipment = {
+    sender: {
+      name: String(row.sender_name),
+      address: String(row.sender_address),
+      email: String(row.sender_email ?? ""),
+      phone: String(row.sender_phone),
+      cityId: Number(row.sender_city_id),
+      sector: Number(row.sender_sector ?? 0),
+    },
+    recipient: {
+      name: String(row.customer_name),
+      address: String(row.line1),
+      email: String(row.customer_email ?? ""),
+      phone: String(row.customer_phone_e164),
+      cityId,
+      sector: Number(row.sector ?? 0),
+    },
+    content: {
+      packageContent: "Cutiuțe muzicale",
+      parcels: 1,
+      weightKg: (Number(row.default_weight_g) * quantity) / 1000,
+      lengthCm: Number(row.default_length_cm),
+      widthCm: Number(row.default_width_cm),
+      heightCm: Number(row.default_height_cm) * quantity,
+      cashOnDeliveryRon:
+        row.payment_method === "cash_on_delivery" ? Number(row.total_bani) / 100 : 0,
+      lockerId: row.shipping_option_requested === "easybox" ? Number(row.locker_id) : undefined,
+      orderId: String(row.order_number),
+    },
+  };
+  if (Number(row.courier_id) <= 0) {
+    // Fixed customer prices do not require SmartShip at checkout. Resolve the
+    // actual courier only when an administrator issues the AWB.
+    const offers = await quoteSmartShip(env, shipment);
+    const offer = offers
+      .filter((candidate) => !PRINT_REQUIRED_COURIER_IDS.has(candidate.courierId))
+      .sort((a, b) => a.costRon - b.costRon)[0];
+    if (!offer)
+      throw new FulfillmentError("Nu există un curier SmartShip fără imprimarea etichetei.");
+    row.courier_id = offer.courierId;
+    row.courier_name = offer.courierName;
+    row.own_contract = offer.ownContract ? 1 : 0;
+    row.quoted_provider_cost_bani = Math.round(offer.costRon * 100);
+  }
   const claim = await env.DB.prepare(
     `INSERT INTO smartship_awb_requests(order_id,status,requested_by)
      VALUES(?1,'issuing',?2) ON CONFLICT(order_id) DO NOTHING`,
@@ -132,38 +190,10 @@ export async function issueSmartShipAwb(env: CommerceEnv, orderId: string, actor
       "Emiterea AWB a fost deja inițiată. Verifică starea înainte de o nouă acțiune.",
     );
   try {
-    const quantity = Number(row.quantity);
     const result = await createSmartShipAwb(env, {
       courierId: Number(row.courier_id),
       useOwnContract: Number(row.own_contract) === 1,
-      sender: {
-        name: String(row.sender_name),
-        address: String(row.sender_address),
-        email: String(row.sender_email ?? ""),
-        phone: String(row.sender_phone),
-        cityId: Number(row.sender_city_id),
-        sector: Number(row.sender_sector ?? 0),
-      },
-      recipient: {
-        name: String(row.customer_name),
-        address: String(row.line1),
-        email: String(row.customer_email ?? ""),
-        phone: String(row.customer_phone_e164),
-        cityId,
-        sector: Number(row.sector ?? 0),
-      },
-      content: {
-        packageContent: "Cutiuțe muzicale",
-        parcels: 1,
-        weightKg: (Number(row.default_weight_g) * quantity) / 1000,
-        lengthCm: Number(row.default_length_cm),
-        widthCm: Number(row.default_width_cm),
-        heightCm: Number(row.default_height_cm) * quantity,
-        cashOnDeliveryRon:
-          row.payment_method === "cash_on_delivery" ? Number(row.total_bani) / 100 : 0,
-        lockerId: row.shipping_option_requested === "easybox" ? Number(row.locker_id) : undefined,
-        orderId: String(row.order_number),
-      },
+      ...shipment,
     });
     return await saveIssued(env, row, actorId, result.awb, result.trackingUrl);
   } catch (error) {
@@ -188,10 +218,12 @@ export async function reconcileSmartShipAwb(env: CommerceEnv, orderId: string, a
     .first<{ status: string }>();
   const manualEasybox =
     !request && row.shipping_option_requested === "easybox" && Number(row.courier_id) === 0;
-  if (!request && !manualEasybox)
+  const manualHome =
+    !request && row.shipping_option_requested === "home_delivery" && row.courier_id == null;
+  if (!request && !manualEasybox && !manualHome)
     throw new FulfillmentError("Nu există o cerere AWB de verificat.");
   if (
-    manualEasybox &&
+    (manualEasybox || manualHome) &&
     (!["pending", "confirmed", "processing"].includes(String(row.order_status)) ||
       (row.payment_method === "card" && row.payment_status !== "paid") ||
       !["card", "cash_on_delivery"].includes(String(row.payment_method)))
@@ -202,7 +234,7 @@ export async function reconcileSmartShipAwb(env: CommerceEnv, orderId: string, a
     throw new FulfillmentError(
       "SmartShip nu confirmă încă un AWB. Verifică manual înainte de orice reemitere.",
     );
-  if (manualEasybox) {
+  if (manualEasybox || manualHome) {
     const claim = await env.DB.prepare(
       `INSERT INTO smartship_awb_requests(order_id,status,requested_by)
        VALUES(?1,'issuing',?2) ON CONFLICT(order_id) DO NOTHING`,

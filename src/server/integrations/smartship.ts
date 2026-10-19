@@ -8,6 +8,7 @@ import {
 import { credential } from "@/server/services/growth-settings";
 import type { EasyboxLocker } from "@/lib/easybox";
 import { normalizeIban } from "@/lib/iban";
+import { PRINT_REQUIRED_COURIER_IDS } from "@/server/services/smartship-couriers";
 
 export interface SmartShipParty {
   name: string;
@@ -47,6 +48,7 @@ export interface SmartShipQuoteProbe {
   httpStatus: number;
   providerStatus: number | null;
   courierCount: number;
+  eligibleOffers: Array<{ courier: string; costRon: number }>;
   errorIds: number[];
   message: string | null;
 }
@@ -367,11 +369,31 @@ export async function diagnoseSmartShipQuote(
       }),
     });
     const body = record(await readProviderJson(response).catch(() => null));
+    const eligibleOffers = (body && Array.isArray(body.costs) ? body.costs : [])
+      .flatMap((entry) => {
+        const quote = record(entry);
+        const courierId = quote?.courier_id;
+        const courier = quote?.courier_name;
+        const costRon = quote?.cost;
+        return typeof courierId === "number" &&
+          !PRINT_REQUIRED_COURIER_IDS.has(courierId) &&
+          typeof courier === "string" &&
+          courier.length <= 80 &&
+          typeof costRon === "number" &&
+          Number.isFinite(costRon) &&
+          costRon >= 0 &&
+          costRon < 10_000
+          ? [{ courier, costRon }]
+          : [];
+      })
+      .sort((a, b) => a.costRon - b.costRon)
+      .slice(0, 12);
     probes.push({
       variant: probe.variant,
       httpStatus: response.status,
       providerStatus: body && typeof body.status === "number" ? body.status : null,
       courierCount: body && Array.isArray(body.costs) ? body.costs.length : 0,
+      eligibleOffers,
       errorIds:
         body && Array.isArray(body.erori)
           ? body.erori

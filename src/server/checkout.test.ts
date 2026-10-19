@@ -965,6 +965,72 @@ describe("delivery quote integrity", () => {
     expect(label?.headers.get("cache-control")).toBe("private, no-store");
     expect(await label?.text()).toBe("%PDF-1.4 local");
   });
+  it("chooses an eligible live courier only when issuing a fixed-price home AWB", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    env.SMARTSHIP_COD_IBAN = "RO49AAAA1B31007593840000";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1,standard_price_bani=3200",
+    );
+    const body = websiteOrderInputSchema.parse({
+      ...input(),
+      paymentMethod: "cash_on_delivery",
+      paymentProvider: undefined,
+    });
+    const created = await createWebsiteOrder(env.DB, body);
+    expect(created.shipping).toBe(32);
+    expect(
+      sqlite.prepare("SELECT shipping_quote_id FROM orders WHERE id=?").get(created.orderId),
+    ).toMatchObject({ shipping_quote_id: null });
+    const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.includes("/counties"))
+        return Response.json({ counties: [{ id: 13, county: "Cluj" }] });
+      if (url.includes("/cities"))
+        return Response.json({ cities: [{ id: 256212, city: "Cluj-Napoca" }] });
+      if (url.includes("/cost")) {
+        const payload = JSON.parse(String(options?.body)) as {
+          content: { cash_on_delivery: number };
+        };
+        expect(payload.content.cash_on_delivery).toBe(created.total);
+        return Response.json({
+          status: 200,
+          costs: [
+            { courier_id: 5, courier_name: "Fără etichetă automată", cost: 12 },
+            { courier_id: 6, courier_name: "DPD", cost: 27.49 },
+            { courier_id: 1, courier_name: "Cargus", cost: 25.74 },
+          ],
+        });
+      }
+      if (url.includes("/awb/new")) {
+        const payload = JSON.parse(String(options?.body)) as {
+          courier_id: number;
+          content: { cash_on_delivery: number; order_id: string };
+        };
+        expect(payload.courier_id).toBe(1);
+        expect(payload.content.cash_on_delivery).toBe(created.total);
+        expect(payload.content.order_id).toBe(created.orderNumber);
+        return Response.json({ status: 200, awb: "874156063268" });
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const issued = await issueSmartShipAwb(env, created.orderId, "test-admin");
+    expect(issued.awb).toBe("874156063268");
+    expect(fetcher.mock.calls.filter(([url]) => url.includes("/cost"))).toHaveLength(1);
+    expect(fetcher.mock.calls.filter(([url]) => url.includes("/awb/new"))).toHaveLength(1);
+    expect(
+      sqlite.prepare("SELECT metadata_json FROM audit_log WHERE action='shipping.awb.issue'").get(),
+    ).toMatchObject({
+      metadata_json: JSON.stringify({
+        provider: "smartship",
+        courierId: 1,
+        courier: "Cargus",
+        quotedProviderCostBani: 2574,
+      }),
+    });
+    await expect(issueSmartShipAwb(env, created.orderId, "test-admin")).rejects.toThrow(
+      "există deja",
+    );
+  });
   it("reconciles an uncertain AWB by order number without issuing it again", async () => {
     env.SMARTSHIP_API_KEY = "private";
     sqlite.exec(

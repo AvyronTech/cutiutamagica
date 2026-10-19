@@ -11,11 +11,9 @@ import {
 } from "../integrations/smartship";
 import type { EasyboxLocker } from "@/lib/easybox";
 import { deliverySector, isBucharest, sectorFromPostalCode } from "@/lib/bucharest-sector";
+import { PRINT_REQUIRED_COURIER_IDS } from "../services/smartship-couriers";
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
-// The /cost API does not document a printing-required flag. SmartShip's quote UI
-// currently marks these courier IDs as requiring a printed label.
-const PRINT_REQUIRED_COURIER_IDS = new Set([5, 19]);
 
 function searchKey(value: string): string {
   return value

@@ -166,7 +166,13 @@ describe("growth and commerce integration", () => {
         const payload =
           body.sender.name === "Atelier Test SRL"
             ? { status: 91929, message: "Contact: atelier@test.ro 0720123456" }
-            : { status: 200, costs: [{ courier_id: 1, cost: 23.81 }] };
+            : {
+                status: 200,
+                costs: [
+                  { courier_id: 5, courier_name: "Necesită imprimare", cost: 11 },
+                  { courier_id: 1, courier_name: "Curier eligibil", cost: 23.81 },
+                ],
+              };
         return Promise.resolve(new Response(JSON.stringify(payload), { status: 200 }));
       }),
     );
@@ -192,7 +198,10 @@ describe("growth and commerce integration", () => {
     ).toEqual([
       { variant: "configured", providerStatus: 91929, courierCount: 0 },
       { variant: "without_own_contracts", providerStatus: 91929, courierCount: 0 },
-      { variant: "documented_sample", providerStatus: 200, courierCount: 1 },
+      { variant: "documented_sample", providerStatus: 200, courierCount: 2 },
+    ]);
+    expect(result.probes[2].eligibleOffers).toEqual([
+      { courier: "Curier eligibil", costRon: 23.81 },
     ]);
     expect(JSON.stringify(result)).not.toContain("atelier@test.ro");
     expect(JSON.stringify(result)).not.toContain("0720123456");
