@@ -249,11 +249,13 @@ export async function handleShippingCheckout(
     } else if (selectedLocker && policy.locker_price_bani != null) {
       quotes = [
         {
-          courierId: 0,
+          // SmartShip's standard-contract courier for SAMEDAY Easybox. Retaining
+          // its real ID lets fulfillment issue an AWB after a fixed-price order.
+          courierId: 12,
           courierName: "SAMEDAY Easybox",
           costRon: Number(policy.locker_price_bani) / 100,
           deliveryDate: null,
-          ownContract: true,
+          ownContract: false,
         },
       ];
     } else {

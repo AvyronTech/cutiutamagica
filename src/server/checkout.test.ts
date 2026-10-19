@@ -357,6 +357,7 @@ describe("secure checkout", () => {
     expect(body.to).toEqual(["cutiutamagicaofficial@gmail.com"]);
     expect(body.subject).toContain(created.orderNumber);
     expect(body.text).toContain("panoul intern Cutiuța Magică");
+    expect(body.text).toContain("Stare plată:");
     expect(new Headers(init.headers).get("idempotency-key")).toBe(
       `order-owner-notification/${created.orderId}`,
     );
@@ -377,7 +378,10 @@ describe("secure checkout", () => {
       from: { email: "comenzi@cutiutamagica.eu", name: "Cutiuța Magică" },
       to: "test@example.test",
       replyTo: "contact@cutiutamagica.eu",
+      subject: `Comanda ${created.orderNumber} a ajuns la noi ✨`,
     });
+    expect(send.mock.calls[0][0].text).toContain("Pregătim cu grijă următorii pași");
+    expect(send.mock.calls[0][0].text).toContain("\n\n");
     expect(
       sqlite
         .prepare(
@@ -779,6 +783,7 @@ describe("delivery quote integrity", () => {
   });
   it("selects an official Easybox, applies the fixed tariff and stores the canonical pickup address", async () => {
     env.SMARTSHIP_API_KEY = "private";
+    env.SMARTSHIP_COD_IBAN = "RO76REVO0000303947103261";
     sqlite.exec(
       "UPDATE shipping_policy_configs SET easybox_enabled=1,sender_name='Atelier Magic',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
     );
@@ -862,25 +867,40 @@ describe("delivery quote integrity", () => {
       pickup_point_id: "7123",
     });
     expect(
-      sqlite.prepare("SELECT courier_id FROM shipping_quotes WHERE id=?").get(quote.id)?.courier_id,
-    ).toBe(0);
-    const lookup = vi.fn(async (url: string) => {
-      if (url.includes("/awb/order_id/"))
+      sqlite.prepare("SELECT courier_id,own_contract FROM shipping_quotes WHERE id=?").get(quote.id),
+    ).toMatchObject({ courier_id: 12, own_contract: 0 });
+    const issuance = vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.includes("/counties"))
+        return Response.json({ counties: [{ id: 13, county: "Cluj" }] });
+      if (url.includes("/cities"))
+        return Response.json({ cities: [{ id: 256212, city: "Cluj-Napoca" }] });
+      if (url.includes("/awb/new")) {
+        const payload = JSON.parse(String(options?.body)) as {
+          courier_id: number;
+          use_own_contract: number;
+          content: { locker_id: number; order_id: string };
+        };
+        expect(payload.courier_id).toBe(12);
+        expect(payload.use_own_contract).toBe(0);
+        expect(payload.content.locker_id).toBe(7123);
+        expect(payload.content.order_id).toBe(created.orderNumber);
         return Response.json({
+          status: 200,
           awb: "874156063267",
           tracking_link: "https://smartship.ro/t/easybox",
         });
+      }
       throw new Error(`Unexpected URL: ${url}`);
     });
-    vi.stubGlobal("fetch", lookup);
-    const imported = await reconcileSmartShipAwb(env, created.orderId, "test-admin");
-    expect(imported.awb).toBe("874156063267");
-    expect(lookup.mock.calls.some(([url]) => url.includes("/awb/new"))).toBe(false);
+    vi.stubGlobal("fetch", issuance);
+    const issued = await issueSmartShipAwb(env, created.orderId, "test-admin");
+    expect(issued.awb).toBe("874156063267");
+    expect(issuance.mock.calls.filter(([url]) => url.includes("/awb/new"))).toHaveLength(1);
     expect(
       sqlite
         .prepare("SELECT status,awb FROM smartship_awb_requests WHERE order_id=?")
         .get(created.orderId),
-    ).toMatchObject({ status: "issued", awb: imported.awb });
+    ).toMatchObject({ status: "issued", awb: issued.awb });
     await expect(reconcileSmartShipAwb(env, created.orderId, "test-admin")).rejects.toThrow(
       "există deja",
     );

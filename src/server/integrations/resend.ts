@@ -236,10 +236,12 @@ export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: stri
     env.DB.prepare(
       `SELECT o.order_number, o.customer_name, o.customer_email, o.customer_phone_e164,
               o.customer_note, o.payment_method_requested, o.shipping_option_requested,
-              o.subtotal_bani, o.discount_bani, o.shipping_bani, o.total_bani, o.currency,
-              a.line1, a.city, a.county, a.postal_code
+              o.payment_status, o.subtotal_bani, o.discount_bani, o.shipping_bani,
+              o.total_bani, o.currency, a.line1, a.city, a.county, a.postal_code,
+              q.courier_name, q.locker_name, q.locker_id, q.delivery_estimate
        FROM orders o
        LEFT JOIN order_addresses a ON a.order_id = o.id AND a.address_type = 'shipping'
+       LEFT JOIN shipping_quotes q ON q.id = o.shipping_quote_id
        WHERE o.id = ?1`,
     )
       .bind(orderId)
@@ -251,6 +253,7 @@ export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: stri
         customer_note: string | null;
         payment_method_requested: string;
         shipping_option_requested: string;
+        payment_status: string;
         subtotal_bani: number;
         discount_bani: number;
         shipping_bani: number;
@@ -260,6 +263,10 @@ export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: stri
         city: string | null;
         county: string | null;
         postal_code: string | null;
+        courier_name: string | null;
+        locker_name: string | null;
+        locker_id: string | null;
+        delivery_estimate: string | null;
       }>(),
     env.DB.prepare(
       `SELECT product_name, variant_name, melody_name, quantity, line_total_bani
@@ -300,7 +307,13 @@ export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: stri
     `E-mail: ${order.customer_email || "—"}`,
     `Adresă: ${address || "de confirmat"}`,
     `Plată: ${order.payment_method_requested}`,
+    `Stare plată: ${order.payment_status}`,
     `Livrare: ${order.shipping_option_requested}`,
+    ...(order.courier_name ? [`Curier: ${order.courier_name}`] : []),
+    ...(order.locker_id
+      ? [`Punct Easybox: ${order.locker_name || order.locker_id} (${order.locker_id})`]
+      : []),
+    ...(order.delivery_estimate ? [`Estimare curier: ${order.delivery_estimate}`] : []),
     ...(order.customer_note ? [`Observații: ${order.customer_note}`] : []),
     "",
     "Comanda este disponibilă și în panoul intern Cutiuța Magică.",
