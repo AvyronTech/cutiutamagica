@@ -40,6 +40,16 @@ function Privacy() {
           care poate fi retras fără afectarea comenzilor.
         </p>
       </LegalSection>
+      <LegalSection title="Chatul magazinului">
+        <p>
+          Mesajele trimise prin chat sunt păstrate pentru a răspunde solicitării și pot fi văzute de
+          administratorii autorizați. Când asistentul virtual este activ, Cloudflare Workers AI
+          analizează textul cu datele de contact mascate și poate răspunde automat. Răspunsurile
+          sunt marcate drept mesaje ale asistentului și pot fi preluate de echipă. Asistentul nu
+          plasează comenzi și nu cere date de card. Poți cere oricând continuarea conversației cu un
+          operator.
+        </p>
+      </LegalSection>
       <LegalSection title="Contul de client și recenziile">
         <p>
           Poți trimite o recenzie fără cont, folosind un nume afișat și o adresă de e-mail. După

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Bot,
@@ -18,11 +19,14 @@ import { toast } from "sonner";
 import {
   getChatCenter,
   getChatConversation,
+  controlChatAi,
   replyToChatConversation,
   updateChatConversationStatus,
+  updateChatKnowledge,
   updateChatSettings,
 } from "@/lib/chat.functions";
 import type { ChatConversationStatus, ChatSettings } from "@/lib/chat-contracts";
+import type { ChatKnowledge } from "@/server/db/chat.repository";
 
 const input =
   "w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none transition focus:border-amber-300";
@@ -40,16 +44,20 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export default function ChatCenter() {
+export default function ChatCenter({ conversationId }: { conversationId?: string }) {
+  const navigate = useNavigate();
   const client = useQueryClient();
   const loadCenter = useServerFn(getChatCenter);
   const loadConversation = useServerFn(getChatConversation);
   const sendReply = useServerFn(replyToChatConversation);
   const saveStatus = useServerFn(updateChatConversationStatus);
+  const controlAi = useServerFn(controlChatAi);
+  const saveKnowledge = useServerFn(updateChatKnowledge);
   const saveSettings = useServerFn(updateChatSettings);
-  const [tab, setTab] = useState<"inbox" | "settings">("inbox");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"inbox" | "settings" | "knowledge">("inbox");
+  const [selectedId, setSelectedId] = useState<string | null>(conversationId ?? null);
   const [reply, setReply] = useState("");
+  const [newKnowledgeId, setNewKnowledgeId] = useState<string | null>(null);
 
   const center = useQuery({
     queryKey: ["admin", "chat-center"],
@@ -63,6 +71,12 @@ export default function ChatCenter() {
   useEffect(() => {
     if (!selectedId && conversations[0]) setSelectedId(conversations[0].id);
   }, [conversations, selectedId]);
+  useEffect(() => {
+    if (conversationId) {
+      setSelectedId(conversationId);
+      setTab("inbox");
+    }
+  }, [conversationId]);
 
   const transcript = useQuery({
     queryKey: ["admin", "chat-conversation", selected?.id],
@@ -95,6 +109,22 @@ export default function ChatCenter() {
     mutationFn: (status: ChatConversationStatus) =>
       saveStatus({ data: { conversationId: selected!.id, status } }),
     onSuccess: invalidate,
+    onError: (error) => toast.error(error.message),
+  });
+
+  const aiControlMutation = useMutation({
+    mutationFn: (paused: boolean) => controlAi({ data: { conversationId: selected!.id, paused } }),
+    onSuccess: invalidate,
+    onError: (error) => toast.error(error.message),
+  });
+
+  const knowledgeMutation = useMutation({
+    mutationFn: (item: Omit<ChatKnowledge, "updatedAt">) => saveKnowledge({ data: item }),
+    onSuccess: async () => {
+      setNewKnowledgeId(null);
+      await client.invalidateQueries({ queryKey: ["admin", "chat-center"] });
+      toast.success("Informația pentru asistent a fost salvată.");
+    },
     onError: (error) => toast.error(error.message),
   });
 
@@ -140,7 +170,7 @@ export default function ChatCenter() {
         .map((item) => item.trim())
         .filter(Boolean)
         .slice(0, 8),
-      aiEnabled: false,
+      aiEnabled: form.get("aiEnabled") === "on",
       retentionDays: Number(value("retentionDays")),
     });
   }
@@ -154,8 +184,8 @@ export default function ChatCenter() {
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-white">Chat clienți</h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-400">
-            Inbox pentru vizitatori, răspunsuri umane, configurarea widgetului și controlul
-            consimțământului. Datele rămân în D1-ul Cutiuța Magică.
+            Asistentul răspunde automat pe baza catalogului. Echipa poate urmări și prelua oricând
+            conversația.
           </p>
         </div>
         <button className={secondary} onClick={() => center.refetch()}>
@@ -163,12 +193,13 @@ export default function ChatCenter() {
         </button>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(
           [
             ["Conversații active", openCount, MessageCircle],
             ["Mesaje necitite", unreadCount, Clock3],
             ["Stare widget", center.data.settings.enabled ? "Activ" : "Oprit", CheckCircle2],
+            ["Răspunsuri AI azi", `${center.data.aiUsageToday}/30`, Bot],
           ] as Array<[string, string | number, LucideIcon]>
         ).map(([label, count, Icon]) => (
           <article
@@ -182,7 +213,7 @@ export default function ChatCenter() {
         ))}
       </section>
 
-      <div className="flex gap-2 border-b border-slate-700 pb-3">
+      <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-3">
         <button className={tab === "inbox" ? primary : secondary} onClick={() => setTab("inbox")}>
           <MessageCircle size={16} /> Inbox
         </button>
@@ -191,6 +222,12 @@ export default function ChatCenter() {
           onClick={() => setTab("settings")}
         >
           <Settings2 size={16} /> Configurare
+        </button>
+        <button
+          className={tab === "knowledge" ? primary : secondary}
+          onClick={() => setTab("knowledge")}
+        >
+          <Bot size={16} /> Cunoștințe
         </button>
       </div>
 
@@ -203,7 +240,14 @@ export default function ChatCenter() {
               conversations.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setSelectedId(item.id)}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    void navigate({
+                      to: "/admin/chat",
+                      search: { conversation: item.id },
+                      replace: true,
+                    });
+                  }}
                   className={`w-full border-b border-slate-800 p-4 text-left transition hover:bg-slate-900 ${selected?.id === item.id ? "bg-slate-900" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -243,19 +287,36 @@ export default function ChatCenter() {
                     <p className="mt-1 text-xs text-slate-500">
                       {selected.visitorEmail || "Fără e-mail"} · {selected.sourcePath}
                     </p>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      {selected.aiPaused
+                        ? "Preluat de echipă · AI oprit"
+                        : center.data.settings.aiEnabled
+                          ? "Asistentul răspunde automat"
+                          : "Răspunsuri manuale"}
+                    </p>
                   </div>
-                  <select
-                    value={selected.status}
-                    onChange={(event) =>
-                      statusMutation.mutate(event.target.value as ChatConversationStatus)
-                    }
-                    className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-white"
-                  >
-                    <option value="open">Deschis</option>
-                    <option value="pending">În așteptare</option>
-                    <option value="closed">Închis</option>
-                    <option value="spam">Spam</option>
-                  </select>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className={secondary}
+                      disabled={aiControlMutation.isPending}
+                      onClick={() => aiControlMutation.mutate(!selected.aiPaused)}
+                    >
+                      {selected.aiPaused ? "Repornește asistentul" : "Preia conversația"}
+                    </button>
+                    <select
+                      value={selected.status}
+                      onChange={(event) =>
+                        statusMutation.mutate(event.target.value as ChatConversationStatus)
+                      }
+                      className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs text-white"
+                    >
+                      <option value="open">Deschis</option>
+                      <option value="pending">În așteptare</option>
+                      <option value="closed">Închis</option>
+                      <option value="spam">Spam</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="flex-1 space-y-3 overflow-y-auto p-4">
                   {transcript.isLoading && (
@@ -282,6 +343,23 @@ export default function ChatCenter() {
                     );
                   })}
                 </div>
+                {transcript.data?.draft && (
+                  <div className="border-t border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-sm">
+                    <div className="flex items-center gap-2 text-cyan-200">
+                      <Bot size={16} /> Propunere AI neexpediată · verifică înainte de trimitere
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-slate-200">
+                      {transcript.data.draft}
+                    </p>
+                    <button
+                      type="button"
+                      className={`${secondary} mt-3`}
+                      onClick={() => setReply(transcript.data!.draft ?? "")}
+                    >
+                      Folosește ciorna
+                    </button>
+                  </div>
+                )}
                 <form
                   className="flex gap-2 border-t border-slate-700 p-3"
                   onSubmit={(event) => {
@@ -309,7 +387,7 @@ export default function ChatCenter() {
             )}
           </div>
         </section>
-      ) : (
+      ) : tab === "settings" ? (
         <form onSubmit={submitSettings} className="space-y-6">
           <section className="grid gap-4 rounded-lg border border-slate-700 bg-slate-900/40 p-5 md:grid-cols-2">
             <label className="space-y-1.5 text-sm text-slate-300">
@@ -414,6 +492,7 @@ export default function ChatCenter() {
               ["requireConsent", "Solicită consimțământ", center.data.settings.requireConsent],
               ["collectName", "Solicită prenume", center.data.settings.collectName],
               ["collectEmail", "Solicită e-mail", center.data.settings.collectEmail],
+              ["aiEnabled", "Răspunsuri automate AI", center.data.settings.aiEnabled],
             ].map(([name, label, checked]) => (
               <label
                 key={String(name)}
@@ -428,11 +507,11 @@ export default function ChatCenter() {
           <section className="flex items-start gap-3 rounded-lg border border-cyan-500/25 bg-cyan-500/5 p-4">
             <Bot className="mt-0.5 text-cyan-300" size={18} />
             <div>
-              <h2 className="text-sm font-semibold text-white">Asistent AI pregătit, dar oprit</h2>
+              <h2 className="text-sm font-semibold text-white">Asistent virtual autonom</h2>
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Schema acceptă mesaje de tip assistant. Activarea va necesita furnizor, bază de
-                cunoștințe aprobată, limită de cost, disclosure și escaladare obligatorie către
-                operator.
+                Folosește catalogul și politicile active plus informațiile aprobate în Cunoștințe.
+                Maximum 30 de generări pe zi; situațiile sensibile trec la echipă. Răspunsurile
+                obișnuite ajung direct la client și sunt vizibile în Inbox.
               </p>
             </div>
           </section>
@@ -441,6 +520,80 @@ export default function ChatCenter() {
             <Save size={16} /> Salvează configurarea
           </button>
         </form>
+      ) : (
+        <section className="space-y-4">
+          <p className="text-sm text-slate-400">
+            Adaugă răspunsuri aprobate pentru întrebări frecvente. Prețurile și disponibilitatea vin
+            direct din catalog, nu din aceste note.
+          </p>
+          {[
+            ...(center.data.knowledge ?? []),
+            ...(newKnowledgeId
+              ? [
+                  {
+                    id: newKnowledgeId,
+                    title: "",
+                    answer: "",
+                    enabled: true,
+                    sortOrder: 100,
+                    version: 0,
+                    updatedAt: "",
+                  },
+                ]
+              : []),
+          ].map((item) => (
+            <form
+              key={`${item.id}-${item.version}`}
+              className="space-y-3 rounded-xl border border-slate-700 bg-slate-900/50 p-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const form = new FormData(event.currentTarget);
+                knowledgeMutation.mutate({
+                  id: item.id,
+                  title: String(form.get("title") ?? "").trim(),
+                  answer: String(form.get("answer") ?? "").trim(),
+                  enabled: form.get("enabled") === "on",
+                  sortOrder: item.sortOrder,
+                  version: item.version,
+                });
+              }}
+            >
+              <input
+                name="title"
+                defaultValue={item.title}
+                className={input}
+                maxLength={120}
+                required
+                placeholder="Subiect sau întrebare"
+              />
+              <textarea
+                name="answer"
+                defaultValue={item.answer}
+                className={`${input} min-h-24`}
+                maxLength={1200}
+                required
+                placeholder="Răspuns verificat pentru echipă"
+              />
+              <div className="flex items-center justify-between gap-3">
+                <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <input type="checkbox" name="enabled" defaultChecked={item.enabled} /> Folosește
+                  în răspunsuri
+                </label>
+                <button className={primary} disabled={knowledgeMutation.isPending}>
+                  <Save size={15} /> Salvează
+                </button>
+              </div>
+            </form>
+          ))}
+          <button
+            type="button"
+            className={secondary}
+            disabled={Boolean(newKnowledgeId)}
+            onClick={() => setNewKnowledgeId(crypto.randomUUID())}
+          >
+            Adaugă informație
+          </button>
+        </section>
       )}
     </div>
   );

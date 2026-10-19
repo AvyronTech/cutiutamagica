@@ -48,4 +48,18 @@ export const chatConversationStatusSchema = z.object({
   status: z.enum(["open", "pending", "closed", "spam"]),
 });
 
+export const chatAiControlSchema = z.object({
+  conversationId: z.string().uuid(),
+  paused: z.boolean(),
+});
+
+export const chatKnowledgeSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().trim().min(2).max(120),
+  answer: z.string().trim().min(10).max(1200),
+  enabled: z.boolean(),
+  sortOrder: z.number().int().min(0).max(999),
+  version: z.number().int().nonnegative(),
+});
+
 export type ChatConversationStatus = z.infer<typeof chatConversationStatusSchema>["status"];

@@ -31,6 +31,7 @@ type PublicChatConfig = {
   collectName: boolean;
   collectEmail: boolean;
   quickReplies: string[];
+  aiEnabled: boolean;
 };
 
 type ChatMessage = {
@@ -412,7 +413,11 @@ export function ChatWidget() {
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${operatorOnline ? "bg-emerald-400" : "bg-amber-400"}`}
                     />
-                    {operatorOnline ? activeConfig.responseTimeLabel : "Mesajele rămân salvate"}
+                    {activeConfig.aiEnabled
+                      ? "Asistent virtual · răspuns în câteva clipe"
+                      : operatorOnline
+                        ? activeConfig.responseTimeLabel
+                        : "Mesajele rămân salvate"}
                   </p>
                 </div>
                 <button
@@ -432,7 +437,11 @@ export function ChatWidget() {
               aria-live="polite"
             >
               <div className="max-w-[88%] rounded-lg rounded-tl-sm border border-amber-900/10 bg-white px-3 py-2.5 text-sm leading-relaxed text-[#4b382d] shadow-sm">
-                {operatorOnline ? activeConfig.welcomeMessage : activeConfig.offlineMessage}
+                {activeConfig.aiEnabled
+                  ? activeConfig.welcomeMessage
+                  : operatorOnline
+                    ? activeConfig.welcomeMessage
+                    : activeConfig.offlineMessage}
               </div>
               {messages.length === 0 && activeConfig.quickReplies.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
@@ -454,6 +463,11 @@ export function ChatWidget() {
                     <div
                       className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-sm ${mine ? "rounded-br-sm bg-[var(--chat-accent)] text-white" : "rounded-bl-sm border border-amber-900/10 bg-white text-[#4b382d]"}`}
                     >
+                      {item.senderType === "assistant" && (
+                        <span className="mb-1 block text-[10px] font-semibold text-[#8b5a2b]">
+                          Asistent virtual
+                        </span>
+                      )}
                       {item.body}
                       <span
                         className={`mt-1 block text-[9px] ${mine ? "text-white/65" : "text-[#8b735f]"}`}

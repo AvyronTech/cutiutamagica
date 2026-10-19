@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getAdminNotifications, markNotificationRead } from "@/lib/admin.functions";
 import type { StorefrontMessage } from "@/lib/storefront-messages";
+import { adminNotificationLink } from "@/lib/admin-notification-link";
 const input = "mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-2 text-white";
 const url = "/api/v1/admin/storefront/messages";
 export default function NotificationCenter() {
@@ -98,6 +99,14 @@ export default function NotificationCenter() {
             <div>
               <strong>{n.title}</strong>
               <p className="mt-1 text-sm text-slate-400">{n.message}</p>
+              {adminNotificationLink(n.actionUrl) && (
+                <a
+                  href={adminNotificationLink(n.actionUrl)!}
+                  className="mt-2 inline-block text-sm font-medium text-amber-200 hover:underline"
+                >
+                  Deschide conversația sau acțiunea →
+                </a>
+              )}
             </div>
             <button
               onClick={async () => {

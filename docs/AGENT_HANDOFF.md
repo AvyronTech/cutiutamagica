@@ -1,5 +1,13 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — inbox chat și asistent virtual autonom
+
+- Ramura `codex/customer-ai-chat-inbox` pornește din `codex/cutiuta-cloudflare-final` la `e90f379`. Notificările administrative deschid acum ruta chatului și conversația indicată. Inboxul permite preluarea și reluarea asistentului, urmărirea răspunsurilor și editarea informațiilor aprobate de echipă.
+- Chatul public identifică vizibil asistentul virtual. După autorizarea explicită a utilizatorului în conversație, acesta răspunde automat la întrebările obișnuite despre produsele disponibile, cu prețuri citite din catalogul D1; nu trimite același răspuns de două ori. Un administrator care preia conversația oprește răspunsul AI inclusiv dacă modelul încă generează. Întrebările despre comenzi, retururi, reclamații și situații sensibile sunt trimise echipei, iar clientul primește confirmarea de preluare. Mesajele și acțiunile AI se păstrează în conversație și în audit.
+- Workers AI folosește bindingul `AI` existent și modelul `@cf/meta/llama-3.1-8b-instruct-fp8`. Limita internă este 30 de generări pe zi, fără chei noi sau abonament nou. Dacă bugetul se termină ori furnizorul nu răspunde, conversația trece la echipă. Limita este specifică magazinului și nu garantează că alte aplicații din același cont Cloudflare nu consumă alocarea gratuită.
+- Migrații append-only: `0073_customer_chat_ai.sql` pentru cunoștințe, stare și jurnal de generare; `0074_chat_notification_deep_links.sql` pentru notificările vechi; `0075_chat_ai_autonomous_replies.sql` pentru jurnalul livrării și activarea asistentului. Aplică-le în această ordine, înainte de Worker. Migrarea 0075 activează răspunsurile AI în setările magazinului, așa cum a cerut utilizatorul; pot fi oprite din `/admin/chat`.
+- Verificări locale: `npm run typecheck`, 56 fișiere / 298 teste înainte de completarea auditului, `npm run lint`, `npm run build`, `npm run cf:deploy:dry`, `git diff --check` și migrațiile 0073–0075 local. Chatul public a fost verificat în browser la 1280 și 390 px, fără depășire orizontală; panoul admin modificat necesită verificare cu sesiune autenticată după publicare. Nu s-a apelat modelul real în testul de browser local, deoarece bindingul AI local poate consuma resurse remote. Nu s-au făcut push, migrare remote sau deploy în această etapă.
+
 ## Handoff 2026-10-19 — cotații live cu tarife calibrate de rezervă
 
 - Magazinul afișează cotațiile SmartShip live când serviciul răspunde și păstrează toate ofertele eligibile. Numai o eroare de furnizor, rețea sau timeout declanșează un tarif de rezervă; erorile de adresă, ramburs și lipsa unui curier eligibil nu sunt mascate.
