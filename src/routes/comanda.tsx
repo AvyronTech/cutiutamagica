@@ -142,10 +142,15 @@ function OrderPage() {
   const [promotionError, setPromotionError] = useState("");
   const [promotionExpanded, setPromotionExpanded] = useState(false);
   const [activeCheckoutStep, setActiveCheckoutStep] = useState(1);
+  const [preferredWallet, setPreferredWallet] = useState<"apple" | "google" | null>(null);
   const cartSignature = JSON.stringify(itemsDetailed.map((item) => [item.id, item.qty]));
   const activePromotion =
     appliedPromotion?.cartSignature === cartSignature ? appliedPromotion : null;
   const productsAfterCode = Math.max(0, totals.total - (activePromotion?.discount ?? 0));
+  const recommendsAdvancePayment = itemsDetailed.some(
+    (item) => item.product.prepaymentRecommended || /personalizat/i.test(item.product.category),
+  );
+  const onlineOptions = config?.payments.options ?? [];
   const deliveryRequest = {
     customer: form,
     items: itemsDetailed.map((i) => ({ productId: i.id, quantity: i.qty })),
@@ -163,6 +168,13 @@ function OrderPage() {
     quote?.context === deliveryContext && Date.parse(quote.offer.expiresAt) > Date.now()
       ? quote.offer
       : null;
+  useEffect(() => {
+    const agent = navigator.userAgent;
+    setPreferredWallet(
+      /iPhone|iPad|iPod/i.test(agent) ? "apple" : /Android/i.test(agent) ? "google" : null,
+    );
+  }, []);
+
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(pendingPaymentKey);
@@ -315,6 +327,15 @@ function OrderPage() {
       setShippingOption("home_delivery");
       setEasyboxLocker(null);
     }
+    if (
+      shippingOption === "easybox" &&
+      easyboxLocker?.supportsCashOnDelivery === false &&
+      paymentMethod === "cash_on_delivery" &&
+      config?.payments.options.length
+    ) {
+      setPaymentMethod("card");
+      setPaymentProvider(config.payments.options[0].id);
+    }
     if (paymentMethod === "card" && !config?.payments.options.length)
       setPaymentMethod("cash_on_delivery");
     if (
@@ -322,7 +343,7 @@ function OrderPage() {
       !config.payments.options.some((o) => o.id === paymentProvider)
     )
       setPaymentProvider(config.payments.options[0].id);
-  }, [config, paymentMethod, shippingOption, paymentProvider]);
+  }, [config, easyboxLocker, paymentMethod, shippingOption, paymentProvider]);
 
   const shippingCost = useMemo(() => {
     if (activeQuote) return activeQuote.price;
@@ -872,8 +893,8 @@ function OrderPage() {
                           <small>Doar informațiile necesare livrării</small>
                         </span>
                       </h2>
-                      <div className="mt-3 grid gap-x-3 gap-y-2.5 sm:grid-cols-2">
-                        <label className="block text-xs font-medium text-muted-foreground">
+                      <div className="checkout-fields mt-3 grid grid-cols-2 gap-x-2.5 gap-y-2 sm:gap-x-3">
+                        <label className="col-span-2 block text-xs font-medium text-muted-foreground sm:col-span-1">
                           Nume complet
                           <input
                             required
@@ -887,7 +908,7 @@ function OrderPage() {
                             className={inputClass}
                           />
                         </label>
-                        <label className="block text-xs font-medium text-muted-foreground">
+                        <label className="col-span-2 block text-xs font-medium text-muted-foreground sm:col-span-1">
                           E-mail
                           <input
                             required
@@ -900,7 +921,7 @@ function OrderPage() {
                             className={inputClass}
                           />
                         </label>
-                        <label className="block text-xs font-medium text-muted-foreground">
+                        <label className="col-span-2 block text-xs font-medium text-muted-foreground sm:col-span-1">
                           Telefon (pentru curier)
                           <input
                             required
@@ -941,7 +962,7 @@ function OrderPage() {
                           />
                         </label>
                         {needsSector && (
-                          <label className="block text-xs font-medium text-muted-foreground">
+                          <label className="col-span-2 block text-xs font-medium text-muted-foreground sm:col-span-1">
                             Sectorul livrării
                             <select
                               required={!sectorFromPostalCode(form.postalCode)}
@@ -959,7 +980,7 @@ function OrderPage() {
                             </select>
                           </label>
                         )}
-                        <label className="block text-xs font-medium text-muted-foreground sm:col-span-2">
+                        <label className="col-span-2 block text-xs font-medium text-muted-foreground">
                           Adresă
                           <input
                             required
@@ -974,7 +995,7 @@ function OrderPage() {
                           />
                         </label>
                         <details
-                          className="checkout-optional-fields sm:col-span-2"
+                          className="checkout-optional-fields col-span-2"
                           open={
                             paymentMethod === "card" && paymentProvider === "revolut_pay"
                               ? true
@@ -1105,11 +1126,41 @@ function OrderPage() {
                       )}
                     </ChoiceSection>
 
-                    <ChoiceSection
-                      step={3}
-                      title="Plată"
-                      subtitle="Metoda și momentul plății, clar"
-                    >
+                    <ChoiceSection step={3} title="Plată" subtitle="Alege cum îți este mai ușor">
+                      {recommendsAdvancePayment && onlineOptions.length > 0 && (
+                        <p className="checkout-payment-tip sm:col-span-2">
+                          <Sparkles size={16} aria-hidden /> Pentru o cutiuță pregătită special
+                          pentru tine, recomandăm plata online în avans.
+                        </p>
+                      )}
+                      {onlineOptions.map((option) => (
+                        <Choice
+                          key={option.id}
+                          name="payment-method"
+                          disabled={shippingCost == null && !config?.shipping.liveQuotesEnabled}
+                          selected={paymentMethod === "card" && paymentProvider === option.id}
+                          onChange={() => {
+                            setPaymentMethod("card");
+                            setPaymentProvider(option.id);
+                          }}
+                          icon={<CreditCard className="h-5 w-5" />}
+                          title={option.id === "stripe" ? "Card online" : option.label}
+                          badge={
+                            option.id === onlineOptions[0]?.id && preferredWallet
+                              ? `${preferredWallet === "apple" ? "Apple Pay" : "Google Pay"}, dacă este disponibil`
+                              : undefined
+                          }
+                          note={
+                            shippingCost == null
+                              ? config?.shipping.liveQuotesEnabled
+                                ? "Alege curierul pentru a confirma totalul"
+                                : "Disponibil după confirmarea costului de livrare"
+                              : option.id === "stripe"
+                                ? "Card sau portofel digital, dacă este disponibil la procesator"
+                                : option.description
+                          }
+                        />
+                      ))}
                       <Choice
                         name="payment-method"
                         disabled={
@@ -1127,31 +1178,10 @@ function OrderPage() {
                             : "Achită coletul la predare"
                         }
                       />
-                      {config?.payments.options.map((option) => (
-                        <Choice
-                          key={option.id}
-                          name="payment-method"
-                          disabled={shippingCost == null && !config?.shipping.liveQuotesEnabled}
-                          selected={paymentMethod === "card" && paymentProvider === option.id}
-                          onChange={() => {
-                            setPaymentMethod("card");
-                            setPaymentProvider(option.id);
-                          }}
-                          icon={<CreditCard className="h-5 w-5" />}
-                          title={option.label}
-                          note={
-                            shippingCost == null
-                              ? config?.shipping.liveQuotesEnabled
-                                ? "Alege curierul pentru a confirma totalul"
-                                : "Disponibil după confirmarea costului de livrare"
-                              : option.description
-                          }
-                        />
-                      ))}
                       {paymentMethod === "card" && (
                         <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
-                          Plata se finalizează în siguranță la procesator. Datele cardului nu ajung
-                          în magazin.
+                          Plata se finalizează în pagina securizată a procesatorului. Metodele
+                          afișate acolo depind de dispozitiv și de eligibilitatea comenzii.
                         </p>
                       )}
                       <section className="checkout-promotion rounded-xl border border-[color:var(--gold)]/25 bg-card/85 p-3.5 backdrop-blur-sm sm:col-span-2">
@@ -1366,6 +1396,21 @@ function OrderPage() {
             </aside>
           )}
         </div>
+
+        {totalQty > 0 && (
+          <aside className="checkout-account-invite" aria-label="Contul Cutiuța Magică">
+            <div className="checkout-account-invite__symbol" aria-hidden>
+              ✦
+            </div>
+            <div>
+              <h2>Mai multă magie, mai puțini pași data viitoare</h2>
+              <p>Un cont îți păstrează comenzile și beneficiile Magic Rewards la îndemână.</p>
+            </div>
+            <Link to="/cont" search={{ mod: "creare" }} className="checkout-account-invite__link">
+              Creează cont <ArrowRight size={16} aria-hidden />
+            </Link>
+          </aside>
+        )}
 
         {/* Bara de acțiune pe telefon: totalul rămâne vizibil, comanda se trimite de aici. */}
         {itemsDetailed.length > 0 && (
@@ -1586,6 +1631,7 @@ function Choice({
   title,
   note,
   name,
+  badge,
 }: {
   disabled?: boolean;
   name: string;
@@ -1594,10 +1640,11 @@ function Choice({
   icon: React.ReactNode;
   title: string;
   note: string;
+  badge?: string;
 }) {
   return (
     <label
-      className={`flex min-h-14 items-center gap-2.5 rounded-xl border p-3 ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
+      className={`checkout-choice flex min-h-14 items-center gap-2.5 rounded-xl border p-3 ${disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer"} ${selected ? "border-primary bg-primary/5" : "border-border"}`}
     >
       <input
         type="radio"
@@ -1610,6 +1657,7 @@ function Choice({
       {icon}
       <span>
         <strong className="block text-sm">{title}</strong>
+        {badge && <span className="checkout-choice-badge">{badge}</span>}
         <span className="text-xs text-muted-foreground">{note}</span>
       </span>
     </label>

@@ -39,6 +39,8 @@ export type Product = {
   sortOrder?: number;
   featured?: boolean;
   preorderEnabled?: boolean;
+  /** Suggest online prepayment for a made-to-order product; this does not change payment eligibility. */
+  prepaymentRecommended?: boolean;
   releaseNote?: string;
   limitedEdition?: ProductLimitedEdition;
   seoTitle?: string;

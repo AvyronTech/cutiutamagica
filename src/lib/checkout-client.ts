@@ -4,7 +4,7 @@ export type PendingPayment = {
   order: WebsiteOrderPublicResult;
   items: Array<{ id: string; qty: number }>;
 };
-export async function openSecureCheckout(order: WebsiteOrderPublicResult) {
+export async function secureCheckoutUrl(order: WebsiteOrderPublicResult) {
   const response = await fetch("/api/v1/payments/checkout", {
     method: "POST",
     credentials: "same-origin",
@@ -25,5 +25,8 @@ export async function openSecureCheckout(order: WebsiteOrderPublicResult) {
     )
   )
     throw new Error("Pagina de plată nu este disponibilă.");
-  window.location.assign(url.href);
+  return url.href;
+}
+export async function openSecureCheckout(order: WebsiteOrderPublicResult) {
+  window.location.assign(await secureCheckoutUrl(order));
 }
