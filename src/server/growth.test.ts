@@ -14,7 +14,7 @@ import {
   getAdminShippingInsightsData,
   refreshSmartShipTracking,
 } from "./services/shipping-insights";
-import { getSmartShipAccountOverview } from "./integrations/smartship";
+import { diagnoseSmartShipQuote, getSmartShipAccountOverview } from "./integrations/smartship";
 
 const databases: DatabaseSync[] = [];
 function database() {
@@ -144,6 +144,53 @@ describe("growth and commerce integration", () => {
     });
     expect(JSON.stringify(overview)).not.toContain("Private");
     expect(JSON.stringify(overview)).not.toContain("PRIVATE");
+  });
+  it("isolates a SmartShip quote rejection without creating an AWB or exposing sender contact data", async () => {
+    const { db, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    const paths: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string, init?: RequestInit) => {
+        paths.push(new URL(input).pathname);
+        const body = JSON.parse(String(init?.body)) as {
+          show_byoc: number;
+          sender: { name: string };
+        };
+        const payload =
+          body.sender.name === "Atelier Test SRL"
+            ? { status: 91929, message: "Contact: atelier@test.ro 0720123456" }
+            : { status: 200, costs: [{ courier_id: 1, cost: 23.81 }] };
+        return Promise.resolve(new Response(JSON.stringify(payload), { status: 200 }));
+      }),
+    );
+    const result = await diagnoseSmartShipQuote(
+      env,
+      {
+        name: "Atelier Test SRL",
+        address: "Str. Test 6A",
+        email: "atelier@test.ro",
+        phone: "0720123456",
+        cityId: 259539,
+        sector: 0,
+      },
+      { weightKg: 0.35, lengthCm: 12, widthCm: 8, heightCm: 6 },
+    );
+    expect(paths).toEqual(["/cost", "/cost", "/cost"]);
+    expect(
+      result.probes.map(({ variant, providerStatus, courierCount }) => ({
+        variant,
+        providerStatus,
+        courierCount,
+      })),
+    ).toEqual([
+      { variant: "configured", providerStatus: 91929, courierCount: 0 },
+      { variant: "without_own_contracts", providerStatus: 91929, courierCount: 0 },
+      { variant: "documented_sample", providerStatus: 200, courierCount: 1 },
+    ]);
+    expect(JSON.stringify(result)).not.toContain("atelier@test.ro");
+    expect(JSON.stringify(result)).not.toContain("0720123456");
   });
   it("refreshes one AWB twice without duplicating tracking events", async () => {
     const { db, sql, actor } = database();

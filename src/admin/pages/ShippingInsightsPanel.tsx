@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowUpRight, CircleAlert, PackageCheck, RefreshCw, Truck } from "lucide-react";
 import { toast } from "sonner";
 import {
+  diagnoseAdminSmartShipQuote,
   getAdminShippingInsights,
   getAdminSmartShipAccountOverview,
   refreshAdminSmartShipTracking,
@@ -39,6 +40,7 @@ export default function ShippingInsightsPanel() {
   const loadInsights = useServerFn(getAdminShippingInsights);
   const loadAccount = useServerFn(getAdminSmartShipAccountOverview);
   const refreshTracking = useServerFn(refreshAdminSmartShipTracking);
+  const runQuoteDiagnostics = useServerFn(diagnoseAdminSmartShipQuote);
   const [accountRequested, setAccountRequested] = useState(false);
   const insights = useQuery({
     queryKey: ["admin", "shipping-insights"],
@@ -64,6 +66,10 @@ export default function ShippingInsightsPanel() {
       toast.error("Trackingul nu a putut fi actualizat", {
         description: error.message,
       }),
+  });
+  const quoteDiagnostics = useMutation({
+    mutationFn: () => runQuoteDiagnostics(),
+    onError: (error) => toast.error("Testul cotației nu a reușit", { description: error.message }),
   });
   const summary = insights.data?.summary;
   const cards = [
@@ -349,6 +355,55 @@ export default function ShippingInsightsPanel() {
             <p className="text-[11px] text-slate-500">
               Verificat la {localDateTime(account.data.checkedAt)} · fără emitere de AWB sau comandă
               de ridicare.
+            </p>
+          </div>
+        )}
+      </div>
+      <div className="rounded-xl border border-white/10 bg-[#0b1526] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Test cotație SmartShip</h3>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-400">
+              Verifică expeditorul salvat și un colet standard pe ruta de exemplu din documentație.
+              Nu creează comandă, AWB sau plată și nu schimbă tarifele afișate cumpărătorilor.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={quoteDiagnostics.isPending}
+            onClick={() => quoteDiagnostics.mutate()}
+            className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-cyan-300/30 px-3 text-xs font-semibold text-cyan-200 disabled:opacity-50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Testează cotația
+          </button>
+        </div>
+        {quoteDiagnostics.data && (
+          <div className="mt-3 space-y-2" aria-live="polite">
+            {quoteDiagnostics.data.probes.map((probe) => (
+              <p
+                key={probe.variant}
+                className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300"
+              >
+                <strong className="text-white">
+                  {
+                    {
+                      configured: "Expeditor configurat",
+                      without_own_contracts: "Fără contracte proprii",
+                      documented_sample: "Exemplul SmartShip",
+                    }[probe.variant]
+                  }
+                </strong>
+                {" · "}
+                {probe.courierCount > 0
+                  ? `${probe.courierCount} curieri disponibili`
+                  : `Fără oferte · cod ${probe.providerStatus ?? probe.httpStatus}`}
+                {probe.errorIds.length > 0 ? ` · erori ${probe.errorIds.join(", ")}` : ""}
+                {probe.message ? ` · ${probe.message}` : ""}
+              </p>
+            ))}
+            <p className="text-[11px] text-slate-500">
+              Verificat la {localDateTime(quoteDiagnostics.data.checkedAt)}. Testul este înregistrat
+              în jurnalul administrativ.
             </p>
           </div>
         )}

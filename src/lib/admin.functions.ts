@@ -17,7 +17,10 @@ import {
 } from "@/server/integrations/resend";
 import { awardMagicStarsForDeliveredOrder } from "@/server/services/magic-rewards";
 import { issueSmartShipAwb, reconcileSmartShipAwb } from "@/server/services/smartship-fulfillment";
-import { getSmartShipAccountOverview } from "@/server/integrations/smartship";
+import {
+  diagnoseSmartShipQuote,
+  getSmartShipAccountOverview,
+} from "@/server/integrations/smartship";
 import {
   getAdminShippingInsightsData,
   refreshSmartShipTracking,
@@ -87,6 +90,71 @@ export const getAdminSmartShipAccountOverview = createServerFn({ method: "GET" }
     assertPermission(context.admin, "integrations.read");
     assertPermission(context.admin, "reports.read");
     return getSmartShipAccountOverview(env as CommerceEnv);
+  });
+
+export const diagnoseAdminSmartShipQuote = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    const request = getRequest();
+    if (request.headers.get("origin") !== new URL(request.url).origin)
+      throw new Error("Cerere de administrare nepermisă.");
+    assertPermission(context.admin, "integrations.read");
+    assertPermission(context.admin, "reports.read");
+    const policy = await env.DB.prepare(
+      "SELECT sender_name,sender_address,sender_email,sender_phone,sender_city_id,sender_sector,default_weight_g,default_length_cm,default_width_cm,default_height_cm FROM shipping_policy_configs WHERE code='RO_STANDARD'",
+    ).first<Record<string, string | number | null>>();
+    if (
+      !policy?.sender_name ||
+      !policy.sender_address ||
+      !policy.sender_email ||
+      !policy.sender_phone ||
+      !policy.sender_city_id ||
+      !policy.default_weight_g ||
+      !policy.default_length_cm ||
+      !policy.default_width_cm ||
+      !policy.default_height_cm
+    )
+      throw new Error("Completează mai întâi expeditorul și dimensiunile coletului.");
+    const diagnostics = await diagnoseSmartShipQuote(
+      env as CommerceEnv,
+      {
+        name: String(policy.sender_name),
+        address: String(policy.sender_address),
+        email: String(policy.sender_email),
+        phone: String(policy.sender_phone),
+        cityId: Number(policy.sender_city_id),
+        sector: Number(policy.sender_sector || 0),
+        country: "RO",
+      },
+      {
+        weightKg: Number(policy.default_weight_g) / 1000,
+        lengthCm: Number(policy.default_length_cm),
+        widthCm: Number(policy.default_width_cm),
+        heightCm: Number(policy.default_height_cm),
+      },
+    );
+    await env.DB.prepare(
+      `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,after_json,metadata_json)
+       VALUES(?1,?2,?3,'shipping.smartship_quote.diagnose','shipping_policy','RO_STANDARD',?4,'{}')`,
+    )
+      .bind(
+        crypto.randomUUID(),
+        context.admin.id,
+        context.admin.email,
+        JSON.stringify({
+          checkedAt: diagnostics.checkedAt,
+          probes: diagnostics.probes.map(
+            ({ variant, httpStatus, providerStatus, courierCount }) => ({
+              variant,
+              httpStatus,
+              providerStatus,
+              courierCount,
+            }),
+          ),
+        }),
+      )
+      .run();
+    return diagnostics;
   });
 
 export const refreshAdminSmartShipTracking = createServerFn({ method: "POST" })
