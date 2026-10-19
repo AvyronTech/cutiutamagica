@@ -20,12 +20,14 @@ export function EasyboxPicker({
   selected,
   searchHint,
   onSelect,
+  openOnMount = false,
 }: {
   selected: EasyboxLocker | null;
   searchHint: string;
   onSelect: (locker: EasyboxLocker) => void;
+  openOnMount?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openOnMount);
   const [search, setSearch] = useState(searchHint);
   const [lockers, setLockers] = useState<EasyboxLocker[]>([]);
   const [draft, setDraft] = useState<EasyboxLocker | null>(selected);
