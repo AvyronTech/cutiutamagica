@@ -163,18 +163,6 @@ function AdminAuth({ redirect }: { redirect?: string }) {
             <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-[#e8c88d]/30 bg-[#e8c88d]/10">
               <ShieldCheck className="h-5 w-5 text-[#e8c88d]" />
             </div>
-            <div className="mt-4 flex gap-2 text-xs">
-              <Link
-                to="/auth"
-                search={{ role: "client" }}
-                className="rounded-full border border-white/15 px-3 py-2 text-[#f7ead3]/70 hover:text-white"
-              >
-                Cont client
-              </Link>
-              <span className="rounded-full border border-[#e8c88d]/50 bg-[#e8c88d]/15 px-3 py-2 text-[#f3d9a8]">
-                Echipă
-              </span>
-            </div>
             <h2 className="mt-4 font-display text-3xl">Intră în administrare</h2>
             <p className="mt-2 text-sm leading-6 text-[#f7ead3]/65">
               Folosește adresa de e-mail și parola contului administrativ.
@@ -238,16 +226,39 @@ function CustomerAuth() {
   const providers = useQuery({
     queryKey: ["reviewer-auth-providers"],
     queryFn: () =>
-      reviewApi<{ google: { enabled: boolean }; email: { enabled: boolean } }>(
-        "/api/v1/reviewer/providers",
-      ),
+      reviewApi<{
+        google: { enabled: boolean };
+        apple: { enabled: boolean };
+        email: { enabled: boolean };
+      }>("/api/v1/reviewer/providers"),
     retry: false,
   });
+  const [mode, setMode] = useState<"password" | "email" | "forgot">("password");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [email, setEmail] = useState("");
   const [challengeId, setChallengeId] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  async function loginWithPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await reviewApi<Reviewer>("/api/v1/reviewer/login", {
+        method: "POST",
+        body: JSON.stringify({ identifier, password, remember }),
+      });
+      window.location.assign("/cont");
+    } catch (cause) {
+      setError(readableError(cause));
+      setBusy(false);
+    }
+  }
 
   async function requestCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -273,9 +284,9 @@ function CustomerAuth() {
     try {
       await reviewApi<Reviewer>("/api/v1/reviewer/email/verify", {
         method: "POST",
-        body: JSON.stringify({ email, challengeId, code }),
+        body: JSON.stringify({ email, challengeId, code, remember }),
       });
-      window.location.assign("/cont");
+      window.location.assign(mode === "forgot" ? "/cont#securitatea-contului" : "/cont");
     } catch (cause) {
       setError(readableError(cause));
       setBusy(false);
@@ -316,25 +327,85 @@ function CustomerAuth() {
           </div>
         </section>
         <section className="customer-login__card" aria-labelledby="customer-login-title">
-          <div className="customer-login__tabs">
-            <span aria-current="page">Cont client</span>
-            <Link to="/auth" search={{ role: "admin", redirect: "/admin" }}>
-              Echipă
-            </Link>
-          </div>
           <div className="customer-login__icon">
             <Mail size={23} />
           </div>
           <p className="customer-login__kicker">Bine ai revenit</p>
           <h2 id="customer-login-title">
-            {challengeId ? "Verifică-ți e-mailul" : "Intră în povestea ta"}
+            {challengeId
+              ? "Verifică-ți e-mailul"
+              : mode === "forgot"
+                ? "Recuperează accesul"
+                : "Intră în povestea ta"}
           </h2>
           <p className="customer-login__intro">
             {challengeId
               ? `Am trimis un cod de 8 cifre la ${email}. Este valabil 10 minute.`
-              : "Primești un cod de acces pe e-mail. La prima vizită, contul se creează automat."}
+              : mode === "forgot"
+                ? "Primești un cod pe e-mail. După confirmare poți seta o parolă nouă în cont."
+                : mode === "email"
+                  ? "La prima vizită, contul se creează după confirmarea codului primit pe e-mail."
+                  : "Conectează-te cu e-mailul sau numărul de telefon și parola contului."}
           </p>
-          {challengeId ? (
+          {mode === "password" ? (
+            <form
+              onSubmit={(event) => void loginWithPassword(event)}
+              className="customer-login__form"
+            >
+              <label htmlFor="customer-login-identifier">E-mail sau număr de telefon</label>
+              <input
+                id="customer-login-identifier"
+                value={identifier}
+                onChange={(event) => setIdentifier(event.target.value)}
+                autoComplete="username"
+                maxLength={254}
+                required
+                placeholder="nume@exemplu.ro sau 07…"
+              />
+              <label htmlFor="customer-login-password">Parolă</label>
+              <span className="customer-login__password-field">
+                <input
+                  id="customer-login-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  maxLength={128}
+                  required
+                  placeholder="Parola contului"
+                />
+                <button
+                  type="button"
+                  className="customer-login__reveal"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </span>
+              <label className="customer-login__remember">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                />
+                Păstrează-mă conectat
+              </label>
+              <button disabled={busy}>
+                {busy ? "Se conectează…" : "Intră în cont"} <ArrowRight size={17} />
+              </button>
+              <button
+                type="button"
+                className="customer-login__text-button"
+                onClick={() => {
+                  setMode("forgot");
+                  setError("");
+                }}
+              >
+                Am uitat parola
+              </button>
+            </form>
+          ) : challengeId ? (
             <form onSubmit={(event) => void verifyCode(event)} className="customer-login__form">
               <label htmlFor="customer-login-code">Codul de acces</label>
               <input
@@ -352,6 +423,14 @@ function CustomerAuth() {
               <button disabled={busy || code.length !== 8}>
                 {busy ? "Se verifică…" : "Deschide contul"} <ArrowRight size={17} />
               </button>
+              <label className="customer-login__remember">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                />
+                Păstrează-mă conectat
+              </label>
               <button
                 type="button"
                 className="customer-login__text-button"
@@ -383,26 +462,69 @@ function CustomerAuth() {
               >
                 {busy ? "Se trimite…" : "Trimite codul de acces"} <ArrowRight size={17} />
               </button>
+              <label className="customer-login__remember">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                />
+                Păstrează-mă conectat
+              </label>
             </form>
           )}
+          <div className="customer-login__options">
+            {mode !== "password" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("password");
+                  setChallengeId("");
+                  setError("");
+                }}
+              >
+                Intră cu parolă
+              </button>
+            )}
+            {mode !== "email" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("email");
+                  setChallengeId("");
+                  setError("");
+                }}
+              >
+                Creează cont / intră cu cod pe e-mail
+              </button>
+            )}
+          </div>
           {error && (
             <p className="customer-login__error" role="alert">
               {error}
             </p>
           )}
-          {providers.data?.google.enabled && (
+          {(providers.data?.google.enabled || providers.data?.apple.enabled) && (
             <div className="customer-login__alternate">
               <span>sau</span>
-              <a href="/api/v1/reviewer/oauth/google">
-                Continuă cu Google <ArrowRight size={16} />
-              </a>
+              {providers.data?.google.enabled && (
+                <a href={`/api/v1/reviewer/oauth/google${remember ? "?remember=1" : ""}`}>
+                  Continuă cu Google <ArrowRight size={16} />
+                </a>
+              )}
+              {providers.data?.apple.enabled && (
+                <a href={`/api/v1/reviewer/oauth/apple${remember ? "?remember=1" : ""}`}>
+                  Continuă cu Apple <ArrowRight size={16} />
+                </a>
+              )}
             </div>
           )}
-          {providers.data?.email.enabled === false && !providers.data.google.enabled && (
-            <p className="customer-login__error" role="status">
-              Accesul prin e-mail este în configurare. Poți continua cumpărăturile fără cont.
-            </p>
-          )}
+          {providers.data?.email.enabled === false &&
+            !providers.data.google.enabled &&
+            !providers.data.apple.enabled && (
+              <p className="customer-login__error" role="status">
+                Accesul prin e-mail este în configurare. Poți continua cumpărăturile fără cont.
+              </p>
+            )}
           <p className="customer-login__privacy">
             Continuând, confirmi că ai citit{" "}
             <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.

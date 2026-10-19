@@ -279,7 +279,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
-  const showBack = isChrome && pathname !== "/";
+  const showBack = isChrome && pathname !== "/" && pathname !== "/cont";
   const isProductPage = isProductPath(pathname);
   return (
     <QueryClientProvider client={queryClient}>

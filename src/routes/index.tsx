@@ -126,14 +126,14 @@ function Index() {
                 </div>
               )}
               <div className="hero-discovery">
-                <a
-                  href="#povesti"
+                <Link
+                  to="/produse"
                   className="magic-button"
-                  aria-label="Găsește cutiuța ta — vezi poveștile"
+                  aria-label="Găsește cutiuța ta — vezi toate produsele"
                 >
                   Găsește cutiuța ta
                   <ArrowUpRight size={17} aria-hidden />
-                </a>
+                </Link>
                 <p className="hero-footnote">
                   Cutiuțe muzicale din lemn · mecanism manual · fără baterii
                 </p>
