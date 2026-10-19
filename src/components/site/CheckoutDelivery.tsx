@@ -64,8 +64,8 @@ export function CheckoutDelivery({
     <div className="min-w-0 sm:col-span-2">
       <p className="text-sm text-muted-foreground">
         {request.shippingOption === "easybox"
-          ? "Confirmăm disponibilitatea punctului ales și tariful final înainte de comandă."
-          : "După completarea adresei, afișăm toate ofertele disponibile fără imprimarea etichetei, cu prețul final și termenul estimat. Datele de livrare sunt transmise serviciului de curierat."}
+          ? "Vezi prețul pentru punctul Easybox ales înainte de a plasa comanda."
+          : "Alege oferta care ți se potrivește. Vezi prețul final și termenul estimat înainte de comandă."}
       </p>
       <button
         type="button"
@@ -86,8 +86,8 @@ export function CheckoutDelivery({
       )}
       {offers.some((offer) => offer.fixedFallback) && (
         <p role="status" className="mt-3 text-sm text-amber-700 dark:text-amber-200">
-          Serviciul de cotații nu răspunde acum. Îți oferim un tarif fix pentru această comandă;
-          prețul afișat rămâne final.
+          Prețul afișat este final pentru această comandă. Îți confirmăm termenul de livrare la
+          expediere.
         </p>
       )}
       <div className="mt-3 grid gap-2">
@@ -123,7 +123,7 @@ export function CheckoutDelivery({
               )}
               {offer.fixedFallback && (
                 <span className="text-xs text-muted-foreground">
-                  Tarif fix de rezervă · termenul se confirmă la expediere
+                  Preț final · termenul se confirmă la expediere
                 </span>
               )}
             </span>

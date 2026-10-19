@@ -341,9 +341,8 @@ function OrderPage() {
           ? 0
           : config.shipping.standardPrice;
 
-  async function applyPromotion(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!promotionCode.trim()) return;
+  async function applyPromotion() {
+    if (promotionCode.trim().length < 4 || promotionBusy) return;
     setPromotionBusy(true);
     setPromotionError("");
     setQuote(null);
@@ -607,25 +606,6 @@ function OrderPage() {
               </div>
             )}
             {itemsDetailed.length > 0 && (
-              <div className="checkout-delivery-early" role="status">
-                <PackageCheck className="h-4 w-4 shrink-0" aria-hidden />
-                <div>
-                  <strong>Costul livrării, înainte de datele tale</strong>
-                  <span>
-                    {!config
-                      ? "Încărcăm tariful real…"
-                      : config.shipping.requiresConfirmation
-                        ? "Îți comunicăm costul și totalul final înainte de expediere; nimic nu este adăugat pe ascuns."
-                        : shippingCost === 0
-                          ? "Livrare gratuită pentru această comandă."
-                          : shippingCost != null
-                            ? `${money(shippingCost)} ${shippingOption === "easybox" ? "la Easybox" : "prin curier"}${config.shipping.freeOver != null ? ` · gratuită de la ${money(config.shipping.freeOver)}` : ""}.`
-                            : "Tariful exact este afișat imediat după alegerea adresei și a curierului."}
-                  </span>
-                </div>
-              </div>
-            )}
-            {itemsDetailed.length > 0 && (
               <details className="checkout-mobile-order-review">
                 <summary>
                   <span>
@@ -844,77 +824,6 @@ function OrderPage() {
               </div>
             )}
 
-            {totalQty > 0 && (
-              <section className="checkout-promotion mt-4 rounded-xl border border-[color:var(--gold)]/25 bg-card/85 p-3.5 backdrop-blur-sm">
-                <button
-                  type="button"
-                  className="checkout-promotion-toggle"
-                  aria-expanded={promotionExpanded || Boolean(activePromotion)}
-                  onClick={() => setPromotionExpanded((current) => !current)}
-                >
-                  <span>
-                    <TicketPercent className="h-4 w-4" aria-hidden />
-                    {activePromotion ? `${activePromotion.code} aplicat` : "Ai un cod promoțional?"}
-                  </span>
-                  <span aria-hidden>{promotionExpanded || activePromotion ? "−" : "+"}</span>
-                </button>
-                {(promotionExpanded || activePromotion) &&
-                  (activePromotion ? (
-                    <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-800 dark:text-emerald-200">
-                      <span>
-                        <strong>{activePromotion.code}</strong> · −{money(activePromotion.discount)}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label="Elimină codul promoțional"
-                        onClick={() => {
-                          setAppliedPromotion(null);
-                          setPromotionCode("");
-                          setPromotionError("");
-                          setQuote(null);
-                        }}
-                        className="grid h-9 w-9 place-items-center rounded-full hover:bg-emerald-500/10"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <form onSubmit={applyPromotion} className="mt-3 flex gap-2">
-                      <input
-                        value={promotionCode}
-                        onChange={(event) => {
-                          setPromotionCode(event.target.value.toUpperCase());
-                          setPromotionError("");
-                        }}
-                        minLength={4}
-                        maxLength={40}
-                        autoComplete="off"
-                        placeholder="Ex. MAGIC-AB12CD34"
-                        aria-label="Cod promoțional"
-                        className="min-w-0 flex-1 rounded-lg border border-border bg-background/75 px-3 py-2.5 text-sm uppercase tracking-[0.08em] outline-none focus:border-[color:var(--gold)]"
-                      />
-                      <button
-                        type="submit"
-                        disabled={promotionBusy || !promotionCode.trim() || totalQty === 0}
-                        className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
-                      >
-                        {promotionBusy ? "Verificăm…" : "Aplică"}
-                      </button>
-                    </form>
-                  ))}
-                {(promotionExpanded || activePromotion) && promotionError && (
-                  <p role="alert" className="mt-2 text-xs text-amber-700 dark:text-amber-200">
-                    {promotionError}
-                  </p>
-                )}
-                {(promotionExpanded || activePromotion) && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Codurile de recomandare apar numai după ce o comandă a fost livrată.
-                  </p>
-                )}
-              </section>
-            )}
-
             {!submissionLocked && recommendations.length > 0 && (
               <CartRecommendations
                 products={recommendations}
@@ -1114,6 +1023,23 @@ function OrderPage() {
                       title="Livrare"
                       subtitle="Alegi cum ajunge povestea la tine"
                     >
+                      <div className="checkout-delivery-early sm:col-span-2" role="status">
+                        <PackageCheck className="h-4 w-4 shrink-0" aria-hidden />
+                        <div>
+                          <strong>Costul livrării</strong>
+                          <span>
+                            {!config
+                              ? "Încărcăm opțiunile…"
+                              : shippingCost === 0
+                                ? "Livrare gratuită pentru această comandă."
+                                : shippingCost != null
+                                  ? `${money(shippingCost)} ${shippingOption === "easybox" ? "la Easybox" : "prin curier"}.`
+                                  : shippingOption === "easybox"
+                                    ? "Alege un punct Easybox și vezi prețul înainte de comandă."
+                                    : "Completează adresa și alege oferta potrivită."}
+                          </span>
+                        </div>
+                      </div>
                       <Choice
                         name="shipping-method"
                         selected={shippingOption === "home_delivery"}
@@ -1161,6 +1087,7 @@ function OrderPage() {
                         <EasyboxPicker
                           selected={easyboxLocker}
                           searchHint={[form.city, form.county].filter(Boolean).join(", ")}
+                          openOnMount
                           onSelect={(locker) => {
                             setEasyboxLocker(locker);
                             setQuote(null);
@@ -1223,10 +1150,88 @@ function OrderPage() {
                       ))}
                       {paymentMethod === "card" && (
                         <p className="sm:col-span-2 text-xs leading-relaxed text-muted-foreground">
-                          Continui pe pagina securizată a procesatorului; datele cardului nu sunt
-                          introduse sau stocate pe acest site.
+                          Plata se finalizează în siguranță la procesator. Datele cardului nu ajung
+                          în magazin.
                         </p>
                       )}
+                      <section className="checkout-promotion rounded-xl border border-[color:var(--gold)]/25 bg-card/85 p-3.5 backdrop-blur-sm sm:col-span-2">
+                        <button
+                          type="button"
+                          className="checkout-promotion-toggle"
+                          aria-expanded={promotionExpanded || Boolean(activePromotion)}
+                          onClick={() => setPromotionExpanded((current) => !current)}
+                        >
+                          <span>
+                            <TicketPercent className="h-4 w-4" aria-hidden />
+                            {activePromotion
+                              ? `${activePromotion.code} aplicat`
+                              : "Ai un cod promoțional?"}
+                          </span>
+                          <span aria-hidden>
+                            {promotionExpanded || activePromotion ? "−" : "+"}
+                          </span>
+                        </button>
+                        {(promotionExpanded || activePromotion) &&
+                          (activePromotion ? (
+                            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-800 dark:text-emerald-200">
+                              <span>
+                                <strong>{activePromotion.code}</strong> · −
+                                {money(activePromotion.discount)}
+                              </span>
+                              <button
+                                type="button"
+                                aria-label="Elimină codul promoțional"
+                                onClick={() => {
+                                  setAppliedPromotion(null);
+                                  setPromotionCode("");
+                                  setPromotionError("");
+                                  setQuote(null);
+                                }}
+                                className="grid h-9 w-9 place-items-center rounded-full hover:bg-emerald-500/10"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="mt-3 flex gap-2">
+                              <input
+                                value={promotionCode}
+                                onChange={(event) => {
+                                  setPromotionCode(event.target.value.toUpperCase());
+                                  setPromotionError("");
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter") {
+                                    event.preventDefault();
+                                    void applyPromotion();
+                                  }
+                                }}
+                                minLength={4}
+                                maxLength={40}
+                                autoComplete="off"
+                                placeholder="Codul tău"
+                                aria-label="Cod promoțional"
+                                className="min-w-0 flex-1 rounded-lg border border-border bg-background/75 px-3 py-2.5 text-sm uppercase tracking-[0.08em] outline-none focus:border-[color:var(--gold)]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => void applyPromotion()}
+                                disabled={promotionBusy || promotionCode.trim().length < 4}
+                                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                              >
+                                {promotionBusy ? "Verificăm…" : "Aplică"}
+                              </button>
+                            </div>
+                          ))}
+                        {(promotionExpanded || activePromotion) && promotionError && (
+                          <p
+                            role="alert"
+                            className="mt-2 text-xs text-amber-700 dark:text-amber-200"
+                          >
+                            {promotionError}
+                          </p>
+                        )}
+                      </section>
                     </ChoiceSection>
 
                     <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card/90 p-3.5 text-xs leading-relaxed sm:text-sm">
