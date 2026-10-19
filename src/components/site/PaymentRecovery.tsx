@@ -1,9 +1,14 @@
 import { PHONE_TEL } from "@/lib/whatsapp";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, LockKeyhole, RefreshCw } from "lucide-react";
+import { Check, Copy, LockKeyhole, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { pendingPaymentKey, openSecureCheckout, type PendingPayment } from "@/lib/checkout-client";
+import {
+  pendingPaymentKey,
+  openSecureCheckout,
+  secureCheckoutUrl,
+  type PendingPayment,
+} from "@/lib/checkout-client";
 import type { PaymentStatus } from "@/lib/checkout-settings";
 export function PaymentRecovery({
   pending,
@@ -71,6 +76,20 @@ export function PaymentRecovery({
       setBusy(false);
     }
   }
+  async function copyPaymentLink() {
+    setBusy(true);
+    try {
+      const url = await secureCheckoutUrl(pending.order);
+      await navigator.clipboard.writeText(url);
+      toast.success(
+        "Linkul de plată a fost copiat. Este valabil cât timp sesiunea de plată este activă.",
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Linkul nu a putut fi copiat.");
+    } finally {
+      setBusy(false);
+    }
+  }
   const paid = status?.status === "paid";
   return (
     <section className="mx-auto max-w-xl px-4 py-20 text-center">
@@ -111,13 +130,22 @@ export function PaymentRecovery({
         )}
       </div>
       {status?.canResume && !error && (
-        <button
-          disabled={busy}
-          onClick={() => void resume()}
-          className="wood-grain mt-6 w-full rounded-xl px-6 py-3.5 text-[color:var(--cream)] disabled:opacity-50"
-        >
-          {busy ? "Se deschide plata…" : "Reia plata securizată"}
-        </button>
+        <div className="mt-6 grid gap-2 sm:grid-cols-2">
+          <button
+            disabled={busy}
+            onClick={() => void resume()}
+            className="wood-grain min-h-12 rounded-xl px-5 py-3 text-[color:var(--cream)] disabled:opacity-50"
+          >
+            {busy ? "Te rugăm să aștepți…" : "Reia plata securizată"}
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => void copyPaymentLink()}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-medium disabled:opacity-50"
+          >
+            <Copy size={16} aria-hidden /> Copiază linkul de plată
+          </button>
+        </div>
       )}
       {!paid && (
         <button
