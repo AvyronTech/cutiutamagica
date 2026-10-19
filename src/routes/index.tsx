@@ -115,19 +115,6 @@ function Index() {
                 Învârți manivela și începe melodia. Fiecare cutiuță din lemn păstrează o lume pe
                 care cineva drag o va recunoaște.
               </p>
-              <div className="hero-actions">
-                <a
-                  href="#povesti"
-                  className="magic-button"
-                  aria-label="Găsește cutiuța ta — vezi poveștile"
-                >
-                  Găsește cutiuța ta
-                  <ArrowUpRight size={17} />
-                </a>
-              </div>
-              <p className="hero-footnote">
-                Cutiuțe muzicale din lemn · mecanism manual · fără baterii
-              </p>
             </div>
             <div className="hero-object">
               <span className="hero-object-kicker">O mică lume, gata să fie descoperită</span>
@@ -138,6 +125,19 @@ function Index() {
                   <BrandMark className="h-2/3 w-2/3" />
                 </div>
               )}
+              <div className="hero-discovery">
+                <a
+                  href="#povesti"
+                  className="magic-button"
+                  aria-label="Găsește cutiuța ta — vezi poveștile"
+                >
+                  Găsește cutiuța ta
+                  <ArrowUpRight size={17} aria-hidden />
+                </a>
+                <p className="hero-footnote">
+                  Cutiuțe muzicale din lemn · mecanism manual · fără baterii
+                </p>
+              </div>
               <Link
                 to="/despre-cutiuta"
                 className="hero-about"
@@ -191,7 +191,8 @@ function Index() {
           spotlight={<RotatingSpotlight products={collectionProducts(products, "dedicated")} />}
         />
         <PersonalizationSpotlight />
-        <section className="story-invitation" data-world="dedicated">
+        <UpcomingCollection products={upcoming} />
+        <section className="story-invitation" data-world="future">
           <p className="scene-eyebrow">Dincolo de capac</p>
           <h2>
             Cum prinde viață
@@ -204,7 +205,6 @@ function Index() {
             <ArrowUpRight size={17} />
           </Link>
         </section>
-        <UpcomingCollection products={upcoming} />
         <ChristmasDrop />
         <ReviewCarousel data={reviews} />
         <GiftCalendarSpotlight />

@@ -339,17 +339,13 @@ describe("storefront and dashboard share one catalog", () => {
     expect(collectionProducts(products, "story").map((p) => p.id)).toEqual([
       "hp-keeper",
       "got-winter",
-      "lotr-rings",
-      "hp-always",
-      "fairy",
-      "pirates",
     ]);
     expect(collectionProducts(products, "emotion").map((p) => p.id)).toEqual(["sunshine"]);
     expect(
       collectionProducts(products, "dedicated")
         .map((p) => p.id)
         .sort(),
-    ).toEqual(["halloween", "kitten", "starwars-dad"]);
+    ).toEqual(["halloween", "kitten"]);
     expect(products.filter((p) => !isAvailable(p))).toHaveLength(5);
     expect(products.find((p) => p.id === "hp-always")?.image).toBe(
       "/produse/archive/hp-always.webp",

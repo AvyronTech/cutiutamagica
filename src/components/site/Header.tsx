@@ -43,10 +43,21 @@ export function Header() {
   useEffect(() => {
     let frame = 0;
     let lastY = Math.max(0, window.scrollY);
+    let heroEnd = 0;
     let direction: "up" | "down" | null = null;
     let directionalDistance = 0;
+    const hero = pathname === "/" ? document.getElementById("inceput") : null;
+    const measureHero = () => {
+      heroEnd = hero ? hero.offsetTop + hero.offsetHeight - 12 : 0;
+    };
+    measureHero();
+    const heroObserver =
+      hero && typeof ResizeObserver !== "undefined" ? new ResizeObserver(measureHero) : null;
+    if (hero && heroObserver) heroObserver.observe(hero);
+    window.addEventListener("resize", measureHero);
 
     const setHeaderHidden = (next: boolean) => {
+      if (next && cartOpen) return;
       if (next === hiddenRef.current) return;
       hiddenRef.current = next;
       setHidden(next);
@@ -55,8 +66,7 @@ export function Header() {
     const update = () => {
       frame = 0;
       const y = Math.max(0, window.scrollY);
-      const hero = pathname === "/" ? document.getElementById("inceput") : null;
-      const nextPastHero = Boolean(hero && y >= hero.offsetTop + hero.offsetHeight - 12);
+      const nextPastHero = Boolean(hero && y >= heroEnd);
       setPastHero((current) => (current === nextPastHero ? current : nextPastHero));
       // Hysteresis prevents the header from oscillating around one scroll threshold.
       const next = compactRef.current ? y > 28 : y > 84;
@@ -73,16 +83,13 @@ export function Header() {
       }
       directionalDistance += Math.abs(delta);
 
-      if (pathname === "/" && nextPastHero) {
-        setHeaderHidden(true);
-        directionalDistance = 0;
-      } else if (y < 104) {
+      if (y < 104) {
         setHeaderHidden(false);
         directionalDistance = 0;
-      } else if (direction === "down" && directionalDistance > 42) {
+      } else if (direction === "down" && directionalDistance > 56) {
         setHeaderHidden(true);
         directionalDistance = 0;
-      } else if (direction === "up" && directionalDistance > 16) {
+      } else if (direction === "up" && directionalDistance > 28) {
         setHeaderHidden(false);
         directionalDistance = 0;
       }
@@ -96,15 +103,17 @@ export function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", measureHero);
+      heroObserver?.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [pathname]);
+  }, [cartOpen, pathname]);
 
   useEffect(() => {
-    if (!cartOpen || !hiddenRef.current || pastHero) return;
+    if (!cartOpen || !hiddenRef.current) return;
     hiddenRef.current = false;
     setHidden(false);
-  }, [cartOpen, pastHero]);
+  }, [cartOpen]);
 
   return (
     <header
@@ -243,7 +252,7 @@ export function Header() {
         pathname={pathname}
         open={cartOpen}
         onOpen={openCart}
-        forceVisible={pathname === "/" && pastHero}
+        forceVisible={pathname === "/" && pastHero && hidden}
       />
     </header>
   );
