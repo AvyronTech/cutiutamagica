@@ -867,7 +867,9 @@ describe("delivery quote integrity", () => {
       pickup_point_id: "7123",
     });
     expect(
-      sqlite.prepare("SELECT courier_id,own_contract FROM shipping_quotes WHERE id=?").get(quote.id),
+      sqlite
+        .prepare("SELECT courier_id,own_contract FROM shipping_quotes WHERE id=?")
+        .get(quote.id),
     ).toMatchObject({ courier_id: 12, own_contract: 0 });
     const issuance = vi.fn(async (url: string, options?: RequestInit) => {
       if (url.includes("/counties"))

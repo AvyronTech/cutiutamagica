@@ -41,8 +41,8 @@ const guides: Record<
     title: "Revolut Business · flux bancar în Oblio",
     steps: [
       "Verifică firma DIGITAL ECOTECH SOLUTIONS în Revolut și Oblio, apoi contul RON dedicat Cutiuța Magică în Revolut. Conectarea bancară nu activează plata Revolut în magazin.",
-      "În Oblio, verifică disponibilitatea planului Nelimitat și folosește un administrator cu drept de acces la conturi bancare. Deschide Rapoarte → Tranzacții bancare → Integrează cu Banca și selectează Revolut Business. În Revolut există și intrarea Setări → Integrări → Contabilitate → Oblio.",
-      "La autorizare, selectează numai contul RON al magazinului. Fluxul transmite către Oblio datele contului, soldul și tranzacțiile selectate; nu sincronizează facturile, cheltuielile sau plățile din magazin.",
+      "În Oblio, verifică planul Nelimitat și intră cu administratorul firmei. Oblio cere autentificarea prin SMS activată în Date Cont înainte de conectarea băncii; titularul o configurează și confirmă codul. Apoi deschide Rapoarte → Tranzacții bancare → Integrează cu Banca și selectează Revolut Business. În Revolut există și intrarea Setări → Integrări → Contabilitate → Oblio.",
+      "Conexiunea autorizată afișează în Oblio șase conturi Revolut, inclusiv contul RON al magazinului. Titularul a cerut păstrarea lor. Fluxul transmite datele conturilor conectate, soldurile și tranzacțiile; nu sincronizează plățile din checkout.",
       "Verifică apariția contului în Oblio și, când există tranzacții, potrivirea lor cu extrasele Revolut. Asociază încasarea cu factura corectă și gestionează drepturile utilizatorilor și revocarea conexiunii din cele două aplicații.",
       "API-ul Business separat cere certificat X509 și OAuth. Nu introduce în magazin un token temporar ca substitut pentru un flux OAuth cu reînnoire; integrarea nativă Oblio nu are nevoie de cheia API a magazinului.",
     ],

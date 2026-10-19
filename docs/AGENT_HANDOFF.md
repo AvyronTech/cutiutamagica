@@ -1,5 +1,13 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — sincronizare checkout și agent social
+
+- Ramură: `codex/final-commerce-sync`, din `origin/codex/cutiuta-cloudflare-final` la `3758ca8`. Include corecția Easybox, e-mailurile comenzilor, schimbarea compatibilă a agentului din PR #21 și instrucțiunile Oblio/Revolut actualizate din PR #22. PR-urile vechi #2 și #3 nu se combină cu schema curentă; funcțiile lor de consimțământ Metricool și Studio AI există deja în aplicație.
+- Easybox cu tarif fix salvează acum identificatorul oficial SmartShip pentru SAMEDAY Easybox (`12`) și contractul standard. Aceasta permite emiterea AWB din panou când contul SmartShip permite expedierea. Comenzile vechi cu identificatorul `0` păstrează calea de reconciliere manuală după numărul comenzii. Testul acoperă punctul oficial, prețul, adresa, AWB, identificatorul curierului, lockerul și idempotenta.
+- Migrarea append-only `0072_order_confirmation_copy.sql` schimbă doar șablonul inițial neatins de administrator și actualizează marcajul schemei la 72. Textul nou este cald și folosește paragrafe reale. Notificarea internă adaugă starea plății, curierul, punctul Easybox și estimarea când acestea există. Nu pretinde că plata ori expedierea au fost confirmate înaintea evenimentelor furnizorilor.
+- Verificări locale: `npm run typecheck`, 55 fișiere / 289 teste, `npm run lint`, `npm run build`, `git diff --check` și `npm run cf:deploy:dry` au trecut. Testarea vizuală desktop/mobil a paginilor live și verificarea panoului autentificat rămân de făcut după ce controlul Opera este reconectat.
+- Activarea cardului necesită un checkout Stripe complet, cu sumă, revenire, webhook semnat și reconciliere; opțiunea rămâne oprită până atunci. SmartShip `/cost` continuă să răspundă `91929` și cotațiile live rămân oprite; cererea de suport este trimisă. Soldul/creditul SmartShip de 0 RON împiedică emiterea reală a AWB până la alimentare sau credit aprobat. Nu prezenta tariful fix drept cotație live.
+
 ## Handoff 2026-10-19 — diagnostic cotație SmartShip și verificare Stripe
 
 - Ramură: `codex/stripe-smartship-readiness`, bazată pe `codex/social-dashboard-work` (`3bcb530`) pentru a păstra versiunea deja publicată a panoului social; PR-ul #23 rămâne deschis către ramura Cloudflare de referință.

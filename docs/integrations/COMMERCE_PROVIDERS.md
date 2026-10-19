@@ -1,13 +1,15 @@
 # Infrastructură comercială și integrări
 
-Actualizat: 2026-10-17
+Actualizat: 2026-10-19
+
+Verificarea live din 19 octombrie a confirmat Oblio Nelimitat, SMS 2FA și cota de 0% pentru neplătitor prin API. Oblio vede șase conturi Revolut; titularul a decis să nu restrângem integrarea acum. Stripe Account ID a fost salvat și cheia a fost reverificată; checkoutul cu cardul rămâne oprit până la testul complet.
 
 ## Decizie curentă
 
 - FGO este retras din fluxul activ. Istoricul facturilor și jurnalelor rămâne intact.
-- Oblio este conectat pentru firma DIGITAL ECOTECH SOLUTIONS S.R.L.; seria CM începe de la 0001. Nu s-a emis o factură de acceptanță.
+- Oblio are cheia configurată pentru DIGITAL ECOTECH SOLUTIONS S.R.L.; seria CM începe de la 0001. Verificarea API a contului, firmei, seriei și cotei de 0% a reușit la 19 octombrie, 02:56; nu s-a emis o factură de acceptanță. Numărul Registrului Comerțului corectat a fost confirmat prin e-mail de titular și verificat după reîncărcarea fișei firmei.
 - Stripe are cheia și webhookul configurate pentru Cutiuța Magică, dar plata cu cardul rămâne dezactivată până la testul complet de checkout.
-- Revolut Business este un cont bancar distinct. Fluxul bancar nativ Revolut–Oblio și API-ul Merchant nu erau conectate la verificarea din 17 octombrie. Contul Merchant cere verificarea firmei înainte de emiterea unei chei.
+- Revolut Business este un cont bancar distinct. Fluxul GoCardless Revolut–Oblio este autorizat și Oblio afișează șase conturi, inclusiv contul RON al magazinului; titularul a cerut să nu modificăm conexiunile suplimentare. Nu descrie fluxul drept limitat la RON. API-ul Merchant nu este conectat. Oblio Nelimitat și SMS 2FA sunt active. Contul Merchant cere verificarea firmei înainte de emiterea unei chei.
 - NETOPIA este rezervat pentru o etapă ulterioară și va folosi Payment API v2.
 - SmartShip este configurat, dar cotațiile live rămân dezactivate: cererea de cost a întors codul furnizorului `91929`. Pentru comenzile eMAG, AWB-ul și curierii se tratează prin API-ul eMAG Marketplace, nu prin fluxul direct al magazinului.
 
@@ -56,7 +58,7 @@ Documentație oficială:
 - [Metode de plată salvate](https://developer.revolut.com/docs/guides/merchant/optimise-checkout/save-payment-methods/charge-saved-payment-method)
 - [Subscriptions API](https://developer.revolut.com/docs/guides/merchant/billing-subscriptions/api/get-started)
 
-Pentru reconcilierea bancară, folosește integrarea nativă Revolut–Oblio și selectează numai contul RON al magazinului. Aceasta sincronizează tranzacțiile bancare în Oblio, nu facturile, cheltuielile sau plățile checkoutului. La verificarea din 17 octombrie, sesiunea Oblio era „Utilizator Operator”, fără drept de acces la conturile bancare, iar pagina integrării a cerut planul „Oblio Nelimitat”. Reia configurarea din sesiunea administratorului, verifică planul firmei și nu comanda un abonament fără aprobare separată. Un token Business API temporar nu este o conexiune bancară durabilă; integrarea nativă nu cere cheia API a magazinului.
+Pentru reconcilierea bancară, integrarea nativă Revolut–Oblio sincronizează tranzacții, nu facturi, cheltuieli sau plățile checkoutului. La 19 octombrie, planul Nelimitat, contul de administrator și SMS 2FA au fost verificate. După autorizarea GoCardless, Oblio a afișat șase conturi Revolut, deși intenția inițială era numai contul RON al magazinului. Titularul a refuzat modificarea integrărilor în acel moment; conexiunile suplimentare se păstrează până la o decizie nouă. Un token Business API temporar nu este o conexiune bancară durabilă; integrarea nativă nu cere cheia API a magazinului.
 
 Revolut Pay necesită un cont Merchant aprobat, cheie Merchant și secret webhook separate. Comanda nu este considerată plătită pe baza revenirii în site. Starea finală vine din webhookul verificat și este reconciliată cu suma, moneda, mediul și ID-ul tentativei. Nu activa Revolut Pay înainte de un test complet documentat.
 
