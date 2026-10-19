@@ -14,7 +14,12 @@ import {
   getAdminShippingInsightsData,
   refreshSmartShipTracking,
 } from "./services/shipping-insights";
-import { diagnoseSmartShipQuote, getSmartShipAccountOverview } from "./integrations/smartship";
+import {
+  createSmartShipAwb,
+  diagnoseSmartShipQuote,
+  getSmartShipAccountOverview,
+  quoteSmartShip,
+} from "./integrations/smartship";
 
 const databases: DatabaseSync[] = [];
 function database() {
@@ -191,6 +196,74 @@ describe("growth and commerce integration", () => {
     ]);
     expect(JSON.stringify(result)).not.toContain("atelier@test.ro");
     expect(JSON.stringify(result)).not.toContain("0720123456");
+  });
+  it("sends ASCII delivery text to SmartShip for quotes and AWBs while preserving customer data", async () => {
+    const { db, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    const bodies: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        const result =
+          new URL(input).pathname === "/cost"
+            ? {
+                status: 200,
+                costs: [{ courier_id: 12, courier_name: "SAMEDAY Easybox", cost: 15 }],
+              }
+            : { status: 200, awb: "AWB123" };
+        return Promise.resolve(new Response(JSON.stringify(result), { status: 200 }));
+      }),
+    );
+    const sender = {
+      name: "Cutiuța Magică",
+      address: "Str. Prof. Anton Șesan 6A, Iași",
+      phone: "0720123456",
+      email: "atelier@example.test",
+      cityId: 259539,
+    };
+    const recipient = {
+      name: "Ana Țăran",
+      address: "Șoseaua Florilor 8, București",
+      phone: "0720333444",
+      email: "ana@example.test",
+      cityId: 255154,
+      sector: 1,
+    };
+    const shipment = {
+      packageContent: "Jucării și cutiuțe muzicale",
+      parcels: 1,
+      weightKg: 0.35,
+      lengthCm: 12,
+      widthCm: 8,
+      heightCm: 6,
+      cashOnDeliveryRon: 0,
+    };
+    expect(await quoteSmartShip(env, { sender, recipient, content: shipment })).toHaveLength(1);
+    expect(
+      await createSmartShipAwb(env, {
+        courierId: 12,
+        useOwnContract: false,
+        sender,
+        recipient,
+        content: shipment,
+      }),
+    ).toMatchObject({ awb: "AWB123" });
+    expect(bodies).toHaveLength(2);
+    for (const body of bodies) {
+      expect(body.sender).toMatchObject({
+        name: "Cutiuta Magica",
+        address: "Str. Prof. Anton Sesan 6A, Iasi",
+      });
+      expect(body.recipient).toMatchObject({
+        name: "Ana Taran",
+        address: "Soseaua Florilor 8, Bucuresti",
+      });
+      expect(body.content).toMatchObject({ package_content: "Jucarii si cutiute muzicale" });
+    }
+    expect(sender.name).toBe("Cutiuța Magică");
+    expect(recipient.address).toBe("Șoseaua Florilor 8, București");
   });
   it("refreshes one AWB twice without duplicating tracking events", async () => {
     const { db, sql, actor } = database();

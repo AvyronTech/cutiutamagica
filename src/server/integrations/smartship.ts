@@ -299,6 +299,14 @@ function party(value: SmartShipParty) {
   };
 }
 
+// SmartShip confirmed that its API currently rejects Romanian diacritics in
+// request text with status 91929. Keep the original customer data in our DB.
+function smartShipBody(value: unknown): string {
+  return JSON.stringify(value, (_key, field) =>
+    typeof field === "string" ? field.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : field,
+  );
+}
+
 function safeQuoteMessage(value: unknown, sender: SmartShipParty): string | null {
   if (typeof value !== "string") return null;
   const message = value.trim().slice(0, 300);
@@ -351,7 +359,7 @@ export async function diagnoseSmartShipQuote(
   for (const probe of variants) {
     const response = await smartShipFetch(env, "/cost", {
       method: "POST",
-      body: JSON.stringify({
+      body: smartShipBody({
         show_byoc: probe.showByoc,
         sender: party(probe.sender),
         recipient: party(recipient),
@@ -563,7 +571,7 @@ export async function quoteSmartShip(
 ): Promise<SmartShipQuote[]> {
   const response = await smartShipFetch(env, "/cost", {
     method: "POST",
-    body: JSON.stringify({
+    body: smartShipBody({
       show_byoc: 1,
       sender: party(input.sender),
       recipient: party(input.recipient),
@@ -648,7 +656,7 @@ export async function createSmartShipAwb(
 ): Promise<{ awb: string; trackingUrl: string | null; costRon: number | null }> {
   const response = await smartShipFetch(env, "/awb/new", {
     method: "POST",
-    body: JSON.stringify({
+    body: smartShipBody({
       courier_id: input.courierId,
       use_own_contract: input.useOwnContract ? 1 : 0,
       sender: party(input.sender),

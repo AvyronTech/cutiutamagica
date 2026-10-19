@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — remediere SmartShip 91929
+
+- SmartShip a confirmat în chatul contului DIGITAL ECOTECH SOLUTIONS că API-ul `/cost` respinge momentan textele cu diacritice cu codul `91929`, deși cheia și datele contului sunt corecte. Furnizorul pregătește corecția proprie; soluția recomandată între timp este textul fără diacritice.
+- Ramura `codex/smartship-ascii-quotes` normalizează numai textul din cererile către SmartShip pentru diagnostic, cotații și emiterea AWB. Numele și adresele din magazin și din fișele comenzilor rămân în forma originală. Testul verifică atât cererea `/cost`, cât și `/awb/new`.
+- Migrarea `0072_order_confirmation_copy.sql` a fost aplicată în D1 `cutiutamagica-db`: schema 72, o intrare în `d1_migrations` și paragrafe reale în mesajul comenzii, confirmate în consola Cloudflare.
+- Cotațiile live și plata cu cardul rămân dezactivate până când răspunsul real al furnizorului și fluxul Stripe cu eveniment semnat sunt verificate. SmartShip afișează încă 0 RON credit disponibil pentru emiterea AWB.
+
 ## Handoff 2026-10-19 — sincronizare checkout și agent social
 
 - Ramură: `codex/final-commerce-sync`, din `origin/codex/cutiuta-cloudflare-final` la `3758ca8`. Include corecția Easybox, e-mailurile comenzilor, schimbarea compatibilă a agentului din PR #21 și instrucțiunile Oblio/Revolut actualizate din PR #22. PR-urile vechi #2 și #3 nu se combină cu schema curentă; funcțiile lor de consimțământ Metricool și Studio AI există deja în aplicație.
