@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { WebsiteOrderInput } from "@/lib/order-contracts";
 export type DeliveryOffer = {
   id: string;
@@ -12,6 +12,7 @@ export function CheckoutDelivery({
   request,
   onSelect,
   selected,
+  autoSelectBestOffer = false,
 }: {
   request: Pick<
     WebsiteOrderInput,
@@ -19,11 +20,14 @@ export function CheckoutDelivery({
   >;
   onSelect: (offer: DeliveryOffer) => void;
   selected: string | undefined;
+  autoSelectBestOffer?: boolean;
 }) {
   const [offers, setOffers] = useState<DeliveryOffer[]>([]),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const requestKey = JSON.stringify(request);
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
   const calculate = useCallback(
     async (signal?: AbortSignal) => {
       setBusy(true);
@@ -40,14 +44,22 @@ export function CheckoutDelivery({
         const data = (await r.json()) as { data?: DeliveryOffer[]; error?: { message: string } };
         if (!r.ok || !data.data)
           throw new Error(data.error?.message ?? "Nu am putut calcula livrarea.");
-        if (!signal?.aborted) setOffers(data.data);
+        if (!signal?.aborted) {
+          setOffers(data.data);
+          if (autoSelectBestOffer) {
+            const bestOffer = data.data
+              .filter((offer) => Date.parse(offer.expiresAt) > Date.now())
+              .sort((left, right) => left.price - right.price)[0];
+            if (bestOffer) onSelectRef.current(bestOffer);
+          }
+        }
       } catch (e) {
         if (!signal?.aborted) setError((e as Error).message);
       } finally {
         if (!signal?.aborted) setBusy(false);
       }
     },
-    [requestKey],
+    [autoSelectBestOffer, requestKey],
   );
   useEffect(() => {
     const controller = new AbortController();

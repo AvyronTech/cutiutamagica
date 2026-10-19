@@ -4399,6 +4399,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   display: flex;
   align-items: center;
   gap: 9px;
+  max-width: 100%;
+  min-width: 0;
 }
 .checkout-step-heading > span:first-child {
   display: inline-grid;
@@ -4414,6 +4416,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 .checkout-step-heading > span:last-child {
   display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .checkout-step-heading small {
   margin-top: 1px;
@@ -4989,7 +4993,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
     top: 62px;
     z-index: 20;
     display: grid;
-    grid-template-columns: auto 1fr auto 1fr auto;
+    grid-template-columns: minmax(0, auto) minmax(8px, 1fr) minmax(0, auto) minmax(8px, 1fr) minmax(0, auto);
     align-items: center;
     gap: 7px;
     margin: 12px -1px 0;
@@ -5002,13 +5006,16 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   }
   .checkout-mobile-steps span {
     display: grid;
+    min-width: 0;
     justify-items: center;
     gap: 3px;
     color: #6f553d;
     font-size: 8px;
     font-weight: 700;
     letter-spacing: 0.05em;
+    text-align: center;
     text-transform: uppercase;
+    overflow-wrap: anywhere;
   }
   .checkout-mobile-steps b {
     display: grid;
@@ -13504,6 +13511,9 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   left: max(16px, calc((100vw - 1280px) / 2 + 16px));
   pointer-events: none;
 }
+body:has(.checkout-page) .page-back-dock {
+  left: 16px;
+}
 .page-back-link {
   pointer-events: auto;
   display: inline-flex;
@@ -13549,6 +13559,9 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   .page-back-dock {
     top: 82px;
     left: 10px;
+  }
+  body:has(.product-world) .product-world-intro {
+    padding-top: 76px;
   }
   .page-back-link {
     min-height: 44px;

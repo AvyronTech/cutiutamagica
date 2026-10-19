@@ -327,7 +327,7 @@ function ProductPage() {
               />
               <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
               {product.melody ? (
-                <motion.div className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
+                <motion.div className="absolute top-4 left-4 flex items-center gap-1.5 rounded-full border border-[#694523]/25 bg-[#fffaf0]/95 px-3 py-1.5 text-xs font-semibold text-[#322317] shadow-[0_4px_18px_#1f150f33] backdrop-blur">
                   <Music className="w-3 h-3" /> {product.melody}
                 </motion.div>
               ) : null}
