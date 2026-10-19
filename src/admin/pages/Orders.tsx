@@ -343,18 +343,25 @@ function OrderDetailPanel({
               {awbBusy ? "Verificăm…" : "Verifică AWB după numărul comenzii"}
             </button>
           )}
-          {!order.awb && !order.awbRequestStatus && Boolean(order.smartshipCourierId) && (
-            <button
-              type="button"
-              disabled={
-                awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
-              }
-              onClick={() => void handleAwb(false)}
-              className="mt-3 min-h-10 w-full rounded-lg bg-cyan-300 px-3 text-xs font-semibold text-[#07111f] disabled:opacity-50"
-            >
-              {awbBusy ? "Emitem AWB…" : "Emite AWB SmartShip"}
-            </button>
-          )}
+          {!order.awb &&
+            !order.awbRequestStatus &&
+            (Boolean(order.smartshipCourierId) ||
+              (order.channelCode === "website" && order.shippingOption === "home_delivery")) && (
+              <button
+                type="button"
+                disabled={
+                  awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+                }
+                onClick={() => void handleAwb(false)}
+                className="mt-3 min-h-10 w-full rounded-lg bg-cyan-300 px-3 text-xs font-semibold text-[#07111f] disabled:opacity-50"
+              >
+                {awbBusy
+                  ? "Emitem AWB…"
+                  : order.smartshipCourierId
+                    ? "Emite AWB SmartShip"
+                    : "Alege curierul disponibil și emite AWB"}
+              </button>
+            )}
           {!order.awb && !order.awbRequestStatus && order.smartshipCourierId === 0 && (
             <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
               <p>

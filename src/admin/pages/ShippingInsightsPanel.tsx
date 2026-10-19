@@ -380,7 +380,7 @@ export default function ShippingInsightsPanel() {
         {quoteDiagnostics.data && (
           <div className="mt-3 space-y-2" aria-live="polite">
             {quoteDiagnostics.data.probes.map((probe) => (
-              <p
+              <div
                 key={probe.variant}
                 className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300"
               >
@@ -399,11 +399,26 @@ export default function ShippingInsightsPanel() {
                   : `Fără oferte · cod ${probe.providerStatus ?? probe.httpStatus}`}
                 {probe.errorIds.length > 0 ? ` · erori ${probe.errorIds.join(", ")}` : ""}
                 {probe.message ? ` · ${probe.message}` : ""}
-              </p>
+                {probe.eligibleOffers.length > 0 && (
+                  <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+                    {probe.eligibleOffers.map((offer, index) => (
+                      <li key={`${offer.courier}-${index}`} className="flex justify-between gap-3">
+                        <span>{offer.courier}</span>
+                        <strong className="text-white">
+                          {offer.costRon.toLocaleString("ro-RO", {
+                            style: "currency",
+                            currency: "RON",
+                          })}
+                        </strong>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             ))}
             <p className="text-[11px] text-slate-500">
-              Verificat la {localDateTime(quoteDiagnostics.data.checkedAt)}. Testul este înregistrat
-              în jurnalul administrativ.
+              Tarife live de probă fără ramburs, numai pentru administrator · verificate la{" "}
+              {localDateTime(quoteDiagnostics.data.checkedAt)}. Testul este înregistrat în jurnal.
             </p>
           </div>
         )}
