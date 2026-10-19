@@ -80,8 +80,7 @@ export default function Shipping() {
       <header>
         <h1 className="text-2xl font-semibold text-white">Livrare și SmartShip</h1>
         <p className="mt-1 text-sm text-slate-400">
-          Cotație înainte de AWB, opțiuni la adresă/Easybox și costuri controlate dintr-o singură
-          politică.
+          Tarifele afișate clienților, ofertele curierilor și AWB-urile dintr-o singură politică.
         </p>
       </header>
       <CredentialPanel providers={["smartship", "smartship_cod_iban"]} />
@@ -254,7 +253,7 @@ export default function Shipping() {
               defaultChecked={policy.useLiveQuotes}
               disabled={!smartship?.secretConfigured}
             >
-              Folosește cotații SmartShip live înainte de AWB
+              Afișează cotații SmartShip live în checkout
             </Check>
             <Check name="markVerified" defaultChecked={policy.validationStatus === "verified"}>
               Confirm că prețurile, pragul și contractul au fost verificate
@@ -273,7 +272,11 @@ export default function Shipping() {
           </h2>
           <ol className="mt-4 space-y-3 text-xs leading-5 text-slate-400">
             <li>1. Normalizează județul, localitatea, codul poștal și greutatea produselor.</li>
-            <li>2. Cere cotația SmartShip înainte de selectarea serviciului.</li>
+            <li>
+              {policy.useLiveQuotes
+                ? "2. Cere cotația SmartShip înainte de selectarea serviciului."
+                : "2. Afișează tariful fix clientului și verifică ofertele live în administrare la emiterea AWB."}
+            </li>
             <li>
               3. Pentru Easybox păstrează identificatorul lockerului și limita de greutate a
               serviciului.
