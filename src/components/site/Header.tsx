@@ -8,6 +8,7 @@ import { SoundToggle } from "./SoundToggle";
 import { MiniCart } from "./MiniCart";
 import { FloatingCartButton } from "./FloatingCartButton";
 import type { WidgetSide } from "@/lib/floating-widgets";
+import { isProductPath } from "@/lib/product-url";
 
 export function Header() {
   const { totalQty } = useShop();
@@ -198,7 +199,7 @@ export function Header() {
           </nav>
 
           <div className="site-header__actions flex shrink-0 items-center gap-2">
-            <SoundToggle compact={compact} />
+            {!isProductPath(pathname) && <SoundToggle compact={compact} />}
             <Link
               to="/cont"
               aria-label="Contul meu"

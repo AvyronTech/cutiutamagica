@@ -1,9 +1,24 @@
 import { Link } from "@tanstack/react-router";
 import type { Product } from "@/data/products";
 import { giftGuidesForProduct } from "@/data/gift-guides";
+
+function ProductMakingNote() {
+  return (
+    <aside className="product-making-note" aria-label="Procesul de fabricare">
+      <Link to="/despre-cutiuta" className="product-making-note__link">
+        <span>
+          <small>Dincolo de capac</small>
+          <strong>Vezi procesul magic de fabricare a cutiuței</strong>
+        </span>
+        <span aria-hidden="true">↗</span>
+      </Link>
+    </aside>
+  );
+}
+
 export function ProductDiscovery({ product }: { product: Product }) {
   const content = product.discovery;
-  if (!content?.intro) return null;
+  if (!content?.intro) return <ProductMakingNote />;
   const guides = giftGuidesForProduct(product.id).slice(0, 8);
   return (
     <section className="product-discovery" aria-labelledby="discovery-title">
@@ -81,6 +96,7 @@ export function ProductDiscovery({ product }: { product: Product }) {
           </p>
         </details>
       </div>
+      <ProductMakingNote />
       <details className="discovery-guides">
         <summary>Explorează ghidurile de cadouri</summary>
         <nav aria-label="Ghiduri de cadouri potrivite acestui produs" className="discovery-links">
