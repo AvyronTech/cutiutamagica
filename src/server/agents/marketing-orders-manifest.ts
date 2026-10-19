@@ -1,5 +1,6 @@
 import skill from "../../../skills/cutiuta-magica-marketing-comenzi/SKILL.md?raw";
 import brandProductTruth from "../../../skills/cutiuta-magica-marketing-comenzi/references/brand-product-truth.md?raw";
+import carouselSequencing from "../../../skills/cutiuta-magica-marketing-comenzi/references/carousel-sequencing.md?raw";
 import customerConversationsOrders from "../../../skills/cutiuta-magica-marketing-comenzi/references/customer-conversations-orders.md?raw";
 import contentConversionPlaybook from "../../../skills/cutiuta-magica-marketing-comenzi/references/content-conversion-playbook.md?raw";
 import dailySocialOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/daily-social-operations.md?raw";
@@ -9,12 +10,13 @@ import platformNativeProduction from "../../../skills/cutiuta-magica-marketing-c
 import approvalOrchestration from "../../../skills/cutiuta-magica-marketing-comenzi/references/approval-orchestration.md?raw";
 import storageRetention from "../../../skills/cutiuta-magica-marketing-comenzi/references/storage-retention.md?raw";
 
-export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.17.3";
+export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.18.1";
 
 const documents = [
   { path: "SKILL.md", content: skill },
   { path: "references/approval-orchestration.md", content: approvalOrchestration },
   { path: "references/brand-product-truth.md", content: brandProductTruth },
+  { path: "references/carousel-sequencing.md", content: carouselSequencing },
   { path: "references/content-conversion-playbook.md", content: contentConversionPlaybook },
   { path: "references/customer-conversations-orders.md", content: customerConversationsOrders },
   { path: "references/daily-social-operations.md", content: dailySocialOperations },

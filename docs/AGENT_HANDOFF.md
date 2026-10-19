@@ -1,5 +1,13 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — sincronizare checkout și agent social
+
+- Ramură: `codex/final-commerce-sync`, din `origin/codex/cutiuta-cloudflare-final` la `3758ca8`. Include corecția Easybox, e-mailurile comenzilor, schimbarea compatibilă a agentului din PR #21 și instrucțiunile Oblio/Revolut actualizate din PR #22. PR-urile vechi #2 și #3 nu se combină cu schema curentă; funcțiile lor de consimțământ Metricool și Studio AI există deja în aplicație.
+- Easybox cu tarif fix salvează acum identificatorul oficial SmartShip pentru SAMEDAY Easybox (`12`) și contractul standard. Aceasta permite emiterea AWB din panou când contul SmartShip permite expedierea. Comenzile vechi cu identificatorul `0` păstrează calea de reconciliere manuală după numărul comenzii. Testul acoperă punctul oficial, prețul, adresa, AWB, identificatorul curierului, lockerul și idempotenta.
+- Migrarea append-only `0072_order_confirmation_copy.sql` schimbă doar șablonul inițial neatins de administrator și actualizează marcajul schemei la 72. Textul nou este cald și folosește paragrafe reale. Notificarea internă adaugă starea plății, curierul, punctul Easybox și estimarea când acestea există. Nu pretinde că plata ori expedierea au fost confirmate înaintea evenimentelor furnizorilor.
+- Verificări locale: `npm run typecheck`, 55 fișiere / 289 teste, `npm run lint`, `npm run build`, `git diff --check` și `npm run cf:deploy:dry` au trecut. Testarea vizuală desktop/mobil a paginilor live și verificarea panoului autentificat rămân de făcut după ce controlul Opera este reconectat.
+- Activarea cardului necesită un checkout Stripe complet, cu sumă, revenire, webhook semnat și reconciliere; opțiunea rămâne oprită până atunci. SmartShip `/cost` continuă să răspundă `91929` și cotațiile live rămân oprite; cererea de suport este trimisă. Soldul/creditul SmartShip de 0 RON împiedică emiterea reală a AWB până la alimentare sau credit aprobat. Nu prezenta tariful fix drept cotație live.
+
 ## Handoff 2026-10-19 — diagnostic cotație SmartShip și verificare Stripe
 
 - Ramură: `codex/stripe-smartship-readiness`, bazată pe `codex/social-dashboard-work` (`3bcb530`) pentru a păstra versiunea deja publicată a panoului social; PR-ul #23 rămâne deschis către ramura Cloudflare de referință.
@@ -19,6 +27,14 @@
 - Verificări: `npm run typecheck`, 55 fișiere / 288 teste, `npm run lint`, `npm run build` și `git diff --check` trecute; migrarea 0071 executată în SQLite local cu schema 71, trei rapoarte și `foreign_key_check` curat. `npm run cf:deploy:dry` a ajuns la `--dry-run: exiting now`. Wrangler D1 local nu a putut porni în sandbox (`listen EPERM 127.0.0.1`), de aceea nu s-a declarat o migrare D1 completă. Capturile desktop/mobil pentru ruta autentificată sunt încă necesare după publicare, deoarece nu există o sesiune admin locală în această ramură.
 - Publicare: migrarea 0071 a fost aplicată manual în consola Cloudflare D1 pentru `cutiutamagica-db` înaintea Workerului, după un bookmark Time Travel. Consola a confirmat `schema_version=71`, trei rapoarte, înregistrarea `0071_social_analytics_snapshots.sql` în `d1_migrations` și `PRAGMA foreign_key_check(social_analytics_snapshots)` fără rezultate. SQL-ul aplicat are aceeași schemă și aceleași date ca migrarea versionată; `PRAGMA optimize` de la sfârșitul fișierului nu a fost executat. Workerul și ruta `/admin/social` nu erau încă publicate la această actualizare. După deploy, verificați pagina la 390 și 1440 px cu administratorul Cutiuța Magică și confruntați datele de bază cu Metricool. Nu au fost folosite chei API Metricool și nu a fost făcută publicare socială.
 - Verificare după publicare: Workerul încărcat din revizia `e9720f9` apare în Cloudflare ca versiunea `7e880872`, activă cu 100% din trafic. Comanda Wrangler a ieșit cu eroare după upload, la citirea configurației Queues nepermisă tokenului limitat; activarea a fost confirmată separat în consola Cloudflare și în pagina live. `/admin/social` afișează administratorului cele trei rapoarte, legăturile, contoarele, setările și formularul; la mobil 390 px `documentWidth=viewport=390`. Health public raportează schema 71 și status `ok`.
+
+## Handoff 2026-10-18 — carusele coerente și originalitate în lot
+
+- Skillul `cutiuta-magica-marketing-comenzi` include acum contractul `references/carousel-sequencing.md`: o singură postare multi-imagine, ordine narativă aprobată, rol și text alternativ per cadru, produs real protejat și un singur CTA.
+- Politica de link interzice controalele desenate artificial: linkul canonic intră în descriere, iar „link în bio” se folosește numai după verificarea destinației profilului în aceeași rulare. Story folosește stickerul nativ, nu un buton imprimat în imagine.
+- Fiecare piesă salvează `creativeFingerprint`; variantele din același lot trebuie să difere material prin rol, unghi, copertă, ordine, hook și CTA, nu doar prin text sau fundal.
+- Buildul local al agentului este `2026.10.18.1`; setările guvernate preferă caruselul când există minimum trei cadre eligibile și țintesc 3–7 cadre puternice, fără a trata limita tehnică drept obiectiv editorial.
+- Nu există migrare D1 ori schimbare vizuală în Dashboard. Release-ul publică numai buildul revizuit al agentului; nu activează conectori, nu publică postări și nu execută alte acțiuni sociale.
 
 ## Handoff 2026-10-17 — aprobări multisursă și auditul automatizării
 

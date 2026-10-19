@@ -43,6 +43,12 @@ type AgentSettings = {
     requireOriginalProductLayer: true;
     requireNativePreview: true;
     requireCapabilitySnapshot: true;
+    preferCarouselWhenNarrative: true;
+    carouselSlidesMin: number;
+    carouselSlidesTargetMax: number;
+    carouselSequenceRequired: true;
+    batchDistinctivenessRequired: true;
+    linkPlacementPolicy: "native_then_caption_and_verified_bio";
     noveltyWindowPosts: number;
     measurementWindowsHours: number[];
   };
@@ -196,7 +202,7 @@ function defaultSettings(): AgentSettings {
       autoExecute: false,
     },
     contentPlaybook: {
-      version: "2026.10.17.1",
+      version: "2026.10.18.1",
       feedDaily: true,
       storyDaily: true,
       storyFramesMin: 3,
@@ -208,6 +214,12 @@ function defaultSettings(): AgentSettings {
       requireOriginalProductLayer: true,
       requireNativePreview: true,
       requireCapabilitySnapshot: true,
+      preferCarouselWhenNarrative: true,
+      carouselSlidesMin: 3,
+      carouselSlidesTargetMax: 7,
+      carouselSequenceRequired: true,
+      batchDistinctivenessRequired: true,
+      linkPlacementPolicy: "native_then_caption_and_verified_bio",
       noveltyWindowPosts: 30,
       measurementWindowsHours: [24, 72, 168],
     },
@@ -279,7 +291,7 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
       contentPlaybook: {
         ...fallback.contentPlaybook,
         ...((value.contentPlaybook ?? {}) as Partial<AgentSettings["contentPlaybook"]>),
-        version: "2026.10.17.1",
+        version: "2026.10.18.1",
         feedDaily: true,
         storyDaily: true,
         requireSpecificProductLink: true,
@@ -287,6 +299,12 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
         requireOriginalProductLayer: true,
         requireNativePreview: true,
         requireCapabilitySnapshot: true,
+        preferCarouselWhenNarrative: true,
+        carouselSlidesMin: 3,
+        carouselSlidesTargetMax: 7,
+        carouselSequenceRequired: true,
+        batchDistinctivenessRequired: true,
+        linkPlacementPolicy: "native_then_caption_and_verified_bio",
       },
       freeResources: {
         ...fallback.freeResources,
