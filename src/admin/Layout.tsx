@@ -75,6 +75,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { path: "/admin/ai", label: "Agent Codex", icon: Bot },
       { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
+      { path: "/admin/social", label: "Rețele sociale", icon: BarChart3 },
       { path: "/admin/posts", label: "Postări", icon: Send },
     ],
   },
