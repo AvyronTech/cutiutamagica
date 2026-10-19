@@ -42,6 +42,20 @@ export interface SmartShipQuote {
   deliveryDate: string | null;
 }
 
+export interface SmartShipQuoteProbe {
+  variant: "configured" | "without_own_contracts" | "documented_sample";
+  httpStatus: number;
+  providerStatus: number | null;
+  courierCount: number;
+  errorIds: number[];
+  message: string | null;
+}
+
+export interface SmartShipQuoteDiagnostics {
+  checkedAt: string;
+  probes: SmartShipQuoteProbe[];
+}
+
 export interface SmartShipTrackingEvent {
   date: string;
   eventId: string;
@@ -283,6 +297,87 @@ function party(value: SmartShipParty) {
     country: value.country ?? "RO",
     sector: value.sector ?? 0,
   };
+}
+
+function safeQuoteMessage(value: unknown, sender: SmartShipParty): string | null {
+  if (typeof value !== "string") return null;
+  const message = value.trim().slice(0, 300);
+  if (!message) return null;
+  return message
+    .replaceAll(sender.address, "[adresă]")
+    .replaceAll(sender.phone, "[telefon]")
+    .replaceAll(sender.email || "\u0000", "[e-mail]")
+    .replace(/\bRO\d{2}[A-Z0-9]{20,}\b/gi, "[IBAN]")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[e-mail]")
+    .replace(/(?:\+?40|0)[\s().-]*7(?:[\s().-]*\d){8}\b/g, "[telefon]");
+}
+
+/** Read-only /cost checks using the configured sender and the public documentation sample. */
+export async function diagnoseSmartShipQuote(
+  env: CommerceEnv,
+  sender: SmartShipParty,
+  parcel: Pick<SmartShipContent, "weightKg" | "lengthCm" | "widthCm" | "heightCm">,
+): Promise<SmartShipQuoteDiagnostics> {
+  const sampleSender: SmartShipParty = {
+    name: "Magazinul Meu SRL",
+    address: "Str. Polonă 68",
+    email: "expeditor@magazin.ro",
+    cityId: 255154,
+    phone: "0720333222",
+    country: "RO",
+    sector: 1,
+  };
+  const recipient: SmartShipParty = {
+    name: "Ion Vasile",
+    address: "Str. Memorandumului 28",
+    email: "client@email.com",
+    cityId: 256212,
+    phone: "0720123456",
+    country: "RO",
+    sector: 0,
+  };
+  const packageDetails = content({
+    packageContent: "Cutiuțe muzicale",
+    parcels: 1,
+    cashOnDeliveryRon: 0,
+    ...parcel,
+  });
+  const variants = [
+    { variant: "configured", sender, showByoc: 1 },
+    { variant: "without_own_contracts", sender, showByoc: 0 },
+    { variant: "documented_sample", sender: sampleSender, showByoc: 0 },
+  ] as const;
+  const probes: SmartShipQuoteProbe[] = [];
+  for (const probe of variants) {
+    const response = await smartShipFetch(env, "/cost", {
+      method: "POST",
+      body: JSON.stringify({
+        show_byoc: probe.showByoc,
+        sender: party(probe.sender),
+        recipient: party(recipient),
+        content: packageDetails,
+      }),
+    });
+    const body = record(await readProviderJson(response).catch(() => null));
+    probes.push({
+      variant: probe.variant,
+      httpStatus: response.status,
+      providerStatus: body && typeof body.status === "number" ? body.status : null,
+      courierCount: body && Array.isArray(body.costs) ? body.costs.length : 0,
+      errorIds:
+        body && Array.isArray(body.erori)
+          ? body.erori
+              .flatMap((entry) => {
+                const id = record(entry)?.id;
+                return typeof id === "number" ? [id] : [];
+              })
+              .slice(0, 8)
+          : [],
+      message: safeQuoteMessage(body?.message ?? body?.err, probe.sender),
+    });
+    if (probe.variant === "configured" && response.ok && Array.isArray(body?.costs)) break;
+  }
+  return { checkedAt: new Date().toISOString(), probes };
 }
 
 function content(value: SmartShipContent) {

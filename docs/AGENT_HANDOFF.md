@@ -1,5 +1,14 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-19 — diagnostic cotație SmartShip și verificare Stripe
+
+- Ramură: `codex/stripe-smartship-readiness`, bazată pe `codex/social-dashboard-work` (`3bcb530`) pentru a păstra versiunea deja publicată a panoului social; PR-ul #23 rămâne deschis către ramura Cloudflare de referință.
+- În `/admin/shipping`, „Testează cotația” face numai cereri `POST /cost` cu datele expeditorului configurat și cu destinatarul demonstrativ din documentația SmartShip. Compară cererea curentă, varianta fără contracte proprii și exemplul documentat; arată codul furnizorului și numărul de oferte, fără a crea comandă, AWB sau plată. Mesajele sunt curățate de e-mail, telefon, adresă și IBAN, iar rezultatul sumar este auditat.
+- Adresa de ridicare din producție a fost salvată și verificată după reîncărcare ca `str. prof. Anton Sesan, nr. 6a, parter, mun. Iasi, jud. Iasi`, conform confirmării utilizatorului. Datele de contact mascate nu au fost modificate.
+- Furnizorul SmartShip a întors `status: 91929` pentru cotația magazinului, în timp ce testerul oficial a putut cota ruta Iași–București. Codul nu apare în lista de erori publicată pentru `/cost`; cauza exactă rămâne de stabilit cu diagnosticul nou. Soldul și limita de credit SmartShip erau ambele 0 RON, deci emiterea AWB are separat risc de credit insuficient.
+- Stripe este configurat în panoul financiar, însă plata cu cardul rămâne oprită până la o probă completă, inclusiv webhook și reconcilierea comenzii. Nu s-a creat o plată sau o comandă reală. Testele unitare existente acoperă semnătura, identitatea contului, suma, mediul și idempotenta, dar nu substituie proba live.
+- Verificări locale: `npm run typecheck`, 55 fișiere / 289 teste, `npm run lint`, `npm run build`, `git diff --check` și `npm run cf:deploy:dry` au trecut. Nu există migrare nouă. Capturile desktop/mobil ale panoului autentificat și rezultatul real al diagnosticului sunt necesare după publicare.
+
 ## Handoff 2026-10-19 — panou Rețele sociale și Metricool Free
 
 - Ramură: `codex/social-dashboard-work`, pornită din `origin/codex/cutiuta-cloudflare-final` la `77c7270`, în worktree separat. Nu au fost modificate celelalte ramuri sau schimbările locale existente.
