@@ -6,6 +6,7 @@ export type DeliveryOffer = {
   price: number;
   estimate: string | null;
   expiresAt: string;
+  fixedFallback?: boolean;
 };
 export function CheckoutDelivery({
   request,
@@ -83,6 +84,12 @@ export function CheckoutDelivery({
           {error}
         </p>
       )}
+      {offers.some((offer) => offer.fixedFallback) && (
+        <p role="status" className="mt-3 text-sm text-amber-700 dark:text-amber-200">
+          Serviciul de cotații nu răspunde acum. Îți oferim un tarif fix pentru această comandă;
+          prețul afișat rămâne final.
+        </p>
+      )}
       <div className="mt-3 grid gap-2">
         {offers.map((offer) => (
           <label
@@ -112,6 +119,11 @@ export function CheckoutDelivery({
                         timeZone: "Europe/Bucharest",
                       }).format(new Date(`${offer.estimate}T12:00:00+03:00`))
                     : offer.estimate}
+                </span>
+              )}
+              {offer.fixedFallback && (
+                <span className="text-xs text-muted-foreground">
+                  Tarif fix de rezervă · termenul se confirmă la expediere
                 </span>
               )}
             </span>

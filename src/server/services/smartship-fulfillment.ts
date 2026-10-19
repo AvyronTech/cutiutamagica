@@ -33,7 +33,7 @@ async function orderForAwb(env: CommerceEnv, orderId: string, mode: "issue" | "r
      LEFT JOIN shipping_quotes q ON q.id=o.shipping_quote_id AND q.order_id=o.id
      JOIN shipping_policy_configs p ON p.code='RO_STANDARD'
      WHERE o.id=?1 AND o.channel_id='channel_website'
-       AND (q.provider='smartship' OR (
+       AND (q.provider IN ('smartship','fixed_fallback') OR (
          o.shipping_quote_id IS NULL AND o.shipping_option_requested='home_delivery'
          AND NOT EXISTS (
            SELECT 1 FROM order_tags t WHERE t.order_id=o.id AND t.tag='shipping_quote_required'

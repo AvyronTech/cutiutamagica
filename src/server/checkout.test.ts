@@ -781,6 +781,102 @@ describe("delivery quote integrity", () => {
       ["DPD", 21.5],
     ]);
   });
+  it("uses calibrated prices only when SmartShip quotes fail and later resolves the home AWB", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET use_live_quotes=1,easybox_enabled=1,standard_price_bani=3200,locker_price_bani=2400,sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    let providerUnavailable = true;
+    const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+      if (url.includes("/geolocation/easybox"))
+        return Response.json({
+          lockers: [
+            {
+              locker_id: 7123,
+              name: "easybox Piața Unirii",
+              address: "Piața Unirii 1",
+              city: "Cluj-Napoca",
+              county: "Cluj",
+              postal_code: "400015",
+              lat: 46.77,
+              long: 23.59,
+              supportedPayment: true,
+            },
+          ],
+        });
+      if (url.includes("/counties"))
+        return Response.json({ counties: [{ id: 13, county: "Cluj" }] });
+      if (url.includes("/cities"))
+        return Response.json({ cities: [{ id: 256212, city: "Cluj-Napoca" }] });
+      if (url.includes("/cost"))
+        return providerUnavailable
+          ? Response.json({ status: 91929 })
+          : Response.json({
+              status: 200,
+              costs: [{ courier_id: 1, courier_name: "Cargus", cost: 25.74 }],
+            });
+      if (url.includes("/awb/new")) {
+        const payload = JSON.parse(String(options?.body)) as { courier_id: number };
+        expect(payload.courier_id).toBe(1);
+        return Response.json({ status: 200, awb: "874156063270" });
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const home = input();
+    const homeResponse = await handleShippingCheckout(
+      request("/api/v1/shipping/quotes", home),
+      env,
+    );
+    expect(homeResponse?.status).toBe(200);
+    const homeOffer = (
+      (await homeResponse!.json()) as {
+        data: Array<{ id: string; price: number; fixedFallback: boolean }>;
+      }
+    ).data[0];
+    expect(homeOffer).toMatchObject({ price: 32, fixedFallback: true });
+    expect(
+      sqlite
+        .prepare("SELECT provider,courier_id FROM shipping_quotes WHERE id=?")
+        .get(homeOffer.id),
+    ).toMatchObject({ provider: "fixed_fallback", courier_id: null });
+    const homeOrder = await createWebsiteOrder(env.DB, { ...home, shippingQuoteId: homeOffer.id });
+    expect(homeOrder.shipping).toBe(32);
+    sqlite
+      .prepare("UPDATE orders SET payment_status='paid',paid_bani=total_bani WHERE id=?")
+      .run(homeOrder.orderId);
+
+    const locker = websiteOrderInputSchema.parse({
+      ...input(),
+      shippingOption: "easybox",
+      easyboxLockerId: 7123,
+    });
+    const lockerResponse = await handleShippingCheckout(
+      request("/api/v1/shipping/quotes", locker),
+      env,
+    );
+    expect(lockerResponse?.status).toBe(200);
+    const lockerOffer = (
+      (await lockerResponse!.json()) as {
+        data: Array<{ id: string; price: number; fixedFallback: boolean }>;
+      }
+    ).data[0];
+    expect(lockerOffer).toMatchObject({ price: 24, fixedFallback: true });
+    expect(
+      sqlite
+        .prepare("SELECT provider,courier_id FROM shipping_quotes WHERE id=?")
+        .get(lockerOffer.id),
+    ).toMatchObject({ provider: "fixed_fallback", courier_id: 12 });
+    expect(
+      (await createWebsiteOrder(env.DB, { ...locker, shippingQuoteId: lockerOffer.id })).shipping,
+    ).toBe(24);
+
+    providerUnavailable = false;
+    expect((await issueSmartShipAwb(env, homeOrder.orderId, "test-admin")).awb).toBe(
+      "874156063270",
+    );
+    expect(fetcher.mock.calls.filter(([url]) => url.includes("/awb/new"))).toHaveLength(1);
+  });
   it("selects an official Easybox, applies the fixed tariff and stores the canonical pickup address", async () => {
     env.SMARTSHIP_API_KEY = "private";
     env.SMARTSHIP_COD_IBAN = "RO76REVO0000303947103261";

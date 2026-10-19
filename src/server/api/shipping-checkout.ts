@@ -15,6 +15,13 @@ import { PRINT_REQUIRED_COURIER_IDS } from "../services/smartship-couriers";
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } });
 
+const RECOVERABLE_QUOTE_ERRORS = new Set([
+  "SMARTSHIP_QUOTE_FAILED",
+  "PROVIDER_TIMEOUT",
+  "PROVIDER_NETWORK_ERROR",
+  "PROVIDER_INVALID_RESPONSE",
+]);
+
 function searchKey(value: string): string {
   return value
     .normalize("NFD")
@@ -201,6 +208,7 @@ export async function handleShippingCheckout(
       deliveryDate: string | null;
       ownContract: boolean;
     }>;
+    let fixedFallback = false;
     if (Number(policy.use_live_quotes) === 1) {
       if (
         !policy.sender_name ||
@@ -214,36 +222,54 @@ export async function handleShippingCheckout(
       )
         throw new Error("SENDER_INCOMPLETE");
       const cityId = await resolveSmartShipCity(env, destination.county, destination.city);
-      quotes = await quoteSmartShip(env, {
-        sender: {
-          name: String(policy.sender_name),
-          address: String(policy.sender_address),
-          email: String(policy.sender_email || ""),
-          phone: String(policy.sender_phone),
-          cityId: Number(policy.sender_city_id),
-          country: "RO",
-          sector: Number(policy.sender_sector || 0),
-        },
-        recipient: {
-          name: customer.name,
-          address: selectedLocker?.address ?? customer.address,
-          email: customer.email,
-          phone: customer.phone,
-          cityId,
-          country: "RO",
-          sector: recipientSector,
-        },
-        content: {
-          packageContent: "Cutiuțe muzicale",
-          parcels: 1,
-          weightKg: (Number(policy.default_weight_g) * qty) / 1000,
-          lengthCm: Number(policy.default_length_cm),
-          widthCm: Number(policy.default_width_cm),
-          heightCm: Number(policy.default_height_cm) * qty,
-          cashOnDeliveryRon: input.data.paymentMethod === "cash_on_delivery" ? total / 100 : 0,
-          lockerId: selectedLocker?.id,
-        },
-      });
+      try {
+        quotes = await quoteSmartShip(env, {
+          sender: {
+            name: String(policy.sender_name),
+            address: String(policy.sender_address),
+            email: String(policy.sender_email || ""),
+            phone: String(policy.sender_phone),
+            cityId: Number(policy.sender_city_id),
+            country: "RO",
+            sector: Number(policy.sender_sector || 0),
+          },
+          recipient: {
+            name: customer.name,
+            address: selectedLocker?.address ?? customer.address,
+            email: customer.email,
+            phone: customer.phone,
+            cityId,
+            country: "RO",
+            sector: recipientSector,
+          },
+          content: {
+            packageContent: "Cutiuțe muzicale",
+            parcels: 1,
+            weightKg: (Number(policy.default_weight_g) * qty) / 1000,
+            lengthCm: Number(policy.default_length_cm),
+            widthCm: Number(policy.default_width_cm),
+            heightCm: Number(policy.default_height_cm) * qty,
+            cashOnDeliveryRon: input.data.paymentMethod === "cash_on_delivery" ? total / 100 : 0,
+            lockerId: selectedLocker?.id,
+          },
+        });
+      } catch (error) {
+        if (!(error instanceof ProviderError) || !RECOVERABLE_QUOTE_ERRORS.has(error.code))
+          throw error;
+        const fallbackBani = selectedLocker ? policy.locker_price_bani : policy.standard_price_bani;
+        if (fallbackBani == null || Number(fallbackBani) < 0) throw error;
+        fixedFallback = true;
+        console.warn("shipping.quote_fixed_fallback", { code: error.code });
+        quotes = [
+          {
+            courierId: selectedLocker ? 12 : 0,
+            courierName: selectedLocker ? "SAMEDAY Easybox" : "Curier la adresă",
+            costRon: Number(fallbackBani) / 100,
+            deliveryDate: null,
+            ownContract: false,
+          },
+        ];
+      }
     } else if (selectedLocker && policy.locker_price_bani != null) {
       quotes = [
         {
@@ -288,6 +314,7 @@ export async function handleShippingCheckout(
       expiresAt,
       courierId: q.courierId,
       ownContract: q.ownContract,
+      fixedFallback,
     }));
     if (!offers.length)
       return json(
@@ -310,12 +337,13 @@ export async function handleShippingCheckout(
              locker_city,locker_county,locker_postal_code,locker_latitude,locker_longitude,
              recipient_sector
            ) VALUES(
-             ?1,'smartship',?2,?3,?4,?5,?6,'RON',?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18
+             ?1,?2,?3,?4,?5,?6,?7,'RON',?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19
            )`,
         ).bind(
           o.id,
+          fixedFallback ? "fixed_fallback" : "smartship",
           input.data.shippingOption,
-          o.courierId,
+          o.courierId || null,
           o.courier,
           selectedLocker ? String(selectedLocker.id) : null,
           Math.round(o.price * 100),

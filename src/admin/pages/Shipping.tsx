@@ -106,7 +106,7 @@ export default function Shipping() {
             <Truck className="h-4 w-4 text-cyan-300" /> Politica România
           </h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <Field label="Curier la adresă (RON)">
+            <Field label="Curier la adresă · tarif de rezervă (RON)">
               <input
                 name="standardPrice"
                 type="number"
@@ -118,7 +118,7 @@ export default function Shipping() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Easybox (RON)">
+            <Field label="Easybox · tarif de rezervă (RON)">
               <input
                 name="lockerPrice"
                 type="number"
@@ -255,6 +255,10 @@ export default function Shipping() {
             >
               Afișează cotații SmartShip live în checkout
             </Check>
+            <p className="text-xs leading-5 text-slate-400">
+              Cu cotațiile live active, tarifele de rezervă apar clienților numai dacă serviciul de
+              estimare are o eroare. În celelalte cazuri se afișează ofertele SmartShip.
+            </p>
             <Check name="markVerified" defaultChecked={policy.validationStatus === "verified"}>
               Confirm că prețurile, pragul și contractul au fost verificate
             </Check>

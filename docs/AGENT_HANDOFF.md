@@ -1,10 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
-## Handoff 2026-10-19 — tarife publice calibrate și cotații în administrare
+## Handoff 2026-10-19 — cotații live cu tarife calibrate de rezervă
 
-- Politica publică va folosi 32 RON la adresă, calculat din ofertele SmartShip observate pentru coletul standard (25,74, 27,49 și 42,55 RON; media 31,93 RON), și 24 RON la Easybox, aproape de oferta observată de 23,81 RON. Tarifele sunt fixe pentru cumpărător, nu sunt etichetate drept cotații live. Valorile se salvează în `/admin/livrare`; nu necesită migrare D1.
-- Diagnosticul din `/admin/shipping` afișează cotațiile live eligibile, fără curierii care cer imprimarea etichetei. La emiterea unui AWB pentru o comandă la adresă cu tarif fix, administratorul obține atunci ofertele reale și sistemul selectează cel mai ieftin curier eligibil. Costul furnizorului și curierul ales intră în jurnal; prețul promis clientului rămâne cel din comandă. Dacă cotația eșuează, nu se creează o cerere AWB blocată și se poate încerca din nou. Rambursul este inclus în cererea către SmartShip.
-- Revizia pornește din `c387cd9` și se livrează prin PR către `codex/cutiuta-cloudflare-final`. Verificări locale: typecheck, lint, 291 teste, build și simulare deploy. Nu s-a emis un AWB real; creditul SmartShip trebuie alimentat pentru expediere.
+- Magazinul afișează cotațiile SmartShip live când serviciul răspunde și păstrează toate ofertele eligibile. Numai o eroare de furnizor, rețea sau timeout declanșează un tarif de rezervă; erorile de adresă, ramburs și lipsa unui curier eligibil nu sunt mascate.
+- Tarifele de rezervă propuse sunt 32 RON la adresă, din ofertele observate pentru coletul standard (25,74, 27,49 și 42,55 RON; media 31,93 RON), și 24 RON la Easybox, aproape de oferta observată de 23,81 RON. Clientul vede explicit că oferta este de rezervă și prețul final. Valorile se salvează în `/admin/shipping`, păstrând cotațiile live activate; nu este necesară migrare D1.
+- Diagnosticul din `/admin/shipping` afișează cotațiile live eligibile, fără curierii care cer imprimarea etichetei. La emiterea unui AWB pentru o comandă la adresă cu ofertă de rezervă, administratorul obține atunci ofertele reale și sistemul selectează cel mai ieftin curier eligibil. Costul furnizorului și curierul ales intră în jurnal; prețul promis clientului rămâne cel din comandă. Dacă această cotație eșuează, nu se creează o cerere AWB blocată și se poate încerca din nou. Rambursul este inclus în cererea către SmartShip.
+- Revizia pornește din `c387cd9` și se livrează prin PR către `codex/cutiuta-cloudflare-final`. Nu s-a emis un AWB real; creditul SmartShip trebuie alimentat pentru expediere.
 
 ## Handoff 2026-10-19 — remediere SmartShip 91929
 
