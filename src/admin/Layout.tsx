@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PwaInstallButton } from "@/admin/PwaInstallButton";
 import type { AdminNotification } from "@/lib/admin-contracts";
+import { adminNotificationLink } from "@/lib/admin-notification-link";
 import {
   dismissNotification,
   getAdminNotifications,
@@ -536,6 +537,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                                 </button>
                               </div>
                               <p className="text-[11px] text-slate-400 mt-0.5">{notif.message}</p>
+                              {adminNotificationLink(notif.actionUrl) && (
+                                <a
+                                  href={adminNotificationLink(notif.actionUrl)!}
+                                  className="mt-2 inline-block text-xs font-medium text-amber-200 underline-offset-2 hover:underline"
+                                  onClick={(event) => event.stopPropagation()}
+                                >
+                                  Deschide →
+                                </a>
+                              )}
                               <p className="text-[10px] text-slate-500 mt-1">
                                 {new Date(notif.createdAt).toLocaleString("ro-RO")}
                               </p>

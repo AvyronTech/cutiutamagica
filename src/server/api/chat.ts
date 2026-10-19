@@ -7,6 +7,7 @@ import {
   sha256,
   verifyChatAccess,
 } from "@/server/db/chat.repository";
+import { answerCustomerChat } from "@/server/services/customer-chat-ai";
 
 const CHAT_PREFIX = "/api/v1/chat";
 const MAX_BODY_BYTES = 8_192;
@@ -77,7 +78,11 @@ async function rateLimited(
   return false;
 }
 
-export async function handleChatApi(request: Request, env: Env): Promise<Response | null> {
+export async function handleChatApi(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response | null> {
   const url = new URL(request.url);
   if (url.pathname !== CHAT_PREFIX && !url.pathname.startsWith(`${CHAT_PREFIX}/`)) return null;
   if (!isAllowedOrigin(request, env))
@@ -101,6 +106,7 @@ export async function handleChatApi(request: Request, env: Env): Promise<Respons
         collectName: settings.collectName,
         collectEmail: settings.collectEmail,
         quickReplies: settings.quickReplies,
+        aiEnabled: settings.aiEnabled,
       },
     });
   }
@@ -151,7 +157,13 @@ export async function handleChatApi(request: Request, env: Env): Promise<Respons
     try {
       const parsed = visitorChatMessageSchema.safeParse(await parseJson(request));
       if (!parsed.success) return error("INVALID_MESSAGE", "Mesajul nu este valid.", 400);
-      await addVisitorMessage(env.DB, conversationId, parsed.data.messageId, parsed.data.body);
+      const inserted = await addVisitorMessage(
+        env.DB,
+        conversationId,
+        parsed.data.messageId,
+        parsed.data.body,
+      );
+      if (inserted) ctx.waitUntil(answerCustomerChat(env, conversationId, parsed.data.messageId));
       return json({ data: { accepted: true } }, { status: 201 });
     } catch (caught) {
       if (caught instanceof Response) {

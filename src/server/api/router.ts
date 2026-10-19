@@ -271,7 +271,7 @@ export async function handleApiRequest(
   const commerceResponse = await handleCommerceApi(request, env as CommerceEnv, ctx);
   if (commerceResponse) return commerceResponse;
 
-  const chatResponse = await handleChatApi(request, env);
+  const chatResponse = await handleChatApi(request, env, ctx);
   if (chatResponse) return chatResponse;
 
   if (url.pathname === "/api/v1/orders") {

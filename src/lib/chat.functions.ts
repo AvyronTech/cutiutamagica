@@ -4,16 +4,22 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import {
   adminChatReplySchema,
+  chatAiControlSchema,
   chatConversationStatusSchema,
+  chatKnowledgeSchema,
   chatSettingsSchema,
 } from "@/lib/chat-contracts";
 import { assertPermission, requireAdminAuth } from "@/lib/admin-auth";
 import {
   addAdminChatMessage,
   getChatSettings,
+  latestChatDraft,
   listAdminChatConversations,
   listAdminChatMessages,
+  listChatKnowledge,
+  saveChatKnowledge,
   saveChatSettings,
+  setChatAiPaused,
   setChatConversationStatus,
 } from "@/server/db/chat.repository";
 
@@ -29,11 +35,15 @@ export const getChatCenter = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     assertPermission(context.admin, "chat.read");
-    const [settings, conversations] = await Promise.all([
+    const [settings, conversations, knowledge, usage] = await Promise.all([
       getChatSettings(env.DB),
       listAdminChatConversations(env.DB),
+      listChatKnowledge(env.DB),
+      env.DB.prepare("SELECT requests FROM chat_ai_daily_usage WHERE usage_date=?1")
+        .bind(new Date().toISOString().slice(0, 10))
+        .first<{ requests: number }>(),
     ]);
-    return { settings, conversations };
+    return { settings, conversations, knowledge, aiUsageToday: usage?.requests ?? 0 };
   });
 
 export const getChatConversation = createServerFn({ method: "GET" })
@@ -41,7 +51,8 @@ export const getChatConversation = createServerFn({ method: "GET" })
   .validator(z.object({ conversationId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     assertPermission(context.admin, "chat.read");
-    return { messages: await listAdminChatMessages(env.DB, data.conversationId) };
+    const messages = await listAdminChatMessages(env.DB, data.conversationId);
+    return { messages, draft: await latestChatDraft(env.DB, data.conversationId) };
   });
 
 export const replyToChatConversation = createServerFn({ method: "POST" })
@@ -70,17 +81,32 @@ export const updateChatConversationStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const controlChatAi = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(chatAiControlSchema)
+  .handler(async ({ context, data }) => {
+    sameOrigin();
+    assertPermission(context.admin, "chat.write");
+    await setChatAiPaused(env.DB, data.conversationId, data.paused, context.admin.id);
+    return { ok: true };
+  });
+
+export const updateChatKnowledge = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(chatKnowledgeSchema)
+  .handler(async ({ context, data }) => {
+    sameOrigin();
+    assertPermission(context.admin, "chat.write");
+    await saveChatKnowledge(env.DB, data, context.admin.id);
+    return { ok: true };
+  });
+
 export const updateChatSettings = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator(chatSettingsSchema)
   .handler(async ({ context, data }) => {
     sameOrigin();
     assertPermission(context.admin, "chat.write");
-    if (data.aiEnabled) {
-      throw new Error(
-        "Modul AI rămâne dezactivat până la configurarea furnizorului și politicii de date.",
-      );
-    }
     await saveChatSettings(env.DB, data, context.admin.id);
     return { ok: true };
   });
