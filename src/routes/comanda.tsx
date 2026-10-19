@@ -332,6 +332,14 @@ function OrderPage() {
     if (config.shipping.freeOver != null && productsAfterCode >= config.shipping.freeOver) return 0;
     return config.shipping.standardPrice;
   }, [config, shippingOption, productsAfterCode, activeQuote]);
+  const homeDeliveryPreview =
+    shippingOption === "home_delivery"
+      ? shippingCost
+      : !config || config.shipping.requiresConfirmation || config.shipping.liveQuotesEnabled
+        ? null
+        : config.shipping.freeOver != null && productsAfterCode >= config.shipping.freeOver
+          ? 0
+          : config.shipping.standardPrice;
 
   async function applyPromotion(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -611,7 +619,7 @@ function OrderPage() {
                         : shippingCost === 0
                           ? "Livrare gratuită pentru această comandă."
                           : shippingCost != null
-                            ? `${money(shippingCost)} prin curier${config.shipping.freeOver != null ? ` · gratuită de la ${money(config.shipping.freeOver)}` : ""}.`
+                            ? `${money(shippingCost)} ${shippingOption === "easybox" ? "la Easybox" : "prin curier"}${config.shipping.freeOver != null ? ` · gratuită de la ${money(config.shipping.freeOver)}` : ""}.`
                             : "Tariful exact este afișat imediat după alegerea adresei și a curierului."}
                   </span>
                 </div>
@@ -1116,15 +1124,15 @@ function OrderPage() {
                         icon={<PackageCheck className="h-5 w-5" />}
                         title="Curier la adresă"
                         note={
-                          shippingCost == null
+                          homeDeliveryPreview == null
                             ? config?.shipping.liveQuotesEnabled
                               ? "Vezi curierii și tarifele disponibile"
                               : "Îți confirmăm costul înainte de expediere"
-                            : activeQuote
+                            : activeQuote && shippingOption === "home_delivery"
                               ? `${activeQuote.courier} · ${money(activeQuote.price)}`
-                              : shippingCost === 0
+                              : homeDeliveryPreview === 0
                                 ? "Livrare gratuită"
-                                : money(shippingCost)
+                                : money(homeDeliveryPreview)
                         }
                       />
                       <Choice
