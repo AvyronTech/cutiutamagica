@@ -21,11 +21,7 @@ function SpotlightCard({ product }: { product: Product }) {
 
   return (
     <article className="spotlight-card" data-magic-card>
-      <Link
-        {...productLink(product.id)}
-        className="spotlight-card__media"
-        aria-label={`Descoperă ${product.name}`}
-      >
+      <Link {...productLink(product.id)} className="spotlight-card__media">
         <ProductImage
           src={product.image}
           alt={product.name}

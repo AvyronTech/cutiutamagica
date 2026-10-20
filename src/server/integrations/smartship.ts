@@ -792,7 +792,12 @@ export async function resolveSmartShipCity(
     id: number;
     city: string;
   }>;
-  const locality = cities?.find((c) => localityKey(c.city) === localityKey(city));
+  const requestedCity = localityKey(city);
+  const lookupCity =
+    localityKey(county) === "bucuresti" && /^sector(?:ul)? [1-6]$/.test(requestedCity)
+      ? "bucuresti"
+      : requestedCity;
+  const locality = cities?.find((c) => localityKey(c.city) === lookupCity);
   if (!locality)
     throw new ProviderError(
       "Verifică localitatea pentru calculul livrării.",

@@ -103,9 +103,11 @@ export function CheckoutDelivery({
       </button>
       {!canCalculate && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Completează datele de contact și adresa
-          {request.shippingOption === "easybox" ? ", apoi alege punctul Easybox" : ""} pentru
-          calculul livrării.
+          {request.shippingOption === "easybox" && request.easyboxLockerId
+            ? "Completează datele de contact și adresa pentru calculul tarifului punctului ales."
+            : request.shippingOption === "easybox"
+              ? "Completează datele de contact și adresa, apoi alege punctul Easybox pentru calculul livrării."
+              : "Completează datele de contact și adresa pentru calculul livrării."}
         </p>
       )}
       {error && (

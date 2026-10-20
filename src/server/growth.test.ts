@@ -19,6 +19,7 @@ import {
   diagnoseSmartShipQuote,
   getSmartShipAccountOverview,
   quoteSmartShip,
+  resolveSmartShipCity,
 } from "./integrations/smartship";
 
 const databases: DatabaseSync[] = [];
@@ -71,6 +72,30 @@ afterEach(() => {
   for (const db of databases.splice(0)) db.close();
 });
 describe("growth and commerce integration", () => {
+  it("resolves a Bucharest easybox sector through the city and separate sector", async () => {
+    const { db, actor } = database();
+    const env = {
+      DB: db,
+      INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)),
+      CACHE: { get: async () => null, put: async () => undefined },
+    } as unknown as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string) =>
+        Promise.resolve(
+          Response.json(
+            new URL(input).pathname === "/geolocation/counties"
+              ? { counties: [{ id: 1, county: "Bucuresti" }] }
+              : { cities: [{ id: 255154, city: "Bucuresti" }] },
+          ),
+        ),
+      ),
+    );
+
+    expect(await resolveSmartShipCity(env, "București", "Sectorul 1")).toBe(255154);
+    expect(await resolveSmartShipCity(env, "Bucuresti", "Sector 2")).toBe(255154);
+  });
   it("returns honest empty shipping statistics before the first AWB", async () => {
     const { db } = database();
     const insights = await getAdminShippingInsightsData(db);

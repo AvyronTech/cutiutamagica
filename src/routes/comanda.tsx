@@ -1070,7 +1070,9 @@ function OrderPage() {
                                 : shippingCost != null
                                   ? `${money(shippingCost)} ${shippingOption === "easybox" ? "la Easybox" : "prin curier"}.`
                                   : shippingOption === "easybox"
-                                    ? "Alege un punct Easybox și vezi prețul înainte de comandă."
+                                    ? easyboxLocker
+                                      ? "Punctul este ales. Completează datele pentru calculul tarifului Easybox."
+                                      : "Alege un punct Easybox și vezi prețul înainte de comandă."
                                     : "Completează adresa și alege oferta potrivită."}
                           </span>
                         </div>
@@ -1414,8 +1416,8 @@ function OrderPage() {
               </div>
               {shippingCost == null && config && (
                 <p className="mt-5 rounded-md bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-                  Costul livrării nu este inclus încă. Îți comunicăm totalul final și îți cerem
-                  acordul înainte de expediere.
+                  Costul livrării se calculează după completarea datelor. Vei vedea totalul final
+                  înainte de plată.
                 </p>
               )}
             </aside>
