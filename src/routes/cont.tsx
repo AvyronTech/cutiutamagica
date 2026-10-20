@@ -231,7 +231,9 @@ function CustomerAccount() {
   }
 
   if (account.isLoading) {
-    return <div className="customer-account-loading">Se deschide contul tău…</div>;
+    return (
+      <div className="customer-account-page customer-account-loading">Se deschide contul tău…</div>
+    );
   }
 
   if (!account.data) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { WebsiteOrderInput } from "@/lib/order-contracts";
+import { websiteOrderInputSchema, type WebsiteOrderInput } from "@/lib/order-contracts";
 export type DeliveryOffer = {
   id: string;
   courier: string;
@@ -26,6 +26,12 @@ export function CheckoutDelivery({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const requestKey = JSON.stringify(request);
+  const canCalculate = websiteOrderInputSchema.safeParse({
+    ...request,
+    idempotencyKey: "00000000-0000-4000-8000-000000000000",
+    checkoutConsentAccepted: true,
+    checkoutConsentVersion: "quote",
+  }).success;
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
   const calculate = useCallback(
@@ -65,13 +71,17 @@ export function CheckoutDelivery({
     const controller = new AbortController();
     setOffers([]);
     setError("");
+    if (!canCalculate) {
+      setBusy(false);
+      return () => controller.abort();
+    }
     setBusy(true);
     const timer = setTimeout(() => void calculate(controller.signal), 1_100);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [calculate]);
+  }, [calculate, canCalculate]);
   return (
     <div className="min-w-0 sm:col-span-2">
       <p className="text-sm text-muted-foreground">
@@ -81,7 +91,7 @@ export function CheckoutDelivery({
       </p>
       <button
         type="button"
-        disabled={busy}
+        disabled={busy || !canCalculate}
         onClick={() => void calculate()}
         className="mt-3 min-h-11 rounded-full border border-[color:var(--gold)]/50 px-5 text-sm disabled:opacity-60"
       >
@@ -91,6 +101,13 @@ export function CheckoutDelivery({
             ? "Confirmă tariful Easybox"
             : "Actualizează ofertele de curierat"}
       </button>
+      {!canCalculate && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Completează datele de contact și adresa
+          {request.shippingOption === "easybox" ? ", apoi alege punctul Easybox" : ""} pentru
+          calculul livrării.
+        </p>
+      )}
       {error && (
         <p role="alert" className="mt-3 text-sm text-amber-700 dark:text-amber-200">
           {error}

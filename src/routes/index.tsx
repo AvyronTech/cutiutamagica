@@ -138,11 +138,7 @@ function Index() {
                   Cutiuțe muzicale din lemn · mecanism manual · fără baterii
                 </p>
               </div>
-              <Link
-                to="/despre-cutiuta"
-                className="hero-about"
-                aria-label="Despre cutiuță — descoperă mecanismul și povestea"
-              >
+              <Link to="/despre-cutiuta" className="hero-about">
                 <span className="hero-about-spark" aria-hidden="true">
                   <Sparkles size={19} />
                 </span>

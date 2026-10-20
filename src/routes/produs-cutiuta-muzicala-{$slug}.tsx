@@ -504,7 +504,7 @@ function ProductPage() {
 
           {product.details.length > 0 && (
             <div className="mt-8">
-              <h3 className="font-display text-xl">Detalii</h3>
+              <h2 className="font-display text-xl">Detalii</h2>
               <ul className="mt-3 space-y-2">
                 {product.details.map((d: string) => (
                   <li key={d} className="flex gap-2 text-sm">

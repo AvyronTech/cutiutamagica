@@ -44,7 +44,6 @@ export function FloatingCartButton({
       data-after-hero={forceVisible || undefined}
       data-footer-visible={(pathname === "/" && footerVisible) || undefined}
       data-cart-target="floating"
-      aria-label={`Deschide coșul: ${totalQty} ${totalQty === 1 ? "cutiuță" : "cutiuțe"}, ${totals.total.toLocaleString("ro-RO")} lei`}
       aria-haspopup="dialog"
       aria-expanded={open}
       onClick={(event) => onOpen(event.currentTarget, side)}

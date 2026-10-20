@@ -137,7 +137,6 @@ function FooterTrustBadges() {
         href="https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/resolve-your-consumer-complaint/alternative-dispute-resolution-consumers_ro"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Soluționarea litigiilor — ADR și ECC-Net, Comisia Europeană"
         className="magic-adr-badge"
       >
         <span aria-hidden>EU</span>

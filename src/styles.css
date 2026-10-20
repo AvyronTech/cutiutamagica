@@ -11998,7 +11998,7 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   }
 }
 .customer-account-loading {
-  min-height: 60vh;
+  min-height: 100svh;
   display: grid;
   place-items: center;
 }
@@ -14769,6 +14769,9 @@ body:has(.checkout-page) .page-back-dock {
   font-style: normal;
 }
 .magic-footer-contact a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   color: #e0c89f;
   font-size: 11px;
   line-height: 1.45;
@@ -14790,7 +14793,7 @@ body:has(.checkout-page) .page-back-dock {
 .magic-footer-nav > div {
   display: grid;
   align-content: start;
-  gap: 7px;
+  gap: 3px;
 }
 .magic-footer-nav strong {
   margin-bottom: 3px;
@@ -14800,6 +14803,9 @@ body:has(.checkout-page) .page-back-dock {
   text-transform: uppercase;
 }
 .magic-footer-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   width: fit-content;
   color: #d1c3b1;
   font-size: 12px;
