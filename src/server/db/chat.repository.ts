@@ -238,7 +238,7 @@ export async function listVisitorMessages(
   const result = await db
     .prepare(
       `SELECT id,sender_type AS senderType,body,created_at AS createdAt,read_at AS readAt
-       FROM chat_messages WHERE conversation_id=?1 ORDER BY created_at,id LIMIT 250`,
+       FROM chat_messages WHERE conversation_id=?1 ORDER BY created_at,rowid LIMIT 250`,
     )
     .bind(conversationId)
     .all<ChatMessage>();
@@ -262,7 +262,7 @@ export async function listAdminChatConversations(db: D1Database): Promise<AdminC
         c.source_path AS sourcePath,c.unread_admin_count AS unreadAdminCount,
         c.unread_visitor_count AS unreadVisitorCount,c.last_message_at AS lastMessageAt,
         c.created_at AS createdAt,c.ai_paused AS aiPaused,
-        (SELECT body FROM chat_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC,m.id DESC LIMIT 1) AS lastMessage
+        (SELECT body FROM chat_messages m WHERE m.conversation_id=c.id ORDER BY m.created_at DESC,m.rowid DESC LIMIT 1) AS lastMessage
        FROM chat_conversations c
        WHERE c.status!='spam' OR c.last_message_at>=datetime('now','-7 days')
        ORDER BY CASE c.status WHEN 'open' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
@@ -279,7 +279,7 @@ export async function listAdminChatMessages(
   const result = await db
     .prepare(
       `SELECT id,sender_type AS senderType,body,created_at AS createdAt,read_at AS readAt
-       FROM chat_messages WHERE conversation_id=?1 ORDER BY created_at,id LIMIT 500`,
+       FROM chat_messages WHERE conversation_id=?1 ORDER BY created_at,rowid LIMIT 500`,
     )
     .bind(conversationId)
     .all<ChatMessage>();
