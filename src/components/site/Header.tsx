@@ -214,7 +214,11 @@ export function Header() {
 
             <button
               type="button"
-              aria-label={`Coș de cumpărături, ${totalQty} produse`}
+              aria-label={
+                totalQty > 0
+                  ? `Coș ${totalQty} ${totalQty === 1 ? "produs" : "produse"}`
+                  : "Coș de cumpărături"
+              }
               ref={headerCartTrigger}
               data-cart-target
               aria-expanded={cartOpen}

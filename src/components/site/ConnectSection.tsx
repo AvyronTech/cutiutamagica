@@ -233,7 +233,7 @@ export function ConnectSection() {
             Cadouri corporate & comenzi în volum — scrie-ne pe WhatsApp.
           </p>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#25d366]/95 text-white px-3 py-1.5 text-[12px] font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
+        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#137a3b] text-white px-3 py-1.5 text-[12px] font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
           <MessageCircle className="w-3.5 h-3.5" />
           WhatsApp
           <ArrowRight className="w-3.5 h-3.5" />
