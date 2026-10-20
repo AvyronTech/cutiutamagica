@@ -2,11 +2,11 @@
 @source "../src";
 @import "tw-animate-css";
 
-/* Self-hosted, WOFF2-only fonts. `fallback` prevents a late swap from moving the layout. */
+/* Self-hosted, WOFF2-only fonts. Show fallback text immediately while the final font loads. */
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: normal;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 400;
   src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-normal.woff2")
     format("woff2");
@@ -17,7 +17,7 @@
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: normal;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 400;
   src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-normal.woff2")
     format("woff2");
@@ -28,7 +28,7 @@
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: normal;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 600;
   src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-600-normal.woff2")
     format("woff2");
@@ -39,7 +39,7 @@
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: normal;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 600;
   src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-600-normal.woff2")
     format("woff2");
@@ -50,7 +50,7 @@
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: italic;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 400;
   src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-ext-400-italic.woff2")
     format("woff2");
@@ -61,7 +61,7 @@
 @font-face {
   font-family: "Cormorant Garamond";
   font-style: italic;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 400;
   src: url("@fontsource/cormorant-garamond/files/cormorant-garamond-latin-400-italic.woff2")
     format("woff2");
@@ -73,7 +73,7 @@
 @font-face {
   font-family: "Inter Variable";
   font-style: normal;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 100 900;
   src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
     format("woff2-variations");
@@ -615,7 +615,7 @@
 @font-face {
   font-family: "Inter Variable";
   font-style: normal;
-  font-display: fallback;
+  font-display: swap;
   font-weight: 100 900;
   src: url("@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2")
     format("woff2-variations");
