@@ -29,7 +29,7 @@ export function supportedPriceClaims(body: string, prices: number[]): boolean {
 }
 
 export function isChatMetaResponse(body: string): boolean {
-  return /^(?:prezintă|recomandă|menționează|sugerează|oferă|explică|descrie|răspunde|asistentul virtual)\b|\b(?:vizitatorului|pot fi recomandate|ar trebui prezentate)\b/i.test(
+  return /^(?:prezintă|recomandă|menționează|sugerează|oferă|explică|descrie|răspunde|asistentul virtual)(?![\p{L}\p{N}])|\b(?:vizitatorului|pot fi recomandate|ar trebui prezentate)\b/iu.test(
     body.trim(),
   );
 }

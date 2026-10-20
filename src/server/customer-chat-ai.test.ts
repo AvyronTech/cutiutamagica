@@ -91,6 +91,7 @@ describe("customer chat assistant boundaries", () => {
     expect(supportedPriceClaims("Costă 139 RON", [139])).toBe(true);
     expect(supportedPriceClaims("Costă 99 RON", [139])).toBe(false);
     expect(isChatMetaResponse("Prezintă o gamă variată vizitatorului.")).toBe(true);
+    expect(isChatMetaResponse("Prezintă cutiuțele potrivite.")).toBe(true);
     expect(isChatMetaResponse("Ți-aș recomanda o cutiuță cu melodia preferată.")).toBe(false);
   });
 
