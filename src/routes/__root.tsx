@@ -199,34 +199,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             refundType: "https://schema.org/FullRefund",
             merchantReturnLink: "https://cutiutamagica.eu/retur",
           },
-          hasShippingService: [
-            {
-              "@type": "ShippingService",
-              "@id": "https://cutiutamagica.eu/#shipping-home",
-              name: "Curier la adresă în România",
-              description:
-                "Livrare la adresă prin curier, cu tariful afișat înainte de finalizarea comenzii.",
-              fulfillmentType: "https://schema.org/FulfillmentTypeDelivery",
-              shippingConditions: {
-                "@type": "ShippingConditions",
-                shippingDestination: { "@type": "DefinedRegion", addressCountry: "RO" },
-                shippingRate: { "@type": "MonetaryAmount", value: 25, currency: "RON" },
-              },
-            },
-            {
-              "@type": "ShippingService",
-              "@id": "https://cutiutamagica.eu/#shipping-easybox",
-              name: "Livrare SAMEDAY easybox în România",
-              description:
-                "Livrare la punctul SAMEDAY easybox ales în checkout, în limita disponibilității.",
-              fulfillmentType: "https://schema.org/FulfillmentTypeCollectionPoint",
-              shippingConditions: {
-                "@type": "ShippingConditions",
-                shippingDestination: { "@type": "DefinedRegion", addressCountry: "RO" },
-                shippingRate: { "@type": "MonetaryAmount", value: 15, currency: "RON" },
-              },
-            },
-          ],
           sameAs: [
             "https://www.facebook.com/profile.php?id=61590919580877",
             "https://www.instagram.com/cutiutamagicaofficial/",
