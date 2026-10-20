@@ -13,6 +13,7 @@ import {
 } from "./db/chat.repository";
 import {
   answerCustomerChat,
+  isChatMetaResponse,
   redactChatForAi,
   supportedPriceClaims,
 } from "./services/customer-chat-ai";
@@ -88,6 +89,32 @@ describe("customer chat assistant boundaries", () => {
     );
     expect(supportedPriceClaims("Costă 139 RON", [139])).toBe(true);
     expect(supportedPriceClaims("Costă 99 RON", [139])).toBe(false);
+    expect(isChatMetaResponse("Prezintă o gamă variată vizitatorului.")).toBe(true);
+    expect(isChatMetaResponse("Ți-aș recomanda o cutiuță cu melodia preferată.")).toBe(false);
+  });
+
+  it("rewrites an instruction-like answer before sending it to the visitor", async () => {
+    const db = database();
+    const ai = vi
+      .fn()
+      .mockResolvedValueOnce({ response: "Prezintă vizitatorului cutiuțele pentru aniversare." })
+      .mockResolvedValueOnce({
+        response:
+          "Pentru aniversare, ți-aș recomanda o cutiuță cu melodia preferată. Ce temă îi place?",
+      });
+    const env = { DB: db, AI: { run: ai } } as unknown as Env;
+    const session = await createChatConversation(db, {
+      consent: true,
+      sourcePath: "/produse",
+      context: {},
+    });
+    const messageId = crypto.randomUUID();
+    await addVisitorMessage(db, session.conversationId, messageId, "Ce cadou recomanzi?");
+    await answerCustomerChat(env, session.conversationId, messageId);
+    expect(ai).toHaveBeenCalledTimes(2);
+    const messages = await listVisitorMessages(db, session.conversationId);
+    expect(messages.at(-1)?.body).toContain("ți-aș recomanda");
+    expect(messages.at(-1)?.body).not.toContain("Prezintă");
   });
 
   it("answers once automatically and stops after an administrator takes over", async () => {
