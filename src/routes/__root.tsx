@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { ShopProvider } from "@/store/shop";
 import { Header } from "@/components/site/Header";
+import { PreviousPageLink } from "@/components/site/PreviousPageLink";
 import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { PageStoryLoader } from "@/components/site/PageStoryLoader";
@@ -278,7 +279,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
-  const showBack = isChrome && pathname !== "/";
+  const showBack = isChrome && pathname !== "/" && pathname !== "/cont";
   const isProductPage = isProductPath(pathname);
   return (
     <QueryClientProvider client={queryClient}>
@@ -290,7 +291,11 @@ function RootComponent() {
           {isChrome && <CartRecoveryPrompt pathname={pathname} />}
           {showBack && (
             <div className="page-back-dock">
-              <Link to={isProductPage ? "/produse" : "/"} className="page-back-link group">
+              <PreviousPageLink
+                fallbackTo={isProductPage ? "/produse" : "/"}
+                fallbackLabel={isProductPage ? "Înapoi la cutiuțe" : "Înapoi acasă"}
+                className="page-back-link group"
+              >
                 <span className="page-back-icon">
                   <svg
                     viewBox="0 0 24 24"
@@ -305,8 +310,7 @@ function RootComponent() {
                     <path d="M12 19l-7-7 7-7" />
                   </svg>
                 </span>
-                {isProductPage ? "Înapoi la cutiuțe" : "Înapoi acasă"}
-              </Link>
+              </PreviousPageLink>
             </div>
           )}
           <main className="min-h-[60vh]">

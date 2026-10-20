@@ -113,7 +113,7 @@ export function SideScrollMagic() {
         ))}
       </div>
 
-      <div className="magic-rail-progress" aria-label="Progres în pagină">
+      <div className="magic-rail-progress" role="group" aria-label="Progres în pagină">
         <div className="magic-scroll-line" aria-hidden>
           <motion.div style={{ scaleY: scrollYProgress }} />
         </div>

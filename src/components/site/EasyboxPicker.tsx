@@ -174,8 +174,8 @@ export function EasyboxPicker({
             </span>
           </button>
         </DialogTrigger>
-        <DialogContent className="max-h-[92dvh] w-[calc(100vw-1rem)] max-w-6xl overflow-hidden border-amber-900/15 bg-[#fffaf0] p-0 dark:bg-[#17120d] sm:rounded-3xl">
-          <DialogHeader className="border-b border-amber-900/10 px-5 pb-4 pt-5 pr-12 sm:px-7 sm:pt-6">
+        <DialogContent className="flex h-[min(92dvh,760px)] w-[calc(100vw-1rem)] max-w-6xl flex-col gap-0 overflow-hidden border-amber-900/15 bg-[#fffaf0] p-0 dark:bg-[#17120d] sm:rounded-3xl">
+          <DialogHeader className="shrink-0 border-b border-amber-900/10 px-5 pb-4 pt-5 pr-12 sm:px-7 sm:pt-6">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-800 dark:text-amber-200">
               <Sparkles className="h-3.5 w-3.5" /> SAMEDAY easybox
             </div>
@@ -187,7 +187,7 @@ export function EasyboxPicker({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid min-h-0 flex-1 md:grid-cols-[minmax(300px,.78fr)_1.35fr]">
+          <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(190px,1fr)] overflow-y-auto md:grid-cols-[minmax(300px,.78fr)_1.35fr] md:grid-rows-1 md:overflow-hidden">
             <div className="flex min-h-0 flex-col border-b border-amber-900/10 md:border-b-0 md:border-r">
               <div className="p-4 sm:p-5">
                 <label className="relative block">
@@ -210,7 +210,7 @@ export function EasyboxPicker({
                     : "Date oficiale de localizare, încărcate la cerere."}
                 </p>
               </div>
-              <div className="max-h-[29dvh] flex-1 space-y-2 overflow-y-auto px-3 pb-4 sm:px-5 md:max-h-[52dvh]">
+              <div className="max-h-[23dvh] flex-1 space-y-2 overflow-y-auto px-3 pb-4 sm:px-5 md:max-h-none">
                 {error && (
                   <p
                     role="alert"
@@ -245,7 +245,7 @@ export function EasyboxPicker({
                 ))}
               </div>
             </div>
-            <div className="relative min-h-[35dvh] overflow-hidden bg-[#e9e0cb] md:min-h-[58dvh]">
+            <div className="relative min-h-[190px] overflow-hidden bg-[#e9e0cb] md:min-h-0">
               <div
                 ref={mapNode}
                 className="absolute inset-0 z-0"
@@ -264,8 +264,8 @@ export function EasyboxPicker({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-amber-900/10 bg-white/55 px-5 py-4 dark:bg-black/15 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-            <p className="min-w-0 text-xs text-muted-foreground">
+          <div className="flex shrink-0 flex-col gap-2 border-t border-amber-900/10 bg-white/90 px-5 py-3 dark:bg-[#17120d] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-7 sm:py-4">
+            <p className="min-w-0 truncate text-xs text-muted-foreground">
               {draft
                 ? `${lockerAddress(draft)}${draft.supportsCashOnDelivery === false ? " · fără ramburs" : ""}`
                 : "Selectează un punct pentru a continua."}
@@ -278,9 +278,9 @@ export function EasyboxPicker({
                 onSelect(draft);
                 setOpen(false);
               }}
-              className="min-h-11 shrink-0 rounded-full bg-[#5a3217] px-5 text-sm font-medium text-white shadow-lg shadow-amber-950/15 transition hover:bg-[#3f210f] disabled:cursor-not-allowed disabled:opacity-45"
+              className="min-h-11 w-full shrink-0 rounded-full bg-[#5a3217] px-5 text-sm font-medium text-white shadow-lg shadow-amber-950/15 transition hover:bg-[#3f210f] disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto"
             >
-              Alege acest Easybox
+              Alege punctul de ridicare
             </button>
           </div>
         </DialogContent>

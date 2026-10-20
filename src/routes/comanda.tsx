@@ -41,6 +41,7 @@ import { useShop } from "@/store/shop";
 import { ProductImage } from "@/components/site/ProductImage";
 import { ProductPrice } from "@/components/site/ProductPrice";
 import { BrandMark } from "@/components/site/BrandMark";
+import { PreviousPageLink } from "@/components/site/PreviousPageLink";
 import type { EasyboxLocker } from "@/lib/easybox";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { seoHead } from "@/lib/seo-head";
@@ -79,6 +80,13 @@ const inputClass =
 
 function money(value: number, currency = "RON") {
   return new Intl.NumberFormat("ro-RO", { style: "currency", currency }).format(value);
+}
+
+function preferredOnlineProvider(
+  options: CommercePublicConfig["payments"]["options"],
+): PaymentProvider | null {
+  const preferred = options.find((option) => option.id === "stripe" || option.id === "netopia");
+  return preferred?.id ?? options[0]?.id ?? null;
 }
 
 function usePrefersReducedMotion() {
@@ -128,6 +136,7 @@ function OrderPage() {
   const [website, setWebsite] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
+  const paymentChoiceTouched = useRef(false);
   const [shippingOption, setShippingOption] = useState<ShippingOption>("home_delivery");
   const [easyboxLocker, setEasyboxLocker] = useState<EasyboxLocker | null>(null);
   const [consent, setConsent] = useState(false);
@@ -262,7 +271,14 @@ function OrderPage() {
         if (!response.ok) throw new Error("Config indisponibil");
         return (await response.json()) as { data: CommercePublicConfig };
       })
-      .then(({ data }) => setConfig(data))
+      .then(({ data }) => {
+        setConfig(data);
+        const preferredProvider = preferredOnlineProvider(data.payments.options);
+        if (preferredProvider && !paymentChoiceTouched.current) {
+          setPaymentMethod("card");
+          setPaymentProvider(preferredProvider);
+        }
+      })
       .catch(() => {
         setConfigFailed(true);
         // id fix: o singură notificare, chiar dacă efectul se reia.
@@ -323,6 +339,7 @@ function OrderPage() {
   }, [hasItems, recovering]);
 
   useEffect(() => {
+    const preferredProvider = preferredOnlineProvider(config?.payments.options ?? []);
     if (shippingOption === "easybox" && !config?.shipping.easyboxEnabled) {
       setShippingOption("home_delivery");
       setEasyboxLocker(null);
@@ -331,18 +348,15 @@ function OrderPage() {
       shippingOption === "easybox" &&
       easyboxLocker?.supportsCashOnDelivery === false &&
       paymentMethod === "cash_on_delivery" &&
-      config?.payments.options.length
+      preferredProvider
     ) {
       setPaymentMethod("card");
-      setPaymentProvider(config.payments.options[0].id);
+      setPaymentProvider(preferredProvider);
     }
     if (paymentMethod === "card" && !config?.payments.options.length)
       setPaymentMethod("cash_on_delivery");
-    if (
-      config?.payments.options.length &&
-      !config.payments.options.some((o) => o.id === paymentProvider)
-    )
-      setPaymentProvider(config.payments.options[0].id);
+    if (preferredProvider && !config?.payments.options.some((o) => o.id === paymentProvider))
+      setPaymentProvider(preferredProvider);
   }, [config, easyboxLocker, paymentMethod, shippingOption, paymentProvider]);
 
   const shippingCost = useMemo(() => {
@@ -1122,11 +1136,18 @@ function OrderPage() {
                           request={deliveryRequest}
                           selected={activeQuote?.id}
                           onSelect={(offer) => setQuote({ offer, context: deliveryContext })}
+                          autoSelectBestOffer={shippingOption === "easybox"}
                         />
                       )}
                     </ChoiceSection>
 
                     <ChoiceSection step={3} title="Plată" subtitle="Alege cum îți este mai ușor">
+                      {config && onlineOptions.length === 0 && (
+                        <p className="checkout-payment-tip sm:col-span-2">
+                          <CreditCard size={16} aria-hidden /> Plata online cu cardul nu este
+                          disponibilă momentan. Poți finaliza comanda cu ramburs.
+                        </p>
+                      )}
                       {recommendsAdvancePayment && onlineOptions.length > 0 && (
                         <p className="checkout-payment-tip sm:col-span-2">
                           <Sparkles size={16} aria-hidden /> Pentru o cutiuță pregătită special
@@ -1140,6 +1161,7 @@ function OrderPage() {
                           disabled={shippingCost == null && !config?.shipping.liveQuotesEnabled}
                           selected={paymentMethod === "card" && paymentProvider === option.id}
                           onChange={() => {
+                            paymentChoiceTouched.current = true;
                             setPaymentMethod("card");
                             setPaymentProvider(option.id);
                           }}
@@ -1168,7 +1190,10 @@ function OrderPage() {
                           easyboxLocker?.supportsCashOnDelivery === false
                         }
                         selected={paymentMethod === "cash_on_delivery"}
-                        onChange={() => setPaymentMethod("cash_on_delivery")}
+                        onChange={() => {
+                          paymentChoiceTouched.current = true;
+                          setPaymentMethod("cash_on_delivery");
+                        }}
                         icon={<PackageCheck className="h-5 w-5" />}
                         title="Ramburs"
                         note={
@@ -1325,7 +1350,7 @@ function OrderPage() {
                           ? "Se trimite comanda…"
                           : paymentMethod === "card"
                             ? "Comandă și plătește online"
-                            : "Comandă și achită la livrare"}
+                            : "Plasează comanda"}
                       </strong>
                     </span>
                     <ArrowRight size={20} aria-hidden />
@@ -1429,9 +1454,7 @@ function OrderPage() {
                 type="submit"
                 disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
                 aria-label={
-                  paymentMethod === "card"
-                    ? "Comandă și plătește online"
-                    : "Comandă și achită la livrare"
+                  paymentMethod === "card" ? "Comandă și plătește online" : "Plasează comanda"
                 }
                 className="checkout-submit-action checkout-mobile-submit ml-auto min-h-11 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -1440,7 +1463,7 @@ function OrderPage() {
                 ) : paymentMethod === "card" ? (
                   <strong>Comandă și plătește online</strong>
                 ) : (
-                  <strong>Comandă și achită la livrare</strong>
+                  <strong>Plasează comanda</strong>
                 )}
               </button>
             </div>
@@ -1484,9 +1507,9 @@ function CheckoutMobileHeader({
 }) {
   return (
     <div className="checkout-mobile-header">
-      <Link to="/produse" aria-label="Înapoi la cutiuțe">
+      <PreviousPageLink fallbackTo="/produse" ariaLabel="Înapoi la pagina anterioară">
         <ArrowLeft size={17} />
-      </Link>
+      </PreviousPageLink>
       <BrandMark aria-hidden className="h-9 w-9" />
       <div>
         <strong>
@@ -1611,13 +1634,14 @@ function ChoiceSection({
       id={`checkout-step-${step}`}
       className="min-w-0 rounded-2xl border border-[color:var(--gold)]/25 bg-card/90 p-4 shadow-soft backdrop-blur-md"
     >
-      <legend className="checkout-step-heading font-display text-xl sm:text-2xl">
+      <legend className="sr-only">{title}</legend>
+      <h2 className="checkout-step-heading font-display text-xl sm:text-2xl">
         <span aria-hidden>{step}</span>
         <span>
           {title}
           <small>{subtitle}</small>
         </span>
-      </legend>
+      </h2>
       <div className="mt-2.5 grid min-w-0 grid-cols-1 gap-2.5 sm:grid-cols-2">{children}</div>
     </fieldset>
   );

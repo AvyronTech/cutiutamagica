@@ -38,6 +38,8 @@ export function catalogProducts(catalog: CatalogProduct[]): Product[] {
     tagline: row.tagline,
     description: row.description || row.shortDescription,
     story: row.story,
+    editorial: row.editorial,
+    dimensions: row.dimensions,
     details: row.details,
     searchTerms: row.searchTerms,
     price: row.price ?? undefined,

@@ -327,7 +327,7 @@ function ProductPage() {
               />
               <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
               {product.melody ? (
-                <motion.div className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
+                <motion.div className="absolute top-4 left-4 flex items-center gap-1.5 rounded-full border border-[#694523]/25 bg-[#fffaf0]/95 px-3 py-1.5 text-xs font-semibold text-[#322317] shadow-[0_4px_18px_#1f150f33] backdrop-blur">
                   <Music className="w-3 h-3" /> {product.melody}
                 </motion.div>
               ) : null}
@@ -393,13 +393,6 @@ function ProductPage() {
               </button>
             ))}
           </div>
-
-          <article className="product-about-card">
-            <p className="catalog-eyebrow">Povestea modelului</p>
-            <h2>Despre cutiuță</h2>
-            <p>{product.description}</p>
-            <p>{product.story}</p>
-          </article>
         </div>
 
         <div className="product-detail-copy">
@@ -487,7 +480,7 @@ function ProductPage() {
           {available && totalQty > 0 && (
             <Link
               to="/comanda"
-              className="product-checkout-link mt-3 inline-flex min-h-11 items-center justify-center gap-2 border border-primary/40 px-4 py-2.5 text-sm font-medium hover:bg-primary/5"
+              className="product-checkout-link mt-3 inline-flex items-center justify-center gap-2 font-medium"
             >
               <Gift className="w-4 h-4" /> Finalizează comanda
             </Link>
@@ -509,18 +502,74 @@ function ProductPage() {
             </div>
           </div>
 
-          <div className="mt-8">
-            <h3 className="font-display text-xl">Detalii</h3>
-            <ul className="mt-3 space-y-2">
-              {product.details.map((d: string) => (
-                <li key={d} className="flex gap-2 text-sm">
-                  <span className="text-[color:var(--gold)]">✦</span> {d}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {product.details.length > 0 && (
+            <div className="mt-8">
+              <h2 className="font-display text-xl">Detalii</h2>
+              <ul className="mt-3 space-y-2">
+                {product.details.map((d: string) => (
+                  <li key={d} className="flex gap-2 text-sm">
+                    <span className="text-[color:var(--gold)]">✦</span> {d}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
+
+      <article className="product-about-card" aria-labelledby="product-story-title">
+        <p className="catalog-eyebrow">Descoperă modelul</p>
+        <h2 id="product-story-title">Povestea cutiuței</h2>
+        {product.editorial ? (
+          <>
+            <div className="product-about-card__chapters">
+              <section>
+                <h3>Într-o poveste Cutiuța Magică</h3>
+                <p>{product.editorial.story}</p>
+              </section>
+              <section>
+                <h3>Despre melodia cutiuței</h3>
+                <p>{product.editorial.melody}</p>
+              </section>
+              <section>
+                <h3>Cum o folosești</h3>
+                <p>{product.editorial.use}</p>
+              </section>
+            </div>
+            <div className="product-about-card__practical">
+              <section>
+                <h3>Funcționare</h3>
+                <p>
+                  Deschizi capacul și rotești manivela pentru a asculta melodia. Mecanismul este
+                  manual și nu are nevoie de baterii.
+                </p>
+              </section>
+              <section>
+                <h3>Dimensiuni</h3>
+                <p>
+                  {product.dimensions ??
+                    "Dimensiunile vor fi publicate după verificarea modelului."}
+                </p>
+              </section>
+              <section>
+                <h3>Pentru cine o alegi</h3>
+                <p>{product.editorial.gift}</p>
+              </section>
+            </div>
+            <p className="product-about-card__closing">{product.editorial.closing}</p>
+          </>
+        ) : (
+          <div className="product-about-card__fallback">
+            <p>{product.description}</p>
+            <p>{product.story}</p>
+          </div>
+        )}
+        <p className="product-about-card__documents">
+          <Link to="/termeni-de-utilizare">Termenii de utilizare</Link> sunt disponibili gratuit.
+          Documentele specifice produsului și informațiile despre eventualele licențe necesită
+          verificare înainte de publicare.
+        </p>
+      </article>
 
       <div className="product-world-afterstory">
         <div className="product-world-afterstory__scene" aria-hidden>

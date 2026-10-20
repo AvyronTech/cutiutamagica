@@ -287,7 +287,7 @@ describe("customer Google OpenID Connect accounts", () => {
   it("keeps OAuth visibly disabled until the two Worker secrets exist", async () => {
     const providers = (await handleReviewAccount(request("reviewer/providers"), env))!;
     expect(await providers.json()).toEqual({
-      data: { google: { enabled: false }, email: { enabled: false } },
+      data: { google: { enabled: false }, apple: { enabled: false }, email: { enabled: false } },
     });
 
     const start = (await handleReviewAccount(request("reviewer/oauth/google"), env))!;
@@ -374,7 +374,7 @@ describe("customer Google OpenID Connect accounts", () => {
     });
   });
 
-  it("rejects forged OAuth state and retires local customer passwords", async () => {
+  it("rejects forged OAuth state and direct unverified registration", async () => {
     enableGoogle();
     const { stateCookie } = await beginGoogleLogin();
     const forged = (await handleReviewAccount(
@@ -387,8 +387,42 @@ describe("customer Google OpenID Connect accounts", () => {
     ))!;
     expect(forged.status).toBe(302);
     expect(forged.headers.get("location")).toBe("https://cutiutamagica.eu/cont?auth=eroare");
-    expect((await handleReviewAccount(request("reviewer/login", {}), env))!.status).toBe(410);
     expect((await handleReviewAccount(request("reviewer/register", {}), env))!.status).toBe(410);
+  });
+});
+
+describe("customer Apple authorization", () => {
+  it("requires complete server secrets and binds the callback to the browser state", async () => {
+    const disabled = (await handleReviewAccount(request("reviewer/oauth/apple"), env))!;
+    expect(disabled.headers.get("location")).toBe(
+      "https://cutiutamagica.eu/cont?auth=neconfigurat",
+    );
+    Object.assign(env, {
+      CUSTOMER_APPLE_CLIENT_ID: "eu.cutiutamagica.web",
+      CUSTOMER_APPLE_TEAM_ID: "TESTTEAM01",
+      CUSTOMER_APPLE_KEY_ID: "TESTKEY01",
+      CUSTOMER_APPLE_PRIVATE_KEY: "test-key",
+    });
+    const providers = (await handleReviewAccount(request("reviewer/providers"), env))!;
+    expect(await providers.json()).toMatchObject({ data: { apple: { enabled: true } } });
+    const start = (await handleReviewAccount(request("reviewer/oauth/apple?remember=1"), env))!;
+    const authorization = new URL(start.headers.get("location")!);
+    expect(authorization.origin).toBe("https://appleid.apple.com");
+    expect(authorization.searchParams.get("response_mode")).toBe("form_post");
+    expect(authorization.searchParams.get("nonce")).toBe(authorization.searchParams.get("state"));
+    expect(start.headers.get("set-cookie")).toContain("SameSite=None; Secure");
+    const forged = (await handleReviewAccount(
+      new Request("https://cutiutamagica.eu/api/v1/reviewer/oauth/apple/callback", {
+        method: "POST",
+        headers: {
+          cookie: start.headers.get("set-cookie") ?? "",
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ code: "forged-code", state: "forged-state" }),
+      }),
+      env,
+    ))!;
+    expect(forged.headers.get("location")).toBe("https://cutiutamagica.eu/cont?auth=eroare");
   });
 });
 
@@ -441,5 +475,68 @@ describe("customer email access", () => {
       env,
     ))!;
     expect(replay.status).toBe(401);
+  });
+
+  it("lets a verified customer set a password and use email or phone without admin access", async () => {
+    const send = vi.fn(async (_message: { text: string }) => ({ messageId: "email-test-2" }));
+    Object.assign(env, { EMAIL: { send } });
+    const start = (await handleReviewAccount(
+      request("reviewer/email/start", { email: "client@example.test" }),
+      env,
+    ))!;
+    const { data: challenge } = (await start.json()) as { data: { challengeId: string } };
+    const code = send.mock.calls[0]?.[0].text.match(/\b\d{8}\b/)?.[0];
+    const verified = (await handleReviewAccount(
+      request("reviewer/email/verify", {
+        email: "client@example.test",
+        challengeId: challenge.challengeId,
+        code,
+        remember: true,
+      }),
+      env,
+    ))!;
+    const session = verified.headers.get("set-cookie")?.match(/cm_reviewer=[a-f0-9]{64}/)?.[0];
+    expect(verified.headers.get("set-cookie")).toContain("Max-Age=2592000");
+    const setPassword = (await handleReviewAccount(
+      request(
+        "reviewer/password",
+        {
+          password: "o-parola-lunga-sigura-2026",
+          phone: "0722 123 456",
+        },
+        session,
+      ),
+      env,
+    ))!;
+    expect(setPassword.status).toBe(200);
+    expect(
+      sqlite
+        .prepare(
+          "SELECT phone_e164,password_hash FROM review_accounts WHERE email='client@example.test'",
+        )
+        .get(),
+    ).toMatchObject({
+      phone_e164: "+40722123456",
+      password_hash: expect.stringMatching(/^pbkdf2-sha256:/),
+    });
+    const wrong = (await handleReviewAccount(
+      request("reviewer/login", {
+        identifier: "client@example.test",
+        password: "wrong",
+      }),
+      env,
+    ))!;
+    expect(wrong.status).toBe(401);
+    for (const identifier of ["client@example.test", "0722 123 456"]) {
+      const login = (await handleReviewAccount(
+        request("reviewer/login", {
+          identifier,
+          password: "o-parola-lunga-sigura-2026",
+        }),
+        env,
+      ))!;
+      expect(login.status).toBe(200);
+      expect(login.headers.get("set-cookie")).toContain("Max-Age=86400");
+    }
   });
 });

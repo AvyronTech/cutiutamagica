@@ -1,17 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { safeJsonLd } from "@/lib/product-discovery";
-import {
-  BookOpen,
-  Heart,
-  Gift,
-  Search,
-  X,
-  ArrowDown,
-  ArrowRight,
-  Music2,
-  Sparkles,
-} from "lucide-react";
+import { BookOpen, Heart, Gift, Search, X, ArrowRight, Music2, Sparkles } from "lucide-react";
 import { isAvailable } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import {
@@ -132,46 +122,27 @@ function ProductsPage() {
             <Music2 size={14} aria-hidden="true" /> Lemn · manivelă · melodie
           </span>
           <h1 id="catalog-title">
-            O cutiuță mică.
+            Găsește cutiuța
             <br />
-            <em>O poveste doar a ta.</em>
+            <em>care spune povestea ta.</em>
           </h1>
           <p>
-            Cutiuțe muzicale cu manivelă, pentru poveștile pe care le iubești și oamenii pe care îi
-            porți în suflet.
+            Alege după melodie, emoție sau persoana căreia vrei să-i dăruiești un moment. Fiecare
+            cutiuță prinde viață când învârți manivela.
           </p>
-          <Link
-            to="/produse"
-            search={{}}
-            hash="catalog-alegere"
-            resetScroll={false}
-            className="catalog-gold-button"
-          >
-            Afișează toate cutiuțele <ArrowDown size={16} aria-hidden="true" />
-          </Link>
-          <span className="catalog-intro-note">Învârți manivela. Amintirile prind glas.</span>
+          <span className="catalog-intro-note">
+            Descoperă colecțiile și caută povestea potrivită mai jos.
+          </span>
         </div>
       </section>
 
       <div className="catalog-content" id="catalog-alegere">
-        <p className="catalog-guide-entry">
-          Alegi pentru cineva drag?{" "}
-          <Link to="/cadouri">Explorează ideile de cadouri pentru sărbători ↗</Link>
-        </p>
         <section aria-labelledby="catalog-collections-title">
           <div className="catalog-section-heading">
             <div>
               <span className="catalog-eyebrow">Trei feluri de a dărui magie</span>
               <h2 id="catalog-collections-title">Unde începe povestea ta?</h2>
             </div>
-            <button
-              type="button"
-              className="catalog-all-button"
-              aria-pressed={!filtered}
-              onClick={showAll}
-            >
-              Toate cutiuțele <ArrowRight size={15} aria-hidden="true" />
-            </button>
           </div>
           <div className="catalog-collections" role="group" aria-label="Alege o colecție">
             {catalogCollections.map((collection, index) => {
@@ -281,6 +252,10 @@ function ProductsPage() {
               ))}
             </div>
           )}
+          <p className="catalog-guide-entry">
+            Alegi pentru cineva drag?{" "}
+            <Link to="/cadouri">Explorează ideile de cadouri pentru sărbători ↗</Link>
+          </p>
           {upcoming.length > 0 && (
             <section className="catalog-upcoming" aria-labelledby="catalog-upcoming-title">
               <div className="catalog-section-heading">

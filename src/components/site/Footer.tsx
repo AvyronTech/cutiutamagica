@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { BrandMark } from "./BrandMark";
 import { FooterScene } from "./FooterScene";
 import avyronLogo from "@/assets/avyron-logo.jpg";
@@ -37,32 +37,10 @@ const navGroups = [
 
 export function Footer() {
   const year = new Date().getFullYear();
-  const isCheckout = useLocation({ select: (location) => location.pathname === "/comanda" });
-
-  if (isCheckout) {
-    return (
-      <footer className="magic-footer magic-footer--checkout text-[color:var(--cream)]">
-        <div className="magic-footer-details">
-          <FooterTrustBadges />
-          <nav className="magic-footer-checkout-links" aria-label="Informații pentru comandă">
-            <Link to="/livrare">Livrare</Link>
-            <Link to="/retur">Retur și garanție</Link>
-            <Link to="/termeni-de-utilizare">Termeni</Link>
-            <Link to="/politica-de-confidentialitate">Confidențialitate</Link>
-          </nav>
-          <div className="magic-footer-bottom">
-            <p>© {year} Cutiuța Magică</p>
-          </div>
-        </div>
-      </footer>
-    );
-  }
-
   return (
     <footer className="magic-footer text-[color:var(--cream)]">
       <FooterScene />
       <div className="magic-footer-invitation">
-        <BrandMark className="magic-footer-box" />
         <div className="magic-footer-invitation-copy">
           <span>O melodie poate spune atât de mult.</span>
           <h2>
@@ -159,7 +137,6 @@ function FooterTrustBadges() {
         href="https://commission.europa.eu/topics/consumers/consumer-rights-and-complaints/resolve-your-consumer-complaint/alternative-dispute-resolution-consumers_ro"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Soluționarea litigiilor — ADR și ECC-Net, Comisia Europeană"
         className="magic-adr-badge"
       >
         <span aria-hidden>EU</span>

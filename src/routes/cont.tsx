@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
+  ArrowLeft,
   Box,
   CalendarDays,
   Camera,
@@ -14,7 +15,7 @@ import {
   Star,
   UserRound,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   formatPersonalizationPrice,
   personalizationMelodies,
@@ -24,6 +25,7 @@ import {
 import { reviewApi, type Reviewer } from "@/lib/reviews";
 import { CustomerMagicCenter } from "@/components/site/CustomerMagicCenter";
 import { seoHead } from "@/lib/seo-head";
+import { PreviousPageLink } from "@/components/site/PreviousPageLink";
 
 export const Route = createFileRoute("/cont")({
   validateSearch: (
@@ -141,9 +143,11 @@ function CustomerAccount() {
   const providers = useQuery({
     queryKey: ["reviewer-auth-providers"],
     queryFn: () =>
-      reviewApi<{ google: { enabled: boolean }; email: { enabled: boolean } }>(
-        "/api/v1/reviewer/providers",
-      ),
+      reviewApi<{
+        google: { enabled: boolean };
+        apple: { enabled: boolean };
+        email: { enabled: boolean };
+      }>("/api/v1/reviewer/providers"),
     retry: false,
     staleTime: 60_000,
   });
@@ -151,6 +155,38 @@ function CustomerAccount() {
   const [error, setError] = useState("");
   const [cardConsent, setCardConsent] = useState(false);
   const [cardBusy, setCardBusy] = useState(false);
+  const [accountPassword, setAccountPassword] = useState("");
+  const [accountPhone, setAccountPhone] = useState("");
+  const [showAccountPassword, setShowAccountPassword] = useState(false);
+  const [securityBusy, setSecurityBusy] = useState(false);
+  const [securitySaved, setSecuritySaved] = useState(false);
+
+  useEffect(() => {
+    if (!account.data || window.location.hash !== "#securitatea-contului") return;
+    const frame = requestAnimationFrame(() =>
+      document.getElementById("securitatea-contului")?.scrollIntoView({ block: "start" }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [account.data]);
+
+  async function saveCustomerPassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSecurityBusy(true);
+    setSecuritySaved(false);
+    setError("");
+    try {
+      await reviewApi("/api/v1/reviewer/password", {
+        method: "POST",
+        body: JSON.stringify({ password: accountPassword, phone: accountPhone || undefined }),
+      });
+      setAccountPassword("");
+      setSecuritySaved(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Parola nu a putut fi salvată.");
+    } finally {
+      setSecurityBusy(false);
+    }
+  }
 
   async function addCard() {
     setCardBusy(true);
@@ -195,17 +231,20 @@ function CustomerAccount() {
   }
 
   if (account.isLoading) {
-    return <div className="customer-account-loading">Se deschide contul tău…</div>;
+    return (
+      <div className="customer-account-page customer-account-loading">Se deschide contul tău…</div>
+    );
   }
 
   if (!account.data) {
     const googleReady = providers.data?.google.enabled === true;
+    const appleReady = providers.data?.apple.enabled === true;
     const emailReady = providers.data?.email.enabled === true;
     const customerAuthMessage =
       auth === "neconfigurat"
         ? "Conectarea nu este disponibilă momentan. Poți continua cumpărăturile fără cont."
         : auth === "eroare"
-          ? "Autentificarea Google nu a putut fi finalizată. Încearcă din nou."
+          ? "Autentificarea externă nu a putut fi finalizată. Încearcă din nou."
           : "";
     return (
       <div className="customer-account-page customer-account-page--guest">
@@ -217,6 +256,13 @@ function CustomerAccount() {
           <span className="customer-account-orbit customer-account-orbit--two" />
         </div>
         <section className="customer-account-story">
+          <PreviousPageLink
+            fallbackTo="/"
+            fallbackLabel="Înapoi acasă"
+            className="customer-account-inline-back"
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+          </PreviousPageLink>
           <p className="catalog-eyebrow">
             <Sparkles size={14} /> Poveștile tale, într-un singur loc
           </p>
@@ -225,7 +271,7 @@ function CustomerAccount() {
           </h1>
           <p>
             Un cont gratuit îți păstrează cererile, preferințele și momentele importante aproape —
-            fără o parolă nouă de memorat.
+            într-un singur loc.
           </p>
           <div className="customer-account-benefits">
             <article>
@@ -276,12 +322,12 @@ function CustomerAccount() {
             <h2 id="customer-auth-title">
               {providers.isLoading
                 ? "Verificăm accesul securizat…"
-                : emailReady || googleReady
+                : emailReady || googleReady || appleReady
                   ? "Intră în contul tău"
                   : "Conturile Magic se deschid în curând"}
             </h2>
             <p>
-              {emailReady || googleReady
+              {emailReady || googleReady || appleReady
                 ? "La prima vizită, contul se creează automat. Dacă ai revenit, îți regăsești comenzile și momentele salvate."
                 : "Până atunci poți descoperi colecția și poți finaliza orice comandă rapid, fără cont."}
             </p>
@@ -290,8 +336,8 @@ function CustomerAccount() {
                 <span aria-hidden>✦</span>
                 Se verifică accesul…
               </span>
-            ) : emailReady || googleReady ? (
-              <Link className="customer-google-button" to="/auth" search={{ role: "client" }}>
+            ) : emailReady || googleReady || appleReady ? (
+              <Link className="customer-google-button" to="/auth">
                 <span aria-hidden>✦</span>
                 Intră în cont
                 <ArrowRight size={16} />
@@ -308,13 +354,11 @@ function CustomerAccount() {
                 {customerAuthMessage}
               </p>
             )}
-            {(emailReady || googleReady) && (
+            {(emailReady || googleReady || appleReady) && (
               <>
                 <div className="customer-auth-assurance">
                   <ShieldCheck aria-hidden />
-                  <span>
-                    Nu îți cerem o parolă nouă. Accesul se confirmă prin e-mail sau prin Google.
-                  </span>
+                  <span>Poți intra cu parolă, cod pe e-mail sau cu un cont extern configurat.</span>
                 </div>
                 <p className="customer-auth-legal">
                   Continuând, accepți crearea contului și confirmi că ai citit{" "}
@@ -362,6 +406,60 @@ function CustomerAccount() {
           Salvarea cardului a fost anulată. Nu s-a făcut nicio plată.
         </p>
       )}
+
+      <section
+        id="securitatea-contului"
+        className="customer-security"
+        aria-labelledby="customer-security-title"
+      >
+        <div>
+          <p className="catalog-eyebrow">Accesul tău</p>
+          <h2 id="customer-security-title">Securitatea contului</h2>
+          <p>
+            Setează sau schimbă parola. Poți adăuga și un număr pentru conectare cu aceeași parolă.
+          </p>
+        </div>
+        <form onSubmit={(event) => void saveCustomerPassword(event)}>
+          <label>
+            Parolă nouă (minimum 12 caractere)
+            <span className="customer-security__password">
+              <input
+                type={showAccountPassword ? "text" : "password"}
+                value={accountPassword}
+                onChange={(event) => setAccountPassword(event.target.value)}
+                autoComplete="new-password"
+                minLength={12}
+                maxLength={128}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowAccountPassword(!showAccountPassword)}
+                aria-label={showAccountPassword ? "Ascunde parola" : "Arată parola"}
+              >
+                {showAccountPassword ? "Ascunde" : "Arată"}
+              </button>
+            </span>
+          </label>
+          <label>
+            Telefon pentru conectare (opțional)
+            <input
+              type="tel"
+              value={accountPhone}
+              onChange={(event) => setAccountPhone(event.target.value)}
+              autoComplete="tel"
+              placeholder="07… sau +40…"
+              maxLength={32}
+            />
+          </label>
+          <button type="submit" disabled={securityBusy || accountPassword.length < 12}>
+            {securityBusy ? "Se salvează…" : "Salvează parola"}
+          </button>
+          {securitySaved && (
+            <p role="status">Parola a fost salvată. O poți folosi la următoarea conectare.</p>
+          )}
+        </form>
+      </section>
 
       <CustomerMagicCenter />
 

@@ -31,6 +31,8 @@ export function productLimitedEdition(productId: string) {
 }
 
 export type Product = {
+  editorial?: ProductEditorial | null;
+  dimensions?: string | null;
   discovery?: import("@/lib/product-discovery").ProductDiscovery | null;
   scene?: import("@/lib/product-themes").ProductScene;
   id: string;
@@ -66,6 +68,14 @@ export type Product = {
   availability: ProductAvailability;
   /** Anunțul de pe platforma externă din care au fost preluate titlul, pozele și descrierea. */
   source?: { platform: "vinted"; url: string };
+};
+
+export type ProductEditorial = {
+  story: string;
+  melody: string;
+  use: string;
+  gift: string;
+  closing: string;
 };
 
 export type ProductAvailability = "available" | "coming_soon" | "out_of_stock";

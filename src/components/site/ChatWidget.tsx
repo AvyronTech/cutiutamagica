@@ -50,7 +50,12 @@ const SIDE_KEY = CHAT_SIDE_KEY;
 
 function loadSession(): ChatSession | null {
   try {
-    const parsed = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null") as ChatSession | null;
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* Old storage may be blocked. */
+    }
+    const parsed = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? "null") as ChatSession | null;
     return parsed?.conversationId && parsed.accessToken ? parsed : null;
   } catch {
     return null;
@@ -58,11 +63,15 @@ function loadSession(): ChatSession | null {
 }
 
 function visitorKey(): string {
-  const current = localStorage.getItem(VISITOR_KEY);
-  if (current) return current;
-  const value = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
-  localStorage.setItem(VISITOR_KEY, value);
-  return value;
+  try {
+    const current = localStorage.getItem(VISITOR_KEY);
+    if (current) return current;
+    const value = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
+    localStorage.setItem(VISITOR_KEY, value);
+    return value;
+  } catch {
+    return crypto.randomUUID();
+  }
 }
 
 async function responseData<T>(response: Response): Promise<T> {
@@ -143,6 +152,21 @@ export function ChatWidget() {
           `/api/v1/chat/conversations/${session.conversationId}/messages`,
           { headers: { authorization: `Bearer ${session.accessToken}` } },
         );
+        if (response.status === 401) {
+          try {
+            sessionStorage.removeItem(SESSION_KEY);
+          } catch {
+            /* Storage may be unavailable. */
+          }
+          if (active) {
+            setSession(null);
+            setMessages([]);
+            setError(
+              "Conversația anterioară a expirat. Trimite un mesaj pentru a începe una nouă.",
+            );
+          }
+          return;
+        }
         const data = await responseData<ChatMessage[]>(response);
         if (active) setMessages(data);
       } catch {
@@ -238,8 +262,7 @@ export function ChatWidget() {
   if (!config?.enabled) return null;
   const activeConfig = config;
 
-  async function ensureSession(): Promise<ChatSession> {
-    if (session) return session;
+  async function createSession(): Promise<ChatSession> {
     const response = await fetch("/api/v1/chat/conversations", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -253,9 +276,17 @@ export function ChatWidget() {
       }),
     });
     const created = await responseData<ChatSession>(response);
-    localStorage.setItem(SESSION_KEY, JSON.stringify(created));
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(created));
+    } catch {
+      /* A tab can still chat without storage. */
+    }
     setSession(created);
     return created;
+  }
+
+  async function ensureSession(): Promise<ChatSession> {
+    return session ?? createSession();
   }
 
   async function sendMessage(body: string) {
@@ -278,20 +309,32 @@ export function ChatWidget() {
       const activeSession = await ensureSession();
       setMessages((current) => [...current, optimistic]);
       setMessage("");
-      const response = await fetch(
-        `/api/v1/chat/conversations/${activeSession.conversationId}/messages`,
-        {
+      const postMessage = (currentSession: ChatSession) =>
+        fetch(`/api/v1/chat/conversations/${currentSession.conversationId}/messages`, {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            authorization: `Bearer ${activeSession.accessToken}`,
+            authorization: `Bearer ${currentSession.accessToken}`,
           },
           body: JSON.stringify({ messageId: optimistic.id, body: clean }),
-        },
-      );
+        });
+      const response = await postMessage(activeSession);
+      if (response.status === 401) {
+        try {
+          sessionStorage.removeItem(SESSION_KEY);
+        } catch {
+          /* Storage may be unavailable. */
+        }
+        setSession(null);
+        setMessages([]);
+        throw new Error(
+          "Conversația anterioară a expirat. Confirmă acordul și trimite mesajul din nou.",
+        );
+      }
       await responseData<{ accepted: boolean }>(response);
     } catch (caught) {
       setMessages((current) => current.filter((item) => item.id !== optimistic.id));
+      setMessage(clean);
       setError(caught instanceof Error ? caught.message : "Mesajul nu a putut fi trimis.");
     } finally {
       setSending(false);

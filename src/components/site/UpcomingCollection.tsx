@@ -18,6 +18,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
   const [interacting, setInteracting] = useState(false);
   const [selected, setSelected] = useState(0);
   const [richEffects, setRichEffects] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const cooldownTimer = useRef<number | undefined>(undefined);
   const playing =
     richEffects &&
@@ -28,6 +29,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
     !interacting &&
     products.length > 1;
   useEffect(() => setRichEffects(currentVisualEffectsTier() === "full"), []);
+  useEffect(() => setMounted(true), []);
   const update = useCallback(() => setSelected(api?.selectedScrollSnap() ?? 0), [api]);
   useEffect(() => {
     if (!api) return;
@@ -169,7 +171,7 @@ export function UpcomingCollection({ products }: { products: Product[] }) {
             }
           }}
           aria-label={playing ? "Oprește derularea automată" : "Pornește derularea automată"}
-          disabled={!!reduced || !richEffects || products.length <= 1}
+          disabled={(mounted && !!reduced) || !richEffects || products.length <= 1}
         >
           {playing ? <Pause size={16} /> : <Play size={16} />}
         </button>
