@@ -233,7 +233,7 @@ export function Header() {
               <ShoppingBag
                 className={`transition-transform group-hover:scale-105 ${compact ? "h-[18px] w-[18px]" : "h-5 w-5"}`}
               />
-              <span className="hidden text-sm sm:inline">Coș</span>
+              <span className="hidden text-sm sm:inline">Coș</span>{" "}
               {totalQty > 0 ? (
                 <span
                   aria-live="polite"
