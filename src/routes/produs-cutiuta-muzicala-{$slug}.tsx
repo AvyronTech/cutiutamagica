@@ -114,12 +114,6 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
             category: loaderData.product.category,
             material: "Lemn",
             brand: { "@type": "Brand", name: loaderData.product.brand || "Cutiuța Magică" },
-            audience: loaderData.product.discovery?.audience
-              ? {
-                  "@type": "Audience",
-                  audienceType: loaderData.product.discovery.audience,
-                }
-              : undefined,
             additionalProperty: [
               { "@type": "PropertyValue", name: "Mecanism", value: "Manual, cu manivelă" },
               ...(loaderData.product.melody
