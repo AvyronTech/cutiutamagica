@@ -14,6 +14,7 @@ import {
 import {
   answerCustomerChat,
   isChatMetaResponse,
+  needsHuman,
   redactChatForAi,
   supportedPriceClaims,
 } from "./services/customer-chat-ai";
@@ -91,6 +92,13 @@ describe("customer chat assistant boundaries", () => {
     expect(supportedPriceClaims("Costă 99 RON", [139])).toBe(false);
     expect(isChatMetaResponse("Prezintă o gamă variată vizitatorului.")).toBe(true);
     expect(isChatMetaResponse("Ți-aș recomanda o cutiuță cu melodia preferată.")).toBe(false);
+  });
+
+  it("keeps ordinary gift questions with the assistant while handing explicit support requests to staff", () => {
+    expect(needsHuman("Ce recomanzi dacă persoana iubește poveștile fantasy?")).toBe(false);
+    expect(needsHuman("Caut un cadou pentru un copil.")).toBe(false);
+    expect(needsHuman("Vreau să vorbesc cu o persoană reală.")).toBe(true);
+    expect(needsHuman("Unde este comanda mea?")).toBe(true);
   });
 
   it("rewrites an instruction-like answer before sending it to the visitor", async () => {

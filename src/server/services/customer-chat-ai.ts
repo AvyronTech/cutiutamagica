@@ -5,7 +5,7 @@ import { getCommercePublicConfig } from "@/server/db/commerce-operations.reposit
 export const CHAT_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
 export const CHAT_AI_DAILY_LIMIT = 30;
 const NEEDS_HUMAN =
-  /\b(reclama[țt]i|retur|garan[țt]i|defect|anulare|rambursare|refund|fraud[ăa]|avocat|juridic|disput[ăa]|copil|minor|pericol|siguran[țt]ă|operator|om real|persoan[ăa]|coletul meu|comanda mea|awb)\b/i;
+  /(?<![\p{L}\p{N}])(?:reclama[țt]i|retur|garan[țt]i|defect|anulare|rambursare|refund|fraud[ăa]|avocat|juridic|disput[ăa]|pericol|siguran[țt]ă|operator|om real|persoan[ăa] real[ăa]|persoan[ăa] din echipă|coletul meu|comanda mea|awb)(?![\p{L}\p{N}])/iu;
 const EMAIL = /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g;
 const PHONE = /(?:\+?40|0)\s*7\d(?:[\s.-]*\d){8}/g;
 const CARD_LIKE = /\b(?:\d[ -]*?){13,19}\b/g;
@@ -138,7 +138,7 @@ export async function answerCustomerChat(env: Env, conversationId: string, messa
       getCommercePublicConfig(env.DB, { stripe: false, smartship: false }),
       env.DB.prepare(
         `SELECT sender_type AS senderType,body FROM chat_messages WHERE conversation_id=?1
-         AND sender_type IN ('visitor','admin','assistant') ORDER BY created_at DESC,id DESC LIMIT 8`,
+         AND sender_type IN ('visitor','admin','assistant') ORDER BY created_at DESC,rowid DESC LIMIT 8`,
       )
         .bind(conversationId)
         .all<{ senderType: string; body: string }>(),
