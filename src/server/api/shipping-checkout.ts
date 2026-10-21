@@ -1,6 +1,6 @@
 import { websiteOrderInputSchema } from "@/lib/order-contracts";
 import { boundedJson } from "./bounded-json";
-import { checkoutSubtotal } from "../db/order.repository";
+import { CheckoutError, checkoutSubtotal } from "../db/order.repository";
 import { credential } from "../services/growth-settings";
 import { shippingFingerprint } from "../services/shipping-fingerprint";
 import { digestHex, ProviderError, type CommerceEnv } from "../integrations/provider-runtime";
@@ -20,6 +20,7 @@ const RECOVERABLE_QUOTE_ERRORS = new Set([
   "PROVIDER_TIMEOUT",
   "PROVIDER_NETWORK_ERROR",
   "PROVIDER_INVALID_RESPONSE",
+  "LOCATION_UNAVAILABLE",
 ]);
 
 function searchKey(value: string): string {
@@ -221,8 +222,8 @@ export async function handleShippingCheckout(
         Number(policy.default_height_cm) <= 0
       )
         throw new Error("SENDER_INCOMPLETE");
-      const cityId = await resolveSmartShipCity(env, destination.county, destination.city);
       try {
+        const cityId = await resolveSmartShipCity(env, destination.county, destination.city);
         quotes = await quoteSmartShip(env, {
           sender: {
             name: String(policy.sender_name),
@@ -365,19 +366,26 @@ export async function handleShippingCheckout(
     return json({ data: offers.map(({ courierId: _id, ownContract: _own, ...offer }) => offer) });
   } catch (error) {
     const providerError = error instanceof ProviderError ? error : null;
-    const safe = Boolean(providerError && providerError.status < 500);
-    console.error("shipping.quote_failed", {
-      code: error instanceof ProviderError ? error.code : "QUOTE_FAILED",
-    });
+    const checkoutError = error instanceof CheckoutError ? error : null;
+    const safe = Boolean(checkoutError || (providerError && providerError.status < 500));
+    if (safe) {
+      console.warn("shipping.quote_rejected", {
+        code: checkoutError ? "INVALID_CART" : providerError!.code,
+      });
+    } else {
+      console.error("shipping.quote_failed", {
+        code: providerError?.code ?? "QUOTE_FAILED",
+      });
+    }
     return json(
       {
         error: {
           message: safe
-            ? providerError!.message
+            ? (checkoutError ?? providerError)!.message
             : "Nu am putut calcula livrarea acum. Poți încerca din nou sau folosi opțiunea de livrare afișată.",
         },
       },
-      safe ? providerError!.status : 503,
+      checkoutError?.status ?? (safe ? providerError!.status : 503),
     );
   }
 }

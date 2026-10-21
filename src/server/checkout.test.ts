@@ -694,6 +694,39 @@ describe("secure checkout", () => {
   });
 });
 describe("delivery quote integrity", () => {
+  it("identifies an unavailable product before contacting SmartShip", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec("UPDATE shipping_policy_configs SET use_live_quotes=1");
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    const response = await handleShippingCheckout(
+      request("/api/v1/shipping/quotes", {
+        ...input(),
+        items: [{ productId: "missing-product", quantity: 1 }],
+      }),
+      env,
+    );
+    expect(response?.status).toBe(409);
+    expect(await response?.json()).toMatchObject({
+      error: { message: "Un produs nu mai este disponibil." },
+    });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("uses the configured fallback when SmartShip location lookup is unavailable", async () => {
+    env.SMARTSHIP_API_KEY = "private";
+    sqlite.exec(
+      "UPDATE shipping_policy_configs SET use_live_quotes=1,standard_price_bani=3200,sender_name='Atelier',sender_address='Strada Test 2',sender_phone='0712345678',sender_city_id=1",
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({}, { status: 503 })),
+    );
+    const response = await handleShippingCheckout(request("/api/v1/shipping/quotes", input()), env);
+    expect(response?.status).toBe(200);
+    expect(await response?.json()).toMatchObject({
+      data: [{ price: 32, fixedFallback: true }],
+    });
+  });
   async function savedQuote(body = input()) {
     const id = crypto.randomUUID(),
       hash = await shippingFingerprint(body, await checkoutSubtotal(env.DB, body.items));
