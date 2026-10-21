@@ -314,7 +314,18 @@ export async function getAdminCommerceOperations(db: D1Database): Promise<AdminC
        ORDER BY o.placed_at DESC LIMIT 100`,
     ),
     db.prepare(
-      `SELECT i.*, o.order_number,
+      `SELECT i.*, o.order_number, o.payment_status,
+              EXISTS(SELECT 1 FROM payment_attempts p WHERE p.order_id=i.order_id
+                AND p.status='captured' AND p.provider IN ('stripe','revolut_pay'))
+                AS has_captured_online_payment,
+              (SELECT po.status FROM provider_operations po
+                WHERE po.provider='oblio' AND po.operation_type='invoice.collect'
+                  AND po.entity_id=i.id ORDER BY po.created_at DESC LIMIT 1)
+                AS collection_sync_status,
+              (SELECT po.error_code FROM provider_operations po
+                WHERE po.provider='oblio' AND po.operation_type='invoice.collect'
+                  AND po.entity_id=i.id ORDER BY po.created_at DESC LIMIT 1)
+                AS collection_error_code,
               (SELECT bd.id FROM business_documents bd
                WHERE bd.entity_type = 'invoice' AND bd.entity_id = i.id AND bd.status = 'active'
                ORDER BY bd.created_at DESC LIMIT 1) AS document_id
@@ -406,6 +417,9 @@ export async function getAdminCommerceOperations(db: D1Database): Promise<AdminC
       provider: nullableString(row.external_provider),
       issuedAt: nullableString(row.issued_at),
       documentId: nullableString(row.document_id),
+      hasCapturedOnlinePayment: numberValue(row.has_captured_online_payment) === 1,
+      collectionSyncStatus: nullableString(row.collection_sync_status),
+      collectionErrorCode: nullableString(row.collection_error_code),
     })),
     returnRequests: results[5].results.map((row) => ({
       id: stringValue(row.id),

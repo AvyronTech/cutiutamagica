@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { emitOblioInvoice, oblioIssueDate, verifyOblioSetup } from "./integrations/oblio";
+import {
+  collectOblioCardPayment,
+  emitOblioInvoice,
+  oblioIssueDate,
+  verifyOblioSetup,
+} from "./integrations/oblio";
 
 vi.mock("@/server/services/growth-settings", () => ({
   credential: vi.fn(async (_env: unknown, provider: string) =>
@@ -13,6 +18,83 @@ describe("Oblio invoice adapter", () => {
   it("uses the Bucharest calendar date for the fiscal issue date", () => {
     expect(oblioIssueDate(new Date("2026-10-17T22:30:00Z"))).toBe("2026-10-18");
     expect(oblioIssueDate(new Date("2026-01-17T22:30:00Z"))).toBe("2026-01-18");
+  });
+
+  const collectionInput = {
+    accountEmail: "billing@example.test",
+    taxId: "55055976",
+    series: "CM",
+    number: "0042",
+    reference: "cs_paid_42",
+    amountBani: 12500,
+    capturedAt: "2026-10-20T19:30:00.000Z",
+  };
+
+  it("does not record a second collection after an uncertain first response", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json({ access_token: "temporary-access-token" }))
+      .mockResolvedValueOnce(
+        Response.json({
+          status: 200,
+          data: {
+            seriesName: "CM",
+            number: "0042",
+            collects: [{ type: "Card", number: "cs_paid_42", value: 125 }],
+          },
+        }),
+      );
+    await expect(collectOblioCardPayment({} as never, collectionInput)).resolves.toBe(
+      "already_collected",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("records and verifies a card collection against the exact payment reference", async () => {
+    const empty = { status: 200, data: { seriesName: "CM", number: "0042", collects: [] } };
+    const collected = {
+      status: 200,
+      data: {
+        seriesName: "CM",
+        number: "0042",
+        collects: [{ type: "Card", number: "cs_paid_42", value: "125.00" }],
+      },
+    };
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json({ access_token: "temporary-access-token" }))
+      .mockResolvedValueOnce(Response.json(empty))
+      .mockResolvedValueOnce(Response.json(collected))
+      .mockResolvedValueOnce(Response.json(collected));
+    await expect(collectOblioCardPayment({} as never, collectionInput)).resolves.toBe("collected");
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    const [url, init] = fetchMock.mock.calls[2]!;
+    expect(String(url)).toBe("https://www.oblio.eu/api/docs/invoice/collect");
+    const body = init?.body as URLSearchParams;
+    expect(body.get("collect[type]")).toBe("Card");
+    expect(body.get("collect[documentNumber]")).toBe("cs_paid_42");
+    expect(body.get("collect[value]")).toBe("125.00");
+    expect(body.get("collect[issueDate]")).toBe("2026-10-20");
+  });
+
+  it("requires manual reconciliation if another collection is already present", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(Response.json({ access_token: "temporary-access-token" }))
+      .mockResolvedValueOnce(
+        Response.json({
+          status: 200,
+          data: {
+            seriesName: "CM",
+            number: "0042",
+            collects: [{ type: "Ordin de plata", number: "OP 1", value: 125 }],
+          },
+        }),
+      );
+    await expect(collectOblioCardPayment({} as never, collectionInput)).rejects.toMatchObject({
+      code: "OBLIO_COLLECTION_CONFLICT",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("verifies the company, invoice series and non-VAT rate without issuing a document", async () => {

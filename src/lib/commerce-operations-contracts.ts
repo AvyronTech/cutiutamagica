@@ -131,6 +131,9 @@ export interface AdminCommerceOperations {
     provider: string | null;
     issuedAt: string | null;
     documentId: string | null;
+    hasCapturedOnlinePayment: boolean;
+    collectionSyncStatus: string | null;
+    collectionErrorCode: string | null;
   }>;
   returnRequests: Array<{
     id: string;

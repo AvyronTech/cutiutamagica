@@ -233,7 +233,7 @@ function CustomerAuth() {
       }>("/api/v1/reviewer/providers"),
     retry: false,
   });
-  const [mode, setMode] = useState<"password" | "email" | "forgot">("password");
+  const [mode, setMode] = useState<"password" | "email" | "forgot">("email");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -344,9 +344,26 @@ function CustomerAuth() {
               : mode === "forgot"
                 ? "Primești un cod pe e-mail. După confirmare poți seta o parolă nouă în cont."
                 : mode === "email"
-                  ? "La prima vizită, contul se creează după confirmarea codului primit pe e-mail."
+                  ? "Intră rapid cu un cod pe e-mail. Dacă ești nou, contul se creează la prima conectare."
                   : "Conectează-te cu e-mailul sau numărul de telefon și parola contului."}
           </p>
+          {!challengeId &&
+            mode !== "forgot" &&
+            (providers.data?.google.enabled || providers.data?.apple.enabled) && (
+              <div className="customer-login__alternate customer-login__alternate--first">
+                {providers.data?.google.enabled && (
+                  <a href={`/api/v1/reviewer/oauth/google${remember ? "?remember=1" : ""}`}>
+                    Continuă cu Google <ArrowRight size={16} />
+                  </a>
+                )}
+                {providers.data?.apple.enabled && (
+                  <a href={`/api/v1/reviewer/oauth/apple${remember ? "?remember=1" : ""}`}>
+                    Continuă cu Apple <ArrowRight size={16} />
+                  </a>
+                )}
+                <span>{mode === "email" ? "sau continuă cu e-mailul" : "sau intră cu parola"}</span>
+              </div>
+            )}
           {mode === "password" ? (
             <form
               onSubmit={(event) => void loginWithPassword(event)}
@@ -503,21 +520,6 @@ function CustomerAuth() {
               {error}
             </p>
           )}
-          {(providers.data?.google.enabled || providers.data?.apple.enabled) && (
-            <div className="customer-login__alternate">
-              <span>sau</span>
-              {providers.data?.google.enabled && (
-                <a href={`/api/v1/reviewer/oauth/google${remember ? "?remember=1" : ""}`}>
-                  Continuă cu Google <ArrowRight size={16} />
-                </a>
-              )}
-              {providers.data?.apple.enabled && (
-                <a href={`/api/v1/reviewer/oauth/apple${remember ? "?remember=1" : ""}`}>
-                  Continuă cu Apple <ArrowRight size={16} />
-                </a>
-              )}
-            </div>
-          )}
           {providers.data?.email.enabled === false &&
             !providers.data.google.enabled &&
             !providers.data.apple.enabled && (
@@ -529,6 +531,9 @@ function CustomerAuth() {
             Continuând, confirmi că ai citit{" "}
             <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
           </p>
+          <Link className="customer-login__guest" to="/comanda">
+            Cumpără fără cont <ArrowRight size={15} aria-hidden />
+          </Link>
         </section>
       </div>
     </main>

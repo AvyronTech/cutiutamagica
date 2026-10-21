@@ -10,6 +10,7 @@ import {
 } from "../integrations/provider-runtime";
 import { createStripeCheckoutSession, verifyStripeWebhook } from "../integrations/stripe";
 import { completeStripeCardSetup } from "../services/customer-stripe-cards";
+import { syncPaidInvoiceCollection } from "../services/oblio-payment-sync";
 import { currentReviewer } from "../review-accounts";
 import {
   createRevolutCheckout,
@@ -279,6 +280,15 @@ async function settle(
       `UPDATE webhook_events SET status='processed',processed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE provider=?1 AND external_event_id=?2`,
     ).bind(provider, eventId),
   ]);
+  // Accounting outages must never undo a processor-confirmed customer payment.
+  try {
+    await syncPaidInvoiceCollection(env, order.id);
+  } catch (error) {
+    console.error("payment.oblio_sync_pending", {
+      orderId: order.id,
+      code: error instanceof ProviderError ? error.code : "UNKNOWN",
+    });
+  }
 }
 async function expireAttempt(
   env: CommerceEnv,

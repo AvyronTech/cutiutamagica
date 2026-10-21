@@ -1,5 +1,6 @@
 import { emitOblioInvoice } from "@/server/integrations/oblio";
 import { checkoutSettingsSchema } from "@/lib/checkout-settings";
+import { syncPaidInvoiceCollection } from "@/server/services/oblio-payment-sync";
 import {
   digestHex,
   fetchWithTimeout,
@@ -328,6 +329,14 @@ export async function issueInvoiceForOrder(
       responseCode: 200,
       responseSummary: { invoiceNumber, pdfUrl: result.pdfUrl },
     });
+    try {
+      await syncPaidInvoiceCollection(env, orderId);
+    } catch (error) {
+      console.error("invoice.collection_sync_pending", {
+        orderId,
+        code: error instanceof ProviderError ? error.code : "UNKNOWN",
+      });
+    }
     return { invoiceId, invoiceNumber, pdfUrl: result.pdfUrl };
   } catch (error) {
     if (

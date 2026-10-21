@@ -276,6 +276,17 @@ export default function Billing() {
                       ? ` · ${new Date(invoice.issuedAt).toLocaleString("ro-RO")}`
                       : ""}
                   </p>
+                  {invoice.provider === "oblio" && invoice.hasCapturedOnlinePayment && (
+                    <p
+                      className={`mt-1 text-xs ${invoice.status === "paid" ? "text-emerald-300" : invoice.collectionSyncStatus === "failed" ? "text-amber-300" : "text-slate-400"}`}
+                    >
+                      {invoice.status === "paid"
+                        ? "Încasare confirmată în Oblio"
+                        : invoice.collectionSyncStatus === "failed"
+                          ? `Încasare de verificat în Oblio${invoice.collectionErrorCode ? ` · ${invoice.collectionErrorCode}` : ""}`
+                          : "Sincronizarea încasării este în așteptare"}
+                    </p>
+                  )}
                 </div>
                 {invoice.documentId ? (
                   <a

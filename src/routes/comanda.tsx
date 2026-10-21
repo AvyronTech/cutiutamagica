@@ -1168,7 +1168,9 @@ function OrderPage() {
                             setPaymentProvider(option.id);
                           }}
                           icon={<CreditCard className="h-5 w-5" />}
-                          title={option.id === "stripe" ? "Card online" : option.label}
+                          title={
+                            option.id === "stripe" ? "Card sau portofel digital" : option.label
+                          }
                           badge={
                             option.id === onlineOptions[0]?.id && preferredWallet
                               ? `${preferredWallet === "apple" ? "Apple Pay" : "Google Pay"}, dacă este disponibil`
@@ -1180,7 +1182,7 @@ function OrderPage() {
                                 ? "Alege curierul pentru a confirma totalul"
                                 : "Disponibil după confirmarea costului de livrare"
                               : option.id === "stripe"
-                                ? "Card sau portofel digital, dacă este disponibil la procesator"
+                                ? "Apple Pay, Google Pay și Revolut Pay apar când sunt compatibile cu dispozitivul și plata ta"
                                 : option.description
                           }
                         />
