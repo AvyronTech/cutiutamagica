@@ -262,7 +262,7 @@ export async function handleApiRequest(
 
   const shippingResponse = await handleShippingCheckout(request, env as CommerceEnv);
   if (shippingResponse) return shippingResponse;
-  const paymentResponse = await handlePayments(request, env as CommerceEnv);
+  const paymentResponse = await handlePayments(request, env as CommerceEnv, ctx);
   if (paymentResponse) return paymentResponse;
 
   const promotionResponse = await handlePromotionCodes(request, env as CommerceEnv);

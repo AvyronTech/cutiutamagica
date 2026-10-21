@@ -16,6 +16,7 @@ import {
   processGiftCalendarReminders,
 } from "./server/services/magic-rewards";
 import { processRewardEmailDigests } from "./server/services/reward-emails";
+import { reconcilePaidInvoiceCollections } from "./server/services/oblio-payment-sync";
 
 type ServerEntry = {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response> | Response;
@@ -252,6 +253,7 @@ export default {
         processRewardEmailDigests(env),
         processMarketingAgentMonitoring(env.DB),
         processStorageRetention(env),
+        reconcilePaidInvoiceCollections(env),
       ]).then(() => undefined),
     );
   },

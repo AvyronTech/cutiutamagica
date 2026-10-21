@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-21 — autentificare simplificată, portofele Stripe și încasări Oblio
+
+- Ramura locală `codex/oauth-wallets-20261021` pornește din `origin/codex/cutiuta-cloudflare-final` la `ba22d4a`. Intrarea clientului începe cu un cod pe e-mail; Google și Apple apar primele numai când sunt configurate, iar cumpărarea fără cont rămâne vizibilă. Checkoutul descrie cardul și portofelele eligibile oferite de Stripe, fără a promite o metodă indisponibilă pe dispozitivul cumpărătorului.
+- Pentru facturile deja emise în Oblio, o plată online capturată și verificată prin webhook este sincronizată ca încasare `Card` în fundal, după confirmarea locală a plății, fără a întârzia răspunsul procesatorului. Adapterul citește factura și încasările Oblio înainte și după scriere; operațiunea unică este jurnalizată în `provider_operations` și `audit_log`. Reconcilierea orară repară sincronizările întrerupte, fără a emite facturi noi. Panoul Facturare afișează starea încasării. Rambursul nu este marcat încasat la plasarea comenzii.
+- Nu există migrații D1 noi. Nu s-au emis facturi sau încasări de test. Google OAuth are brandingul pregătit în proiectul firmei, dar clientul OAuth și secretul așteaptă aprobarea specifică și accesul la seiful administratorului. Loginul Apple cere un cont Apple Developer și configurarea Services ID. În Stripe live Cutiuța Magică au fost activate Google Pay și Revolut Pay, pe lângă Apple Pay deja activ; afișarea lor finală depinde de eligibilitatea Checkout și trebuie verificată cu o plată reală controlată. Sesiunea Revolut Merchant separată era expirată la ultima verificare.
+- Verificări locale: `npm run typecheck`, `npm run lint`, `npm test` (56 fișiere / 306 teste), `npm run build`, `npm run cf:deploy:dry`, `git diff --check`; migrațiile 0001–0079 au trecut în D1 local. Autentificarea la desktop și 390 px a fost verificată în browser. Catalogul local nu are produse, deci checkoutul cu coș plin și panoul autentificat necesită verificare după conectarea contului de administrator. Nu s-au făcut push, merge sau deploy pentru această ramură.
+
 ## Handoff 2026-10-19 — inbox chat și asistent virtual autonom
 
 - Ramura `codex/customer-ai-chat-inbox` pornește din `codex/cutiuta-cloudflare-final` la `e90f379`. Notificările administrative deschid acum ruta chatului și conversația indicată. Inboxul permite preluarea și reluarea asistentului, urmărirea răspunsurilor și editarea informațiilor aprobate de echipă.

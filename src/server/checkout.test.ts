@@ -187,6 +187,7 @@ async function event(
   extra: Record<string, unknown> = {},
   id = "evt_local",
   live = false,
+  ctx?: Pick<ExecutionContext, "waitUntil">,
 ) {
   const body = JSON.stringify({
     id,
@@ -211,6 +212,7 @@ async function event(
       body,
     }),
     env,
+    ctx,
   );
 }
 function storedPayment(id: string) {
@@ -479,6 +481,21 @@ describe("secure checkout", () => {
       status: "paid",
       canResume: false,
     });
+  });
+  it("acknowledges a captured payment while accounting reconciliation runs in the Worker context", async () => {
+    const created = await start();
+    const scheduled: Promise<unknown>[] = [];
+    const ctx = {
+      waitUntil(promise: Promise<unknown>) {
+        scheduled.push(promise);
+      },
+    };
+    expect((await event(created, {}, "evt_background", false, ctx))!.status).toBe(200);
+    expect(storedPayment(created.orderId)).toBe("paid");
+    expect(scheduled).toHaveLength(1);
+    await Promise.all(scheduled);
+    expect((await event(created, {}, "evt_background", false, ctx))!.status).toBe(200);
+    expect(scheduled).toHaveLength(1);
   });
   it("retries an early webhook after the attempt becomes known", async () => {
     const created = await order();

@@ -10,6 +10,7 @@ import {
 } from "../integrations/provider-runtime";
 import { createStripeCheckoutSession, verifyStripeWebhook } from "../integrations/stripe";
 import { completeStripeCardSetup } from "../services/customer-stripe-cards";
+import { syncPaidInvoiceCollection } from "../services/oblio-payment-sync";
 import { currentReviewer } from "../review-accounts";
 import {
   createRevolutCheckout,
@@ -243,7 +244,7 @@ async function settle(
   amount: unknown,
   currency: unknown,
   eventId: string,
-) {
+): Promise<string> {
   const attempt = await env.DB.prepare(
     "SELECT * FROM payment_attempts WHERE provider=?1 AND external_payment_id=?2",
   )
@@ -279,6 +280,7 @@ async function settle(
       `UPDATE webhook_events SET status='processed',processed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE provider=?1 AND external_event_id=?2`,
     ).bind(provider, eventId),
   ]);
+  return order.id;
 }
 async function expireAttempt(
   env: CommerceEnv,
@@ -308,7 +310,12 @@ async function expireAttempt(
     ).bind(provider, eventId),
   ]);
 }
-async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | "revolut_pay") {
+async function webhook(
+  request: Request,
+  env: CommerceEnv,
+  provider: "stripe" | "revolut_pay",
+  ctx?: Pick<ExecutionContext, "waitUntil">,
+) {
   // Keep exact bytes for signature verification, with an enforced streaming size limit.
   const reader = request.body?.getReader();
   if (!reader) return json({ error: { code: "INVALID_EVENT" } }, 400);
@@ -352,6 +359,7 @@ async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | 
   const type = String(provider === "stripe" ? (event.type ?? "") : (event.event ?? ""));
   const eventId =
     provider === "stripe" ? String(event.id ?? "") : `${String(event.order_id ?? "")}/${type}`;
+  let paidOrderId: string | null = null;
   if (!eventId || !type || eventId.length > 200)
     return json({ error: { code: "INVALID_EVENT" } }, 400);
   const old = await env.DB.prepare(
@@ -400,7 +408,14 @@ async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | 
     )
       await expireAttempt(env, provider, object.id, eventId);
     else if (object.payment_status === "paid")
-      await settle(env, provider, object.id, object.amount_total, object.currency, eventId);
+      paidOrderId = await settle(
+        env,
+        provider,
+        object.id,
+        object.amount_total,
+        object.currency,
+        eventId,
+      );
   } else if (
     provider === "revolut_pay" &&
     ["ORDER_COMPLETED", "ORDER_CANCELLED", "ORDER_FAILED"].includes(type)
@@ -432,7 +447,14 @@ async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | 
       result.state === "completed" &&
       (result.outstanding_amount == null || result.outstanding_amount === 0)
     ) {
-      await settle(env, provider, externalId, result.amount, result.currency, eventId);
+      paidOrderId = await settle(
+        env,
+        provider,
+        externalId,
+        result.amount,
+        result.currency,
+        eventId,
+      );
     } else if (["cancelled", "failed"].includes(String(result.state))) {
       await expireAttempt(env, provider, externalId, eventId);
     } else throw new ProviderError("Plata este încă în curs.", "PAYMENT_PENDING", 503);
@@ -442,9 +464,25 @@ async function webhook(request: Request, env: CommerceEnv, provider: "stripe" | 
   )
     .bind(provider, eventId)
     .run();
+  if (paidOrderId) {
+    const orderId = paidOrderId;
+    // Oblio is independent of the processor response. The hourly job retries interrupted work.
+    const accounting = syncPaidInvoiceCollection(env, orderId).catch((error: unknown) => {
+      console.error("payment.oblio_sync_pending", {
+        orderId,
+        code: error instanceof ProviderError ? error.code : "UNKNOWN",
+      });
+    });
+    if (ctx) ctx.waitUntil(accounting);
+    else await accounting;
+  }
   return json({ received: true });
 }
-export async function handlePayments(request: Request, env: CommerceEnv): Promise<Response | null> {
+export async function handlePayments(
+  request: Request,
+  env: CommerceEnv,
+  ctx?: Pick<ExecutionContext, "waitUntil">,
+): Promise<Response | null> {
   const path = new URL(request.url).pathname;
   if (
     ![
@@ -459,7 +497,7 @@ export async function handlePayments(request: Request, env: CommerceEnv): Promis
   if (request.method !== "POST") return json({ error: { code: "METHOD_NOT_ALLOWED" } }, 405);
   try {
     if (path.includes("/webhooks/"))
-      return await webhook(request, env, path.endsWith("/stripe") ? "stripe" : "revolut_pay");
+      return await webhook(request, env, path.endsWith("/stripe") ? "stripe" : "revolut_pay", ctx);
     if (path.endsWith("/status")) {
       const order = await orderFor(request, env);
       const status =

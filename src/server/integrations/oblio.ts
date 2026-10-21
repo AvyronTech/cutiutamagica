@@ -54,6 +54,106 @@ export interface OblioInvoiceResult {
   pdfUrl: string | null;
 }
 
+export interface OblioCollectionInput {
+  accountEmail: string;
+  taxId: string;
+  series: string;
+  number: string;
+  reference: string;
+  amountBani: number;
+  capturedAt: string;
+}
+
+type OblioCollection = { type?: string; number?: string; value?: number | string };
+type OblioDocumentResponse = {
+  status?: number;
+  statusMessage?: string;
+  data?: { seriesName?: string; number?: string | number; collects?: OblioCollection[] };
+};
+
+/** Read Oblio before writing so a lost response cannot create a second collection. */
+export async function collectOblioCardPayment(
+  env: CommerceEnv,
+  input: OblioCollectionInput,
+): Promise<"already_collected" | "collected"> {
+  const token = await accessToken(env, input.accountEmail);
+  const query = new URLSearchParams({
+    cif: input.taxId,
+    seriesName: input.series,
+    number: input.number,
+  });
+  const url = `${OBLIO_API}/docs/invoice?${query}`;
+  const read = async () => {
+    const response = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+    });
+    const result = (await readProviderJson(response).catch(
+      () => null,
+    )) as OblioDocumentResponse | null;
+    if (
+      !response.ok ||
+      result?.status !== 200 ||
+      result.data?.seriesName !== input.series ||
+      String(result.data?.number ?? "") !== input.number
+    )
+      throw new ProviderError(
+        result?.statusMessage || "Factura nu a putut fi verificată în Oblio.",
+        "OBLIO_INVOICE_UNVERIFIED",
+        409,
+      );
+    return result.data.collects ?? [];
+  };
+  const matches = (collection: OblioCollection) =>
+    collection.type === "Card" &&
+    collection.number === input.reference &&
+    Math.round(Number(collection.value) * 100) === input.amountBani;
+  const current = await read();
+  if (current.some(matches)) return "already_collected";
+  if (current.length > 0)
+    throw new ProviderError(
+      "Factura are deja o încasare diferită în Oblio; verifică manual înainte de sincronizare.",
+      "OBLIO_COLLECTION_CONFLICT",
+      409,
+    );
+  const body = new URLSearchParams({
+    cif: input.taxId,
+    seriesName: input.series,
+    number: input.number,
+    "collect[type]": "Card",
+    "collect[documentNumber]": input.reference,
+    "collect[value]": (input.amountBani / 100).toFixed(2),
+    "collect[issueDate]": oblioIssueDate(new Date(input.capturedAt)),
+  });
+  const response = await fetchWithTimeout(`${OBLIO_API}/docs/invoice/collect`, {
+    method: "PUT",
+    headers: {
+      authorization: `Bearer ${token}`,
+      accept: "application/json",
+      "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+    },
+    body,
+  });
+  const result = (await readProviderJson(response).catch(
+    () => null,
+  )) as OblioDocumentResponse | null;
+  if (!response.ok || result?.status !== 200)
+    throw new ProviderError(
+      result?.statusMessage || "Încasarea nu a fost confirmată de Oblio.",
+      "OBLIO_COLLECTION_UNVERIFIED",
+      response.status >= 500 ? 502 : 409,
+      response.status >= 500,
+    );
+  const verified = await read();
+  if (!verified.some(matches))
+    throw new ProviderError(
+      "Încasarea nu apare încă în factura Oblio; verifică manual înainte de reluare.",
+      "OBLIO_COLLECTION_UNVERIFIED",
+      409,
+    );
+  return "collected";
+}
+
 type OblioTokenResponse = {
   access_token?: string;
   token_type?: string;

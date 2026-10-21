@@ -367,7 +367,6 @@ async function startGoogleOAuth(request: Request, env: CustomerOAuthEnv) {
     response_type: "code",
     scope: "openid email profile",
     state,
-    prompt: "select_account",
   }).toString();
   return new Response(null, {
     status: 302,
