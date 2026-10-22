@@ -58,7 +58,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.168.25",
-    "@tanstack/react-start": "^1.167.50",
+    "@tanstack/react-start": "1.168.60",
     "@tanstack/router-plugin": "^1.167.28",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -113,5 +113,8 @@
     "vite": "^7.3.6",
     "vitest": "^4.1.11",
     "wrangler": "^4.147.0"
+  },
+  "overrides": {
+    "source-map-js": "1.2.2"
   }
 }
