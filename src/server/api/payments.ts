@@ -8,9 +8,15 @@ import {
   ProviderError,
   type CommerceEnv,
 } from "../integrations/provider-runtime";
-import { createStripeCheckoutSession, verifyStripeWebhook } from "../integrations/stripe";
+import {
+  createStripeCheckoutSession,
+  expireStripeCheckoutSession,
+  verifyStripeWebhook,
+} from "../integrations/stripe";
 import { completeStripeCardSetup } from "../services/customer-stripe-cards";
 import { syncPaidInvoiceCollection } from "../services/oblio-payment-sync";
+import { markOrderNotificationQueued } from "../db/order.repository";
+import { sendOrderConfirmation, sendOrderOwnerNotification } from "../integrations/resend";
 import { currentReviewer } from "../review-accounts";
 import {
   createRevolutCheckout,
@@ -271,15 +277,32 @@ async function settle(
       `UPDATE payment_attempts SET status='captured',updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?1 AND status IN ('created','pending','authorized','captured') AND EXISTS(SELECT 1 FROM orders WHERE id=?2 AND total_bani=?3 AND currency=?4 AND order_status!='cancelled' AND payment_status NOT IN ('refunded','partially_refunded'))`,
     ).bind(attempt.id, order.id, amount as number, attempt.currency),
     env.DB.prepare(
-      `UPDATE orders SET payment_status='paid',paid_bani=total_bani,version=version+1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?1 AND payment_status!='paid' AND EXISTS(SELECT 1 FROM payment_attempts WHERE id=?2 AND status='captured')`,
+      `UPDATE customers SET order_count=order_count+1,
+       lifetime_value_bani=lifetime_value_bani+?2,
+       first_order_at=COALESCE(first_order_at,strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+       last_order_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+       updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE id=?1 AND EXISTS(SELECT 1 FROM orders WHERE id=?3 AND customer_id=?1
+         AND payment_status='unpaid' AND payment_method_requested='card'
+         AND EXISTS(SELECT 1 FROM payment_attempts WHERE id=?4 AND status='captured'))`,
+    ).bind(order.customer_id, order.total_bani, order.id, attempt.id),
+    env.DB.prepare(
+      `UPDATE orders SET payment_status='paid',paid_bani=total_bani,version=version+1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?1 AND order_status!='cancelled' AND payment_status='unpaid' AND EXISTS(SELECT 1 FROM payment_attempts WHERE id=?2 AND status='captured')`,
     ).bind(order.id, attempt.id),
     env.DB.prepare(
-      `INSERT OR IGNORE INTO order_events(id,order_id,event_type,to_status,actor_type,actor_id,message,metadata_json) SELECT ?1,?2,'payment.captured','paid','integration',?3,'Plata online a fost confirmată.',?4 WHERE EXISTS(SELECT 1 FROM payment_attempts WHERE id=?5 AND status='captured')`,
+      `INSERT OR IGNORE INTO order_events(id,order_id,event_type,to_status,actor_type,actor_id,message,metadata_json) SELECT ?1,?2,'payment.captured','paid','integration',?3,'Plata online a fost confirmată.',?4 WHERE EXISTS(SELECT 1 FROM orders WHERE id=?2 AND payment_status='paid' AND paid_bani=total_bani) AND EXISTS(SELECT 1 FROM payment_attempts WHERE id=?5 AND status='captured')`,
     ).bind(`payment/${attempt.id}`, order.id, provider, JSON.stringify({ eventId }), attempt.id),
     env.DB.prepare(
       `UPDATE webhook_events SET status='processed',processed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE provider=?1 AND external_event_id=?2`,
     ).bind(provider, eventId),
   ]);
+  const confirmed = await env.DB.prepare(
+    "SELECT 1 AS confirmed FROM orders WHERE id=?1 AND order_status!='cancelled' AND payment_status='paid' AND paid_bani=total_bani",
+  )
+    .bind(order.id)
+    .first<{ confirmed: number }>();
+  if (!confirmed)
+    throw new ProviderError("Confirmarea necesită verificare.", "PAYMENT_MISMATCH", 409);
   return order.id;
 }
 async function expireAttempt(
@@ -302,6 +325,41 @@ async function expireAttempt(
     env.DB.prepare(
       "UPDATE orders SET order_status='cancelled',version=version+1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?1 AND payment_status='unpaid' AND order_status='pending' AND EXISTS(SELECT 1 FROM payment_attempts WHERE id=?2 AND status='expired')",
     ).bind(attempt.order_id, attempt.id),
+    env.DB.prepare(
+      `UPDATE promotion_codes SET
+         used_count=MAX(0,used_count-(SELECT COUNT(*) FROM promotion_redemptions
+           WHERE promotion_code_id=promotion_codes.id AND order_id=?1 AND status='reserved')),
+         status=CASE WHEN status='consumed' AND
+           used_count-(SELECT COUNT(*) FROM promotion_redemptions
+             WHERE promotion_code_id=promotion_codes.id AND order_id=?1 AND status='reserved')<usage_limit
+           THEN 'active' ELSE status END
+       WHERE EXISTS(SELECT 1 FROM orders WHERE id=?1 AND order_status='cancelled')
+         AND EXISTS(SELECT 1 FROM promotion_redemptions WHERE promotion_code_id=promotion_codes.id
+           AND order_id=?1 AND status='reserved')`,
+    ).bind(attempt.order_id),
+    env.DB.prepare(
+      `UPDATE promotion_redemptions SET status='released',released_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE order_id=?1 AND status='reserved'
+         AND EXISTS(SELECT 1 FROM orders WHERE id=?1 AND order_status='cancelled')`,
+    ).bind(attempt.order_id),
+    env.DB.prepare(
+      `UPDATE referral_codes SET
+         used_count=MAX(0,used_count-(SELECT COUNT(*) FROM referral_redemptions
+           WHERE referral_code_id=referral_codes.id AND referred_order_id=?1 AND status='reserved')),
+         status=CASE WHEN status='depleted' AND expires_at>strftime('%Y-%m-%dT%H:%M:%fZ','now') AND
+           used_count-(SELECT COUNT(*) FROM referral_redemptions
+             WHERE referral_code_id=referral_codes.id AND referred_order_id=?1 AND status='reserved')<usage_limit
+           THEN 'active' ELSE status END,
+         updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE EXISTS(SELECT 1 FROM orders WHERE id=?1 AND order_status='cancelled')
+         AND EXISTS(SELECT 1 FROM referral_redemptions WHERE referral_code_id=referral_codes.id
+           AND referred_order_id=?1 AND status='reserved')`,
+    ).bind(attempt.order_id),
+    env.DB.prepare(
+      `UPDATE referral_redemptions SET status='released',released_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+       WHERE referred_order_id=?1 AND status='reserved'
+         AND EXISTS(SELECT 1 FROM orders WHERE id=?1 AND order_status='cancelled')`,
+    ).bind(attempt.order_id),
     env.DB.prepare(
       "INSERT OR IGNORE INTO order_events(id,order_id,event_type,actor_type,actor_id,message) SELECT ?1,?2,'payment.expired','integration',?3,'Sesiunea de plată a expirat; comanda neplătită a fost anulată.' WHERE EXISTS(SELECT 1 FROM orders WHERE id=?2 AND order_status='cancelled')",
     ).bind(`expiry/${attempt.id}`, attempt.order_id, provider),
@@ -466,6 +524,35 @@ async function webhook(
     .run();
   if (paidOrderId) {
     const orderId = paidOrderId;
+    const outbox = await env.DB.prepare(
+      `SELECT id FROM outbox_events WHERE aggregate_type='order' AND aggregate_id=?1
+       AND event_type='order.created' AND destination='admin.notification' LIMIT 1`,
+    )
+      .bind(orderId)
+      .first<{ id: string }>();
+    if (outbox) {
+      try {
+        await env.COMMERCE_EVENTS.send({ version: 1, outboxId: outbox.id });
+        await markOrderNotificationQueued(env.DB, outbox.id);
+      } catch (error) {
+        console.error("payment.admin_notification_queue_failed", { orderId, error });
+      }
+    }
+    try {
+      await env.COMMERCE_EVENTS.send({ version: 2, type: "order.email", orderId });
+    } catch (error) {
+      console.error("payment.order_email_queue_failed", { orderId, error });
+      const fallback = Promise.all([
+        sendOrderConfirmation(env, orderId),
+        sendOrderOwnerNotification(env, orderId),
+      ])
+        .then(() => undefined)
+        .catch((sendError: unknown) => {
+          console.error("payment.order_email_fallback_failed", { orderId, error: sendError });
+        });
+      if (ctx) ctx.waitUntil(fallback);
+      else await fallback;
+    }
     // Oblio is independent of the processor response. The hourly job retries interrupted work.
     const accounting = syncPaidInvoiceCollection(env, orderId).catch((error: unknown) => {
       console.error("payment.oblio_sync_pending", {
@@ -489,6 +576,7 @@ export async function handlePayments(
       "/api/v1/payments/checkout",
       "/api/v1/payments/stripe/checkout",
       "/api/v1/payments/status",
+      "/api/v1/payments/abandon",
       "/api/v1/webhooks/stripe",
       "/api/v1/webhooks/revolut",
     ].includes(path)
@@ -498,6 +586,23 @@ export async function handlePayments(
   try {
     if (path.includes("/webhooks/"))
       return await webhook(request, env, path.endsWith("/stripe") ? "stripe" : "revolut_pay", ctx);
+    if (path.endsWith("/abandon")) {
+      const order = await orderFor(request, env);
+      const attempt = await attemptFor(env, order.id);
+      if (order.order_status === "cancelled") return json({ data: { status: "cancelled" } });
+      if (
+        order.payment_status !== "unpaid" ||
+        order.order_status !== "pending" ||
+        attempt?.provider !== "stripe" ||
+        attempt.status !== "pending" ||
+        !attempt.external_payment_id ||
+        attempt.environment !== paymentEnvironment(env)
+      )
+        throw new ProviderError("Verificăm încă plata.", "PAYMENT_RECONCILIATION_REQUIRED", 409);
+      await expireStripeCheckoutSession(env, attempt.external_payment_id, order.id);
+      await expireAttempt(env, "stripe", attempt.external_payment_id, `abandon/${attempt.id}`);
+      return json({ data: { status: "cancelled" } });
+    }
     if (path.endsWith("/status")) {
       const order = await orderFor(request, env);
       const status =
@@ -524,6 +629,11 @@ export async function handlePayments(
             (!attempt ||
               attempt.status === "pending" ||
               (attempt.provider === "stripe" && attempt.status === "created")),
+          canChangeMethod:
+            status === "pending" &&
+            attempt?.provider === "stripe" &&
+            attempt.status === "pending" &&
+            Boolean(attempt.external_payment_id),
         },
       });
     }

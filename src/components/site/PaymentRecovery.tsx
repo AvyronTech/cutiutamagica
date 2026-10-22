@@ -90,6 +90,30 @@ export function PaymentRecovery({
       setBusy(false);
     }
   }
+  async function changeMethod() {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/v1/payments/abandon", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          orderId: pending.order.orderId,
+          publicToken: pending.order.publicToken,
+        }),
+      });
+      if (!response.ok)
+        throw new Error(
+          "Plata poate fi în curs de confirmare. Verifică starea ei înainte de a alege altă metodă.",
+        );
+      onDismiss();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nu am putut schimba metoda de plată.");
+      setRefresh((n) => n + 1);
+    } finally {
+      setBusy(false);
+    }
+  }
   const paid = status?.status === "paid";
   return (
     <section className="mx-auto max-w-xl px-4 py-20 text-center">
@@ -104,14 +128,14 @@ export function PaymentRecovery({
               ? "Comanda a fost anulată"
               : status?.status === "refunded"
                 ? "Plata a fost restituită"
-                : "Cutiuța ta te așteaptă"}
+                : "Așteptăm confirmarea plății"}
         </h1>
         <p className="mt-3 text-muted-foreground">
           {paid
             ? "Mulțumim! Pregătim următorul pas al poveștii tale."
             : status?.status === "cancelled" || status?.status === "refunded"
               ? "Ne poți contacta dacă ai nevoie de ajutor."
-              : "Comanda este păstrată. Dacă ai plătit deja, așteaptă confirmarea înainte de a relua plata."}
+              : "Comanda se confirmă numai după încasarea plății. Poți relua plata sau, dacă sesiunea este încă deschisă, poți alege o altă metodă."}
         </p>
         <p className="mt-5 text-sm">
           Comanda <strong>{status?.orderNumber ?? pending.order.orderNumber}</strong>
@@ -146,6 +170,15 @@ export function PaymentRecovery({
             <Copy size={16} aria-hidden /> Copiază linkul de plată
           </button>
         </div>
+      )}
+      {status?.canChangeMethod && !error && (
+        <button
+          disabled={busy}
+          onClick={() => void changeMethod()}
+          className="mt-4 min-h-11 rounded-full border border-border bg-card px-5 text-sm font-medium disabled:opacity-50"
+        >
+          Alege altă metodă de plată
+        </button>
       )}
       {!paid && (
         <button

@@ -505,9 +505,10 @@ export async function createWebsiteOrder(
           `
       UPDATE customers
       SET full_name = ?1, email = ?2, email_normalized = ?2,
-          last_order_at = ?3,
-          order_count = order_count + 1,
-          lifetime_value_bani = lifetime_value_bani + ?4,
+          last_order_at = CASE WHEN ?6='card' THEN last_order_at ELSE ?3 END,
+          first_order_at = CASE WHEN ?6='card' THEN first_order_at ELSE COALESCE(first_order_at, ?3) END,
+          order_count = order_count + CASE WHEN ?6='card' THEN 0 ELSE 1 END,
+          lifetime_value_bani = lifetime_value_bani + CASE WHEN ?6='card' THEN 0 ELSE ?4 END,
           updated_at = ?3
       WHERE id = ?5
     `,
@@ -518,6 +519,7 @@ export async function createWebsiteOrder(
           nowIso,
           totalBani,
           resolvedCustomerId,
+          input.paymentMethod,
         ),
     );
   } else {
@@ -528,7 +530,11 @@ export async function createWebsiteOrder(
       INSERT INTO customers (
         id, phone_e164, email, email_normalized, full_name, customer_type, status, first_order_at,
         last_order_at, order_count, lifetime_value_bani, created_at, updated_at
-      ) VALUES (?1, ?2, ?3, ?3, ?4, 'guest', 'active', ?5, ?5, 1, ?6, ?5, ?5)
+      ) VALUES (?1, ?2, ?3, ?3, ?4, 'guest', 'active',
+        CASE WHEN ?7='card' THEN NULL ELSE ?5 END,
+        CASE WHEN ?7='card' THEN NULL ELSE ?5 END,
+        CASE WHEN ?7='card' THEN 0 ELSE 1 END,
+        CASE WHEN ?7='card' THEN 0 ELSE ?6 END, ?5, ?5)
     `,
         )
         .bind(
@@ -538,6 +544,7 @@ export async function createWebsiteOrder(
           normalizedRequest.customer.name,
           nowIso,
           totalBani,
+          input.paymentMethod,
         ),
     );
   }

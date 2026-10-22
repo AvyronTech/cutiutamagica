@@ -133,7 +133,9 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
           );
       }
     });
-    if (result.outboxId) {
+    // Card checkout creates a provisional record. Only a signed, captured
+    // payment event may turn it into an accepted order.
+    if (parsed.data.paymentMethod !== "card" && result.outboxId) {
       try {
         await env.COMMERCE_EVENTS.send({ version: 1, outboxId: result.outboxId });
         await markOrderNotificationQueued(env.DB, result.outboxId);
@@ -146,8 +148,8 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
       }
     }
     const commerceEnv = env as CommerceEnv;
-    recordOrderMetric(env, result, parsed.data);
-    if (!result.replayed) {
+    if (parsed.data.paymentMethod !== "card") recordOrderMetric(env, result, parsed.data);
+    if (!result.replayed && parsed.data.paymentMethod !== "card") {
       recordPurchaseGrowthEvent(env, ctx, {
         orderId: result.orderId,
         total: result.total,
@@ -155,7 +157,7 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
         shippingOption: parsed.data.shippingOption,
       });
     }
-    if (!result.replayed) {
+    if (!result.replayed && parsed.data.paymentMethod !== "card") {
       try {
         await env.COMMERCE_EVENTS.send({
           version: 2,

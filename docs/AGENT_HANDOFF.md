@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-22 — confirmarea plății înainte de acceptarea comenzii
+
+- Checkoutul cu card creează o înregistrare provizorie `pending/unpaid` necesară sesiunii de plată. Nu trimite e-mailuri, notificări de comandă nouă, evenimente de conversie și nu crește contorul/valoarea clientului înainte de confirmarea semnată a procesatorului. Webhookul validează furnizorul, mediul, sesiunea, suma și moneda, apoi marchează plata și pune notificările în coadă; trimiterea e-mailurilor și consumul outboxului refuză înregistrările încă neplătite.
+- Clientul poate alege altă metodă numai când sesiunea Stripe este `open/unpaid`: endpointul verifică sesiunea în contul Stripe, o expiră și anulează înregistrarea provizorie, eliberând și codurile promoționale/de recomandare rezervate. O sesiune completată ori ambiguă rămâne în verificare. În admin, solicitările neplătite sunt etichetate „Așteaptă plata”, iar procesarea este blocată atât în UI, cât și în repository.
+- Fișiere: `src/server/api/payments.ts`, `router.ts`, `db/order.repository.ts`, `db/admin.repository.ts`, `integrations/stripe.ts`, `integrations/resend.ts`, `queue/commerce-consumer.ts`, `src/components/site/PaymentRecovery.tsx`, `src/admin/pages/Orders.tsx`, contractul de plată și testele checkout. Fără migrare sau schimbare de secrete.
+- Verificări: 314 teste în 56 fișiere, tipuri, lint, build și dry deploy Cloudflare trecute. Testele acoperă lipsa notificărilor și a valorii CRM înainte de plată, blocarea procesării, abandonarea sigură a sesiunii Stripe, capturarea idempotentă și refuzul unei confirmări după anulare. Checkoutul local cu produs a fost inspectat la 390 × 844 și 1280 × 720; bara mobilă se retrage la butonul din formular. Metodele online și panoul administrativ nu pot fi probate vizual în preview fără conexiunile furnizorilor și sesiunea admin. Identificarea/anularea comenzii reale rămân necesare. Nu s-a făcut push, migrare remote sau deploy în acest handoff.
+
 ## Handoff 2026-10-22 — prezentarea checkoutului și alegerea curierului
 
 - În ramura locală `codex/notification-glass-20261022`, checkoutul are acțiunea principală „Confirmă comanda” imediat după acordul precontractual. Bara fixă de mobil spune „Finalizează comanda” și se retrage când butonul principal intră în zona vizibilă. Ambele folosesc același formular, validări și cheie de idempotentă; un blocaj sincron previne trimiterea simultană.
