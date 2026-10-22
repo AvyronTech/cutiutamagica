@@ -4,13 +4,16 @@ import carouselSequencing from "../../../skills/cutiuta-magica-marketing-comenzi
 import customerConversationsOrders from "../../../skills/cutiuta-magica-marketing-comenzi/references/customer-conversations-orders.md?raw";
 import contentConversionPlaybook from "../../../skills/cutiuta-magica-marketing-comenzi/references/content-conversion-playbook.md?raw";
 import dailySocialOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/daily-social-operations.md?raw";
+import storyLeadCapture from "../../../skills/cutiuta-magica-marketing-comenzi/references/story-lead-capture.md?raw";
 import platformSync from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-sync.md?raw";
+import supplierOutreach from "../../../skills/cutiuta-magica-marketing-comenzi/references/supplier-outreach.md?raw";
+import visualAudioProduction from "../../../skills/cutiuta-magica-marketing-comenzi/references/visual-audio-production.md?raw";
 import marketplaceOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/marketplace-operations.md?raw";
 import platformNativeProduction from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-native-production.md?raw";
 import approvalOrchestration from "../../../skills/cutiuta-magica-marketing-comenzi/references/approval-orchestration.md?raw";
 import storageRetention from "../../../skills/cutiuta-magica-marketing-comenzi/references/storage-retention.md?raw";
 
-export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.18.1";
+export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.22.1";
 
 const documents = [
   { path: "SKILL.md", content: skill },
@@ -23,6 +26,9 @@ const documents = [
   { path: "references/marketplace-operations.md", content: marketplaceOperations },
   { path: "references/platform-native-production.md", content: platformNativeProduction },
   { path: "references/platform-sync.md", content: platformSync },
+  { path: "references/story-lead-capture.md", content: storyLeadCapture },
+  { path: "references/supplier-outreach.md", content: supplierOutreach },
+  { path: "references/visual-audio-production.md", content: visualAudioProduction },
   { path: "references/storage-retention.md", content: storageRetention },
 ] as const;
 

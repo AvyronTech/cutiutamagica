@@ -1478,6 +1478,26 @@
   opacity: 1;
   pointer-events: auto;
 }
+.site-header[data-product-page="true"] {
+  position: relative;
+  transform: none;
+  backface-visibility: visible;
+  transition: none;
+}
+.site-header[data-product-page="true"][data-compact="true"] .site-header__glass {
+  background: linear-gradient(110deg, #faf2e4, #f4e7d3 55%, #f9efdf);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 0 7px 22px -18px rgb(72 38 16 / 0.55);
+}
+.site-header[data-product-page="true"] .site-header__inner {
+  min-height: 58px;
+  padding-block: 6px;
+  transition: none;
+}
+.site-header[data-product-page="true"] :is(.site-header__liquid, .site-header__sheen) {
+  display: none;
+}
 .site-header__glass {
   position: relative;
   overflow: clip;
@@ -3481,13 +3501,13 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 
 .landing-rewards {
-  width: min(1100px, calc(100% - 40px));
+  width: min(1000px, calc(100% - 40px));
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.95fr) auto;
-  gap: clamp(18px, 3vw, 36px);
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.95fr) auto;
+  gap: clamp(14px, 2vw, 22px);
   align-items: center;
-  margin: clamp(38px, 6vw, 72px) auto;
-  padding: clamp(22px, 3vw, 32px);
+  margin: clamp(28px, 4vw, 48px) auto;
+  padding: clamp(17px, 2vw, 22px);
   border: 1px solid rgb(226 190 119 / 0.3);
   border-radius: 24px;
   color: #eadcc8;
@@ -3500,13 +3520,16 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 .landing-rewards__intro {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 16px;
+  gap: 11px;
   align-items: start;
+}
+.landing-rewards__intro .scene-eyebrow {
+  justify-content: flex-start;
 }
 .landing-rewards__mark {
   display: grid;
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   border: 1px solid rgb(238 199 124 / 0.38);
   border-radius: 50%;
@@ -3514,27 +3537,27 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   background: rgb(226 181 95 / 0.1);
 }
 .landing-rewards__mark svg {
-  width: 20px;
+  width: 18px;
 }
 .landing-rewards h2 {
   max-width: 570px;
-  margin-top: 5px;
+  margin-top: 3px;
   color: #f4e5ce;
-  font: 500 clamp(27px, 3vw, 39px) / 1.02 var(--font-display);
+  font: 500 clamp(26px, 2.7vw, 35px) / 1.05 var(--font-display);
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
 .landing-rewards__intro p:last-child {
   max-width: 600px;
-  margin-top: 9px;
+  margin-top: 6px;
   color: #b6a8b7;
-  font-size: 11px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.45;
 }
 .landing-rewards__activities {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
+  gap: 6px;
 }
 .landing-rewards__activities > span {
   min-width: 0;
@@ -3542,12 +3565,12 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   grid-template-columns: auto auto 1fr;
   gap: 6px;
   align-items: center;
-  padding: 9px 10px;
+  padding: 7px 8px;
   border: 1px solid rgb(221 187 122 / 0.18);
   border-radius: 12px;
   color: #c9b9c5;
   background: rgb(255 255 255 / 0.028);
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.25;
 }
 .landing-rewards__activities svg {
@@ -3566,7 +3589,7 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 .landing-rewards__actions {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: center;
   text-align: center;
 }
@@ -3589,17 +3612,17 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   .landing-rewards {
     width: calc(100% - 28px);
     grid-template-columns: 1fr;
-    gap: 17px;
-    padding: 19px;
+    gap: 12px;
+    padding: 16px;
     border-radius: 20px;
   }
   .landing-rewards__intro {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: auto 1fr;
+    gap: 9px;
   }
   .landing-rewards__mark {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
   .landing-rewards__activities {
     grid-column: auto;
@@ -6118,15 +6141,16 @@ body::-webkit-scrollbar,
 }
 .magic-hero {
   position: relative;
-  min-height: min(860px, 92svh);
-  padding: clamp(46px, 6vw, 84px) 6vw 70px;
+  min-height: min(800px, 92svh);
+  padding: clamp(42px, 5vw, 66px) 6vw 62px;
   display: flex;
   align-items: center;
 }
 .magic-hero-inner {
   display: grid;
-  grid-template-columns: 1.08fr 1fr;
-  gap: 7%;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 12px;
   align-items: center;
   width: 100%;
   max-width: 1260px;
@@ -6134,12 +6158,15 @@ body::-webkit-scrollbar,
 }
 .hero-copy {
   position: relative;
-  padding: 22px 0;
+  width: 100%;
+  padding: 0;
+  text-align: center;
 }
 .hero-copy .scene-eyebrow {
-  justify-content: flex-start;
+  justify-content: center;
   font-size: 10px;
   letter-spacing: 0.22em;
+  margin-top: 13px;
 }
 .tiny-star {
   font-size: 22px !important;
@@ -6147,7 +6174,7 @@ body::-webkit-scrollbar,
 }
 .magic-hero h1 {
   font-size: clamp(48px, 5.8vw, 86px);
-  margin: 0;
+  margin: 0 auto;
   text-wrap: balance;
   max-width: 650px;
 }
@@ -6160,7 +6187,8 @@ body::-webkit-scrollbar,
   color: #e0d2bd;
   font-size: 15px;
   line-height: 1.85;
-  margin: 27px 0 30px;
+  margin: 15px auto 0;
+  text-wrap: balance;
 }
 .hero-actions {
   display: flex;
@@ -6266,15 +6294,15 @@ body::-webkit-scrollbar,
   display: grid;
   justify-items: center;
   gap: 13px;
-  margin-top: 26px;
+  margin-top: 16px;
   text-align: center;
 }
 .hero-object {
   position: relative;
   width: 100%;
-  max-width: 470px;
+  max-width: 360px;
   margin: auto;
-  padding: 14px 14px 0;
+  padding: 4px 14px 0;
   transform: translateY(calc(var(--hero-depth) * -1));
 }
 .hero-object > a:not(.hero-about) {
@@ -6289,7 +6317,7 @@ body::-webkit-scrollbar,
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  padding-bottom: 18px;
+  padding-bottom: 10px;
 }
 .hero-mechanism-halo {
   position: absolute;
@@ -6351,7 +6379,7 @@ body::-webkit-scrollbar,
   gap: 9px;
   width: fit-content;
   min-height: 50px;
-  margin: 17px 0 0 -12px;
+  margin: 12px auto 0;
   padding: 8px 14px 8px 9px;
   color: #f4dfb7;
   border: 1px solid #d5b07666;
@@ -7191,12 +7219,12 @@ body::-webkit-scrollbar,
 }
 @media (max-width: 767px) {
   .magic-hero {
-    padding: 35px 24px 53px;
+    padding: 35px 24px 44px;
     min-height: auto;
   }
   .magic-hero-inner {
     grid-template-columns: 1fr;
-    gap: 25px;
+    gap: 14px;
   }
   .hero-copy {
     padding: 0;
@@ -7208,12 +7236,13 @@ body::-webkit-scrollbar,
   .hero-description {
     font-size: 13px;
     max-width: 340px;
-    margin: 18px 0 22px;
+    margin: 12px auto 0;
     line-height: 1.75;
   }
   .hero-copy .scene-eyebrow {
     font-size: 8px;
-    margin-bottom: 12px;
+    margin-top: 10px;
+    margin-bottom: 0;
   }
   .hero-object {
     width: 85%;
@@ -15567,17 +15596,14 @@ body:has(.checkout-page) .page-back-dock {
 .product-world-backdrop {
   position: absolute;
   inset: -9% -7% 18% 38%;
-  opacity: 0.15;
-  filter: saturate(1.35) contrast(1.12);
+  opacity: 0.18;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    color-mix(in srgb, var(--world-accent) 58%, transparent),
+    transparent 68%
+  );
   -webkit-mask-image: radial-gradient(ellipse, #000 15%, transparent 69%);
   mask-image: radial-gradient(ellipse, #000 15%, transparent 69%);
-}
-.product-world-backdrop img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(34px);
-  transform: scale(1.22) rotate(-4deg);
 }
 .product-world-depth {
   position: absolute;
@@ -15727,8 +15753,9 @@ body:has(.checkout-page) .page-back-dock {
     0 45px 110px #0008,
     inset 0 1px #fff2,
     inset 0 0 90px color-mix(in srgb, var(--world-accent) 7%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  backdrop-filter: blur(24px) saturate(1.2);
+  /* The nearly opaque panel already supplies contrast; compositing the full panel adds scroll jank. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .product-detail-shell::before {
   content: "";
@@ -17312,8 +17339,8 @@ body.product-lightbox-open
   background: linear-gradient(110deg, #07090ce8, #25170ebd 58%, #080a0ced);
 }
 .product-world-backdrop {
-  opacity: 0.23;
-  mix-blend-mode: luminosity;
+  opacity: 0.18;
+  mix-blend-mode: screen;
 }
 .product-detail-copy .product-melody-player {
   max-width: 470px;
@@ -18163,9 +18190,16 @@ body.product-lightbox-open
 }
 .hero-description {
   max-width: 440px;
-  margin-block: 22px 25px;
+  margin: 14px auto 0;
   font-size: 16px;
   line-height: 1.65;
+}
+@media (max-width: 767px) {
+  .hero-description {
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.75;
+  }
 }
 
 /* The thread starts at the first card's upper left and finishes at the last card's lower right. */

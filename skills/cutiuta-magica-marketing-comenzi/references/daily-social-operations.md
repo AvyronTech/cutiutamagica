@@ -20,13 +20,15 @@ Fiecare piesă trebuie să aibă o diferență editorială demonstrabilă față
 - primele 1–3 secunde trebuie să arate produsul ori gestul de rotire a manivelei, nu o introducere de logo;
 - pornește din 4–7 cadre ale produsului real: ansamblu, capac, mecanism, manivelă, dimensiune și cadru final. Poți simula mișcare prin pan/zoom lent, dar nu anima părțile produsului și nu inventa funcționarea lui;
 - TikTok primește montaj mai direct, subtitrări mai scurte și sunet nativ; Reel poate avea ritm mai cinematic și copertă editorială. Niciunul nu este exportat cu watermark-ul celuilalt;
-- sunetul se alege din biblioteca comercială/licențiabilă a contului la momentul publicării. Melodia produsului se numește în copy numai dacă este confirmată în catalog;
+- sunetul se alege din biblioteca comercială/licențiabilă a contului la momentul publicării. Caută întâi tema exactă confirmată a produsului; dacă nu este disponibilă pentru utilizare comercială, alege o piesă apropiată ca atmosferă, un sunet original de mecanism/ambianță cu drepturi clare sau publică fără muzică. Nu încorpora în fișier o melodie protejată doar pentru că lipsește din biblioteca platformei. Melodia produsului se numește în copy numai dacă este confirmată în catalog;
 - descrierea conține hook, beneficiu, o dovadă concretă, CTA unic, link scurt sau indicația legitimă spre linkul din profil și 5–10 hashtaguri. Nu pretinde că un URL din descriere este clicabil dacă platforma nu îl face clicabil pentru acel cont.
 
 ## Story și note
 
 - Story-ul folosește propriul export `1080×1920`; lasă aproximativ 250 px liberi sus și 340 px jos, apoi verifică previzualizarea nativă înainte de aprobare;
-- păstrează un singur mesaj, maximum două blocuri scurte de text și un singur sticker funcțional: link, poll, întrebare sau countdown, în funcție de obiectiv;
+- un Story complet are 3–5 cadre, fiecare cu micro-descriere proprie: `hook`, `produs/detaliu`, `dovadă ori ocazie`, `întrebare opțională`, `CTA`. Fiecare cadru transmite o singură idee și rămâne lizibil fără sunet;
+- păstrează maximum două blocuri scurte de text pe cadru și cel mult un sticker funcțional pe cadrul în care este util: link, poll, întrebare sau countdown, în funcție de obiectiv. Nu aglomera toate instrumentele într-un singur Story;
+- ultimul cadru poate invita la `Vezi cutiuța`, `Cere detalii` sau `Cere o ofertă`, dar numai prin sticker/buton existent în composer. Pentru nume și e-mail, trimite prin link către formularul propriu al magazinului; nu desena câmpuri false în imagine și nu cere date personale în răspunsuri publice;
 - nu reutiliza mecanic layoutul feed. Story-ul poate fi teaser, detaliu de mecanism, întrebare, dovadă sau continuarea postării din ziua respectivă;
 - propune o notă la 24 de ore: scurtă, contextuală, fără promisiuni neverificate și fără repetarea captionului. Poate include o melodie numai când opțiunea există pe cont și piesa este disponibilă legitim în biblioteca platformei;
 - exemple de structură pentru note: întrebare scurtă, indiciu despre produsul zilei, ocazie apropiată sau CTA discret către mesaj privat/magazin. Salvează textul și music brief-ul în aceeași revizie aprobabilă.
@@ -57,7 +59,7 @@ Păstrează cel puțin 90 de minute între formatele principale și mută gradua
 - când limita este epuizată sau formatul cere funcții native, folosește numai profilul Opera dedicat Cutiuța Magică, verificat vizual înaintea fiecărei sesiuni. Nu reutiliza profilul ori filele AVYRON;
 - Facebook Page și profilul Facebook sunt destinații distincte. Pagina poate folosi Metricool sau browserul nativ; profilul autorizat se publică numai nativ, cu o versiune personală distinctă și după verificarea numelui/identității contului;
 - pentru Instagram Notes, muzică, stickere interactive și alte funcții indisponibile prin conector, folosește fluxul nativ numai dacă acea funcție este vizibilă pe cont;
-- pentru TikTok alege sunetul din biblioteca disponibilă legitim în cont la momentul publicării; nu încărca aceeași piesă cu watermark din alt canal;
+- pentru TikTok Business verifică mai întâi Commercial Music Library în regiunea și plasamentul reale; pentru Meta verifică biblioteca comercială disponibilă contului. Dacă piesa exactă nu este autorizată, folosește o alternativă tematică licențiată, voice-over ori audio original aprobat; nu încărca aceeași piesă cu watermark din alt canal;
 - pentru conturile Meta business cu biblioteca muzicală restricționată folosește Meta Sound Collection sau audio cu drepturi comerciale confirmate; existența unei melodii în biblioteca personală nu dovedește dreptul brandului de a o folosi;
 - la challenge, CAPTCHA, 2FA, profil ambiguu sau selector care nu afișează identitatea așteptată, oprește publicarea și cere intervenția administratorului;
 - aprobarea rămâne legată de revizie, asset, destinație și oră. O aprobare pentru Facebook Page nu aprobă automat profilul Facebook, Instagram ori TikTok.

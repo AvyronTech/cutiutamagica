@@ -35,13 +35,22 @@ export function Header() {
   useEffect(() => {
     setCartOpen(false);
   }, [pathname]);
-  const [compact, setCompact] = useState(false);
+  const isProductPage = isProductPath(pathname);
+  const [compactOnScroll, setCompact] = useState(false);
+  const compact = isProductPage || compactOnScroll;
   const [hidden, setHidden] = useState(false);
   const [pastHero, setPastHero] = useState(false);
   const compactRef = useRef(false);
   const hiddenRef = useRef(false);
 
   useEffect(() => {
+    // Product pages keep a stable, compact header that scrolls away with the page.
+    if (isProductPage) {
+      compactRef.current = false;
+      hiddenRef.current = false;
+      setHidden(false);
+      return;
+    }
     let frame = 0;
     let lastY = Math.max(0, window.scrollY);
     let heroEnd = 0;
@@ -108,7 +117,7 @@ export function Header() {
       heroObserver?.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [cartOpen, pathname]);
+  }, [cartOpen, isProductPage, pathname]);
 
   useEffect(() => {
     if (!cartOpen || !hiddenRef.current) return;
@@ -119,8 +128,9 @@ export function Header() {
   return (
     <header
       className="site-header sticky top-0 z-50 isolate"
+      data-product-page={isProductPage || undefined}
       data-compact={compact || undefined}
-      data-hidden={hidden || undefined}
+      data-hidden={!isProductPage && hidden ? true : undefined}
     >
       <div className="site-header__glass">
         <div aria-hidden className="site-header__liquid" />
@@ -144,7 +154,10 @@ export function Header() {
                 aria-hidden
                 className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(218,170,91,.52),transparent_68%)] blur-md"
               />
-              <BrandMark className="relative h-full w-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.4)]" />
+              <BrandMark
+                sizes="56px"
+                className="relative h-full w-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.4)]"
+              />
             </span>
             <span className="site-header__wordmark min-w-0 leading-tight">
               <span

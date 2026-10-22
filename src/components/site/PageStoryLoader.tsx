@@ -94,9 +94,15 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
   }, [finish]);
 
   useEffect(() => {
+    if (!isPublicStoryPath(routeState.path)) {
+      clearTimers();
+      activeRef.current = null;
+      setActive(null);
+      return;
+    }
     if (routeState.status === "pending") start(routeState.path);
     else resolve();
-  }, [resolve, routeState.path, routeState.status, start]);
+  }, [clearTimers, resolve, routeState.path, routeState.status, start]);
 
   useEffect(() => {
     const current = activeRef.current;

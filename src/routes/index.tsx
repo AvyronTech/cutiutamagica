@@ -103,14 +103,14 @@ function Index() {
           </div>
           <div className="magic-hero-inner">
             <div className="hero-copy">
-              <p className="scene-eyebrow">
-                <span className="tiny-star">✧</span> Lemn. Manivelă. Melodie.
-              </p>
               <h1 id="hero-heading">
                 <span className="hero-solar-line">Cutiuțe muzicale.</span>
                 <br />
                 <em className="hero-solar-line">Povești de dăruit.</em>
               </h1>
+              <p className="scene-eyebrow">
+                <span className="tiny-star">✧</span> Lemn. Manivelă. Melodie.
+              </p>
               <p className="hero-description">
                 Învârți manivela și începe melodia. Fiecare cutiuță din lemn păstrează o lume pe
                 care cineva drag o va recunoaște.

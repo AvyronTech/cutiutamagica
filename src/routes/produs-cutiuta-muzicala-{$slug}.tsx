@@ -381,6 +381,7 @@ function ProductPage() {
                   src={image.src}
                   alt={image.label}
                   sizes="120px"
+                  thumbnail
                   className="aspect-square w-full object-cover"
                   style={{ objectPosition: image.position ?? "center" }}
                 />
