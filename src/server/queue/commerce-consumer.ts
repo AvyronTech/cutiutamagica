@@ -3,13 +3,22 @@ import {
   processAvyronSync,
   type AvyronQueueMessage,
 } from "@/server/queue/avyron-sync-consumer";
+import { sendOrderConfirmation, sendOrderOwnerNotification } from "@/server/integrations/resend";
+import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
 interface CommerceNotificationQueueMessage {
   version: 1;
   outboxId: string;
 }
 
-type CommerceQueueMessage = CommerceNotificationQueueMessage | AvyronQueueMessage;
+interface OrderEmailQueueMessage {
+  version: 2;
+  type: "order.email";
+  orderId: string;
+}
+
+type CommerceQueueMessage =
+  CommerceNotificationQueueMessage | OrderEmailQueueMessage | AvyronQueueMessage;
 
 type OutboxRow = Record<string, string | number | null>;
 
@@ -17,6 +26,16 @@ function isCommerceQueueMessage(value: unknown): value is CommerceNotificationQu
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
   return candidate.version === 1 && typeof candidate.outboxId === "string";
+}
+
+function isOrderEmailQueueMessage(value: unknown): value is OrderEmailQueueMessage {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    candidate.version === 2 &&
+    candidate.type === "order.email" &&
+    typeof candidate.orderId === "string"
+  );
 }
 
 function parseNotificationPayload(payload: string): {
@@ -76,6 +95,18 @@ async function processMessage(db: D1Database, outboxId: string): Promise<"ack" |
     .first<OutboxRow>();
 
   if (!row || row.status === "completed") return "ack";
+  if (row.aggregate_type === "order") {
+    const accepted = await db
+      .prepare(
+        `SELECT 1 AS accepted FROM orders WHERE id=?1 AND order_status!='cancelled'
+       AND (payment_method_requested!='card' OR (payment_status='paid' AND paid_bani=total_bani))`,
+      )
+      .bind(row.aggregate_id)
+      .first<{ accepted: number }>();
+    // A provisional card checkout must never appear as a new accepted order.
+    // Leave the outbox pending; the captured-payment webhook queues it again.
+    if (!accepted) return "ack";
+  }
   if (row.destination !== "admin.notification") {
     await markFailed(db, outboxId, "ADAPTER_NOT_CONFIGURED", `Destination: ${row.destination}`);
     return "ack";
@@ -137,12 +168,28 @@ export async function consumeCommerceEvents(batch: MessageBatch<unknown>, env: E
   for (const message of batch.messages) {
     if (isAvyronQueueMessage(message.body)) {
       try {
-        const result = await processAvyronSync(env, message.body.jobId);
+        const result = await processAvyronSync(env, message.body);
         if (result.action === "ack") message.ack();
         else message.retry({ delaySeconds: result.delaySeconds ?? 30 });
       } catch (error) {
-        console.error("avyron.sync_queue_failed", { jobId: message.body.jobId, error });
+        console.error("avyron.sync_queue_failed", { message: message.body, error });
         message.retry({ delaySeconds: 30 });
+      }
+      continue;
+    }
+    if (isOrderEmailQueueMessage(message.body)) {
+      try {
+        await Promise.all([
+          sendOrderConfirmation(env as CommerceEnv, message.body.orderId),
+          sendOrderOwnerNotification(env as CommerceEnv, message.body.orderId),
+        ]);
+        message.ack();
+      } catch (error) {
+        console.error("order.email_queue_failed", {
+          orderId: message.body.orderId,
+          error,
+        });
+        message.retry({ delaySeconds: 60 });
       }
       continue;
     }

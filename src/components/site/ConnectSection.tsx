@@ -70,7 +70,7 @@ export function ConnectSection() {
       name: "WhatsApp",
       href: waHref,
       Icon: MessageCircle,
-      accent: "bg-[#25d366] text-white",
+      accent: "bg-[#147a38] text-white",
       external: true,
     },
     {
@@ -82,7 +82,7 @@ export function ConnectSection() {
     },
     {
       name: "Email",
-      href: "mailto:contact@cutiutamagica.ro",
+      href: "mailto:contact@cutiutamagica.eu",
       Icon: Mail,
       accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]",
       external: false,
@@ -91,13 +91,17 @@ export function ConnectSection() {
       name: "Messenger",
       href: "https://m.me/61590919580877",
       Icon: MessageCircle,
-      accent: "bg-[#0084ff] text-white",
+      accent: "bg-[#075ab8] text-white",
       external: true,
     },
   ];
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-10 md:py-14" aria-labelledby="connect-heading">
+    <section
+      data-world="atelier"
+      className="max-w-6xl mx-auto px-4 py-10 md:py-14"
+      aria-labelledby="connect-heading"
+    >
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-3">
           <span
@@ -216,7 +220,6 @@ export function ConnectSection() {
         target="_blank"
         rel="noopener noreferrer"
         className="group flex items-center gap-4 mt-12 max-w-3xl mx-auto rounded-full border border-[color:var(--gold)]/25 bg-[oklch(0.22_0.04_45)]/70 backdrop-blur-sm text-[color:var(--cream)] pl-4 pr-4 py-3 shadow-[0_10px_30px_-20px_oklch(0.55_0.18_55/0.5)] hover:border-[color:var(--gold)]/50 transition-colors"
-        aria-label="Discută parteneriat B2B pe WhatsApp"
       >
         <span className="flex items-center justify-center w-8 h-8 rounded-full shrink-0 border border-[color:var(--gold)]/30 bg-[oklch(0.18_0.03_40)]">
           <Handshake className="w-4 h-4 text-[color:var(--gold)]" />
@@ -230,7 +233,7 @@ export function ConnectSection() {
             Cadouri corporate & comenzi în volum — scrie-ne pe WhatsApp.
           </p>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#25d366]/95 text-white px-3 py-1.5 text-[12px] font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
+        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#137a3b] text-white px-3 py-1.5 text-[12px] font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
           <MessageCircle className="w-3.5 h-3.5" />
           WhatsApp
           <ArrowRight className="w-3.5 h-3.5" />

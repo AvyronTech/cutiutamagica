@@ -3,6 +3,7 @@ import type {
   AdminDashboardData,
   AdminDashboardStats,
   AdminDeliveryMetric,
+  AdminGrowthMetric,
   AdminIntegrationAccount,
   AdminIntegrationsData,
   AdminNotification,
@@ -19,6 +20,9 @@ import {
   toAdminOrderStatus,
   toStoredOrderState,
 } from "@/lib/order-status";
+import { productPath } from "@/lib/product-url";
+import { formatSku, skuPrefix } from "@/lib/product-identification";
+import { getAdminShippingSummary } from "@/server/services/shipping-insights";
 
 type DbValue = string | number | null;
 type DbRow = Record<string, DbValue>;
@@ -27,10 +31,23 @@ const ORDER_SELECT = `
   SELECT
     vo.*,
     o.version,
+    o.payment_method_requested AS payment_method,
+    o.shipping_option_requested,
     oa.line1,
     oa.line2,
     oa.city,
     oa.county,
+    oa.sector,
+    (SELECT status FROM smartship_awb_requests WHERE order_id=vo.id) AS awb_request_status,
+    (SELECT q.courier_id FROM shipping_quotes q WHERE q.id=o.shipping_quote_id) AS smartship_courier_id,
+    (SELECT tracking_url FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_tracking_url,
+    (SELECT id FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_shipment_id,
+    (SELECT status FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_shipment_status,
+    (SELECT updated_at FROM shipments WHERE order_id=vo.id AND provider='smartship'
+      AND awb IS NOT NULL ORDER BY created_at DESC LIMIT 1) AS smartship_shipment_updated_at,
     (
       SELECT sm.name
       FROM shipments sh
@@ -68,6 +85,18 @@ function nullableString(value: DbValue | undefined): string | null {
   return value == null ? null : String(value);
 }
 
+function integrationApiBaseUrl(value: DbValue | undefined): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = JSON.parse(value) as { api_base_url?: unknown };
+    return typeof parsed.api_base_url === "string" && parsed.api_base_url
+      ? parsed.api_base_url
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function baniToRon(value: DbValue | undefined): number {
   return numberValue(value) / 100;
 }
@@ -84,7 +113,7 @@ function mapOrder(row: DbRow): AdminOrder {
     platform: PLATFORM_LABELS[channelCode] ?? stringValue(row.channel_name),
     channelCode,
     customer: stringValue(row.customer_name) || "Client",
-    products: stringValue(row.products_summary) || "Fara produse",
+    products: stringValue(row.products_summary) || "Fără produse",
     total: baniToRon(row.total_bani),
     currency: stringValue(row.currency) || "RON",
     status: toAdminOrderStatus({
@@ -92,13 +121,37 @@ function mapOrder(row: DbRow): AdminOrder {
       fulfillmentStatus: stringValue(row.fulfillment_status),
     }),
     paymentStatus: stringValue(row.payment_status),
+    paymentMethod: stringValue(row.payment_method),
     fulfillmentStatus: stringValue(row.fulfillment_status),
     date: stringValue(row.placed_at).slice(0, 10),
     deliveryMethod: stringValue(row.shipping_method_name) || "Nealocata",
+    shippingOption: stringValue(row.shipping_option_requested),
     awb: nullableString(row.awb) ?? undefined,
+    shipmentId: nullableString(row.smartship_shipment_id) ?? undefined,
+    shipmentStatus: nullableString(row.smartship_shipment_status) ?? undefined,
+    shipmentUpdatedAt: nullableString(row.smartship_shipment_updated_at) ?? undefined,
+    trackingUrl: (() => {
+      const value = nullableString(row.smartship_tracking_url);
+      if (!value) return undefined;
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" &&
+          (url.hostname === "smartship.ro" || url.hostname.endsWith(".smartship.ro"))
+          ? url.href
+          : undefined;
+      } catch {
+        return undefined;
+      }
+    })(),
+    awbRequestStatus:
+      (nullableString(row.awb_request_status) as AdminOrder["awbRequestStatus"]) ?? undefined,
+    smartshipCourierId:
+      row.smartship_courier_id == null ? undefined : numberValue(row.smartship_courier_id),
     phone: stringValue(row.customer_phone_e164),
     email: stringValue(row.customer_email),
-    address: [line1, line2].filter(Boolean).join(", "),
+    address: [line1, line2, numberValue(row.sector) ? `Sector ${numberValue(row.sector)}` : ""]
+      .filter(Boolean)
+      .join(", "),
     city: stringValue(row.city),
     county: stringValue(row.county),
     version: numberValue(row.version),
@@ -149,6 +202,148 @@ export async function listAdminOrders(db: D1Database, limit = 200): Promise<Admi
   return result.results.map(mapOrder);
 }
 
+export interface CreateAdminOrderInput {
+  channelCode: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  productId: string;
+  quantity: number;
+  shippingBani: number;
+  externalOrderId?: string;
+  internalNote?: string;
+  actorId: string;
+  requestId: string;
+}
+
+function normalizeAdminPhone(value: string): string {
+  const compact = value.replace(/[\s().-]/g, "");
+  if (/^0\d{9}$/.test(compact)) return `+40${compact.slice(1)}`;
+  if (/^40\d{9}$/.test(compact)) return `+${compact}`;
+  if (/^\+[1-9]\d{7,14}$/.test(compact)) return compact;
+  throw new Error("PHONE_INVALID");
+}
+
+export async function createAdminOrder(
+  db: D1Database,
+  input: CreateAdminOrderInput,
+): Promise<AdminOrder> {
+  const catalog = await db
+    .prepare(
+      `SELECT p.id AS product_id,p.name,p.tax_rate_bps,pv.id AS variant_id,pv.sku,pv.name AS variant_name,
+        sc.id AS channel_id,sc.name AS channel_name,
+        (SELECT pli.price_bani FROM price_list_items pli
+          JOIN price_lists pl ON pl.id=pli.price_list_id
+          WHERE pli.variant_id=pv.id AND pl.status='active' AND pli.min_quantity=1
+          ORDER BY CASE
+            WHEN pl.channel_id=(SELECT id FROM sales_channels WHERE code=?1) THEN 0
+            WHEN pl.channel_id='channel_website' THEN 1
+            ELSE 2
+          END,
+            pl.priority DESC LIMIT 1) AS price_bani
+       FROM products p
+       JOIN product_variants pv ON pv.product_id=p.id AND pv.status='active'
+       JOIN sales_channels sc ON sc.code=?1
+       WHERE p.id=?2 AND p.product_type='music_box' AND p.status='active'
+       ORDER BY pv.sort_order,pv.created_at LIMIT 1`,
+    )
+    .bind(input.channelCode, input.productId)
+    .first<DbRow>();
+  if (!catalog) throw new Error("ORDER_PRODUCT_OR_CHANNEL_NOT_FOUND");
+  const unitPriceBani = numberValue(catalog.price_bani);
+  if (unitPriceBani <= 0) throw new Error("ORDER_PRODUCT_PRICE_MISSING");
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const orderId = crypto.randomUUID();
+  const orderNumber = `CM-${nowIso.slice(0, 10).replaceAll("-", "")}-${orderId.replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+  const quantity = input.quantity;
+  const subtotalBani = unitPriceBani * quantity;
+  const totalBani = subtotalBani + input.shippingBani;
+  const phone = normalizeAdminPhone(input.customerPhone);
+  const orderItemId = crypto.randomUUID();
+
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO orders(
+          id,order_number,public_token,idempotency_key,channel_id,external_order_id,
+          order_status,payment_status,fulfillment_status,currency,subtotal_bani,shipping_bani,
+          total_bani,customer_name,customer_email,customer_phone_e164,internal_note,placed_at,created_at,updated_at
+        ) VALUES(?1,?2,?3,?4,?5,?6,'pending','unpaid','unfulfilled','RON',?7,?8,?9,?10,?11,?12,?13,?14,?14,?14)`,
+      )
+      .bind(
+        orderId,
+        orderNumber,
+        crypto.randomUUID(),
+        `admin:${input.requestId}`,
+        stringValue(catalog.channel_id),
+        input.externalOrderId || null,
+        subtotalBani,
+        input.shippingBani,
+        totalBani,
+        input.customerName,
+        input.customerEmail || null,
+        phone,
+        input.internalNote || null,
+        nowIso,
+      ),
+    db
+      .prepare(
+        `INSERT INTO order_items(
+          id,order_id,product_id,variant_id,sku,product_name,variant_name,quantity,
+          unit_price_bani,tax_rate_bps,line_subtotal_bani,line_total_bani
+        ) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)`,
+      )
+      .bind(
+        orderItemId,
+        orderId,
+        stringValue(catalog.product_id),
+        stringValue(catalog.variant_id),
+        stringValue(catalog.sku),
+        stringValue(catalog.name),
+        stringValue(catalog.variant_name),
+        quantity,
+        unitPriceBani,
+        numberValue(catalog.tax_rate_bps),
+        subtotalBani,
+      ),
+    db
+      .prepare(
+        `INSERT INTO order_events(id,order_id,event_type,to_status,actor_type,actor_id,message,metadata_json,created_at)
+         VALUES(?1,?2,'order.created','pending/unfulfilled','admin',?3,'Comandă adăugată manual din dashboard',?4,?5)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        orderId,
+        input.actorId,
+        JSON.stringify({ requestId: input.requestId, channelCode: input.channelCode }),
+        nowIso,
+      ),
+    db
+      .prepare(
+        `INSERT INTO audit_log(id,actor_admin_user_id,actor_label,action,entity_type,entity_id,request_id,channel_id,after_json,metadata_json,created_at)
+         VALUES(?1,?2,?2,'order.manual.create','order',?3,?4,?5,?6,'{}',?7)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        input.actorId,
+        orderId,
+        input.requestId,
+        stringValue(catalog.channel_id),
+        JSON.stringify({ orderNumber, totalBani, channelCode: input.channelCode }),
+        nowIso,
+      ),
+  ]);
+
+  const created = await db
+    .prepare(`${ORDER_SELECT} WHERE vo.id=?1 LIMIT 1`)
+    .bind(orderId)
+    .first<DbRow>();
+  if (!created) throw new Error("ORDER_NOT_FOUND");
+  return mapOrder(created);
+}
+
 export async function listAdminProducts(
   db: D1Database,
   publicSiteUrl: string,
@@ -159,9 +354,12 @@ export async function listAdminProducts(
     SELECT
       ap.*,
       p.short_description,
+      p.storefront_state,
+      p.release_note,
       p.version,
       COALESCE(pc.missing_fields_count, 0) AS missing_fields_count,
       pv.sku,
+      pv.ean_gtin,
       COALESCE((
         SELECT COALESCE(pm.source_url, '/media/' || pm.id)
         FROM product_media pm
@@ -179,8 +377,8 @@ export async function listAdminProducts(
       ), 0) AS units_sold,
       (
         SELECT AVG(CAST(r.rating AS REAL))
-        FROM reviews r
-        WHERE r.product_id = ap.id AND r.status = 'published'
+        FROM product_reviews r
+        WHERE r.product_id = ap.id AND r.status = 'approved'
       ) AS average_rating
     FROM v_admin_product_catalog ap
     JOIN products p ON p.id = ap.id
@@ -211,15 +409,121 @@ export async function listAdminProducts(
     rating: row.average_rating == null ? null : numberValue(row.average_rating),
     image: "CM",
     imageUrl: stringValue(row.image_url),
-    url: `${normalizedSiteUrl}/produs/${stringValue(row.slug)}`,
+    url: `${normalizedSiteUrl}${productPath(stringValue(row.slug))}`,
     sku: stringValue(row.sku),
+    eanGtin: row.ean_gtin == null ? null : stringValue(row.ean_gtin),
     mechanismType: stringValue(row.mechanism_type),
     rightsStatus: stringValue(row.rights_status),
     missingFieldsCount: numberValue(row.missing_fields_count),
     listingCount: numberValue(row.listing_count),
+    storefrontState: (stringValue(row.storefront_state) ||
+      "coming_soon") as AdminProduct["storefrontState"],
+    releaseNote: stringValue(row.release_note),
     updatedAt: stringValue(row.updated_at),
     version: numberValue(row.version),
   }));
+}
+
+export interface CreateAdminProductInput {
+  name: string;
+  slug: string;
+  sku?: string;
+  category: string;
+  priceBani: number;
+  actorId: string;
+  requestId: string;
+}
+
+export async function createAdminProduct(
+  db: D1Database,
+  input: CreateAdminProductInput,
+): Promise<{ id: string; sku: string }> {
+  const productId = crypto.randomUUID();
+  const variantId = crypto.randomUUID();
+  const nowIso = new Date().toISOString();
+  const prefix = skuPrefix(input.category, input.name);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const row = input.sku
+      ? null
+      : await db
+          .prepare(
+            `SELECT COALESCE(MAX(COALESCE(sequence_number,
+              CAST(substr(sku,length(?1)+5) AS INTEGER))),0)+1 AS next
+             FROM product_sku_registry WHERE prefix=?1 OR sku LIKE ?2`,
+          )
+          .bind(prefix, `CM-${prefix}-%`)
+          .first<{ next: number }>();
+    const sequence = row?.next ?? null;
+    const sku = input.sku || formatSku(prefix, sequence ?? 1);
+    try {
+      await db.batch([
+        db
+          .prepare(
+            `INSERT INTO product_sku_registry(sku,variant_id,prefix,sequence_number,assigned_by,assigned_at)
+       VALUES(?1,?2,?3,?4,?5,?6)`,
+          )
+          .bind(sku, variantId, input.sku ? null : prefix, sequence, input.actorId, nowIso),
+        db
+          .prepare(
+            `INSERT INTO products(
+          id,slug,status,name,short_name,category,storefront_state,release_note,rights_status,
+          tax_class,tax_rate_bps,created_at,updated_at
+        ) VALUES(?1,?2,'draft',?3,?3,?4,'coming_soon','În pregătire','review_required','review_required',0,?5,?5)`,
+          )
+          .bind(productId, input.slug, input.name, input.category, nowIso),
+        db
+          .prepare(
+            `INSERT INTO product_variants(
+          id,product_id,sku,name,status,inventory_policy,attributes_json,created_at,updated_at
+        ) VALUES(?1,?2,?3,'Standard','active','deny','{"mechanism":"manual_crank"}',?4,?4)`,
+          )
+          .bind(variantId, productId, sku, nowIso),
+        db
+          .prepare(
+            `INSERT INTO inventory_levels(
+          id,variant_id,location_id,on_hand_quantity,reserved_quantity,safety_stock_quantity,updated_at
+        ) VALUES(?1,?2,'location_main',0,0,0,?3)`,
+          )
+          .bind(crypto.randomUUID(), variantId, nowIso),
+        db
+          .prepare(
+            `INSERT INTO price_list_items(
+          id,price_list_id,variant_id,price_bani,min_quantity,created_at,updated_at
+        ) VALUES(?1,'price_list_website_ron',?2,?3,1,?4,?4)`,
+          )
+          .bind(crypto.randomUUID(), variantId, input.priceBani, nowIso),
+        db
+          .prepare(
+            `INSERT INTO audit_log(
+          id,actor_admin_user_id,actor_label,action,entity_type,entity_id,request_id,after_json,metadata_json,created_at
+        ) VALUES(?1,?2,?2,'product.draft.create','product',?3,?4,?5,'{}',?6)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            input.actorId,
+            productId,
+            input.requestId,
+            JSON.stringify({ name: input.name, slug: input.slug, sku }),
+            nowIso,
+          ),
+        db
+          .prepare(
+            `INSERT INTO product_identifier_history(id,variant_id,action,new_value,actor_admin_user_id,created_at)
+         VALUES(?1,?2,'sku_assigned',?3,?4,?5)`,
+          )
+          .bind(crypto.randomUUID(), variantId, sku, input.actorId, nowIso),
+      ]);
+      return { id: productId, sku };
+    } catch (error) {
+      if (
+        input.sku ||
+        attempt === 4 ||
+        !/UNIQUE constraint failed.*(?:sku_registry|product_variants)/i.test(String(error))
+      )
+        throw error;
+    }
+  }
+  throw new Error("Nu am putut aloca un SKU unic. Încearcă din nou.");
 }
 
 export interface UpdateProductStatusInput {
@@ -291,16 +595,21 @@ export async function updateProductStatus(
 }
 
 export async function getAdminDashboardData(db: D1Database): Promise<AdminDashboardData> {
-  const [dashboardResult, ordersResult, channelsResult] = await db.batch<DbRow>([
-    db.prepare("SELECT * FROM v_admin_dashboard LIMIT 1"),
-    db.prepare(`${ORDER_SELECT} ORDER BY vo.placed_at DESC LIMIT 7`),
-    db.prepare("SELECT * FROM v_admin_channel_metrics ORDER BY name ASC"),
+  const [results, shipping] = await Promise.all([
+    db.batch<DbRow>([
+      db.prepare("SELECT * FROM v_admin_dashboard LIMIT 1"),
+      db.prepare(`${ORDER_SELECT} ORDER BY vo.placed_at DESC LIMIT 7`),
+      db.prepare("SELECT * FROM v_admin_channel_metrics ORDER BY name ASC"),
+    ]),
+    getAdminShippingSummary(db),
   ]);
+  const [dashboardResult, ordersResult, channelsResult] = results;
 
   return {
     stats: mapDashboard(dashboardResult.results[0] ?? null),
     recentOrders: ordersResult.results.map(mapOrder),
     channels: channelsResult.results.map(mapChannel),
+    shipping,
   };
 }
 
@@ -378,9 +687,16 @@ export async function dismissAdminNotification(
 }
 
 export async function getAdminStatisticsData(db: D1Database): Promise<AdminStatisticsData> {
-  const [summaryResult, monthlyResult, channelsResult, productsResult, deliveriesResult] =
-    await db.batch<DbRow>([
-      db.prepare(`
+  const [
+    summaryResult,
+    monthlyResult,
+    channelsResult,
+    productsResult,
+    deliveriesResult,
+    growthResult,
+    inventoryResult,
+  ] = await db.batch<DbRow>([
+    db.prepare(`
         SELECT
           COUNT(*) AS orders_total,
           COALESCE(SUM(CASE WHEN order_status != 'cancelled' THEN total_bani - refunded_bani ELSE 0 END), 0) AS net_revenue_bani,
@@ -398,7 +714,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
           COUNT(estimated_cost_bani) AS orders_with_cost
         FROM orders
       `),
-      db.prepare(`
+    db.prepare(`
         SELECT
           month,
           SUM(revenue_bani) AS revenue_bani,
@@ -410,10 +726,8 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         GROUP BY month
         ORDER BY month ASC
       `),
-      db.prepare(
-        "SELECT * FROM v_admin_channel_metrics ORDER BY valid_orders_count DESC, name ASC",
-      ),
-      db.prepare(`
+    db.prepare("SELECT * FROM v_admin_channel_metrics ORDER BY valid_orders_count DESC, name ASC"),
+    db.prepare(`
         SELECT
           COALESCE(p.id, oi.product_id, oi.sku) AS id,
           COALESCE(p.name, oi.product_name) AS name,
@@ -428,7 +742,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         ORDER BY units_count DESC, revenue_bani DESC
         LIMIT 10
       `),
-      db.prepare(`
+    db.prepare(`
         SELECT delivery_method, COUNT(*) AS orders_count
         FROM (
           SELECT
@@ -447,7 +761,37 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
         GROUP BY delivery_method
         ORDER BY orders_count DESC
       `),
-    ]);
+    db.prepare(`
+        SELECT event_name,SUM(event_count) AS event_count,
+          SUM(value_total) AS value_total,SUM(quantity_total) AS quantity_total
+        FROM growth_event_daily
+        WHERE event_day >= date('now','-29 days')
+        GROUP BY event_name
+        ORDER BY event_count DESC,event_name ASC
+      `),
+    db.prepare(`
+        SELECT
+          COALESCE(SUM(on_hand),0) AS on_hand,
+          COALESCE(SUM(reserved),0) AS reserved,
+          COALESCE(SUM(safety),0) AS safety,
+          COALESCE(SUM(available),0) AS available,
+          COUNT(DISTINCT product_id) AS tracked_products,
+          COUNT(DISTINCT CASE WHEN available BETWEEN 1 AND 3 THEN product_id END) AS low_stock_products,
+          COUNT(DISTINCT CASE WHEN available=0 THEN product_id END) AS out_of_stock_products
+        FROM (
+          SELECT pv.product_id,pv.id,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN il.on_hand_quantity ELSE 0 END),0) AS on_hand,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN il.reserved_quantity ELSE 0 END),0) AS reserved,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN il.safety_stock_quantity ELSE 0 END),0) AS safety,
+            COALESCE(SUM(CASE WHEN sl.active=1 THEN MAX(0,il.on_hand_quantity-il.reserved_quantity-il.safety_stock_quantity) ELSE 0 END),0) AS available
+          FROM product_variants pv
+          LEFT JOIN inventory_levels il ON il.variant_id=pv.id
+          LEFT JOIN stock_locations sl ON sl.id=il.location_id
+          WHERE pv.status='active' AND pv.inventory_policy='deny'
+          GROUP BY pv.product_id,pv.id
+        ) tracked_inventory
+      `),
+  ]);
 
   const summary = summaryResult.results[0] ?? {};
   const ordersTotal = numberValue(summary.orders_total);
@@ -463,6 +807,13 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
     name: stringValue(row.delivery_method),
     orders: numberValue(row.orders_count),
   }));
+  const growth: AdminGrowthMetric[] = growthResult.results.map((row) => ({
+    event: stringValue(row.event_name),
+    count: numberValue(row.event_count),
+    value: numberValue(row.value_total),
+    quantity: numberValue(row.quantity_total),
+  }));
+  const inventory = inventoryResult.results[0] ?? {};
 
   return {
     summary: {
@@ -480,6 +831,15 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
           ? baniToRon(summary.estimated_cost_bani)
           : null,
     },
+    inventory: {
+      onHand: numberValue(inventory.on_hand),
+      reserved: numberValue(inventory.reserved),
+      safety: numberValue(inventory.safety),
+      available: numberValue(inventory.available),
+      trackedProducts: numberValue(inventory.tracked_products),
+      lowStockProducts: numberValue(inventory.low_stock_products),
+      outOfStockProducts: numberValue(inventory.out_of_stock_products),
+    },
     monthly: monthlyResult.results.map((row) => ({
       month: stringValue(row.month),
       revenue: baniToRon(row.revenue_bani),
@@ -491,6 +851,7 @@ export async function getAdminStatisticsData(db: D1Database): Promise<AdminStati
     channels: channelsResult.results.map(mapChannel),
     topProducts: products,
     deliveries,
+    growth,
   };
 }
 
@@ -514,6 +875,9 @@ export async function getAdminIntegrationsData(db: D1Database): Promise<AdminInt
     provider: stringValue(row.provider),
     environment: stringValue(row.environment),
     label: stringValue(row.account_label),
+    externalAccountId: nullableString(row.external_account_id),
+    apiBaseUrl: integrationApiBaseUrl(row.config_json),
+    secretReference: nullableString(row.secret_reference),
     status: stringValue(row.status),
     lastHealthcheckAt: nullableString(row.last_healthcheck_at),
     lastSuccessAt: nullableString(row.last_success_at),
@@ -692,7 +1056,7 @@ export async function updateOrderStatus(
   const current = await db
     .prepare(
       `
-    SELECT order_status, fulfillment_status, version
+    SELECT order_status, fulfillment_status, payment_method_requested, payment_status, paid_bani, total_bani, version
     FROM orders
     WHERE id = ?1
   `,
@@ -712,6 +1076,15 @@ export async function updateOrderStatus(
   const currentAdminStatus = toAdminOrderStatus(currentState);
   if (!canTransitionOrderStatus(currentAdminStatus, input.status)) {
     throw new Error(`ORDER_STATUS_TRANSITION_INVALID:${currentAdminStatus}:${input.status}`);
+  }
+  if (
+    input.status !== "Anulată" &&
+    input.status !== currentAdminStatus &&
+    current.payment_method_requested === "card" &&
+    (current.payment_status !== "paid" ||
+      numberValue(current.paid_bani) !== numberValue(current.total_bani))
+  ) {
+    throw new Error("ORDER_PAYMENT_NOT_CONFIRMED");
   }
   if (currentAdminStatus === input.status) {
     const existing = await db

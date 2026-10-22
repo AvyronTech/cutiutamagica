@@ -1,0 +1,113 @@
+import { Link } from "@tanstack/react-router";
+import type { Product } from "@/data/products";
+import { giftGuidesForProduct } from "@/data/gift-guides";
+
+function ProductMakingNote() {
+  return (
+    <aside className="product-making-note" aria-label="Procesul de fabricare">
+      <Link to="/despre-cutiuta" className="product-making-note__link">
+        <span>
+          <small>Dincolo de capac</small>
+          <strong>Vezi procesul magic de fabricare a cutiuței</strong>
+        </span>
+        <span aria-hidden="true">↗</span>
+      </Link>
+    </aside>
+  );
+}
+
+export function ProductDiscovery({ product }: { product: Product }) {
+  const content = product.discovery;
+  if (!content?.intro) return <ProductMakingNote />;
+  const guides = giftGuidesForProduct(product.id).slice(0, 8);
+  return (
+    <section className="product-discovery" aria-labelledby="discovery-title">
+      <header className="product-discovery__heading">
+        <span className="catalog-eyebrow">Un dar ales cu gândul la cineva</span>
+        <h2 id="discovery-title">Idei de cadou, pe scurt</h2>
+      </header>
+      <div className="product-discovery__grid">
+        <article>
+          <h3>Cui i se potrivește</h3>
+          <p>{content.intro}</p>
+          <p>{content.audience}</p>
+        </article>
+        <article>
+          <h3>Ocazii potrivite</h3>
+          <ul className="discovery-occasions">
+            {content.occasions.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </article>
+        <article>
+          <h3>În viața de zi cu zi</h3>
+          <ul className="discovery-moments">
+            {content.moments.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </article>
+      </div>
+      <div className="discovery-questions">
+        <h3>Răspunsuri înainte să alegi</h3>
+        <details name="product-faq">
+          <summary>Ce melodie redă acest model?</summary>
+          <p>
+            {product.melody
+              ? `Melodia prezentată pentru acest model este ${product.melody}. Dacă fragmentul audio este disponibil în pagină, îl poți asculta înainte de a alege.`
+              : "Consultă detaliile modelului și cere confirmarea melodiei înainte de comandă."}
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Cum funcționează manivela?</summary>
+          <p>
+            Rotești ușor manivela pentru a acționa mecanismul muzical. Sunetul continuă cât timp
+            rotești; nu sunt necesare baterii sau o aplicație. Păstrează lemnul ferit de umezeală.
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Pot alege altă melodie sau alt capac?</summary>
+          <p>
+            Modelul vine cu melodia și ilustrația prezentate în această pagină. Compară celelalte
+            cutiuțe pentru alte teme. O dedicație pe un bilețel poate face darul personal fără să
+            modifice produsul.
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Cât de mare este cutiuța?</summary>
+          <p>
+            Este un obiect compact, potrivit pentru birou, bibliotecă sau vitrină. Dimensiunile
+            exacte ale acestui model sunt trecute în secțiunea „Detalii” de mai sus.
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Primesc și decorurile din fotografii?</summary>
+          <p>
+            Nu. Comanda include cutiuța aleasă. Lumânările, cărțile și celelalte elemente folosite
+            pentru atmosferă în fotografii nu fac parte din produs.
+          </p>
+        </details>
+        <details name="product-faq">
+          <summary>Cum o păstrez frumoasă?</summary>
+          <p>
+            Păstreaz-o într-un loc uscat, departe de umezeală și soare puternic. Șterge lemnul cu o
+            lavetă moale și rotește manivela fără să o forțezi.
+          </p>
+        </details>
+      </div>
+      <ProductMakingNote />
+      <details className="discovery-guides">
+        <summary>Explorează ghidurile de cadouri</summary>
+        <nav aria-label="Ghiduri de cadouri potrivite acestui produs" className="discovery-links">
+          {guides.map((guide) => (
+            <Link key={guide.slug} to="/cadouri/$ocazie" params={{ ocazie: guide.slug }}>
+              {guide.label} ↗
+            </Link>
+          ))}
+          <Link to="/cadouri">Toate ghidurile ↗</Link>
+        </nav>
+      </details>
+    </section>
+  );
+}

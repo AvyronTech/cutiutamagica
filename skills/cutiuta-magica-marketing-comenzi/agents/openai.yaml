@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent marketing + comenzi Cutiuța Magică"
+  short_description: "Conținut, conversații și comenzi controlate"
+  default_prompt: "Folosește $cutiuta-magica-marketing-comenzi pentru a pregăti pachetul editorial și operațional de azi."
