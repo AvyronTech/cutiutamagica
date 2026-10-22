@@ -135,6 +135,7 @@ const profiles: Record<PageStoryScene, PageStoryProfile> = {
 
 export function isPublicStoryPath(pathname: string) {
   return !(
+    isProductPath(pathname) ||
     pathname.startsWith("/admin") ||
     pathname === "/auth" ||
     pathname === "/comanda" ||

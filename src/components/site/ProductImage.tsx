@@ -21,6 +21,7 @@ type Props = {
   decoding?: "async" | "sync" | "auto";
   width?: number;
   height?: number;
+  thumbnail?: boolean;
 };
 
 /** Doar pozele procesate de noi au variantele AVIF alături. */
@@ -39,18 +40,21 @@ export function ProductImage({
   decoding = "async",
   width,
   height,
+  thumbnail = false,
 }: Props) {
-  const [resolvedSrc, setResolvedSrc] = useState(src);
+  const thumbnailSrc =
+    thumbnail && hasOptimizedVariants(src) ? src.replace(/\.webp$/, "-thumb.webp") : null;
+  const [resolvedSrc, setResolvedSrc] = useState(thumbnailSrc ?? src);
   const imageRef = useRef<HTMLImageElement>(null);
-  useEffect(() => setResolvedSrc(src), [src]);
+  useEffect(() => setResolvedSrc(thumbnailSrc ?? src), [src, thumbnailSrc]);
   useEffect(() => {
-    const fallback = productImageFallback(src);
+    const fallback = thumbnailSrc && resolvedSrc === thumbnailSrc ? src : productImageFallback(src);
     const image = imageRef.current;
     // O eroare poate surveni înainte ca React să atașeze onError la HTML-ul inițial.
-    if (fallback && resolvedSrc === src && image?.complete && image.naturalWidth === 0) {
+    if (fallback && image?.complete && image.naturalWidth === 0) {
       setResolvedSrc(fallback);
     }
-  }, [src, resolvedSrc]);
+  }, [src, resolvedSrc, thumbnailSrc]);
   const img = (
     <img
       ref={imageRef}
@@ -65,13 +69,14 @@ export function ProductImage({
       width={width}
       height={height}
       onError={() => {
-        const fallback = productImageFallback(src);
+        const fallback = thumbnailSrc && resolvedSrc === thumbnailSrc ? src : productImageFallback(src);
         if (fallback && resolvedSrc !== fallback) setResolvedSrc(fallback);
       }}
     />
   );
 
-  if (!hasOptimizedVariants(resolvedSrc)) return img;
+  if ((thumbnailSrc && resolvedSrc === thumbnailSrc) || !hasOptimizedVariants(resolvedSrc))
+    return img;
 
   const base = resolvedSrc.slice(0, -".webp".length);
   return (

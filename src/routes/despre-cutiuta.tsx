@@ -61,7 +61,7 @@ function AboutBox() {
       <Suspense
         fallback={
           <div className="assembly-placeholder">
-            <BrandMark className="w-48 h-48" />
+            <BrandMark sizes="192px" className="w-48 h-48" />
             <p>Se conturează povestea…</p>
           </div>
         }
