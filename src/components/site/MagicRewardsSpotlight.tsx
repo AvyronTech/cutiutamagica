@@ -36,10 +36,10 @@ export function MagicRewardsSpotlight({ program, activities }: MagicRewardsSpotl
         </span>
         <div>
           <p className="scene-eyebrow">Magic Rewards</p>
-          <h2 id="landing-rewards-title">Gesturile mici îți fac următoarea poveste mai ușoară.</h2>
+          <h2 id="landing-rewards-title">Gesturile mici adună magie pentru următorul cadou.</h2>
           <p>
-            Creezi un cont, iar stelele se strâng automat. {threshold} stele înseamnă {rewardLei}{" "}
-            lei pentru următoarea comandă.
+            Creezi un cont și aduni stele. La {threshold} stele primești {rewardLei} lei pentru
+            următoarea comandă.
           </p>
         </div>
       </div>
