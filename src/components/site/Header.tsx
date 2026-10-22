@@ -154,7 +154,10 @@ export function Header() {
                 aria-hidden
                 className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(218,170,91,.52),transparent_68%)] blur-md"
               />
-              <BrandMark sizes="56px" className="relative h-full w-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.4)]" />
+              <BrandMark
+                sizes="56px"
+                className="relative h-full w-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.4)]"
+              />
             </span>
             <span className="site-header__wordmark min-w-0 leading-tight">
               <span

@@ -12,7 +12,7 @@ describe("marketing orders agent build", () => {
     expect(manifest.agentCode).toBe("marketing-orders");
     expect(manifest.hash).toMatch(/^[a-f0-9]{64}$/);
     expect(manifest.byteSize).toBeGreaterThan(10_000);
-    expect(bundle.documents).toHaveLength(11);
+    expect(bundle.documents).toHaveLength(14);
     expect(bundle.documents[0].content).toContain("Cutiuța Magică");
     expect(
       bundle.documents.find((document) => document.path.endsWith("approval-orchestration.md"))
@@ -37,6 +37,12 @@ describe("marketing orders agent build", () => {
     expect(
       bundle.documents.find((document) => document.path.endsWith("storage-retention.md"))?.content,
     ).toContain("Dashboard și Codex");
+    expect(
+      bundle.documents.find((document) => document.path.endsWith("story-lead-capture.md"))?.content,
+    ).toContain("consimțământ");
+    expect(
+      bundle.documents.find((document) => document.path.endsWith("supplier-outreach.md"))?.content,
+    ).toContain("furnizor");
     expect(bundle.controlPlane).toBe("cutiuta_magic_platform");
     expect(bundle.externalEffects).toBe("approval_required");
   });

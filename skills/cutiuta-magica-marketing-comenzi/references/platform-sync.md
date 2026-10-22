@@ -17,11 +17,14 @@ Folosește entitățile existente, fără registru paralel:
 - `sales_channels`, `sales_channel_profiles`, `channel_listings`, `product_channel_drafts`, `channel_publication_requests`, `integration_accounts`, `sync_jobs`, `sync_failures` și `provider_operations` pentru marketplace;
 - `social_analysis_runs` și `social_unfollow_proposals` pentru igiena follow;
 - `chat_conversations` și `chat_messages` pentru chatul site-ului;
+- fluxul compatibil de contact/lead pentru formularele scurte, dacă există; `/api/v1/product-interest` rămâne limitat la notificare/precomandă cu e-mail și nu este un formular general de ofertă. Nu crea un tabel paralel din timpul publicării. Păstrează consimțământul, proveniența și legătura către campanie fără a copia date personale în analytics;
 - `orders`, `order_items`, `order_events`, `outbox_events` și `provider_operations` pentru comenzi și confirmări;
 - `traffic_daily_metrics` și metricile aprobate ale platformelor pentru evaluare;
 - `avyron_sync_jobs` pentru asset-uri aprobate, `agent_exchange_items` pentru statistici și pachete de skill/date, iar `outbox_events` pentru handoff asincron, idempotent și auditat.
 
-`campaign_json` din `social_posts` trebuie să păstreze: `campaignId`, `productId`, canal, format, obiectiv, hook, CTA, hashtags, musicBrief, asset IDs, UTM, fapte/surse, oră propusă, fus orar, motiv, versiune și `approvalRequired=true`.
+`campaign_json` din `social_posts` trebuie să păstreze: `campaignId`, `productId`, canal, format, obiectiv, hook, CTA, hashtags, musicBrief, asset IDs, UTM, fapte/surse, oră propusă, fus orar, motiv, versiune și `approvalRequired=true`. Pentru materiale native păstrează și `capabilitySnapshot`, `renderContract`, `nativeElements`, `audioRightsEvidence`, `productLockEvidence` și, când există captare de lead, `leadDestination` fără datele persoanei.
+
+Leadul provenit din Story păstrează minimum `source_platform`, `account_id`, `campaign_id`, `revision_id`, `product_id`, UTM, `consent_version`, `consent_at` și pagina de intrare. Numele și e-mailul rămân în registrul operațional protejat, nu în `social_posts`, metrici, prompturi AI ori payloadul AVYRON. Deduplică prin fluxul existent și păstrează atribuirea primei și ultimei interacțiuni.
 
 Pentru marketplace păstrează separat snapshotul catalogului, hashul, categoria/atributele canalului, ID-urile externe, versiunea adapterului, batch/cursor, stock bufferul și rezultatul reconcilierii. `orders(channel_id, external_order_id)` este cheia de deduplicare; nu crea un registru paralel de comenzi.
 
@@ -38,6 +41,7 @@ Sincronizarea este un handoff, nu o bază comună scrisă simultan. Trimite numa
 - identificator proiect/campanie și perioadă;
 - număr de ciorne, aprobări, publicări confirmate și eșecuri;
 - reach, clickuri, conversații calificate, comenzi atribuite și venit confirmat, când există proveniență;
+- agregate de funnel precum accesări Story, clickuri către formular, trimiteri valide și rata de conversie, fără nume, e-mail sau alte date personale;
 - lecții agregate aprobate, fără conversații private brute și fără adrese de livrare.
 
 Pachetul de skill poate conține instrucțiunile versionate, referințele operaționale, hashul și lista fișierelor incluse, dar numai după aprobare. O propunere de date sau skill primită de la AVYRON rămâne `pending_approval`; nu se aplică automat și nu poate modifica politica agentului. Platforma Cutiuța Magică și superadminii săi sunt singurul control plane.

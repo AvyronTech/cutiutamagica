@@ -1,6 +1,12 @@
 import { memo } from "react";
 
-function BrandMarkImpl({ className = "", sizes = "128px" }: { className?: string; sizes?: string }) {
+function BrandMarkImpl({
+  className = "",
+  sizes = "128px",
+}: {
+  className?: string;
+  sizes?: string;
+}) {
   return (
     <span className={`music-box-mark ${className}`} aria-hidden="true">
       <img

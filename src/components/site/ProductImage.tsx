@@ -69,7 +69,8 @@ export function ProductImage({
       width={width}
       height={height}
       onError={() => {
-        const fallback = thumbnailSrc && resolvedSrc === thumbnailSrc ? src : productImageFallback(src);
+        const fallback =
+          thumbnailSrc && resolvedSrc === thumbnailSrc ? src : productImageFallback(src);
         if (fallback && resolvedSrc !== fallback) setResolvedSrc(fallback);
       }}
     />
