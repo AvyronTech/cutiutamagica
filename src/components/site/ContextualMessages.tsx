@@ -123,6 +123,10 @@ export function ContextualMessages() {
         (placement !== "home" && pageCount >= 1)
       )
         return;
+      if (placement === "home") {
+        const hero = document.getElementById("inceput");
+        if (!hero || hero.getBoundingClientRect().bottom > 0) return;
+      }
       const max = document.documentElement.scrollHeight - innerHeight;
       const message = nextStorefrontMessage(
         query.data!,
@@ -178,7 +182,7 @@ export function ContextualMessages() {
           </aside>
         ),
         {
-          duration: 2400,
+          duration: 2200,
           position: "top-center",
           onAutoClose: () => finish(),
           onDismiss: (t) => {
