@@ -1131,7 +1131,7 @@ function OrderPage() {
                       {shippingOption === "easybox" && config?.shipping.easyboxEnabled && (
                         <EasyboxPicker
                           selected={easyboxLocker}
-                          searchHint={[form.city, form.county].filter(Boolean).join(", ")}
+                          searchHint={form.city.trim() || form.county.trim()}
                           openOnMount
                           onSelect={(locker) => {
                             setEasyboxLocker(locker);
