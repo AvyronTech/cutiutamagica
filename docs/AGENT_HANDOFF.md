@@ -1,5 +1,14 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-22 — prezentarea checkoutului și alegerea curierului
+
+- În ramura locală `codex/notification-glass-20261022`, checkoutul are acțiunea principală „Confirmă comanda” imediat după acordul precontractual. Bara fixă de mobil spune „Finalizează comanda” și se retrage când butonul principal intră în zona vizibilă. Ambele folosesc același formular, validări și cheie de idempotentă; un blocaj sincron previne trimiterea simultană.
+- Stripe apare ca „Plata Online”, cu descrierea scurtă a cardului și portofelului digital, fără promisiunea unui portofel anume. Rambursul descrie plata la primire, cu metodele condiționate de curier sau de capacitatea punctului Easybox. Transportul la cost zero este prezentat ca inclus în comandă.
+- Ofertele de livrare au titlul „Alege curierul potrivit:”, selector radio lizibil, accent cromatic pentru numele de curieri recunoscute (SAMEDAY, FAN Courier, Cargus, DPD, GLS, FedEx, PTT) și data estimată pe rând separat sub „Transport estimat după predare:”. Pentru nume neidentificate rămâne un card neutru. Nu s-a schimbat calculul tarifelor sau selecția ofertelor.
+- Fișiere: `src/routes/comanda.tsx`, `src/components/site/CheckoutDelivery.tsx`, `src/styles.css`, acest handoff. Fără migrații noi sau configurări externe. Nu s-a creat nicio comandă sau plată în preview. Produsele demo au fost încărcate numai în D1 local; Pisicuța a fost marcată local disponibilă pentru a vedea checkoutul cu produs.
+- Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (56 fișiere, 310 teste), `npm run lint`, `npm run build`, `npm run cf:deploy:dry`, Prettier și `git diff --check` au trecut. Aspectul checkoutului a fost inspectat în browser la 1280×720 și 390×844; bara mobilă dispare la butonul principal, iar documentul nu depășește 390 px. Cardurile de ofertă live și plata online nu s-au putut proba vizual deoarece previewul local nu are conexiunile furnizorilor.
+- Revizia este locală, peste commiturile nepublicate `6f66dd2` și `733feec`; push, PR, migrațiile D1 remote și deployul rămân în așteptarea aprobării explicite pentru întregul pachet.
+
 ## Handoff 2026-10-22 — contact rapid și asistentul public
 
 - Lucrul este în worktree-ul `codex/notification-glass-20261022`, pornit din `origin/codex/cutiuta-cloudflare-final` la `3ae1877` și păstrând commitul local anterior `6f66dd2` pentru notificări. Checkoutul principal, cu modificări de catalog, nu a fost atins.
