@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PUBLIC_CHAT_SOURCES } from "@/lib/chat-public-knowledge";
 
 export const chatSettingsSchema = z.object({
   enabled: z.boolean(),
@@ -58,6 +59,8 @@ export const chatKnowledgeSchema = z.object({
   title: z.string().trim().min(2).max(120),
   answer: z.string().trim().min(10).max(1200),
   enabled: z.boolean(),
+  publicApproved: z.boolean(),
+  sourcePath: z.enum(PUBLIC_CHAT_SOURCES).nullable(),
   sortOrder: z.number().int().min(0).max(999),
   version: z.number().int().nonnegative(),
 });

@@ -302,7 +302,7 @@ function RootComponent() {
                 mobileOffset={68}
                 gap={7}
                 visibleToasts={1}
-                duration={2800}
+                duration={2500}
                 style={
                   {
                     "--normal-bg": "oklch(0.21 0.035 40 / 0.58)",
@@ -314,7 +314,7 @@ function RootComponent() {
                 toastOptions={{
                   classNames: {
                     toast:
-                      "!backdrop-blur-xl !shadow-[0_18px_44px_-18px_oklch(0.2_0.05_40/0.75),inset_0_1px_0_oklch(0.95_0.05_85/0.12)] !font-body",
+                      "!backdrop-blur-xl !shadow-[0_18px_44px_-18px_oklch(0.2_0.05_40/0.55),inset_0_1px_0_oklch(0.95_0.05_85/0.16)] !font-body",
                     title: "!font-display !text-[0.95rem] !tracking-tight",
                     description: "!text-xs !text-[oklch(0.96_0.02_80/0.72)]",
                     actionButton:

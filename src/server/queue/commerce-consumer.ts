@@ -95,6 +95,18 @@ async function processMessage(db: D1Database, outboxId: string): Promise<"ack" |
     .first<OutboxRow>();
 
   if (!row || row.status === "completed") return "ack";
+  if (row.aggregate_type === "order") {
+    const accepted = await db
+      .prepare(
+        `SELECT 1 AS accepted FROM orders WHERE id=?1 AND order_status!='cancelled'
+       AND (payment_method_requested!='card' OR (payment_status='paid' AND paid_bani=total_bani))`,
+      )
+      .bind(row.aggregate_id)
+      .first<{ accepted: number }>();
+    // A provisional card checkout must never appear as a new accepted order.
+    // Leave the outbox pending; the captured-payment webhook queues it again.
+    if (!accepted) return "ack";
+  }
   if (row.destination !== "admin.notification") {
     await markFailed(db, outboxId, "ADAPTER_NOT_CONFIGURED", `Destination: ${row.destination}`);
     return "ack";

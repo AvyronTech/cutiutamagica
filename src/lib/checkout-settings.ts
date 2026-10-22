@@ -28,4 +28,5 @@ export type PaymentStatus = {
   currency: string;
   status: "paid" | "pending" | "cancelled" | "refunded";
   canResume: boolean;
+  canChangeMethod?: boolean;
 };

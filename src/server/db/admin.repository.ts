@@ -1056,7 +1056,7 @@ export async function updateOrderStatus(
   const current = await db
     .prepare(
       `
-    SELECT order_status, fulfillment_status, version
+    SELECT order_status, fulfillment_status, payment_method_requested, payment_status, paid_bani, total_bani, version
     FROM orders
     WHERE id = ?1
   `,
@@ -1076,6 +1076,15 @@ export async function updateOrderStatus(
   const currentAdminStatus = toAdminOrderStatus(currentState);
   if (!canTransitionOrderStatus(currentAdminStatus, input.status)) {
     throw new Error(`ORDER_STATUS_TRANSITION_INVALID:${currentAdminStatus}:${input.status}`);
+  }
+  if (
+    input.status !== "Anulată" &&
+    input.status !== currentAdminStatus &&
+    current.payment_method_requested === "card" &&
+    (current.payment_status !== "paid" ||
+      numberValue(current.paid_bani) !== numberValue(current.total_bani))
+  ) {
+    throw new Error("ORDER_PAYMENT_NOT_CONFIRMED");
   }
   if (currentAdminStatus === input.status) {
     const existing = await db

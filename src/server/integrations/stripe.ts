@@ -23,6 +23,54 @@ export interface StripeCheckoutInput {
 
 type StripeSession = { id?: string; url?: string; payment_intent?: string };
 
+export async function expireStripeCheckoutSession(
+  env: CommerceEnv,
+  sessionId: string,
+  orderId: string,
+): Promise<void> {
+  if (!/^cs_(?:live|test)_[A-Za-z0-9]+$/.test(sessionId))
+    throw new ProviderError("Sesiune de plată invalidă.", "INVALID_STRIPE_SESSION", 400);
+  const key = requiredSecret((await credential(env, "stripe")) ?? undefined, "STRIPE_SECRET_KEY");
+  const base = `https://api.stripe.com/v1/checkout/sessions/${sessionId}`;
+  const headers = { authorization: `Bearer ${key}`, accept: "application/json" };
+  const lookup = await fetchWithTimeout(base, { method: "GET", headers, redirect: "manual" });
+  const session = (await readProviderJson(lookup).catch(() => null)) as {
+    status?: string;
+    payment_status?: string;
+    client_reference_id?: string;
+  } | null;
+  if (!lookup.ok || !session)
+    throw new ProviderError(
+      "Sesiunea de plată necesită verificare.",
+      "STRIPE_SESSION_UNVERIFIED",
+      409,
+    );
+  if (session.client_reference_id !== orderId)
+    throw new ProviderError("Sesiunea nu aparține comenzii.", "PAYMENT_MISMATCH", 409);
+  if (session.status === "expired" && session.payment_status === "unpaid") return;
+  if (session.status !== "open" || session.payment_status !== "unpaid")
+    throw new ProviderError(
+      "Plata poate fi în curs de confirmare.",
+      "PAYMENT_RECONCILIATION_REQUIRED",
+      409,
+    );
+  const response = await fetchWithTimeout(`${base}/expire`, {
+    method: "POST",
+    headers,
+    redirect: "manual",
+  });
+  const expired = (await readProviderJson(response).catch(() => null)) as {
+    status?: string;
+    payment_status?: string;
+  } | null;
+  if (!response.ok || expired?.status !== "expired" || expired.payment_status !== "unpaid")
+    throw new ProviderError(
+      "Plata poate fi în curs de confirmare.",
+      "PAYMENT_RECONCILIATION_REQUIRED",
+      409,
+    );
+}
+
 export async function verifyStripeMerchantAccount(env: CommerceEnv, key: string) {
   const finance = await readSetting(env.DB, "finance", financeSettingsSchema);
   if (!finance.stripeAccount)

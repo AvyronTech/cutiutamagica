@@ -6,8 +6,8 @@ type ChatPlacement = { side: WidgetSide; open: boolean };
 export const DEFAULT_CHAT_SIDE: WidgetSide = "right";
 // Cheile noi retrag o singură dată amplasările vechi; mutările făcute după
 // acest release rămân salvate explicit pentru vizitator.
-export const CHAT_SIDE_KEY = "cutiuta:chat-side:right-top-v4";
-export const CHAT_POSITION_KEY = "cutiuta:chat-position:right-top-v3";
+export const CHAT_SIDE_KEY = "cutiuta:chat-side:right-stack-v5";
+export const CHAT_POSITION_KEY = "cutiuta:chat-position:right-stack-v5";
 export const CHAT_BUBBLE_SIZE = 44;
 export const CHAT_VIEWPORT_MARGIN = 12;
 

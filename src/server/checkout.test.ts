@@ -5,6 +5,8 @@ import { resolve } from "node:path";
 import { createWebsiteOrder, checkoutSubtotal } from "./db/order.repository";
 import { websiteOrderInputSchema } from "@/lib/order-contracts";
 import { handlePayments, safeCheckoutUrl } from "./api/payments";
+import { handleApiRequest } from "./api/router";
+import { updateOrderStatus } from "./db/admin.repository";
 import { digest } from "./review-accounts";
 import { handleCommerceApi } from "./api/commerce";
 import { handleCheckoutAdmin } from "./api/checkout-admin";
@@ -126,6 +128,7 @@ beforeEach(() => {
     .run(JSON.stringify(settings));
   env = {
     ...bindings(),
+    COMMERCE_EVENTS: { send: vi.fn(async () => undefined) },
     APP_ENV: "development",
     PUBLIC_SITE_URL: "https://shop.test",
     STRIPE_SECRET_KEY: "sk_test_fixture",
@@ -220,6 +223,40 @@ function storedPayment(id: string) {
 }
 
 describe("secure checkout", () => {
+  it("keeps a new card checkout provisional until the processor confirms payment", async () => {
+    const waitUntil = vi.fn((_promise: Promise<unknown>) => undefined);
+    const response = await handleApiRequest(request("/api/v1/orders", input()), env, {
+      waitUntil,
+    } as unknown as ExecutionContext);
+    expect(response?.status).toBe(201);
+    const created = (await response!.json()) as { data: { orderId: string } };
+    expect(env.COMMERCE_EVENTS.send).not.toHaveBeenCalled();
+    expect(waitUntil).not.toHaveBeenCalled();
+    const row = sqlite
+      .prepare(
+        `SELECT o.payment_status, o.order_status, c.order_count, c.lifetime_value_bani
+       FROM orders o JOIN customers c ON c.id=o.customer_id WHERE o.id=?`,
+      )
+      .get(created.data.orderId)!;
+    expect(row).toMatchObject({
+      payment_status: "unpaid",
+      order_status: "pending",
+      order_count: 0,
+      lifetime_value_bani: 0,
+    });
+  });
+  it("blocks admin processing of an unpaid card checkout", async () => {
+    const created = await order();
+    await expect(
+      updateOrderStatus(env.DB, {
+        orderId: created.orderId,
+        status: "Procesare",
+        expectedVersion: 1,
+        actorId: "test-admin",
+        requestId: crypto.randomUUID(),
+      }),
+    ).rejects.toThrow("ORDER_PAYMENT_NOT_CONFIRMED");
+  });
   it("recognizes a restricted Stripe key only in its matching environment", async () => {
     env.APP_ENV = "production";
     env.STRIPE_SECRET_KEY = "rk_live_fixture";
@@ -344,6 +381,9 @@ describe("secure checkout", () => {
   it("sends one idempotent internal order email to the configured owner inbox", async () => {
     env.RESEND_API_KEY = "re_test_fixture";
     const created = await order();
+    sqlite
+      .prepare("UPDATE orders SET payment_status='paid', paid_bani=total_bani WHERE id=?")
+      .run(created.orderId);
     const fetcher = vi
       .fn()
       .mockResolvedValue(
@@ -371,6 +411,9 @@ describe("secure checkout", () => {
     }));
     env.EMAIL = { send } as unknown as SendEmail;
     const created = await order();
+    sqlite
+      .prepare("UPDATE orders SET payment_status='paid', paid_bani=total_bani WHERE id=?")
+      .run(created.orderId);
 
     await sendOrderConfirmation(env, created.orderId);
     await sendOrderConfirmation(env, created.orderId);
@@ -391,6 +434,73 @@ describe("secure checkout", () => {
         )
         .get(`order-confirmation/${created.orderId}`)!.status,
     ).toBe("succeeded");
+  });
+
+  it("never emails an unpaid card checkout", async () => {
+    const send = vi.fn(async () => ({ messageId: "should-not-send" }));
+    env.EMAIL = { send } as unknown as SendEmail;
+    const created = await order();
+    await Promise.all([
+      sendOrderConfirmation(env, created.orderId),
+      sendOrderOwnerNotification(env, created.orderId),
+    ]);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("lets a buyer change method only after Stripe confirms an open unpaid session was expired", async () => {
+    const created = await start();
+    const queue = env.COMMERCE_EVENTS.send as ReturnType<typeof vi.fn>;
+    expect(queue).not.toHaveBeenCalled();
+    const customerId = String(
+      sqlite.prepare("SELECT customer_id FROM orders WHERE id=?").get(created.orderId)!.customer_id,
+    );
+    sqlite
+      .prepare(
+        `INSERT INTO promotion_codes(id,promotion_id,code,status,usage_limit,used_count)
+       VALUES('test-expiring-code','promotion_referral_friend_15','TEST-EXPIRE','active',1,0)`,
+      )
+      .run();
+    sqlite
+      .prepare(
+        `INSERT INTO promotion_redemptions(id,promotion_id,promotion_code_id,customer_id,order_id,status,discount_bani)
+       VALUES('test-expiring-redemption','promotion_referral_friend_15','test-expiring-code',?,?,'reserved',100)`,
+      )
+      .run(customerId, created.orderId);
+    sqlite
+      .prepare(
+        "UPDATE promotion_codes SET status='consumed',used_count=1 WHERE id='test-expiring-code'",
+      )
+      .run();
+    const fetcher = vi.fn(async (_url: string | URL | Request, options?: RequestInit) => {
+      if (options?.method === "GET")
+        return Response.json({
+          status: "open",
+          payment_status: "unpaid",
+          client_reference_id: created.orderId,
+        });
+      return Response.json({ status: "expired", payment_status: "unpaid" });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const response = await handlePayments(request("/api/v1/payments/abandon", created), env);
+    expect(response!.status).toBe(200);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(
+      sqlite.prepare("SELECT order_status FROM orders WHERE id=?").get(created.orderId)!
+        .order_status,
+    ).toBe("cancelled");
+    expect(storedPayment(created.orderId)).toBe("unpaid");
+    expect(
+      sqlite
+        .prepare("SELECT status FROM promotion_redemptions WHERE id='test-expiring-redemption'")
+        .get()!.status,
+    ).toBe("released");
+    expect(
+      sqlite
+        .prepare("SELECT status,used_count FROM promotion_codes WHERE id='test-expiring-code'")
+        .get(),
+    ).toMatchObject({ status: "active", used_count: 0 });
+    expect(queue).not.toHaveBeenCalled();
+    expect((await event(created))!.status).toBe(409);
   });
 
   it("reuses one hosted session; sends authoritative amount and no order access token", async () => {
@@ -471,6 +581,16 @@ describe("secure checkout", () => {
     expect((await event(created))!.status).toBe(200);
     expect((await event(created))!.status).toBe(200);
     expect(storedPayment(created.orderId)).toBe("paid");
+    const customer = sqlite
+      .prepare(
+        "SELECT order_count,lifetime_value_bani FROM customers WHERE id=(SELECT customer_id FROM orders WHERE id=?)",
+      )
+      .get(created.orderId)!;
+    expect(customer).toMatchObject({
+      order_count: 1,
+      lifetime_value_bani: Math.round(created.total * 100),
+    });
+    expect(env.COMMERCE_EVENTS.send).toHaveBeenCalledTimes(2);
     expect(
       sqlite
         .prepare("SELECT count(*) AS n FROM order_events WHERE event_type='payment.captured'")

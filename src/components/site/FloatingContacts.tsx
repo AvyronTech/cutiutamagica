@@ -1,69 +1,38 @@
 import { useLocation } from "@tanstack/react-router";
-import { Phone, MessageCircle } from "lucide-react";
+import { MessageCircle, Phone, Sparkles } from "lucide-react";
 import { PHONE_TEL, waLink, messageForPath } from "@/lib/whatsapp";
 
 export function FloatingContacts() {
   const { pathname } = useLocation();
-  const waHref = waLink(messageForPath(pathname));
-
-  const items = [
-    {
-      label: "Telefon",
-      href: `tel:${PHONE_TEL}`,
-      Icon: Phone,
-      bg: "linear-gradient(135deg, oklch(0.65 0.16 145 / 0.76), oklch(0.5 0.14 150 / 0.7))",
-      ring: "oklch(0.75 0.18 145 / 0.55)",
-      external: false,
-    },
-    {
-      label: "WhatsApp",
-      href: waHref,
-      Icon: MessageCircle,
-      bg: "linear-gradient(135deg, oklch(0.72 0.18 150 / 0.76), oklch(0.55 0.16 155 / 0.7))",
-      ring: "oklch(0.78 0.2 150 / 0.55)",
-      external: true,
-    },
-    {
-      label: "Messenger",
-      href: "https://m.me/61590919580877",
-      Icon: (props: { className?: string }) => (
-        <svg viewBox="0 0 24 24" fill="currentColor" className={props.className}>
-          <path d="M12 2C6.48 2 2 6.14 2 11.26c0 2.86 1.4 5.4 3.6 7.08V22l3.3-1.81c.88.24 1.82.37 2.8.37 5.52 0 10-4.14 10-9.3S17.52 2 12 2zm1 12.43-2.55-2.72-5 2.72 5.5-5.84 2.6 2.72 4.95-2.72-5.5 5.84z" />
-        </svg>
-      ),
-      bg: "linear-gradient(135deg, oklch(0.7 0.18 260 / 0.76), oklch(0.55 0.2 290 / 0.7))",
-      ring: "oklch(0.78 0.2 280 / 0.55)",
-      external: true,
-    },
-  ];
-
   return (
     <div className="floating-contacts fixed z-50 flex flex-col gap-3" aria-label="Contact rapid">
-      {items.map(({ label, href, Icon, bg, ring, external }) => (
-        <a
-          key={label}
-          href={href}
-          target={external ? "_blank" : undefined}
-          rel={external ? "noopener noreferrer" : undefined}
-          aria-label={label}
-          className="group relative"
-        >
-          <span
-            aria-hidden
-            className="absolute inset-0 rounded-full blur-md opacity-35 transition-opacity group-hover:opacity-60"
-            style={{ background: bg }}
-          />
-          <span
-            className="floating-contact-surface relative flex h-12 w-12 items-center justify-center rounded-full border border-white/45 text-white shadow-[0_8px_24px_-6px_rgba(0,0,0,0.4)] backdrop-blur-md transition-transform duration-300 hover:-translate-y-0.5 hover:scale-[1.04] md:h-13 md:w-13"
-            style={{ background: bg, boxShadow: `0 8px 28px -8px ${ring}` }}
-          >
-            <Icon className="w-5 h-5" />
-          </span>
-          <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2.5 py-1 rounded-full text-xs font-medium bg-[color:var(--wood-dark)] text-[color:var(--cream)] opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all whitespace-nowrap shadow-soft">
-            {label}
-          </span>
-        </a>
-      ))}
+      <a
+        href={`tel:${PHONE_TEL}`}
+        aria-label="Sună echipa Cutiuța Magică"
+        title="Sună-ne"
+        className="floating-contact group relative"
+      >
+        <span className="floating-contact-surface floating-contact-surface--phone relative flex h-12 w-12 items-center justify-center rounded-full border border-white/45 text-white transition-transform duration-300 hover:-translate-y-0.5 hover:scale-[1.04] md:h-13 md:w-13">
+          <Phone className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="floating-contact-tooltip">Sună-ne</span>
+      </a>
+      <a
+        href={waLink(messageForPath(pathname))}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Scrie-ne pe WhatsApp despre o cutiuță"
+        title="Scrie-ne pe WhatsApp"
+        className="floating-contact floating-contact--whatsapp group relative"
+      >
+        <span className="floating-contact-halo" aria-hidden />
+        <span className="floating-contact-surface floating-contact-surface--whatsapp relative flex h-12 w-12 items-center justify-center rounded-full border border-white/45 text-white transition-transform duration-300 hover:-translate-y-0.5 hover:scale-[1.04] md:h-13 md:w-13">
+          <MessageCircle className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+          <Phone className="absolute left-[19px] top-[17px] h-3 w-3 -rotate-12" aria-hidden />
+          <Sparkles className="floating-contact-sparkle" size={12} aria-hidden />
+        </span>
+        <span className="floating-contact-tooltip">Scrie-ne pe WhatsApp</span>
+      </a>
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
   updateChatSettings,
 } from "@/lib/chat.functions";
 import type { ChatConversationStatus, ChatSettings } from "@/lib/chat-contracts";
+import { PUBLIC_CHAT_SOURCES } from "@/lib/chat-public-knowledge";
 import type { ChatKnowledge } from "@/server/db/chat.repository";
 
 const input =
@@ -199,7 +200,7 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
             ["Conversații active", openCount, MessageCircle],
             ["Mesaje necitite", unreadCount, Clock3],
             ["Stare widget", center.data.settings.enabled ? "Activ" : "Oprit", CheckCircle2],
-            ["Răspunsuri AI azi", `${center.data.aiUsageToday}/30`, Bot],
+            ["Generări AI azi", `${center.data.aiUsageToday}/30`, Bot],
           ] as Array<[string, string | number, LucideIcon]>
         ).map(([label, count, Icon]) => (
           <article
@@ -227,7 +228,7 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
           className={tab === "knowledge" ? primary : secondary}
           onClick={() => setTab("knowledge")}
         >
-          <Bot size={16} /> Cunoștințe
+          <Bot size={16} /> Baza de cunoștințe
         </button>
       </div>
 
@@ -332,6 +333,11 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
                         <div
                           className={`max-w-[82%] rounded-lg px-3 py-2 text-sm ${operator ? "bg-amber-300 text-slate-950" : "bg-slate-800 text-slate-100"}`}
                         >
+                          {item.senderType === "assistant" && (
+                            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-amber-950/70">
+                              Asistent AI
+                            </span>
+                          )}
                           {item.body}
                           <time
                             className={`mt-1 block text-[9px] ${operator ? "text-slate-700" : "text-slate-500"}`}
@@ -509,9 +515,10 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
             <div>
               <h2 className="text-sm font-semibold text-white">Asistent virtual autonom</h2>
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Folosește catalogul și politicile active plus informațiile aprobate în Cunoștințe.
-                Maximum 30 de generări pe zi; situațiile sensibile trec la echipă. Răspunsurile
-                obișnuite ajung direct la client și sunt vizibile în Inbox.
+                Citește prețurile și disponibilitatea din catalog, politicile active și numai
+                informațiile aprobate pentru public din baza de cunoștințe. Folosește Workers AI cu
+                limită locală de 30 de generări pe zi; conversațiile sensibile sunt preluate de
+                echipă. Răspunsurile apar în Inbox.
               </p>
             </div>
           </section>
@@ -523,9 +530,14 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
       ) : (
         <section className="space-y-4">
           <p className="text-sm text-slate-400">
-            Adaugă răspunsuri aprobate pentru întrebări frecvente. Prețurile și disponibilitatea vin
-            direct din catalog, nu din aceste note.
+            Notează doar fapte pe care clienții le pot vedea pe site. O informație nouă rămâne
+            nepublicată până îi alegi sursa și o aprobi. Prețurile și disponibilitatea se citesc
+            direct din catalog.
           </p>
+          <div className="rounded-xl border border-amber-300/25 bg-amber-300/5 p-4 text-xs leading-relaxed text-amber-100">
+            Nu introduce aici chei, parole, conturi bancare, date ale clienților sau instrucțiuni
+            interne. Doar fișele active și aprobate sunt trimise modelului AI.
+          </div>
           {[
             ...(center.data.knowledge ?? []),
             ...(newKnowledgeId
@@ -534,7 +546,9 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
                     id: newKnowledgeId,
                     title: "",
                     answer: "",
-                    enabled: true,
+                    enabled: false,
+                    publicApproved: false,
+                    sourcePath: null,
                     sortOrder: 100,
                     version: 0,
                     updatedAt: "",
@@ -553,11 +567,20 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
                   title: String(form.get("title") ?? "").trim(),
                   answer: String(form.get("answer") ?? "").trim(),
                   enabled: form.get("enabled") === "on",
-                  sortOrder: item.sortOrder,
+                  publicApproved: form.get("publicApproved") === "on",
+                  sourcePath: (String(form.get("sourcePath") ?? "") ||
+                    null) as ChatKnowledge["sourcePath"],
+                  sortOrder: Number(form.get("sortOrder")),
                   version: item.version,
                 });
               }}
             >
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+                <span>
+                  {item.publicApproved ? "Aprobat pentru public" : "Necesită aprobare publică"}
+                </span>
+                {item.updatedAt && <span>Versiunea {item.version}</span>}
+              </div>
               <input
                 name="title"
                 defaultValue={item.title}
@@ -572,12 +595,43 @@ export default function ChatCenter({ conversationId }: { conversationId?: string
                 className={`${input} min-h-24`}
                 maxLength={1200}
                 required
-                placeholder="Răspuns verificat pentru echipă"
+                placeholder="Informație verificată care poate apărea în răspunsul către client"
               />
-              <div className="flex items-center justify-between gap-3">
+              <div className="grid gap-3 sm:grid-cols-[1fr_110px]">
+                <label className="space-y-1 text-xs text-slate-300">
+                  Sursa publică
+                  <select name="sourcePath" defaultValue={item.sourcePath ?? ""} className={input}>
+                    <option value="">Alege pagina sursă</option>
+                    {PUBLIC_CHAT_SOURCES.map((path) => (
+                      <option key={path} value={path}>
+                        {path === "/" ? "Acasă" : path}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-1 text-xs text-slate-300">
+                  Ordine
+                  <input
+                    name="sortOrder"
+                    type="number"
+                    min="0"
+                    max="999"
+                    defaultValue={item.sortOrder}
+                    className={input}
+                  />
+                </label>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <label className="flex items-center gap-2 text-sm text-slate-300">
-                  <input type="checkbox" name="enabled" defaultChecked={item.enabled} /> Folosește
-                  în răspunsuri
+                  <input
+                    type="checkbox"
+                    name="publicApproved"
+                    defaultChecked={item.publicApproved}
+                  />{" "}
+                  Aprobat pentru răspunsuri publice
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <input type="checkbox" name="enabled" defaultChecked={item.enabled} /> Activ
                 </label>
                 <button className={primary} disabled={knowledgeMutation.isPending}>
                   <Save size={15} /> Salvează

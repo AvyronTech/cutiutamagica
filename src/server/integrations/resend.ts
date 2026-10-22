@@ -209,6 +209,13 @@ export async function sendOrderConfirmation(env: CommerceEnv, orderId: string): 
       currency: string;
     }>();
   if (!row?.customer_email) return;
+  const accepted = await env.DB.prepare(
+    `SELECT 1 AS accepted FROM orders WHERE id=?1 AND order_status!='cancelled'
+     AND (payment_method_requested!='card' OR (payment_status='paid' AND paid_bani=total_bani))`,
+  )
+    .bind(orderId)
+    .first<{ accepted: number }>();
+  if (!accepted) return;
   const total = (row.total_bani / 100).toLocaleString("ro-RO", {
     style: "currency",
     currency: row.currency,
@@ -282,6 +289,13 @@ export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: stri
       }>(),
   ]);
   if (!order) throw new Error("Comanda pentru notificarea internă nu a fost găsită.");
+  const accepted = await env.DB.prepare(
+    `SELECT 1 AS accepted FROM orders WHERE id=?1 AND order_status!='cancelled'
+     AND (payment_method_requested!='card' OR (payment_status='paid' AND paid_bani=total_bani))`,
+  )
+    .bind(orderId)
+    .first<{ accepted: number }>();
+  if (!accepted) return;
 
   const money = (bani: number) =>
     (bani / 100).toLocaleString("ro-RO", { style: "currency", currency: order.currency });

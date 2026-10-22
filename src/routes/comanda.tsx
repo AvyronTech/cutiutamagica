@@ -122,6 +122,8 @@ function OrderPage() {
   const hasItems = totalQty > 0;
   const idempotencyKey = useRef<string | null>(null);
   const submissionBody = useRef<string | null>(null);
+  const submissionInFlight = useRef(false);
+  const inlineSubmitRef = useRef<HTMLButtonElement | null>(null);
   const checkoutFinished = useRef(false);
   const abandonmentState = useRef({
     enabled: false,
@@ -151,7 +153,7 @@ function OrderPage() {
   const [promotionError, setPromotionError] = useState("");
   const [promotionExpanded, setPromotionExpanded] = useState(false);
   const [activeCheckoutStep, setActiveCheckoutStep] = useState(1);
-  const [preferredWallet, setPreferredWallet] = useState<"apple" | "google" | null>(null);
+  const [inlineSubmitVisible, setInlineSubmitVisible] = useState(false);
   const cartSignature = JSON.stringify(itemsDetailed.map((item) => [item.id, item.qty]));
   const activePromotion =
     appliedPromotion?.cartSignature === cartSignature ? appliedPromotion : null;
@@ -178,11 +180,15 @@ function OrderPage() {
       ? quote.offer
       : null;
   useEffect(() => {
-    const agent = navigator.userAgent;
-    setPreferredWallet(
-      /iPhone|iPad|iPod/i.test(agent) ? "apple" : /Android/i.test(agent) ? "google" : null,
+    const button = inlineSubmitRef.current;
+    if (!hasItems || recovering || !button) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInlineSubmitVisible(entry.isIntersecting),
+      { rootMargin: "0px 0px -88px 0px" },
     );
-  }, []);
+    observer.observe(button);
+    return () => observer.disconnect();
+  }, [hasItems, recovering]);
 
   useEffect(() => {
     try {
@@ -534,7 +540,7 @@ function OrderPage() {
     if (!config) return toast.error("Așteaptă încărcarea opțiunilor de plată și livrare.");
     if (!consent) return toast.error("Confirmă termenii comenzii și politica de retur.");
     if (totalQty === 0 && !submissionLocked) return toast.error("Coșul este gol.");
-    if (submitting) return;
+    if (submissionInFlight.current) return;
     if (shippingOption === "easybox" && (!easyboxLocker || !activeQuote))
       return toast.error("Alege un easybox și confirmă tariful înainte de comandă.");
     if (
@@ -548,6 +554,7 @@ function OrderPage() {
     if (!submissionLocked && paymentMethod === "card" && shippingCost == null)
       return toast.error("Confirmă costul livrării înainte de plata online.");
     if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID();
+    submissionInFlight.current = true;
     setSubmitting(true);
     setSubmissionLocked(true);
     try {
@@ -611,6 +618,7 @@ function OrderPage() {
         description: error instanceof Error ? error.message : "Încearcă din nou.",
       });
     } finally {
+      submissionInFlight.current = false;
       setSubmitting(false);
     }
   }
@@ -1066,7 +1074,7 @@ function OrderPage() {
                             {!config
                               ? "Încărcăm opțiunile…"
                               : shippingCost === 0
-                                ? "Livrare gratuită pentru această comandă."
+                                ? "Transportul este inclus în această comandă."
                                 : shippingCost != null
                                   ? `${money(shippingCost)} ${shippingOption === "easybox" ? "la Easybox" : "prin curier"}.`
                                   : shippingOption === "easybox"
@@ -1094,7 +1102,7 @@ function OrderPage() {
                             : activeQuote && shippingOption === "home_delivery"
                               ? `${activeQuote.courier} · ${money(activeQuote.price)}`
                               : homeDeliveryPreview === 0
-                                ? "Livrare gratuită"
+                                ? "Transport inclus"
                                 : money(homeDeliveryPreview)
                         }
                       />
@@ -1113,7 +1121,7 @@ function OrderPage() {
                             ? "Momentan indisponibil"
                             : activeQuote && shippingOption === "easybox"
                               ? activeQuote.price === 0
-                                ? "Livrare gratuită"
+                                ? "Transport inclus"
                                 : money(activeQuote.price)
                               : easyboxLocker
                                 ? "Confirmă tariful punctului ales"
@@ -1168,21 +1176,14 @@ function OrderPage() {
                             setPaymentProvider(option.id);
                           }}
                           icon={<CreditCard className="h-5 w-5" />}
-                          title={
-                            option.id === "stripe" ? "Card sau portofel digital" : option.label
-                          }
-                          badge={
-                            option.id === onlineOptions[0]?.id && preferredWallet
-                              ? `${preferredWallet === "apple" ? "Apple Pay" : "Google Pay"}, dacă este disponibil`
-                              : undefined
-                          }
+                          title={option.id === "stripe" ? "Plata Online" : option.label}
                           note={
                             shippingCost == null
                               ? config?.shipping.liveQuotesEnabled
                                 ? "Alege curierul pentru a confirma totalul"
                                 : "Disponibil după confirmarea costului de livrare"
                               : option.id === "stripe"
-                                ? "Apple Pay, Google Pay și Revolut Pay apar când sunt compatibile cu dispozitivul și plata ta"
+                                ? "Card sau portofel digital, în pagina securizată de plată."
                                 : option.description
                           }
                         />
@@ -1204,7 +1205,9 @@ function OrderPage() {
                           shippingOption === "easybox" &&
                           easyboxLocker?.supportsCashOnDelivery === false
                             ? "Indisponibil la Easybox-ul ales"
-                            : "Achită coletul la predare"
+                            : shippingOption === "easybox"
+                              ? "Plătești la primire, cu cardul, dacă punctul Easybox acceptă ramburs."
+                              : "Plătești la primire, numerar sau cu cardul, în funcție de curier."
                         }
                       />
                       {paymentMethod === "card" && (
@@ -1341,21 +1344,16 @@ function OrderPage() {
                     </div>
                   )}
                   <button
+                    ref={inlineSubmitRef}
                     disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
                     type="submit"
-                    className="checkout-submit-action hidden w-full disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
+                    className="checkout-submit-action w-full disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span className="checkout-submit-action__icon">
                       <ShieldCheck size={20} aria-hidden />
                     </span>
                     <span className="checkout-submit-action__copy">
-                      <strong>
-                        {submitting
-                          ? "Se trimite comanda…"
-                          : paymentMethod === "card"
-                            ? "Comandă și plătește online"
-                            : "Plasează comanda"}
-                      </strong>
+                      <strong>{submitting ? "Se trimite comanda…" : "Confirmă comanda"}</strong>
                     </span>
                     <ArrowRight size={20} aria-hidden />
                   </button>
@@ -1404,7 +1402,7 @@ function OrderPage() {
                     {shippingCost == null
                       ? "La confirmare"
                       : shippingCost === 0
-                        ? "Gratuită"
+                        ? "Inclusă"
                         : money(shippingCost)}
                   </span>
                 </div>
@@ -1443,7 +1441,12 @@ function OrderPage() {
 
         {/* Bara de acțiune pe telefon: totalul rămâne vizibil, comanda se trimite de aici. */}
         {itemsDetailed.length > 0 && (
-          <div className="checkout-mobile-bar fixed inset-x-0 bottom-0 z-30 border-t border-[color:var(--gold)]/30 bg-[color:var(--cream)]/95 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-md lg:hidden">
+          <div
+            className="checkout-mobile-bar fixed inset-x-0 bottom-0 z-30 border-t border-[color:var(--gold)]/30 bg-[color:var(--cream)]/95 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur-md lg:hidden"
+            data-visible={!inlineSubmitVisible}
+            aria-hidden={inlineSubmitVisible}
+            inert={inlineSubmitVisible}
+          >
             <div className="mx-auto flex max-w-6xl items-center gap-3">
               <div className="min-w-0">
                 <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -1457,18 +1460,10 @@ function OrderPage() {
                 form="checkout-form"
                 type="submit"
                 disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
-                aria-label={
-                  paymentMethod === "card" ? "Comandă și plătește online" : "Plasează comanda"
-                }
+                aria-label="Finalizează comanda"
                 className="checkout-submit-action checkout-mobile-submit ml-auto min-h-11 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {submitting ? (
-                  "Se trimite comanda…"
-                ) : paymentMethod === "card" ? (
-                  <strong>Comandă și plătește online</strong>
-                ) : (
-                  <strong>Plasează comanda</strong>
-                )}
+                {submitting ? "Se trimite comanda…" : <strong>Finalizează comanda</strong>}
               </button>
             </div>
           </div>

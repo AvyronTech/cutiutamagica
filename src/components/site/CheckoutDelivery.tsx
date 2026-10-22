@@ -8,6 +8,29 @@ export type DeliveryOffer = {
   expiresAt: string;
   fixedFallback?: boolean;
 };
+
+function courierBrand(name: string): string {
+  const normalized = name.toLocaleLowerCase("ro-RO");
+  if (normalized.includes("sameday")) return "sameday";
+  if (normalized.includes("fan courier") || normalized.includes("fancourier")) return "fan";
+  if (normalized.includes("cargus")) return "cargus";
+  if (normalized.includes("dpd")) return "dpd";
+  if (normalized.includes("gls")) return "gls";
+  if (normalized.includes("fedex")) return "fedex";
+  if (normalized.includes("ptt")) return "ptt";
+  return "standard";
+}
+
+function deliveryDate(estimate: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(estimate)
+    ? new Intl.DateTimeFormat("ro-RO", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Bucharest",
+      }).format(new Date(`${estimate}T12:00:00+03:00`))
+    : estimate;
+}
 export function CheckoutDelivery({
   request,
   onSelect,
@@ -121,11 +144,22 @@ export function CheckoutDelivery({
           expediere.
         </p>
       )}
-      <div className="mt-3 grid gap-2">
+      {offers.length > 0 && (
+        <p className="checkout-courier-heading">
+          {request.shippingOption === "easybox"
+            ? "Confirmă livrarea la Easybox:"
+            : "Alege curierul potrivit:"}
+        </p>
+      )}
+      <div className="mt-2 grid gap-2.5">
         {offers.map((offer) => (
           <label
             key={offer.id}
-            className={`flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-xl border p-3.5 sm:p-4 ${selected === offer.id ? "border-primary bg-primary/5" : "border-border"}`}
+            className="checkout-courier-card"
+            data-brand={courierBrand(
+              request.shippingOption === "easybox" ? "SAMEDAY" : offer.courier,
+            )}
+            data-selected={selected === offer.id}
           >
             <input
               type="radio"
@@ -133,34 +167,27 @@ export function CheckoutDelivery({
               checked={selected === offer.id}
               onChange={() => onSelect(offer)}
               disabled={Date.parse(offer.expiresAt) <= Date.now()}
-              className="h-5 w-5"
+              className="checkout-courier-card__radio"
             />
-            <span className="min-w-0 flex-1">
-              <strong className="block text-sm">
+            <span className="checkout-courier-card__body">
+              <strong className="checkout-courier-card__name">
                 {request.shippingOption === "easybox" ? "SAMEDAY Easybox" : offer.courier}
               </strong>
               {offer.estimate && (
-                <span className="text-xs text-muted-foreground">
-                  Transport estimat după predare:{" "}
-                  {/^\d{4}-\d{2}-\d{2}$/.test(offer.estimate)
-                    ? new Intl.DateTimeFormat("ro-RO", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        timeZone: "Europe/Bucharest",
-                      }).format(new Date(`${offer.estimate}T12:00:00+03:00`))
-                    : offer.estimate}
+                <span className="checkout-courier-card__estimate">
+                  <span>Transport estimat după predare:</span>
+                  <span>{deliveryDate(offer.estimate)}</span>
                 </span>
               )}
               {offer.fixedFallback && (
-                <span className="text-xs text-muted-foreground">
+                <span className="checkout-courier-card__fallback">
                   Preț final · termenul se confirmă la expediere
                 </span>
               )}
             </span>
-            <span className="shrink-0 whitespace-nowrap text-sm font-medium">
+            <span className="checkout-courier-card__price">
               {offer.price === 0
-                ? "Gratuit"
+                ? "Transport inclus"
                 : new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON" }).format(
                     offer.price,
                   )}

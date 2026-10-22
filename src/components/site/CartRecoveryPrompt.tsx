@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bookmark, ShoppingBag, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
@@ -7,15 +8,54 @@ import { useShop } from "@/store/shop";
 export function CartRecoveryPrompt({ pathname }: { pathname: string }) {
   const { hydrated, itemsDetailed, recoveryStage, dismissCartRecovery, saveForGiftList } =
     useShop();
+  const [heroStatus, setHeroStatus] = useState({ pathname, past: pathname !== "/" });
+  const [interacting, setInteracting] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
-  if (
-    !hydrated ||
-    !recoveryStage ||
-    pathname === "/comanda" ||
-    pathname === "/auth" ||
-    pathname.startsWith("/admin")
-  )
-    return null;
+  useEffect(() => {
+    if (pathname !== "/") {
+      setHeroStatus({ pathname, past: true });
+      return;
+    }
+    const hero = document.getElementById("inceput");
+    if (!hero) {
+      setHeroStatus({ pathname, past: false });
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      setHeroStatus({
+        pathname,
+        past: !entry.isIntersecting && entry.boundingClientRect.bottom <= 0,
+      });
+    });
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  const visible =
+    hydrated &&
+    recoveryStage !== null &&
+    (pathname !== "/" || (heroStatus.pathname === pathname && heroStatus.past)) &&
+    pathname !== "/comanda" &&
+    pathname !== "/auth" &&
+    !pathname.startsWith("/admin");
+
+  useEffect(() => {
+    if (!visible || !recoveryStage || interacting || leaving) return;
+    const timeout = window.setTimeout(() => setLeaving(true), 4300);
+    return () => window.clearTimeout(timeout);
+  }, [visible, recoveryStage, interacting, leaving]);
+
+  useEffect(() => {
+    if (!visible || !recoveryStage || !leaving) return;
+    const timeout = window.setTimeout(() => {
+      dismissCartRecovery(recoveryStage);
+      setLeaving(false);
+    }, 320);
+    return () => window.clearTimeout(timeout);
+  }, [visible, recoveryStage, leaving, dismissCartRecovery]);
+
+  if (!visible) return null;
 
   const item = [...itemsDetailed].sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0))[0];
   if (!item) return null;
@@ -23,7 +63,23 @@ export function CartRecoveryPrompt({ pathname }: { pathname: string }) {
   const isGiftPrompt = recoveryStage === "gift-list";
 
   return (
-    <aside className="cart-recovery" aria-live="polite" aria-label="Poveste salvată în coș">
+    <aside
+      className={`cart-recovery${leaving ? " cart-recovery--leaving" : ""}`}
+      aria-live="polite"
+      aria-label="Poveste salvată în coș"
+      onMouseEnter={() => {
+        setInteracting(true);
+        setLeaving(false);
+      }}
+      onMouseLeave={() => setInteracting(false)}
+      onFocusCapture={() => {
+        setInteracting(true);
+        setLeaving(false);
+      }}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setInteracting(false);
+      }}
+    >
       <div className="cart-recovery__image">
         <ProductImage
           src={item.product.image}
@@ -60,20 +116,13 @@ export function CartRecoveryPrompt({ pathname }: { pathname: string }) {
               <ShoppingBag size={13} /> Continuă povestea
             </Link>
           )}
-          <button
-            type="button"
-            className="cart-recovery__later"
-            onClick={() => dismissCartRecovery(recoveryStage)}
-          >
-            Mai târziu
-          </button>
         </div>
       </div>
       <button
         type="button"
         className="cart-recovery__close"
         aria-label="Închide mesajul"
-        onClick={() => dismissCartRecovery(recoveryStage)}
+        onClick={() => setLeaving(true)}
       >
         <X size={15} />
       </button>

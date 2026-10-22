@@ -161,6 +161,8 @@ function OrderDetailPanel({
   const [copied, setCopied] = useState(false);
   const [awbBusy, setAwbBusy] = useState(false);
   const [trackingBusy, setTrackingBusy] = useState(false);
+  const awaitingOnlinePayment =
+    order.paymentMethod === "card" && order.paymentStatus !== "paid" && order.status !== "Anulată";
 
   async function handleAwb(reconcile: boolean) {
     if (
@@ -250,6 +252,12 @@ function OrderDetailPanel({
         </section>
 
         <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3 text-sm">
+          {awaitingOnlinePayment && (
+            <p className="mb-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100">
+              Plata online nu este confirmată. Această solicitare nu poate fi pregătită sau
+              expediată.
+            </p>
+          )}
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Comandă
           </p>
@@ -388,7 +396,9 @@ function OrderDetailPanel({
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ADMIN_ORDER_STATUSES.map((status) => {
-              const allowed = canTransitionOrderStatus(order.status, status);
+              const allowed =
+                canTransitionOrderStatus(order.status, status) &&
+                (!awaitingOnlinePayment || status === "Anulată" || status === order.status);
               return (
                 <button
                   key={status}
@@ -874,6 +884,13 @@ export default function Orders() {
                     <p className="text-[10px] text-slate-500">{order.date}</p>
                   </div>
                   <StatusBadge status={order.status} />
+                  {order.paymentMethod === "card" &&
+                    order.paymentStatus !== "paid" &&
+                    order.status !== "Anulată" && (
+                      <span className="inline-flex rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] text-amber-200 md:text-xs">
+                        Așteaptă plata
+                      </span>
+                    )}
                   <Eye className="hidden h-4 w-4 text-slate-600 group-hover:text-purple-400 md:block" />
                 </div>
               </div>
