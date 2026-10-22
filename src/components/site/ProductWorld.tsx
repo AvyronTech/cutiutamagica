@@ -2,7 +2,6 @@ import type { CSSProperties, ReactNode } from "react";
 import { productScene } from "@/lib/product-themes";
 import type { Product } from "@/data/products";
 import { SceneAtmosphere } from "./SceneAtmosphere";
-import { ProductImage } from "./ProductImage";
 
 const sceneLabel = {
   library: "Arhivă fermecată",
@@ -25,16 +24,7 @@ export function ProductWorld({ product, children }: { product: Product; children
       style={{ "--world-accent": theme.accent } as CSSProperties}
     >
       <div className="product-world-scenery" aria-hidden>
-        <div className="product-world-backdrop">
-          <ProductImage
-            src={product.gallery[0]?.src ?? product.image}
-            alt=""
-            loading="lazy"
-            fetchPriority="low"
-            decoding="async"
-            sizes="100vw"
-          />
-        </div>
+        <div className="product-world-backdrop" />
         <div className="product-world-depth">
           <i className="product-world-depth__rear" />
           <i className="product-world-depth__middle" />
