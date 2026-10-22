@@ -1,4 +1,5 @@
 import type { ChatConversationStatus, ChatSettings } from "@/lib/chat-contracts";
+import { isPublicChatKnowledgeSafe, PUBLIC_CHAT_SOURCES } from "@/lib/chat-public-knowledge";
 
 type SettingsRow = {
   enabled: number;
@@ -45,6 +46,8 @@ export type ChatKnowledge = {
   title: string;
   answer: string;
   enabled: boolean;
+  publicApproved: boolean;
+  sourcePath: (typeof PUBLIC_CHAT_SOURCES)[number] | null;
   sortOrder: number;
   version: number;
   updatedAt: string;
@@ -379,11 +382,21 @@ export async function setChatAiPaused(
 export async function listChatKnowledge(db: D1Database): Promise<ChatKnowledge[]> {
   const result = await db
     .prepare(
-      `SELECT id,title,answer,enabled,sort_order AS sortOrder,version,updated_at AS updatedAt
+      `SELECT id,title,answer,enabled,public_approved AS publicApproved,
+       source_path AS sourcePath,sort_order AS sortOrder,version,updated_at AS updatedAt
      FROM chat_knowledge ORDER BY sort_order,title LIMIT 100`,
     )
-    .all<Omit<ChatKnowledge, "enabled"> & { enabled: number }>();
-  return result.results.map((item) => ({ ...item, enabled: Boolean(item.enabled) }));
+    .all<
+      Omit<ChatKnowledge, "enabled" | "publicApproved"> & {
+        enabled: number;
+        publicApproved: number;
+      }
+    >();
+  return result.results.map((item) => ({
+    ...item,
+    enabled: Boolean(item.enabled),
+    publicApproved: Boolean(item.publicApproved),
+  }));
 }
 
 export async function saveChatKnowledge(
@@ -391,13 +404,17 @@ export async function saveChatKnowledge(
   item: Omit<ChatKnowledge, "updatedAt">,
   adminId: string,
 ) {
+  if (!isPublicChatKnowledgeSafe(`${item.title}\n${item.answer}`))
+    throw new Error("Nu salva date sensibile în baza de cunoștințe a chatului.");
+  if (item.publicApproved && (!item.sourcePath || !PUBLIC_CHAT_SOURCES.includes(item.sourcePath)))
+    throw new Error("Aprobă numai informații publice, cu sursă verificabilă pe site.");
   const now = new Date().toISOString();
   const result =
     item.version === 0
       ? await db
           .prepare(
-            `INSERT OR IGNORE INTO chat_knowledge(id,title,answer,enabled,sort_order,version,updated_by,updated_at)
-             VALUES(?1,?2,?3,?4,?5,1,?6,?7)`,
+            `INSERT OR IGNORE INTO chat_knowledge(id,title,answer,enabled,sort_order,version,updated_by,updated_at,source_path,public_approved)
+             VALUES(?1,?2,?3,?4,?5,1,?6,?7,?8,?9)`,
           )
           .bind(
             item.id,
@@ -407,12 +424,15 @@ export async function saveChatKnowledge(
             item.sortOrder,
             adminId,
             now,
+            item.sourcePath,
+            item.publicApproved ? 1 : 0,
           )
           .run()
       : await db
           .prepare(
             `UPDATE chat_knowledge SET title=?2,answer=?3,enabled=?4,sort_order=?5,
-             version=version+1,updated_by=?6,updated_at=?7 WHERE id=?1 AND version=?8`,
+             version=version+1,updated_by=?6,updated_at=?7,source_path=?9,public_approved=?10
+             WHERE id=?1 AND version=?8`,
           )
           .bind(
             item.id,
@@ -423,6 +443,8 @@ export async function saveChatKnowledge(
             adminId,
             now,
             item.version,
+            item.sourcePath,
+            item.publicApproved ? 1 : 0,
           )
           .run();
   if (!result.meta.changes)

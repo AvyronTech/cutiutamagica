@@ -3,19 +3,24 @@ import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { adminNotificationLink } from "@/lib/admin-notification-link";
+import { isPublicChatKnowledgeSafe } from "@/lib/chat-public-knowledge";
 import {
   addAdminChatMessage,
   addVisitorMessage,
   createChatConversation,
   latestChatDraft,
+  listChatKnowledge,
   listVisitorMessages,
   saveChatKnowledge,
 } from "./db/chat.repository";
 import {
+  CHAT_AI_FALLBACK_MODEL,
+  CHAT_AI_MODEL,
   answerCustomerChat,
   isChatMetaResponse,
   needsHuman,
   redactChatForAi,
+  selectPublicChatKnowledge,
   supportedPriceClaims,
 } from "./services/customer-chat-ai";
 
@@ -85,6 +90,8 @@ describe("customer chat assistant boundaries", () => {
   });
 
   it("masks contact details and rejects unsupported price claims", () => {
+    expect(isPublicChatKnowledgeSafe("Un cadou pentru Secret Santa")).toBe(true);
+    expect(isPublicChatKnowledgeSafe("client secret pentru integrare")).toBe(false);
     expect(redactChatForAi("Scrie la client@example.com sau 0712345678")).not.toContain(
       "client@example.com",
     );
@@ -98,6 +105,8 @@ describe("customer chat assistant boundaries", () => {
   it("keeps ordinary gift questions with the assistant while handing explicit support requests to staff", () => {
     expect(needsHuman("Ce recomanzi dacă persoana iubește poveștile fantasy?")).toBe(false);
     expect(needsHuman("Caut un cadou pentru un copil.")).toBe(false);
+    expect(needsHuman("Cum pot cere un retur?")).toBe(false);
+    expect(needsHuman("Am o reclamație pentru produsul meu.")).toBe(true);
     expect(needsHuman("Vreau să vorbesc cu o persoană reală.")).toBe(true);
     expect(needsHuman("Unde este comanda mea?")).toBe(true);
   });
@@ -225,6 +234,117 @@ describe("customer chat assistant boundaries", () => {
     ).toMatchObject({ status: "pending", ai_paused: 1 });
   });
 
+  it("shares only approved, sourced public facts and removes the old welcome line", async () => {
+    const db = database();
+    const welcome = sqlite
+      .prepare("SELECT welcome_message FROM chat_settings WHERE id='default'")
+      .get() as { welcome_message: string };
+    expect(welcome.welcome_message).not.toContain("Pentru comenzi sau situații speciale");
+    const knowledge = await listChatKnowledge(db);
+    expect(selectPublicChatKnowledge(knowledge, "Cum funcționează manivela?")).toContainEqual(
+      expect.objectContaining({ title: "Cum funcționează cutiuța", publicApproved: true }),
+    );
+    const privateNote = {
+      id: crypto.randomUUID(),
+      title: "Notă internă",
+      answer: "Informație pentru echipă, încă neverificată.",
+      enabled: true,
+      publicApproved: false,
+      sourcePath: null,
+      sortOrder: 2,
+      version: 0,
+    } as const;
+    await saveChatKnowledge(db, privateNote, "chat-admin");
+    expect(
+      selectPublicChatKnowledge(await listChatKnowledge(db), "Notă internă"),
+    ).not.toContainEqual(expect.objectContaining({ id: privateNote.id }));
+    await expect(
+      saveChatKnowledge(
+        db,
+        {
+          ...privateNote,
+          id: crypto.randomUUID(),
+          title: "Date bancare",
+          answer: "IBAN RO12TEST0000000000000000",
+          publicApproved: true,
+          sourcePath: "/despre-noi",
+        },
+        "chat-admin",
+      ),
+    ).rejects.toThrow("date sensibile");
+    await expect(
+      saveChatKnowledge(
+        db,
+        { ...privateNote, id: crypto.randomUUID(), answer: "client secret pentru integrare" },
+        "chat-admin",
+      ),
+    ).rejects.toThrow("date sensibile");
+  });
+
+  it("uses the smaller Workers AI model if the primary model fails and counts both inferences", async () => {
+    const db = database();
+    const ai = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("temporary model unavailable"))
+      .mockResolvedValueOnce({ response: "O cutiuță cu manivelă poate fi un cadou cu poveste." });
+    const env = { DB: db, AI: { run: ai } } as unknown as Env;
+    const session = await createChatConversation(db, {
+      consent: true,
+      sourcePath: "/produse",
+      context: {},
+    });
+    const messageId = crypto.randomUUID();
+    await addVisitorMessage(db, session.conversationId, messageId, "Cum aleg un cadou?");
+    await answerCustomerChat(env, session.conversationId, messageId);
+    expect(ai.mock.calls.map((call) => call[0])).toEqual([CHAT_AI_MODEL, CHAT_AI_FALLBACK_MODEL]);
+    expect(
+      sqlite.prepare("SELECT requests FROM chat_ai_daily_usage WHERE usage_date=date('now')").get(),
+    ).toMatchObject({ requests: 2 });
+    expect(
+      sqlite.prepare("SELECT model FROM chat_ai_runs WHERE message_id=?").get(messageId),
+    ).toMatchObject({
+      model: CHAT_AI_FALLBACK_MODEL,
+    });
+    expect((await listVisitorMessages(db, session.conversationId)).at(-1)?.senderType).toBe(
+      "assistant",
+    );
+  });
+
+  it("does not expose private knowledge or a sensitive model answer to a visitor", async () => {
+    const db = database();
+    const privateFact = "Notă pentru echipă: control manual obligatoriu";
+    await saveChatKnowledge(
+      db,
+      {
+        id: crypto.randomUUID(),
+        title: "Control intern",
+        answer: privateFact,
+        enabled: true,
+        publicApproved: false,
+        sourcePath: null,
+        sortOrder: 1,
+        version: 0,
+      },
+      "chat-admin",
+    );
+    const ai = vi.fn(async () => ({ response: "IBAN RO12TEST0000000000000000" }));
+    const env = { DB: db, AI: { run: ai } } as unknown as Env;
+    const session = await createChatConversation(db, {
+      consent: true,
+      sourcePath: "/produse",
+      context: {},
+    });
+    const messageId = crypto.randomUUID();
+    await addVisitorMessage(db, session.conversationId, messageId, "Ce cadou recomanzi?");
+    await answerCustomerChat(env, session.conversationId, messageId);
+    expect(JSON.stringify(ai.mock.calls)).not.toContain(privateFact);
+    const messages = await listVisitorMessages(db, session.conversationId);
+    expect(messages.map((message) => message.body).join(" ")).not.toContain("RO12TEST");
+    expect(
+      sqlite.prepare("SELECT status,reason FROM chat_ai_runs WHERE message_id=?").get(messageId),
+    ).toMatchObject({ status: "handoff", reason: "draft_unverified" });
+  });
+
   it("saves approved knowledge with optimistic version checks", async () => {
     const db = database();
     const item = {
@@ -232,6 +352,8 @@ describe("customer chat assistant boundaries", () => {
       title: "Materiale",
       answer: "Consultați fișa produsului pentru materialele actuale.",
       enabled: true,
+      publicApproved: true,
+      sourcePath: "/produse" as const,
       sortOrder: 1,
       version: 0,
     };

@@ -174,7 +174,7 @@ export function ChatWidget() {
       }
     };
     void load();
-    const timer = window.setInterval(load, document.visibilityState === "visible" ? 4_000 : 15_000);
+    const timer = window.setInterval(load, document.visibilityState === "visible" ? 2_500 : 15_000);
     return () => {
       active = false;
       window.clearInterval(timer);
