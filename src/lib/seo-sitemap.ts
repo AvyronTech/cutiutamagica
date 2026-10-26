@@ -15,7 +15,7 @@ function date(value: string): string | undefined {
   const day = value.slice(0, 10);
   return /^\d{4}-\d{2}-\d{2}$/.test(day) && !Number.isNaN(Date.parse(day)) ? day : undefined;
 }
-export function renderSitemap(products: SitemapProduct[]): string {
+function sitemapEntries(products: SitemapProduct[]) {
   const productImages = new Map(products.map((product) => [product.slug, product.imageUrl]));
   const catalogDate = products
     .map((p) => date(p.updatedAt))
@@ -65,7 +65,19 @@ export function renderSitemap(products: SitemapProduct[]): string {
       };
     }),
   ];
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${entries
+  return entries;
+}
+
+export function renderTextSitemap(products: SitemapProduct[]): string {
+  return `${sitemapEntries(products)
+    .map((entry) => base + entry.path)
+    .join("\n")}\n`;
+}
+
+export function renderSitemap(products: SitemapProduct[]): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${sitemapEntries(
+    products,
+  )
     .map((entry) => {
       const images = (entry.images ?? [])
         .map((source) => {

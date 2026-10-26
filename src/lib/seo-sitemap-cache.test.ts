@@ -37,6 +37,9 @@ describe("sitemap availability", () => {
     );
     expect(second).toEqual(first);
     expect(second.xml).toContain("/produs-cutiuta-muzicala-winter-is-coming</loc>");
+    expect(second.text).toContain(
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming\n",
+    );
   });
 
   it("retains the last valid sitemap when the database is temporarily unavailable", async () => {
@@ -49,7 +52,7 @@ describe("sitemap availability", () => {
       },
       2_000_000,
     );
-    expect(fallback).toEqual({ xml: first.xml, stale: true });
+    expect(fallback).toEqual({ xml: first.xml, text: first.text, stale: true });
     const recovered = await loadSitemap(cache, async () => [], 2_000_001);
     expect(recovered.stale).toBe(false);
     expect(recovered.xml).not.toContain("/produs-cutiuta-muzicala-winter-is-coming</loc>");
@@ -57,7 +60,7 @@ describe("sitemap availability", () => {
 
   it("does not treat a corrupt cache value as a valid sitemap", async () => {
     const cache = memoryCache();
-    cache.values.set("seo:sitemap:xml:v1", '{"generatedAt":1000000,"xml":"broken"}');
+    cache.values.set("seo:sitemap:documents:v2", '{"generatedAt":1000000,"xml":"broken"}');
     const result = await loadSitemap(cache, async () => products, 1_000_001);
     expect(result.stale).toBe(false);
     expect(result.xml).toContain("<urlset ");

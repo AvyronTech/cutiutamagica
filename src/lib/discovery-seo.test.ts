@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { readProductDiscovery, safeJsonLd } from "./product-discovery";
 import { DISCOVERY_UPDATED, giftGuide, giftGuides } from "@/data/gift-guides";
-import { renderSitemap } from "./seo-sitemap";
+import { renderSitemap, renderTextSitemap } from "./seo-sitemap";
 import type { SitemapProduct } from "./seo-sitemap";
 
 describe("product discovery and search metadata", () => {
@@ -20,6 +20,9 @@ describe("product discovery and search metadata", () => {
     expect(xml).toContain(`<lastmod>${DISCOVERY_UPDATED}</lastmod>`);
     expect(readFileSync(resolve("public/robots.txt"), "utf8")).toContain(
       "Sitemap: https://cutiutamagica.eu/sitemap-guides.xml",
+    );
+    expect(readFileSync(resolve("public/robots.txt"), "utf8")).toContain(
+      "Sitemap: https://cutiutamagica.eu/sitemap.txt",
     );
   });
   it("has distinct valid editorial profiles for all ten models", () => {
@@ -127,5 +130,13 @@ describe("product discovery and search metadata", () => {
     const xml = renderSitemap([]);
     expect(xml).not.toContain("/produs-cutiuta-muzicala-");
     expect(xml).toContain("https://cutiutamagica.eu/cadouri");
+  });
+  it("keeps the text sitemap aligned with the XML sitemap", () => {
+    const products = [
+      { slug: "got-winter", imageUrl: "/produse/got-winter/card.webp", updatedAt: "2026-10-20" },
+    ] as SitemapProduct[];
+    const xml = renderSitemap(products);
+    const urls = [...xml.matchAll(/<url><loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+    expect(renderTextSitemap(products).trimEnd().split("\n")).toEqual(urls);
   });
 });

@@ -27,6 +27,7 @@ import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as ProdusCutiutaMuzicalaChar123slugChar125RouteImport } from './routes/produs-cutiuta-muzicala-{$slug}'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as ReturRouteImport } from './routes/retur'
+import { Route as SitemapDottxtRouteImport } from './routes/sitemap[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermeniDeUtilizareRouteImport } from './routes/termeni-de-utilizare'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
@@ -159,6 +160,11 @@ const ProduseRoute = ProduseRouteImport.update({
 const ReturRoute = ReturRouteImport.update({
   id: '/retur',
   path: '/retur',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDottxtRoute = SitemapDottxtRouteImport.update({
+  id: '/sitemap.txt',
+  path: '/sitemap.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -414,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap.txt': typeof SitemapDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -474,6 +481,7 @@ export interface FileRoutesByTo {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap.txt': typeof SitemapDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/cadouri/$ocazie': typeof CadouriOcazieRoute
@@ -534,6 +542,7 @@ export interface FileRoutesById {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap.txt': typeof SitemapDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
@@ -596,6 +605,7 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap.txt'
     | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/admin'
@@ -656,6 +666,7 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap.txt'
     | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/cadouri/$ocazie'
@@ -715,6 +726,7 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap.txt'
     | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/_authenticated/admin'
@@ -777,6 +789,7 @@ export interface RootRouteChildren {
   ProdusCutiutaMuzicalaChar123slugChar125Route: typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   ProduseRoute: typeof ProduseRoute
   ReturRoute: typeof ReturRoute
+  SitemapDottxtRoute: typeof SitemapDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermeniDeUtilizareRoute: typeof TermeniDeUtilizareRoute
   CadouriOcazieRoute: typeof CadouriOcazieRoute
@@ -910,6 +923,13 @@ declare module '@tanstack/react-router' {
       path: '/retur'
       fullPath: '/retur'
       preLoaderRoute: typeof ReturRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.txt': {
+      id: '/sitemap.txt'
+      path: '/sitemap.txt'
+      fullPath: '/sitemap.txt'
+      preLoaderRoute: typeof SitemapDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1330,6 +1350,7 @@ const rootRouteChildren: RootRouteChildren = {
     ProdusCutiutaMuzicalaChar123slugChar125Route,
   ProduseRoute: ProduseRoute,
   ReturRoute: ReturRoute,
+  SitemapDottxtRoute: SitemapDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermeniDeUtilizareRoute: TermeniDeUtilizareRoute,
   CadouriOcazieRoute: CadouriOcazieRoute,

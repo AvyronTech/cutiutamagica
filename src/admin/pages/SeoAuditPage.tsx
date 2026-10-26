@@ -9,8 +9,9 @@ const endpointChecks = [
     path: "/robots.txt",
     valid: (body: string) =>
       body.includes("Sitemap: https://cutiutamagica.eu/sitemap.xml") &&
+      body.includes("Sitemap: https://cutiutamagica.eu/sitemap.txt") &&
       body.includes("sitemap-guides.xml"),
-    action: "Declară ambele sitemapuri în robots.txt.",
+    action: "Declară sitemapurile XML, text și ghiduri în robots.txt.",
   },
   {
     label: "Sitemap produse și pagini",
@@ -18,6 +19,14 @@ const endpointChecks = [
     valid: (body: string) =>
       body.includes("<urlset") && body.includes("https://cutiutamagica.eu/produse"),
     action: "Verifică ruta sitemap și citirea catalogului D1.",
+  },
+  {
+    label: "Sitemap text de rezervă",
+    path: "/sitemap.txt",
+    valid: (body: string) =>
+      body.startsWith("https://cutiutamagica.eu/\n") &&
+      body.includes("https://cutiutamagica.eu/produse\n"),
+    action: "Servește URL-urile canonice din același catalog public ca sitemapul XML.",
   },
   {
     label: "Sitemap ghiduri",
