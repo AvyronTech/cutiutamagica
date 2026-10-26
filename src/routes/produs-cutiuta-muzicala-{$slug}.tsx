@@ -62,9 +62,9 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
       ? loaderData.product.image
       : `https://cutiutamagica.eu${loaderData.product.image}`;
     const price =
-      !isAvailable(loaderData.product) || loaderData.product.price == null
-        ? undefined
-        : String(loaderData.product.price);
+      loaderData.product.price != null && loaderData.product.price > 0
+        ? String(loaderData.product.price)
+        : undefined;
     const absolute = (src: string) =>
       src.startsWith("http") ? src : `https://cutiutamagica.eu${src}`;
     const images = [
@@ -112,7 +112,7 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
               .join(" "),
             keywords: loaderData.product.searchTerms.join(", "),
             category: loaderData.product.category,
-            material: "Lemn",
+            material: loaderData.product.material,
             brand: { "@type": "Brand", name: loaderData.product.brand || "Cutiuța Magică" },
             additionalProperty: [
               { "@type": "PropertyValue", name: "Mecanism", value: "Manual, cu manivelă" },

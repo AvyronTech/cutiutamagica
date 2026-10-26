@@ -1,5 +1,10 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-26 — indexare, llms.txt și audit SEO
+
+- Ramura locală `codex/seo-indexing-20261026` adaugă sitemapul ghidurilor, sitemapul din catalogul D1, `llms.txt` dinamic, corecții Schema.org și `/admin/seo`; păstrează independența magazinului față de AVYRON OS. Detaliile, verificările, capturile desktop/mobil și starea publică sunt în [handofful SEO](seo-indexing-2026-10-26/HANDOFF.md).
+- În producție, `/sitemap-guides.xml` era încă 404 la 26 octombrie. Nu s-au făcut push, PR, merge sau deploy. Lansarea și retrimiterea sitemapurilor în Search Console necesită aprobarea explicită cerută de `AGENTS.md`.
+
 ## Handoff 2026-10-22 — confirmarea plății înainte de acceptarea comenzii
 
 - Checkoutul cu card creează o înregistrare provizorie `pending/unpaid` necesară sesiunii de plată. Nu trimite e-mailuri, notificări de comandă nouă, evenimente de conversie și nu crește contorul/valoarea clientului înainte de confirmarea semnată a procesatorului. Webhookul validează furnizorul, mediul, sesiunea, suma și moneda, apoi marchează plata și pune notificările în coadă; trimiterea e-mailurilor și consumul outboxului refuză înregistrările încă neplătite.

@@ -184,12 +184,26 @@ function ProductsPage() {
         </section>
 
         <section className="catalog-browser" aria-labelledby="catalog-results-title">
-          <div className="catalog-search-bar" role="search" aria-label="Caută în colecții">
+          <form
+            className="catalog-search-bar"
+            role="search"
+            aria-label="Caută în colecții"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              update({
+                ...search,
+                q: String(data.get("q") ?? "").trim() || undefined,
+                available: data.has("available") ? true : undefined,
+              });
+            }}
+          >
             <label className="catalog-search-field">
               <span className="sr-only">Caută după melodie, poveste sau cadou</span>
               <Search size={19} aria-hidden="true" />
               <input
                 type="search"
+                name="q"
                 value={search.q ?? ""}
                 maxLength={100}
                 autoComplete="off"
@@ -211,6 +225,7 @@ function ProductsPage() {
             <label className="catalog-availability">
               <input
                 type="checkbox"
+                name="available"
                 checked={Boolean(search.available)}
                 onChange={(event) =>
                   update({ ...search, available: event.target.checked ? true : undefined })
@@ -218,7 +233,10 @@ function ProductsPage() {
               />
               <span>Disponibile acum</span>
             </label>
-          </div>
+            <button type="submit" className="catalog-search-submit">
+              Caută
+            </button>
+          </form>
           <div className="catalog-result-heading">
             <div>
               <h2 id="catalog-results-title">

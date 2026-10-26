@@ -176,7 +176,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             logo: "https://cutiutamagica.eu/icon-512.png",
           },
           description: "Cutiuțe muzicale din lemn cu manivelă și mecanism manual.",
-          email: "mailto:contact@cutiutamagica.eu",
+          email: "contact@cutiutamagica.eu",
           telephone: "+40734605742",
           address: { "@type": "PostalAddress", addressCountry: "RO" },
           areaServed: { "@type": "Country", name: "România" },
