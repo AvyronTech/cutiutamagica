@@ -18710,7 +18710,11 @@ body.product-lightbox-open
   border: 1px solid rgb(114 83 51 / 0.2);
   border-radius: 20px;
   background: #fffaf1;
+  color: #392619;
   scroll-margin-top: 110px;
+}
+.customer-security .catalog-eyebrow {
+  color: #896638;
 }
 .customer-security h2 {
   margin-top: 8px;
@@ -18719,6 +18723,7 @@ body.product-lightbox-open
 }
 .customer-security p {
   margin-top: 8px;
+  color: #5a493b;
   font-size: 13px;
   line-height: 1.6;
 }
@@ -18739,7 +18744,11 @@ body.product-lightbox-open
   border: 1px solid #cbbda9;
   border-radius: 10px;
   background: white;
+  color: #392619;
   font-size: 16px;
+}
+.customer-security input::placeholder {
+  color: #806f60;
 }
 .customer-security__password {
   position: relative;
@@ -19796,5 +19805,89 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
     background: #33251d;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+}
+.site-header__profile-wrap {
+  position: relative;
+  flex: none;
+}
+
+.customer-dashboard #comenzi,
+.customer-dashboard #portofel {
+  scroll-margin-top: 110px;
+}
+
+.site-header__profile-menu {
+  position: fixed;
+  z-index: 90;
+  display: grid;
+  width: min(15rem, calc(100vw - 2rem));
+  padding: 0.6rem;
+  border: 1px solid rgba(157, 112, 55, 0.25);
+  border-radius: 1.15rem;
+  background: rgba(255, 251, 243, 0.97);
+  box-shadow: 0 18px 40px -20px rgba(69, 38, 18, 0.55);
+  color: var(--wood-dark);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-0.35rem) scale(0.98);
+  transform-origin: top right;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    visibility 0.18s;
+}
+
+.site-header__profile-menu[data-open] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.site-header__profile-greeting {
+  overflow: hidden;
+  padding: 0.55rem 0.7rem 0.65rem;
+  border-bottom: 1px solid rgba(157, 112, 55, 0.18);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-header__profile-menu a {
+  min-height: 2.35rem;
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.65rem;
+  font-size: 0.87rem;
+  text-decoration: none;
+}
+
+.site-header__profile-menu a:hover,
+.site-header__profile-menu a:focus-visible {
+  background: rgba(193, 146, 78, 0.15);
+  outline: none;
+}
+
+.site-header__profile-language {
+  margin-top: 0.25rem;
+  padding: 0.55rem 0.7rem 0.15rem;
+  border-top: 1px solid rgba(157, 112, 55, 0.18);
+  color: rgba(70, 46, 25, 0.72);
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.site-header__profile-language span {
+  float: right;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header__profile-menu {
+    transition: none;
   }
 }

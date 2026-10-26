@@ -28,5 +28,6 @@ Acest repository este produsul comercial independent Cutiuța Magică. Lovable, 
 - Ramura de referință pentru aplicația Cloudflare este `codex/cutiuta-cloudflare-final`. Orice agent pornește o ramură scurtă din această ramură și deschide un pull request înapoi către ea.
 - Nu înlocui infrastructura Cloudflare cu Supabase, Firebase sau un alt backend fără o decizie arhitecturală explicită și aprobată. Integrarea unui serviciu extern trebuie să fie izolată și opțională.
 - Înainte de lucru, citește `AGENTS.md` și `docs/AGENT_HANDOFF.md`, apoi verifică ramura, starea Git și diferențele față de ramura de referință.
+- Citește `docs/PROJECT_CONTINUITY.md` pentru harta surselor de adevăr, stările de livrare și pașii de sincronizare; folosește `docs/PROJECT_GLOSSARY.md` pentru termenii din produs și `docs/brand/AVYRON_LOGO_USAGE.md` când apare marca AVYRON. Dacă documentele diferă de cod sau de starea live, verifică sursa curentă și actualizează documentul înainte de predare.
 - Lovable și Claude livrează prin pull request. Nu editează direct producția, nu fac force-push și nu rescriu migrațiile D1 existente.
 - Un handoff include: scopul, fișierele modificate, migrațiile adăugate, verificările rulate, capturi desktop/mobil pentru schimbări vizuale și orice configurare externă rămasă.

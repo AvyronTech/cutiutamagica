@@ -58,10 +58,17 @@ export async function handleCustomerBilling(request: Request, env: Env): Promise
       return reviewJson({ error: { message: "Metodă nepermisă." } }, 405);
     } catch (error) {
       const status = error instanceof ProviderError ? error.status : 400;
-      return reviewJson(
-        { error: { message: error instanceof Error ? error.message : "Operațiunea nu a reușit." } },
-        status,
-      );
+      const message =
+        error instanceof ProviderError
+          ? error.code === "STRIPE_CARD_NOT_READY"
+            ? "Salvarea cardurilor nu este disponibilă momentan."
+            : request.method === "DELETE"
+              ? "Cardul nu poate fi eliminat acum. Încearcă din nou."
+              : "Pagina securizată pentru card nu poate fi deschisă acum. Încearcă din nou."
+          : error instanceof Error
+            ? error.message
+            : "Operațiunea nu a reușit.";
+      return reviewJson({ error: { message } }, status);
     }
   }
   if (path !== "/api/v1/customer/billing")

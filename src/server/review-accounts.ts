@@ -303,12 +303,14 @@ async function setCustomerPassword(request: Request, env: Env) {
   await reviewRate(env, [`customer-password-setup:${account.id}`], 5);
   const { hash, salt } = await hashCustomerPassword(data.password);
   try {
-    await env.DB.prepare(
+    const saved = await env.DB.prepare(
       `UPDATE review_accounts SET password_hash=?2,password_salt=?3,phone_e164=COALESCE(?4,phone_e164)
        WHERE id=?1 AND status='active'`,
     )
       .bind(account.id, hash, salt, phone)
       .run();
+    if (saved.meta.changes !== 1)
+      throw reviewFailure("Sesiunea a expirat. Conectează-te din nou pentru a salva parola.", 401);
   } catch (error) {
     if (error instanceof Error && /UNIQUE constraint/i.test(error.message))
       throw reviewFailure("Acest număr de telefon este deja asociat unui cont.", 409);
@@ -663,11 +665,19 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
     }
     const status =
       error && typeof error === "object" && "statusCode" in error ? Number(error.statusCode) : 500;
+    if (status === 500 && path === "/api/v1/reviewer/password")
+      console.error("customer.password_save_failed", {
+        name: error instanceof Error ? error.name : "unknown",
+      });
     return reviewJson(
       {
         error: {
           message:
-            status === 500 ? "Nu am putut accesa contul. Reîncearcă." : (error as Error).message,
+            status === 500
+              ? path === "/api/v1/reviewer/password"
+                ? "Parola nu a putut fi salvată momentan. Încearcă din nou."
+                : "Nu am putut accesa contul. Reîncearcă."
+              : (error as Error).message,
         },
       },
       status,

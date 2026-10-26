@@ -44,8 +44,8 @@ export async function checkoutReadiness(env: CommerceEnv) {
   const definitions: CheckoutOption[] = [
     {
       id: "stripe",
-      label: "Plată online prin Stripe",
-      description: "Card și metode disponibile în contul Stripe",
+      label: "Plată online cu cardul",
+      description: "Card sau portofel digital, într-o pagină de plată securizată",
     },
     {
       id: "revolut_pay",
