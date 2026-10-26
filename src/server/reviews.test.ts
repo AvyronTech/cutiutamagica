@@ -356,6 +356,18 @@ describe("customer Google OpenID Connect accounts", () => {
     expect(await currentReviewer(request("reviewer", undefined, session), env)).toMatchObject({
       displayName: "Maria P.",
     });
+    const password = "o-parola-lunga-google-2026";
+    const saved = (await handleReviewAccount(
+      request("reviewer/password", { password }, session),
+      env,
+    ))!;
+    expect(saved.status).toBe(200);
+    expect(
+      (await handleReviewAccount(
+        request("reviewer/login", { identifier: "member@example.test", password }),
+        env,
+      ))!.status,
+    ).toBe(200);
     expect(
       (
         await submit(

@@ -19,6 +19,7 @@ import { Route as DespreNoiRouteImport } from './routes/despre-noi'
 import { Route as GhidCadouriPersonalizateRouteImport } from './routes/ghid-cadouri-personalizate'
 import { Route as GoogleProductsDotxmlRouteImport } from './routes/google-products[.]xml'
 import { Route as LivrareRouteImport } from './routes/livrare'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MagicRewardsRouteImport } from './routes/magic-rewards'
 import { Route as PersonalizeazaRouteImport } from './routes/personalizeaza'
 import { Route as PoliticaDeConfidentialitateRouteImport } from './routes/politica-de-confidentialitate'
@@ -57,6 +58,7 @@ import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminReturnsRouteImport } from './routes/_authenticated/admin/returns'
 import { Route as AuthenticatedAdminReviewsRouteImport } from './routes/_authenticated/admin/reviews'
 import { Route as AuthenticatedAdminRewardsRouteImport } from './routes/_authenticated/admin/rewards'
+import { Route as AuthenticatedAdminSeoRouteImport } from './routes/_authenticated/admin/seo'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminShippingRouteImport } from './routes/_authenticated/admin/shipping'
 import { Route as AuthenticatedAdminSocialRouteImport } from './routes/_authenticated/admin/social'
@@ -115,6 +117,11 @@ const GoogleProductsDotxmlRoute = GoogleProductsDotxmlRouteImport.update({
 const LivrareRoute = LivrareRouteImport.update({
   id: '/livrare',
   path: '/livrare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MagicRewardsRoute = MagicRewardsRouteImport.update({
@@ -329,6 +336,11 @@ const AuthenticatedAdminRewardsRoute =
     path: '/rewards',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminSeoRoute = AuthenticatedAdminSeoRouteImport.update({
+  id: '/seo',
+  path: '/seo',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -394,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/google-products.xml': typeof GoogleProductsDotxmlRoute
   '/livrare': typeof LivrareRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/magic-rewards': typeof MagicRewardsRoute
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
@@ -431,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/reviews': typeof AuthenticatedAdminReviewsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
+  '/admin/seo': typeof AuthenticatedAdminSeoRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/social': typeof AuthenticatedAdminSocialRoute
@@ -452,6 +466,7 @@ export interface FileRoutesByTo {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/google-products.xml': typeof GoogleProductsDotxmlRoute
   '/livrare': typeof LivrareRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/magic-rewards': typeof MagicRewardsRoute
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
@@ -487,6 +502,7 @@ export interface FileRoutesByTo {
   '/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/admin/reviews': typeof AuthenticatedAdminReviewsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
+  '/admin/seo': typeof AuthenticatedAdminSeoRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/admin/social': typeof AuthenticatedAdminSocialRoute
@@ -510,6 +526,7 @@ export interface FileRoutesById {
   '/ghid-cadouri-personalizate': typeof GhidCadouriPersonalizateRoute
   '/google-products.xml': typeof GoogleProductsDotxmlRoute
   '/livrare': typeof LivrareRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/magic-rewards': typeof MagicRewardsRoute
   '/personalizeaza': typeof PersonalizeazaRoute
   '/politica-de-confidentialitate': typeof PoliticaDeConfidentialitateRoute
@@ -547,6 +564,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/returns': typeof AuthenticatedAdminReturnsRoute
   '/_authenticated/admin/reviews': typeof AuthenticatedAdminReviewsRoute
   '/_authenticated/admin/rewards': typeof AuthenticatedAdminRewardsRoute
+  '/_authenticated/admin/seo': typeof AuthenticatedAdminSeoRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/shipping': typeof AuthenticatedAdminShippingRoute
   '/_authenticated/admin/social': typeof AuthenticatedAdminSocialRoute
@@ -570,6 +588,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/google-products.xml'
     | '/livrare'
+    | '/llms.txt'
     | '/magic-rewards'
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
@@ -607,6 +626,7 @@ export interface FileRouteTypes {
     | '/admin/returns'
     | '/admin/reviews'
     | '/admin/rewards'
+    | '/admin/seo'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/social'
@@ -628,6 +648,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/google-products.xml'
     | '/livrare'
+    | '/llms.txt'
     | '/magic-rewards'
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
@@ -663,6 +684,7 @@ export interface FileRouteTypes {
     | '/admin/returns'
     | '/admin/reviews'
     | '/admin/rewards'
+    | '/admin/seo'
     | '/admin/settings'
     | '/admin/shipping'
     | '/admin/social'
@@ -685,6 +707,7 @@ export interface FileRouteTypes {
     | '/ghid-cadouri-personalizate'
     | '/google-products.xml'
     | '/livrare'
+    | '/llms.txt'
     | '/magic-rewards'
     | '/personalizeaza'
     | '/politica-de-confidentialitate'
@@ -722,6 +745,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/returns'
     | '/_authenticated/admin/reviews'
     | '/_authenticated/admin/rewards'
+    | '/_authenticated/admin/seo'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/shipping'
     | '/_authenticated/admin/social'
@@ -745,6 +769,7 @@ export interface RootRouteChildren {
   GhidCadouriPersonalizateRoute: typeof GhidCadouriPersonalizateRoute
   GoogleProductsDotxmlRoute: typeof GoogleProductsDotxmlRoute
   LivrareRoute: typeof LivrareRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   MagicRewardsRoute: typeof MagicRewardsRoute
   PersonalizeazaRoute: typeof PersonalizeazaRoute
   PoliticaDeConfidentialitateRoute: typeof PoliticaDeConfidentialitateRoute
@@ -829,6 +854,13 @@ declare module '@tanstack/react-router' {
       path: '/livrare'
       fullPath: '/livrare'
       preLoaderRoute: typeof LivrareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/magic-rewards': {
@@ -1097,6 +1129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRewardsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/seo': {
+      id: '/_authenticated/admin/seo'
+      path: '/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AuthenticatedAdminSeoRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -1207,6 +1246,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminReturnsRoute: typeof AuthenticatedAdminReturnsRoute
   AuthenticatedAdminReviewsRoute: typeof AuthenticatedAdminReviewsRoute
   AuthenticatedAdminRewardsRoute: typeof AuthenticatedAdminRewardsRoute
+  AuthenticatedAdminSeoRoute: typeof AuthenticatedAdminSeoRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminShippingRoute: typeof AuthenticatedAdminShippingRoute
   AuthenticatedAdminSocialRoute: typeof AuthenticatedAdminSocialRoute
@@ -1244,6 +1284,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminReturnsRoute: AuthenticatedAdminReturnsRoute,
     AuthenticatedAdminReviewsRoute: AuthenticatedAdminReviewsRoute,
     AuthenticatedAdminRewardsRoute: AuthenticatedAdminRewardsRoute,
+    AuthenticatedAdminSeoRoute: AuthenticatedAdminSeoRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminShippingRoute: AuthenticatedAdminShippingRoute,
     AuthenticatedAdminSocialRoute: AuthenticatedAdminSocialRoute,
@@ -1280,6 +1321,7 @@ const rootRouteChildren: RootRouteChildren = {
   GhidCadouriPersonalizateRoute: GhidCadouriPersonalizateRoute,
   GoogleProductsDotxmlRoute: GoogleProductsDotxmlRoute,
   LivrareRoute: LivrareRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   MagicRewardsRoute: MagicRewardsRoute,
   PersonalizeazaRoute: PersonalizeazaRoute,
   PoliticaDeConfidentialitateRoute: PoliticaDeConfidentialitateRoute,

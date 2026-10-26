@@ -4,6 +4,9 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
+    "seo:guides": "node scripts/generate-guide-sitemap.mjs",
+    "prebuild": "npm run seo:guides",
+    "prebuild:production": "npm run seo:guides",
     "dev": "vite dev",
     "build": "vite build",
     "build:production": "CLOUDFLARE_ENV=production vite build",

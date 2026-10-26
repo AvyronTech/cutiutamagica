@@ -4,22 +4,19 @@ import { isPublicStoryPath, pageStoryProfile } from "@/lib/page-loading";
 import { BrandMark } from "./BrandMark";
 import { currentVisualEffectsTier } from "@/lib/visual-performance";
 
-const MIN_INITIAL_VISIBLE_MS = 720;
-const MIN_ROUTE_VISIBLE_MS = 380;
-const MAX_ACTIVE_MS = 1200;
+const INITIAL_FULL_MS = 1550;
+const INITIAL_BALANCED_MS = 1250;
+const MIN_ROUTE_VISIBLE_MS = 480;
+const MAX_INITIAL_ACTIVE_MS = 1850;
+const MAX_ROUTE_ACTIVE_MS = 1050;
 const EXIT_MS = 220;
-const INTRO_SESSION_KEY = "cutiuta:cinematic-intro:v2";
+const INTRO_SESSION_KEY = "cutiuta:cinematic-intro:v3";
 
 type ActiveStory = {
   id: number;
   path: string;
   phase: "enter" | "visible" | "exit";
   initial: boolean;
-};
-
-type OptionalIdleWindow = {
-  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
-  cancelIdleCallback?: (handle: number) => void;
 };
 
 export function PageStoryLoader({ initialPath }: { initialPath: string }) {
@@ -31,12 +28,10 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
   const [active, setActive] = useState<ActiveStory | null>(() =>
     initialPath === "/" ? { id: 1, path: initialPath, phase: "enter", initial: true } : null,
   );
-  const [sceneReady, setSceneReady] = useState(false);
-  const activeId = active?.id;
+  const [preview, setPreview] = useState(false);
   const activeRef = useRef(active);
   const startedAt = useRef(Date.now());
   const counter = useRef(1);
-  const host = useRef<HTMLDivElement>(null);
   const minimumTimer = useRef<number | undefined>(undefined);
   const maximumTimer = useRef<number | undefined>(undefined);
   const removalTimer = useRef<number | undefined>(undefined);
@@ -59,7 +54,6 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
     removalTimer.current = window.setTimeout(() => {
       activeRef.current = null;
       setActive(null);
-      setSceneReady(false);
     }, EXIT_MS);
   }, []);
 
@@ -70,7 +64,6 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
       const next = { id: ++counter.current, path, phase: "enter" as const, initial };
       startedAt.current = Date.now();
       activeRef.current = next;
-      setSceneReady(false);
       setActive(next);
       requestAnimationFrame(() => {
         setActive((current) => {
@@ -80,7 +73,7 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
           return visible;
         });
       });
-      maximumTimer.current = window.setTimeout(finish, MAX_ACTIVE_MS);
+      maximumTimer.current = window.setTimeout(finish, MAX_ROUTE_ACTIVE_MS);
     },
     [clearTimers, finish],
   );
@@ -107,29 +100,39 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
   useEffect(() => {
     const current = activeRef.current;
     if (!current?.initial) return;
+    const isPreview =
+      import.meta.env.DEV && new URLSearchParams(window.location.search).has("story-preview");
+    setPreview(isPreview);
     let seen = false;
     try {
       seen = sessionStorage.getItem(INTRO_SESSION_KEY) === "1";
     } catch {
       /* A private browsing policy must not block the storefront. */
     }
-    if (seen) {
+    if (seen && !isPreview) {
       activeRef.current = null;
       setActive(null);
       return;
     }
-    try {
-      sessionStorage.setItem(INTRO_SESSION_KEY, "1");
-    } catch {
-      /* The animation remains safe when storage is unavailable. */
-    }
+    if (!isPreview)
+      try {
+        sessionStorage.setItem(INTRO_SESSION_KEY, "1");
+      } catch {
+        /* The animation remains safe when storage is unavailable. */
+      }
 
     const tier = currentVisualEffectsTier();
     introTimer.current = window.setTimeout(
       finish,
-      tier === "minimal" ? 160 : tier === "balanced" ? 420 : MIN_INITIAL_VISIBLE_MS,
+      isPreview
+        ? 120_000
+        : tier === "minimal"
+          ? 160
+          : tier === "balanced"
+            ? INITIAL_BALANCED_MS
+            : INITIAL_FULL_MS,
     );
-    maximumTimer.current = window.setTimeout(finish, MAX_ACTIVE_MS);
+    if (!isPreview) maximumTimer.current = window.setTimeout(finish, MAX_INITIAL_ACTIVE_MS);
     requestAnimationFrame(() => {
       setActive((story) => {
         if (!story?.initial) return story;
@@ -167,49 +170,6 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
     return () => document.removeEventListener("click", onClick, { capture: true });
   }, [start]);
 
-  useEffect(() => {
-    const current = activeRef.current;
-    if (
-      !current ||
-      current.id !== activeId ||
-      current.initial ||
-      current.phase === "exit" ||
-      !host.current
-    )
-      return;
-    const compact = window.matchMedia("(max-width: 720px)").matches;
-    if (currentVisualEffectsTier() !== "full" || compact || document.hidden) return;
-    let disposed = false;
-    let scene: { dispose(): void } | undefined;
-    const loadScene = () => {
-      if (disposed) return;
-      void import("./PageStoryScene")
-        .then(({ mountPageStoryScene }) => {
-          if (disposed || !host.current) return;
-          const profile = pageStoryProfile(current.path);
-          try {
-            scene = mountPageStoryScene(host.current, profile.scene, profile.accent);
-            setSceneReady(true);
-          } catch {
-            /* The lightweight CSS/SVG scene remains complete without WebGL. */
-          }
-        })
-        .catch(() => {
-          /* A route transition never depends on its decorative 3D layer. */
-        });
-    };
-    const idleWindow = window as unknown as OptionalIdleWindow;
-    const idleId = idleWindow.requestIdleCallback
-      ? idleWindow.requestIdleCallback(loadScene, { timeout: 240 })
-      : window.setTimeout(loadScene, 80);
-    return () => {
-      disposed = true;
-      if (idleWindow.cancelIdleCallback) idleWindow.cancelIdleCallback(idleId);
-      else window.clearTimeout(idleId);
-      scene?.dispose();
-    };
-  }, [activeId]);
-
   if (!active) return null;
   const profile = pageStoryProfile(active.path);
   const style = {
@@ -222,21 +182,48 @@ export function PageStoryLoader({ initialPath }: { initialPath: string }) {
       className={`page-story-loader page-story-loader--${active.phase}`}
       data-scene={profile.scene}
       data-initial={active.initial ? "true" : undefined}
+      data-preview={preview ? "true" : undefined}
       style={style}
       role="status"
       aria-live="polite"
       aria-label={`${profile.eyebrow}. ${profile.title}`}
     >
       <div className="page-story-loader__backdrop" aria-hidden>
-        <span className="page-story-loader__horizon" />
-        <span className="page-story-loader__arch" />
-        <span className="page-story-loader__dust page-story-loader__dust--one" />
-        <span className="page-story-loader__dust page-story-loader__dust--two" />
+        <span className="page-story-loader__light" />
       </div>
       <div className="page-story-loader__stage" aria-hidden>
-        <div ref={host} className={`page-story-loader__canvas ${sceneReady ? "is-ready" : ""}`} />
-        <BrandMark className={`page-story-loader__mark ${sceneReady ? "is-hidden" : ""}`} />
-        <span className="page-story-loader__symbol">{profile.symbol}</span>
+        <div className="page-story-loader__artifact">
+          <BrandMark
+            className="page-story-loader__box-body"
+            sizes="(max-width: 640px) 280px, 390px"
+            priority={active.initial}
+          />
+          <BrandMark
+            className="page-story-loader__box-lid"
+            sizes="(max-width: 640px) 280px, 390px"
+          />
+          <svg
+            className="page-story-loader__crank"
+            viewBox="0 0 120 94"
+            fill="none"
+            focusable="false"
+          >
+            <path
+              d="M2 12h22c7 0 9 5 9 11v22l43 21"
+              stroke="#d6c7ad"
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path d="M71 64l35 16" stroke="#9b8770" strokeWidth="10" strokeLinecap="round" />
+            <path d="M88 70l25 11" stroke="#38281f" strokeWidth="15" strokeLinecap="round" />
+            <path d="M88 67l25 11" stroke="#765944" strokeWidth="8" strokeLinecap="round" />
+          </svg>
+          <span className="page-story-loader__lid-glint" />
+          <span className="page-story-loader__note page-story-loader__note--one">♪</span>
+          <span className="page-story-loader__note page-story-loader__note--two">♫</span>
+          <span className="page-story-loader__note page-story-loader__note--three">♪</span>
+        </div>
         <span className="page-story-loader__shadow" />
       </div>
       <div className="page-story-loader__copy">

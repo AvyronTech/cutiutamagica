@@ -1,5 +1,44 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-26 — release integrat
+
+- Starea după publicare, probele live și limitele verificării sunt în [verificarea releaseului](handoff/2026-10-26-release-verification.md).
+- Ramura `codex/cinematic-loader-20261026` integrează ramurile locale `codex/seo-indexing-20261026` și `codex/customer-wallet-profile-20261026` peste baza Cloudflare `c00dfe4`. Conține intro-ul cinematic, SEO/indexarea, contul/Portofelul și documentația comună. Nu adaugă migrații D1, secrete ori integrare AVYRON obligatorie.
+- Verificarea vizuală a găsit o regulă CSS ulterioară care schimba poziționarea capacului; selectorul loaderului are acum prioritate, iar animația pornește cu capacul închis și îl deschide. Pagina locală a fost inspectată în browser la desktop și la viewport mobil de 390 × 844 px; cutia și textul sunt separate, fără depășire orizontală în catalog.
+- Verificări pe pachetul integrat: `npm run typecheck`, `npm test -- --maxWorkers=2` (58 fișiere, 320 teste), `npm run lint`, `npm run build` și `npm run cf:deploy:dry` trecute. Auditul Lighthouse pe catalogul local mobil: accesibilitate 100, bune practici 100, navigare agentică 100; SEO 69 doar fiindcă mediul de dezvoltare trimite intenționat `noindex`. D1 de producție nu are migrații restante.
+- Verificarea după publicare trebuie să includă răspunsurile reale pentru `/robots.txt`, ambele sitemapuri și `/llms.txt`, conținutul paginilor și datele structurate, versiunea Workerului și indexarea în Search Console. Scorurile de laborator și codul publicat nu confirmă singure indexarea ori funcționarea unei plăți reale.
+
+## Handoff 2026-10-26 — intro cinematic al magazinului
+
+- Ramura locală `codex/cinematic-loader-20261026` pornește din `origin/codex/cutiuta-cloudflare-final` la `c00dfe4`. Schimbarea privește numai overlayul de încărcare al paginilor publice, în special primul acces la pagina de start.
+- Cutiuța folosește imaginea universală existentă din `public/brand/music-box-universal.webp`, bazată pe aspectul modelelor reale. Capacul și corpul sunt două măști CSS ale aceleiași imagini, iar manivela SVG se rotește din același pivot vizual. Notele apar lângă mecanism; iluminarea fundalului rămâne localizată în jurul produsului. A fost eliminată scena WebGL a loaderului, care era schematică și adăuga un import greu la tranziții.
+- `BrandMark` acceptă prioritate de descărcare pentru imaginea primului cadru. Intro-ul rulează o singură dată pe sesiune cu cheia `cutiuta:cinematic-intro:v3`, are buton de continuare și limită de timp; `prefers-reduced-motion` păstrează ieșirea rapidă. Pe mobil, animațiile se încheie în fereastra mai scurtă de afișare. În `npm run dev`, `/?story-preview` ține intro-ul deschis pentru capturi și inspecție; parametrul nu are efect în buildul de producție.
+- Fișiere: `src/components/site/PageStoryLoader.tsx`, `BrandMark.tsx`, `src/routes/__root.tsx`, `src/styles.css`; `PageStoryScene.ts` a fost eliminat. Nu există migrații D1 sau configurări externe noi.
+- Măștile capacului și poziția manivelei depind de compoziția imaginii universale actuale. La înlocuirea acestei imagini, recadrează măștile și pivotul în CSS; revenirea completă se face prin revertul commitului acestei ramuri.
+- Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (56 fișiere, 314 teste), `npm run lint`, `npm run build`, `npm run cf:types:check`, `npm run cf:deploy:dry`, `git diff --check` și răspunsul HTTP 200 al homepageului local au trecut. Migrațiile 0001–0081 și seedul au fost aplicate numai în D1 local pentru preview.
+- Capturile desktop/mobil ale versiunii finale rămân de realizat: macOS a rămas blocat în timpul verificării cu browserul. Scena WebGL anterioară a fost inspectată vizual și respinsă ca prea schematică; verificarea ei nu se transferă asupra compoziției foto finale. Nu s-au făcut push, PR, migrare D1 remote sau deploy.
+
+## Handoff 2026-10-26 — indexare, llms.txt și audit SEO
+
+- Ramura locală `codex/seo-indexing-20261026` adaugă sitemapul ghidurilor, sitemapul din catalogul D1, `llms.txt` dinamic, corecții Schema.org și `/admin/seo`; păstrează independența magazinului față de AVYRON OS. Detaliile, verificările, capturile desktop/mobil și starea publică sunt în [handofful SEO](seo-indexing-2026-10-26/HANDOFF.md).
+- În producție, `/sitemap-guides.xml` era încă 404 la 26 octombrie. Nu s-au făcut push, PR, merge sau deploy. Lansarea și retrimiterea sitemapurilor în Search Console necesită aprobarea explicită cerută de `AGENTS.md`.
+
+## Handoff 2026-10-26 — continuitate, glosar și reguli de brand
+
+- În ramura locală `codex/customer-wallet-profile-20261026`, au fost adăugate `docs/PROJECT_CONTINUITY.md`, `docs/PROJECT_GLOSSARY.md` și `docs/brand/AVYRON_LOGO_USAGE.md`; `AGENTS.md` indică aceste surse pentru Codex, Lovable și Claude. Nu sunt modificări de runtime, migrații sau configurări externe.
+- Documentele stabilesc sursele de adevăr, procedura de lucru și handoff, termenii afișați clientului și diferența dintre stările locale, PR, deploy și verificat live. Asseturile AVYRON existente au fost inspectate; albumul master nu este încă identificat, iar regulile vizuale exacte sunt marcate neconfirmate.
+- O notă compactă pentru memoria contului este salvată separat prin mecanismul Codex de actualizare a memoriei. Repo-ul și memoria nu se sincronizează automat cu Lovable; documentația va ajunge la ceilalți agenți după un push/PR/merge aprobat.
+- Verificări: Prettier pentru fișierele atinse, `git diff --check`, `npm run typecheck`, `npm test` (56 fișiere, 314 teste), `npm run lint`, `npm run build` și `npm run cf:deploy:dry` trecute. Fiind o schimbare exclusiv de documentație, nu sunt capturi UI noi.
+
+## Handoff 2026-10-26 — cont client, Portofel și checkout cu cardul
+
+- Ramura locală `codex/customer-wallet-profile-20261026` pornește din `origin/codex/cutiuta-cloudflare-final` (`c00dfe4`) într-un worktree separat de schimbările SEO. Nu s-au făcut push, PR, deploy, migrare remote ori plăți.
+- Profilul din bara de sus deschide pentru un utilizator conectat un meniu compact cu Profil, Comenzi, Portofel, Produse, Despre, Contact și comutator RO/EN pentru etichetele meniului. Se închide la navigare, scroll, Escape și clic exterior. Pagina contului separă Comenzi de Portofel, ascunde numele procesatorului din textele pentru client și explică acordul necesar salvării cardului.
+- Checkoutul precompletează adresa contului conectat, pentru ca metodele salvate în cont să poată apărea în pagina securizată de plată. Butonul arată acțiunea pentru plată și afișează local erorile de validare/API; blocarea `sessionStorage` nu mai împiedică deschiderea plății. Persistă numai referințele și ultimele patru cifre ale cardului, prin fluxul existent al procesatorului. Confirmarea comenzii rămâne condiționată de webhookul semnat.
+- Salvarea parolei arată eroarea lângă formular și verifică faptul că actualizarea a afectat contul activ. Testul local nou acoperă Google OAuth → setare parolă → autentificare cu parolă. Schema D1 live este la versiunea 81 și include `phone_e164`; cauza erorii raportate pe dispozitivul utilizatorului rămâne de confirmat prin mesajul exact din pagină sau din managerul de parole.
+- Fișiere: `src/components/site/Header.tsx`, `src/routes/cont.tsx`, `src/routes/comanda.tsx`, `src/styles.css`, `src/server/review-accounts.ts`, `src/server/api/customer-billing.ts`, `src/server/services/checkout-readiness.ts`, `src/server/services/customer-stripe-cards.ts`, `src/server/reviews.test.ts` și acest handoff. Fără migrare D1 nouă ori configurare externă.
+- Verificări locale: `npm test` (56 fișiere, 314 teste), `npm run lint`, `npm run typecheck`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` trecute. Contul și meniul autentificat au fost inspectate vizual în Opera la desktop și la 390 × 844 px, folosind numai un cont sintetic și D1 local. În preview, datele formularului și meniul sunt lizibile, iar clicul exterior, scrollul și comutarea RO/EN funcționează. Produsul Pisicuța a fost marcat temporar disponibil numai în D1 local, apoi readus la starea inițială; browserul s-a deconectat când Mac-ul s-a încuiat din nou, astfel că proba vizuală a coșului nu a fost finalizată. Nu s-a plasat comandă și nu s-a inițiat plată.
+
 ## Handoff 2026-10-22 — confirmarea plății înainte de acceptarea comenzii
 
 - Checkoutul cu card creează o înregistrare provizorie `pending/unpaid` necesară sesiunii de plată. Nu trimite e-mailuri, notificări de comandă nouă, evenimente de conversie și nu crește contorul/valoarea clientului înainte de confirmarea semnată a procesatorului. Webhookul validează furnizorul, mediul, sesiunea, suma și moneda, apoi marchează plata și pune notificările în coadă; trimiterea e-mailurilor și consumul outboxului refuză înregistrările încă neplătite.

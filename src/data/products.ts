@@ -53,6 +53,7 @@ export type Product = {
   tagline: string;
   melody?: string;
   category: string;
+  material?: string;
   brand?: string;
   image: string;
   gallery: ProductGalleryImage[];

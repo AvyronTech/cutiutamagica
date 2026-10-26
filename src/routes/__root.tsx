@@ -176,7 +176,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             logo: "https://cutiutamagica.eu/icon-512.png",
           },
           description: "Cutiuțe muzicale din lemn cu manivelă și mecanism manual.",
-          email: "mailto:contact@cutiutamagica.eu",
+          email: "contact@cutiutamagica.eu",
           telephone: "+40734605742",
           address: { "@type": "PostalAddress", addressCountry: "RO" },
           areaServed: { "@type": "Country", name: "România" },
@@ -233,7 +233,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(sessionStorage.getItem('cutiuta:cinematic-intro:v2')==='1')document.documentElement.classList.add('story-intro-seen')}catch{}",
+              "let seen=false;try{seen=sessionStorage.getItem('cutiuta:cinematic-intro:v3')==='1'}catch{};if(seen)document.documentElement.classList.add('story-intro-seen');else if(!new URLSearchParams(location.search).has('story-preview'))setTimeout(()=>document.documentElement.classList.add('story-intro-timeout'),1550)",
           }}
         />
         <HeadContent />
