@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-26 — continuitate, glosar și reguli de brand
+
+- În ramura locală `codex/customer-wallet-profile-20261026`, au fost adăugate `docs/PROJECT_CONTINUITY.md`, `docs/PROJECT_GLOSSARY.md` și `docs/brand/AVYRON_LOGO_USAGE.md`; `AGENTS.md` indică aceste surse pentru Codex, Lovable și Claude. Nu sunt modificări de runtime, migrații sau configurări externe.
+- Documentele stabilesc sursele de adevăr, procedura de lucru și handoff, termenii afișați clientului și diferența dintre stările locale, PR, deploy și verificat live. Asseturile AVYRON existente au fost inspectate; albumul master nu este încă identificat, iar regulile vizuale exacte sunt marcate neconfirmate.
+- O notă compactă pentru memoria contului este salvată separat prin mecanismul Codex de actualizare a memoriei. Repo-ul și memoria nu se sincronizează automat cu Lovable; documentația va ajunge la ceilalți agenți după un push/PR/merge aprobat.
+- Verificări: Prettier pentru fișierele atinse, `git diff --check`, `npm run typecheck`, `npm test` (56 fișiere, 314 teste), `npm run lint`, `npm run build` și `npm run cf:deploy:dry` trecute. Fiind o schimbare exclusiv de documentație, nu sunt capturi UI noi.
+
 ## Handoff 2026-10-26 — cont client, Portofel și checkout cu cardul
 
 - Ramura locală `codex/customer-wallet-profile-20261026` pornește din `origin/codex/cutiuta-cloudflare-final` (`c00dfe4`) într-un worktree separat de schimbările SEO. Nu s-au făcut push, PR, deploy, migrare remote ori plăți.
