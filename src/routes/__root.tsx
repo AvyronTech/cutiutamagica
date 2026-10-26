@@ -233,7 +233,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(sessionStorage.getItem('cutiuta:cinematic-intro:v3')==='1')document.documentElement.classList.add('story-intro-seen')}catch{}",
+              "let seen=false;try{seen=sessionStorage.getItem('cutiuta:cinematic-intro:v3')==='1'}catch{};if(seen)document.documentElement.classList.add('story-intro-seen');else if(!new URLSearchParams(location.search).has('story-preview'))setTimeout(()=>document.documentElement.classList.add('story-intro-timeout'),1550)",
           }}
         />
         <HeadContent />

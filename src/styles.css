@@ -5399,7 +5399,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   transform: translateZ(0);
   will-change: opacity, transform;
 }
-.story-intro-seen .page-story-loader[data-initial="true"]:not([data-preview="true"]) {
+.story-intro-seen .page-story-loader[data-initial="true"]:not([data-preview="true"]),
+.story-intro-timeout .page-story-loader[data-initial="true"]:not([data-preview="true"]) {
   display: none;
 }
 .page-story-loader--exit {
