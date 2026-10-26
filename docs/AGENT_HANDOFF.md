@@ -2,6 +2,7 @@
 
 ## Handoff 2026-10-26 — release integrat
 
+- Starea după publicare, probele live și limitele verificării sunt în [verificarea releaseului](handoff/2026-10-26-release-verification.md).
 - Ramura `codex/cinematic-loader-20261026` integrează ramurile locale `codex/seo-indexing-20261026` și `codex/customer-wallet-profile-20261026` peste baza Cloudflare `c00dfe4`. Conține intro-ul cinematic, SEO/indexarea, contul/Portofelul și documentația comună. Nu adaugă migrații D1, secrete ori integrare AVYRON obligatorie.
 - Verificarea vizuală a găsit o regulă CSS ulterioară care schimba poziționarea capacului; selectorul loaderului are acum prioritate, iar animația pornește cu capacul închis și îl deschide. Pagina locală a fost inspectată în browser la desktop și la viewport mobil de 390 × 844 px; cutia și textul sunt separate, fără depășire orizontală în catalog.
 - Verificări pe pachetul integrat: `npm run typecheck`, `npm test -- --maxWorkers=2` (58 fișiere, 320 teste), `npm run lint`, `npm run build` și `npm run cf:deploy:dry` trecute. Auditul Lighthouse pe catalogul local mobil: accesibilitate 100, bune practici 100, navigare agentică 100; SEO 69 doar fiindcă mediul de dezvoltare trimite intenționat `noindex`. D1 de producție nu are migrații restante.
