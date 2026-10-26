@@ -3,7 +3,8 @@
 ## Handoff 2026-10-26 — sitemap text pentru verificarea în Search Console
 
 - Ramura `codex/sitemap-verification-20261026` adaugă `/sitemap.txt`, generat din aceleași intrări canonice ca `/sitemap.xml` și păstrat împreună cu XML-ul în cache-ul KV. `robots.txt` îl declară, iar `/admin/seo` verifică ruta și declarația. Nu adaugă migrații D1, bindinguri sau secrete. Formatul text simplu oferă o cale suplimentară de diagnostic pentru raportul XML care încă afișa „Nu s-a putut prelua”.
-- Verificări locale: TypeScript, 325 teste din 59 fișiere, lint, build și `cf:deploy:dry` trecute. Testul de paritate confirmă aceeași listă de URL-uri în ambele formate. Verifică PR-ul, versiunea Worker, cele trei sitemapuri live și starea distinctă din Search Console după lansare; trimiterea și descoperirea nu reprezintă indexare efectivă.
+- PR #46 a trecut CI și a fost integrat la `c2de006`; Workerul `cutiuta-magica-store` este la versiunea `88b46512-1e4e-49e0-b64d-070af88f97a0`, confirmată distribuită 100%. TypeScript, 325 teste din 59 fișiere, lint, build și `cf:deploy:dry` au trecut. Pe domeniul live, `/sitemap.xml`, `/sitemap.txt`, `/sitemap-guides.xml`, `/robots.txt` și `/llms.txt` răspund 200; XML-ul și textul conțin aceleași 38 URL-uri canonice distincte.
+- În Search Console, pe 26 octombrie, `/sitemap.txt` a fost citit cu `Succes` și 38 pagini descoperite imediat după trimitere; `/sitemap-guides.xml` rămâne `Succes` cu 23. `/sitemap.xml` a fost retrimis după deploy, dar raportul încă arată `Nu s-a putut prelua`, tip `Necunoscut`, 0 pagini, fără detaliu de rețea/parsare. Testul live Google al XML-ului preluase cu succes ruta. Cauza exactă a rândului XML nu este demonstrată; canalul text asigură descoperirea acelorași URL-uri. Descoperirea nu reprezintă indexare efectivă.
 
 ## Handoff 2026-10-26 — fiabilitatea sitemapului principal
 
