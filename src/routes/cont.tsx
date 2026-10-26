@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -120,6 +120,7 @@ const orderLabels: Record<string, string> = {
 
 function CustomerAccount() {
   const { auth, card } = Route.useSearch();
+  const locationHash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
   const [orderPage, setOrderPage] = useState(0);
   const account = useQuery({
@@ -155,25 +156,34 @@ function CustomerAccount() {
   const [error, setError] = useState("");
   const [cardConsent, setCardConsent] = useState(false);
   const [cardBusy, setCardBusy] = useState(false);
+  const [cardFeedback, setCardFeedback] = useState("");
   const [accountPassword, setAccountPassword] = useState("");
   const [accountPhone, setAccountPhone] = useState("");
   const [showAccountPassword, setShowAccountPassword] = useState(false);
   const [securityBusy, setSecurityBusy] = useState(false);
   const [securitySaved, setSecuritySaved] = useState(false);
+  const [securityError, setSecurityError] = useState("");
 
   useEffect(() => {
-    if (!account.data || window.location.hash !== "#securitatea-contului") return;
+    const section = locationHash.replace(/^#/, "");
+    if (
+      !account.data ||
+      !["securitatea-contului", "profil", "comenzi", "portofel"].includes(section)
+    )
+      return;
     const frame = requestAnimationFrame(() =>
-      document.getElementById("securitatea-contului")?.scrollIntoView({ block: "start" }),
+      document
+        .getElementById(section === "securitatea-contului" ? "profil" : section)
+        ?.scrollIntoView({ block: "start" }),
     );
     return () => cancelAnimationFrame(frame);
-  }, [account.data]);
+  }, [account.data, locationHash]);
 
   async function saveCustomerPassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSecurityBusy(true);
     setSecuritySaved(false);
-    setError("");
+    setSecurityError("");
     try {
       await reviewApi("/api/v1/reviewer/password", {
         method: "POST",
@@ -182,15 +192,20 @@ function CustomerAccount() {
       setAccountPassword("");
       setSecuritySaved(true);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Parola nu a putut fi salvată.");
+      setSecurityError(caught instanceof Error ? caught.message : "Parola nu a putut fi salvată.");
     } finally {
       setSecurityBusy(false);
     }
   }
 
   async function addCard() {
+    if (!cardConsent) {
+      setCardFeedback("Confirmă acordul pentru salvarea cardului, apoi continuă.");
+      document.getElementById("wallet-card-consent")?.focus();
+      return;
+    }
     setCardBusy(true);
-    setError("");
+    setCardFeedback("");
     try {
       const result = await reviewApi<{ url: string }>("/api/v1/customer/billing/cards/setup", {
         method: "POST",
@@ -198,7 +213,9 @@ function CustomerAccount() {
       });
       window.location.assign(result.url);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Salvarea cardului nu poate fi pornită.");
+      setCardFeedback(
+        caught instanceof Error ? caught.message : "Salvarea cardului nu poate fi pornită.",
+      );
       setCardBusy(false);
     }
   }
@@ -397,8 +414,8 @@ function CustomerAccount() {
 
       {card === "return" && (
         <p className="customer-account-notice" role="status">
-          Stripe a încheiat configurarea. Cardul va apărea aici după confirmarea securizată;
-          reîncarcă pagina dacă încă nu îl vezi.
+          Configurarea s-a încheiat. Cardul va apărea în Portofel după confirmare; reîncarcă pagina
+          dacă încă nu îl vezi.
         </p>
       )}
       {card === "cancelled" && (
@@ -407,11 +424,7 @@ function CustomerAccount() {
         </p>
       )}
 
-      <section
-        id="securitatea-contului"
-        className="customer-security"
-        aria-labelledby="customer-security-title"
-      >
+      <section id="profil" className="customer-security" aria-labelledby="customer-security-title">
         <div>
           <p className="catalog-eyebrow">Accesul tău</p>
           <h2 id="customer-security-title">Securitatea contului</h2>
@@ -420,6 +433,16 @@ function CustomerAccount() {
           </p>
         </div>
         <form onSubmit={(event) => void saveCustomerPassword(event)}>
+          <label>
+            E-mail pentru conectare
+            <input
+              type="email"
+              name="username"
+              value={account.data.email}
+              autoComplete="username"
+              readOnly
+            />
+          </label>
           <label>
             Parolă nouă (minimum 12 caractere)
             <span className="customer-security__password">
@@ -455,6 +478,11 @@ function CustomerAccount() {
           <button type="submit" disabled={securityBusy || accountPassword.length < 12}>
             {securityBusy ? "Se salvează…" : "Salvează parola"}
           </button>
+          {securityError && (
+            <p className="personalization-error" role="alert">
+              {securityError}
+            </p>
+          )}
           {securitySaved && (
             <p role="status">Parola a fost salvată. O poți folosi la următoarea conectare.</p>
           )}
@@ -463,15 +491,12 @@ function CustomerAccount() {
 
       <CustomerMagicCenter />
 
-      <section className="customer-requests" aria-labelledby="customer-billing-title">
+      <section id="comenzi" className="customer-requests" aria-labelledby="customer-orders-title">
         <div className="customer-requests-heading">
           <div>
-            <p className="catalog-eyebrow">Comenzi și facturare</p>
-            <h2 id="customer-billing-title">Comenzi și plăți</h2>
+            <p className="catalog-eyebrow">Activitatea ta</p>
+            <h2 id="customer-orders-title">Comenzi</h2>
           </div>
-          <span className="inline-flex items-center gap-2 text-sm text-slate-500">
-            <ShieldCheck size={16} /> Datele complete ale cardului nu sunt stocate aici
-          </span>
         </div>
         {billing.isLoading ? (
           <p>Se încarcă situația contului…</p>
@@ -480,7 +505,7 @@ function CustomerAccount() {
             Situația comenzilor nu poate fi încărcată acum.
           </p>
         ) : (
-          <div className="customer-billing-grid grid gap-4 lg:grid-cols-2">
+          <div className="customer-billing-grid grid gap-4">
             <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 lg:col-span-2">
               <ReceiptText aria-hidden />
               <h3 className="mt-3 font-semibold">Comenzile mele</h3>
@@ -547,6 +572,31 @@ function CustomerAccount() {
                 </div>
               )}
             </article>
+          </div>
+        )}
+      </section>
+
+      <section id="portofel" className="customer-requests" aria-labelledby="customer-wallet-title">
+        <div className="customer-requests-heading">
+          <div>
+            <p className="catalog-eyebrow">Plăți rapide și sigure</p>
+            <h2 id="customer-wallet-title">Portofel</h2>
+          </div>
+          <Link className="magic-button magic-button--outline" to="/comanda">
+            Plătește coșul <ArrowRight size={16} />
+          </Link>
+        </div>
+        <p className="mb-4 inline-flex items-center gap-2 text-sm text-slate-500">
+          <ShieldCheck size={16} /> Datele complete ale cardului nu sunt stocate aici.
+        </p>
+        {billing.isLoading ? (
+          <p>Se încarcă portofelul…</p>
+        ) : billing.isError ? (
+          <p className="personalization-error" role="alert">
+            Portofelul nu poate fi încărcat acum.
+          </p>
+        ) : (
+          <div className="customer-billing-grid grid gap-4 lg:grid-cols-2">
             <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
               <CreditCard aria-hidden />
               <h3 className="mt-3 font-semibold">Metode salvate</h3>
@@ -562,7 +612,7 @@ function CustomerAccount() {
                         <span className="block text-slate-600">
                           {method.expiryMonth && method.expiryYear
                             ? `Expiră ${String(method.expiryMonth).padStart(2, "0")}/${method.expiryYear}`
-                            : "Card tokenizat la Stripe"}
+                            : "Card salvat securizat"}
                         </span>
                       </span>
                       <button
@@ -577,31 +627,44 @@ function CustomerAccount() {
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-slate-600">
-                  Salvarea cardului va deveni disponibilă după conectarea procesatorului ales.
-                </p>
+                <p className="mt-3 text-sm text-slate-600">Nu ai încă un card salvat.</p>
               )}
               {billing.data?.cardSavingEnabled && (
                 <div className="mt-4 border-t border-slate-200 pt-4">
                   <label className="flex items-start gap-2 text-xs leading-5 text-slate-700">
                     <input
+                      id="wallet-card-consent"
                       type="checkbox"
                       checked={cardConsent}
-                      onChange={(event) => setCardConsent(event.target.checked)}
+                      onChange={(event) => {
+                        setCardConsent(event.target.checked);
+                        setCardFeedback("");
+                      }}
                       className="mt-1"
                     />
-                    Solicit salvarea cardului la Stripe pentru plăți viitoare inițiate de mine.
-                    Datele complete ale cardului rămân la Stripe.
+                    Sunt de acord să salvez acest card pentru plăți viitoare inițiate de mine.
+                    Datele complete sunt păstrate securizat de procesatorul de plăți.
                   </label>
                   <button
                     type="button"
-                    disabled={!cardConsent || cardBusy}
+                    disabled={cardBusy}
                     onClick={() => void addCard()}
                     className="magic-button mt-3 disabled:opacity-50"
                   >
-                    Adaugă card prin Stripe
+                    {cardBusy ? "Se deschide pagina securizată…" : "Adaugă card"}
                   </button>
+                  {cardFeedback && (
+                    <p className="mt-2 text-xs text-rose-700" role="alert">
+                      {cardFeedback}
+                    </p>
+                  )}
                 </div>
+              )}
+              {!billing.data?.cardSavingEnabled && (
+                <p className="mt-3 text-xs text-slate-600" role="status">
+                  Adăugarea unui card nu este disponibilă momentan. Poți folosi metodele afișate la
+                  finalizarea comenzii.
+                </p>
               )}
             </article>
             <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">

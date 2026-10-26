@@ -6,6 +6,7 @@ import { PaymentRecovery } from "@/components/site/PaymentRecovery";
 import { pendingPaymentKey, openSecureCheckout, type PendingPayment } from "@/lib/checkout-client";
 import { notifyAddedToCart } from "@/lib/notify";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AutoScroll from "embla-carousel-auto-scroll";
 import {
@@ -46,6 +47,7 @@ import type { EasyboxLocker } from "@/lib/easybox";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { seoHead } from "@/lib/seo-head";
 import { productLink } from "@/lib/product-url";
+import { reviewApi, type Reviewer } from "@/lib/reviews";
 
 export const Route = createFileRoute("/comanda")({
   component: OrderPage,
@@ -104,6 +106,12 @@ function usePrefersReducedMotion() {
 }
 
 function OrderPage() {
+  const account = useQuery({
+    queryKey: ["reviewer"],
+    queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
+    retry: false,
+    staleTime: 30_000,
+  });
   const {
     products,
     promotion,
@@ -135,8 +143,13 @@ function OrderPage() {
   const [config, setConfig] = useState<CommercePublicConfig | null>(null);
   const [confirmation, setConfirmation] = useState<WebsiteOrderPublicResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [website, setWebsite] = useState("");
   const [form, setForm] = useState(emptyForm);
+  useEffect(() => {
+    const email = account.data?.email;
+    if (email) setForm((current) => (current.email ? current : { ...current, email }));
+  }, [account.data]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_on_delivery");
   const paymentChoiceTouched = useRef(false);
   const [shippingOption, setShippingOption] = useState<ShippingOption>("home_delivery");
@@ -537,22 +550,27 @@ function OrderPage() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!config) return toast.error("Așteaptă încărcarea opțiunilor de plată și livrare.");
-    if (!consent) return toast.error("Confirmă termenii comenzii și politica de retur.");
-    if (totalQty === 0 && !submissionLocked) return toast.error("Coșul este gol.");
+    const fail = (message: string) => {
+      setSubmitError(message);
+      toast.error(message);
+    };
+    setSubmitError("");
+    if (!config) return fail("Așteaptă încărcarea opțiunilor de plată și livrare.");
+    if (!consent) return fail("Confirmă termenii comenzii și politica de retur.");
+    if (totalQty === 0 && !submissionLocked) return fail("Coșul este gol.");
     if (submissionInFlight.current) return;
     if (shippingOption === "easybox" && (!easyboxLocker || !activeQuote))
-      return toast.error("Alege un easybox și confirmă tariful înainte de comandă.");
+      return fail("Alege un easybox și confirmă tariful înainte de comandă.");
     if (
       shippingOption === "easybox" &&
       easyboxLocker?.supportsCashOnDelivery === false &&
       paymentMethod === "cash_on_delivery"
     )
-      return toast.error("Acest Easybox nu acceptă ramburs. Alege alt punct sau plata online.");
+      return fail("Acest Easybox nu acceptă ramburs. Alege alt punct sau plata online.");
     if (shippingOption === "home_delivery" && config.shipping.liveQuotesEnabled && !activeQuote)
-      return toast.error("Alege un curier și confirmă oferta de livrare înainte de comandă.");
+      return fail("Alege un curier și confirmă oferta de livrare înainte de comandă.");
     if (!submissionLocked && paymentMethod === "card" && shippingCost == null)
-      return toast.error("Confirmă costul livrării înainte de plata online.");
+      return fail("Confirmă costul livrării înainte de plata online.");
     if (!idempotencyKey.current) idempotencyKey.current = crypto.randomUUID();
     submissionInFlight.current = true;
     setSubmitting(true);
@@ -603,9 +621,7 @@ function OrderPage() {
         try {
           sessionStorage.setItem(pendingPaymentKey, JSON.stringify(pending));
         } catch {
-          throw new Error(
-            "Browserul nu poate păstra sesiunea de plată. Permite stocarea pentru acest site înainte de a continua.",
-          );
+          // The payment still opens when private browsing blocks optional recovery storage.
         }
         await openSecureCheckout(result);
         return;
@@ -614,6 +630,7 @@ function OrderPage() {
       setConfirmation(result);
       clearCart();
     } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Încearcă din nou.");
       toast.error("Operația nu a putut fi finalizată.", {
         description: error instanceof Error ? error.message : "Încearcă din nou.",
       });
@@ -893,7 +910,14 @@ function OrderPage() {
                   </span>
                 </nav>
 
-                <form id="checkout-form" onSubmit={submit} className="checkout-form mt-7 space-y-5">
+                <form
+                  id="checkout-form"
+                  onSubmit={submit}
+                  onInvalidCapture={() =>
+                    setSubmitError("Completează câmpurile obligatorii înainte de a continua.")
+                  }
+                  className="checkout-form mt-7 space-y-5"
+                >
                   {submissionLocked && (
                     <p role="status" className="rounded-xl border border-amber-500/30 p-4 text-sm">
                       Păstrăm datele comenzii cât timp verificăm trimiterea. Reîncearcă pentru a
@@ -1188,6 +1212,16 @@ function OrderPage() {
                           }
                         />
                       ))}
+                      {account.data && onlineOptions.some((option) => option.id === "stripe") && (
+                        <p className="checkout-payment-tip sm:col-span-2">
+                          Cardurile din{" "}
+                          <Link to="/cont" hash="portofel" className="underline">
+                            Portofel
+                          </Link>{" "}
+                          apar în pagina securizată când folosești adresa {account.data.email} la
+                          comandă.
+                        </p>
+                      )}
                       <Choice
                         name="payment-method"
                         disabled={
@@ -1353,10 +1387,26 @@ function OrderPage() {
                       <ShieldCheck size={20} aria-hidden />
                     </span>
                     <span className="checkout-submit-action__copy">
-                      <strong>{submitting ? "Se trimite comanda…" : "Confirmă comanda"}</strong>
+                      <strong>
+                        {submitting
+                          ? paymentMethod === "card"
+                            ? "Se pregătește plata…"
+                            : "Se trimite comanda…"
+                          : paymentMethod === "card"
+                            ? "Continuă la plata securizată"
+                            : "Confirmă comanda"}
+                      </strong>
                     </span>
                     <ArrowRight size={20} aria-hidden />
                   </button>
+                  {submitError && (
+                    <p
+                      className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900"
+                      role="alert"
+                    >
+                      {submitError}
+                    </p>
+                  )}
                 </form>
               </>
             )}
@@ -1463,7 +1513,17 @@ function OrderPage() {
                 aria-label="Finalizează comanda"
                 className="checkout-submit-action checkout-mobile-submit ml-auto min-h-11 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {submitting ? "Se trimite comanda…" : <strong>Finalizează comanda</strong>}
+                {submitting ? (
+                  paymentMethod === "card" ? (
+                    "Se pregătește plata…"
+                  ) : (
+                    "Se trimite comanda…"
+                  )
+                ) : (
+                  <strong>
+                    {paymentMethod === "card" ? "Continuă la plată" : "Finalizează comanda"}
+                  </strong>
+                )}
               </button>
             </div>
           </div>

@@ -48,7 +48,7 @@ export async function createStripeCardSetup(
 ) {
   if (!(await stripeCardReady(env)))
     throw new ProviderError(
-      "Salvarea cardurilor prin Stripe nu este activă momentan.",
+      "Salvarea cardurilor nu este disponibilă momentan.",
       "STRIPE_CARD_NOT_READY",
       409,
     );

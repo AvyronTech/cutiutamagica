@@ -1,7 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ShoppingBag, UserRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/store/shop";
+import { reviewApi, type Reviewer } from "@/lib/reviews";
 
 import { BrandMark } from "./BrandMark";
 import { SoundToggle } from "./SoundToggle";
@@ -13,6 +16,17 @@ import { isProductPath } from "@/lib/product-url";
 export function Header() {
   const { totalQty } = useShop();
   const [cartOpen, setCartOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [menuLanguage, setMenuLanguage] = useState<"ro" | "en">("ro");
+  const profileRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuRef = useRef<HTMLElement | null>(null);
+  const [profilePosition, setProfilePosition] = useState({ top: 0, right: 16 });
+  const account = useQuery({
+    queryKey: ["reviewer"],
+    queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
+    retry: false,
+    staleTime: 30_000,
+  });
   const [cartSide, setCartSide] = useState<WidgetSide>("right");
   const cartTrigger = useRef<HTMLButtonElement | null>(null);
   const headerCartTrigger = useRef<HTMLButtonElement | null>(null);
@@ -34,7 +48,35 @@ export function Header() {
   // Panoul nu are ce căuta deschis după o navigare.
   useEffect(() => {
     setCartOpen(false);
+    setProfileOpen(false);
   }, [pathname]);
+  useEffect(() => {
+    if (!profileOpen) return;
+    const outside = (event: PointerEvent) => {
+      if (
+        !profileRef.current?.contains(event.target as Node) &&
+        !profileMenuRef.current?.contains(event.target as Node)
+      )
+        setProfileOpen(false);
+    };
+    const close = () => setProfileOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        close();
+        profileRef.current
+          ?.querySelector<HTMLButtonElement>("button[data-profile-trigger]")
+          ?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", close, { passive: true });
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", close);
+    };
+  }, [profileOpen]);
   const isProductPage = isProductPath(pathname);
   const [compactOnScroll, setCompact] = useState(false);
   const compact = isProductPage || compactOnScroll;
@@ -213,17 +255,94 @@ export function Header() {
 
           <div className="site-header__actions flex shrink-0 items-center gap-2">
             {!isProductPath(pathname) && <SoundToggle compact={compact} />}
-            <Link
-              to="/cont"
-              aria-label="Contul meu"
-              title="Contul meu"
-              className={
-                "site-header__account group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
-                (compact ? "h-11 w-11" : "h-11 w-11 sm:h-12 sm:w-12")
-              }
-            >
-              <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
-            </Link>
+            <div className="site-header__profile-wrap" ref={profileRef}>
+              {account.data ? (
+                <button
+                  type="button"
+                  data-profile-trigger
+                  aria-label="Meniul contului"
+                  title="Meniul contului"
+                  aria-expanded={profileOpen}
+                  aria-controls="customer-profile-menu"
+                  onClick={() => {
+                    setCartOpen(false);
+                    const bounds = profileRef.current?.getBoundingClientRect();
+                    if (bounds)
+                      setProfilePosition({
+                        top: bounds.bottom + 10,
+                        right: Math.max(16, window.innerWidth - bounds.right),
+                      });
+                    setProfileOpen((open) => !open);
+                  }}
+                  className={
+                    "site-header__account group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
+                    (compact ? "h-11 w-11" : "h-11 w-11 sm:h-12 sm:w-12")
+                  }
+                >
+                  <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
+                </button>
+              ) : (
+                <Link
+                  to="/cont"
+                  aria-label="Contul meu"
+                  title="Contul meu"
+                  className={
+                    "site-header__account group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
+                    (compact ? "h-11 w-11" : "h-11 w-11 sm:h-12 sm:w-12")
+                  }
+                >
+                  <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
+                </Link>
+              )}
+              {account.data &&
+                typeof document !== "undefined" &&
+                createPortal(
+                  <nav
+                    ref={profileMenuRef}
+                    id="customer-profile-menu"
+                    aria-label="Contul meu"
+                    className="site-header__profile-menu"
+                    data-open={profileOpen || undefined}
+                    inert={!profileOpen}
+                    style={profilePosition}
+                  >
+                    <span className="site-header__profile-greeting">
+                      {menuLanguage === "ro" ? "Bun venit" : "Welcome"}, {account.data.displayName}
+                    </span>
+                    <Link to="/cont" hash="profil" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Profil" : "Profile"}
+                    </Link>
+                    <Link to="/cont" hash="comenzi" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Comenzi" : "Orders"}
+                    </Link>
+                    <Link to="/cont" hash="portofel" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Portofel" : "Wallet"}
+                    </Link>
+                    <Link to="/produse" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Produse" : "Products"}
+                    </Link>
+                    <Link to="/despre-cutiuta" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Despre" : "About"}
+                    </Link>
+                    <a href="mailto:contact@cutiutamagica.eu" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Contact" : "Contact"}
+                    </a>
+                    <button
+                      type="button"
+                      className="site-header__profile-language"
+                      aria-label={
+                        menuLanguage === "ro"
+                          ? "Switch menu to English"
+                          : "Schimbă meniul în română"
+                      }
+                      onClick={() => setMenuLanguage((current) => (current === "ro" ? "en" : "ro"))}
+                    >
+                      RO / EN <span aria-hidden>{menuLanguage.toUpperCase()}</span>
+                    </button>
+                  </nav>,
+                  document.body,
+                )}
+            </div>
 
             <button
               type="button"
