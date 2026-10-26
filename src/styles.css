@@ -5463,8 +5463,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   filter: drop-shadow(0 20px 22px #00000088);
   transform-style: preserve-3d;
 }
-.page-story-loader__box-body,
-.page-story-loader__box-lid {
+.page-story-loader .page-story-loader__box-body,
+.page-story-loader .page-story-loader__box-lid {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -5697,8 +5697,8 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 }
 @keyframes page-story-lid {
   from {
-    transform: rotateX(-74deg) translateY(5%);
-    filter: brightness(0.38);
+    transform: rotateX(74deg) translateY(-3%);
+    filter: brightness(0.78);
   }
   to {
     transform: rotateX(0) translateY(0);

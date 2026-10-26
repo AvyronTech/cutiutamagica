@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-26 — release integrat
+
+- Ramura `codex/cinematic-loader-20261026` integrează ramurile locale `codex/seo-indexing-20261026` și `codex/customer-wallet-profile-20261026` peste baza Cloudflare `c00dfe4`. Conține intro-ul cinematic, SEO/indexarea, contul/Portofelul și documentația comună. Nu adaugă migrații D1, secrete ori integrare AVYRON obligatorie.
+- Verificarea vizuală a găsit o regulă CSS ulterioară care schimba poziționarea capacului; selectorul loaderului are acum prioritate, iar animația pornește cu capacul închis și îl deschide. Pagina locală a fost inspectată în browser la desktop și la viewport mobil de 390 × 844 px; cutia și textul sunt separate, fără depășire orizontală în catalog.
+- Verificări pe pachetul integrat: `npm run typecheck`, `npm test -- --maxWorkers=2` (58 fișiere, 320 teste), `npm run lint`, `npm run build` și `npm run cf:deploy:dry` trecute. Auditul Lighthouse pe catalogul local mobil: accesibilitate 100, bune practici 100, navigare agentică 100; SEO 69 doar fiindcă mediul de dezvoltare trimite intenționat `noindex`. D1 de producție nu are migrații restante.
+- Verificarea după publicare trebuie să includă răspunsurile reale pentru `/robots.txt`, ambele sitemapuri și `/llms.txt`, conținutul paginilor și datele structurate, versiunea Workerului și indexarea în Search Console. Scorurile de laborator și codul publicat nu confirmă singure indexarea ori funcționarea unei plăți reale.
+
 ## Handoff 2026-10-26 — intro cinematic al magazinului
 
 - Ramura locală `codex/cinematic-loader-20261026` pornește din `origin/codex/cutiuta-cloudflare-final` la `c00dfe4`. Schimbarea privește numai overlayul de încărcare al paginilor publice, în special primul acces la pagina de start.
