@@ -1,4 +1,4 @@
-import { renderSitemap } from "@/lib/seo-sitemap";
+import { loadSitemap } from "@/lib/seo-sitemap-cache";
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { env } from "cloudflare:workers";
@@ -9,11 +9,14 @@ export const Route = createFileRoute("/sitemap.xml")({
     handlers: {
       GET: async () => {
         try {
-          const products = await listPublicCatalog(env.DB);
-          return new Response(renderSitemap(products), {
+          const sitemap = await loadSitemap(env.CACHE, () => listPublicCatalog(env.DB));
+          return new Response(sitemap.xml, {
             headers: {
               "Content-Type": "application/xml; charset=utf-8",
-              "Cache-Control": "public, max-age=3600, s-maxage=86400",
+              "Cache-Control": sitemap.stale
+                ? "public, max-age=60, s-maxage=60"
+                : "public, max-age=300, s-maxage=900",
+              "X-Sitemap-Source": sitemap.stale ? "stale-cache" : "catalog-cache",
             },
           });
         } catch (error) {

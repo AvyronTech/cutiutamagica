@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-26 — fiabilitatea sitemapului principal
+
+- Ramura `codex/sitemap-reliability-20261026` pornește din `origin/codex/cutiuta-cloudflare-final` după PR #44. În Search Console, `/sitemap.xml` avea ultima citire 26 octombrie, 0 URL-uri descoperite și eroarea generică „Sitemapul nu a putut fi citit”; `/sitemap-guides.xml` avea `Succes` și 23 de URL-uri. Google nu afișa un cod HTTP sau o eroare XML mai precisă, deci cauza exactă nu este demonstrată.
+- Diagnosticul live a confirmat HTTP 200 pentru GET/HEAD și user-agent Googlebot, tip `application/xml`, inclusiv varianta comprimată. XML-ul are 38 URL-uri canonice distincte și 111 referințe la imagini, iar partea standard a documentului validează schema sitemap.org; extensia de imagini folosește namespace-ul documentat de Google. Ruta principală era singura care interoga D1 la fiecare cerere, fără un răspuns păstrat dacă interogarea eșua.
+- `src/lib/seo-sitemap-cache.ts` păstrează în KV ultima versiune XML generată din catalogul public D1. Ruta `src/routes/sitemap[.]xml.ts` servește direct o versiune mai nouă de 15 minute și poate servi o versiune validă anterioară timp de până la șapte zile dacă D1 are o eroare temporară. Eșecurile KV nu opresc generarea directă din D1. Cache-ul HTTP a fost redus la maximum 15 minute pentru răspunsurile curente și un minut pentru fallback. Nu există migrații D1 sau secrete noi; KV este bindingul `CACHE` deja existent. Testele noi acoperă citirea din cache, fallbackul la eroare D1, ignorarea unui cache invalid și eroarea de scriere KV.
+- Starea de deploy, PR și Search Console se consemnează după verificarea live. O retrimitere sau un răspuns HTTP 200 nu reprezintă dovadă de indexare efectivă.
+
 ## Handoff 2026-10-26 — integrare și Search Console
 
 - PR #43 a fost integrat în `codex/cutiuta-cloudflare-final` la `e55c7dc`; arborele rezultat corespunde ramurii PR, iar Workerul live `be7fd304-c38f-4809-bb21-9359a86b9569` conține codul final. Această intrare actualizează starea istorică a handoffurilor de mai jos, nu schimbă aplicația sau D1.
