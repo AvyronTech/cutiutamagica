@@ -2,11 +2,26 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { readProductDiscovery, safeJsonLd } from "./product-discovery";
-import { giftGuide, giftGuides } from "@/data/gift-guides";
+import { DISCOVERY_UPDATED, giftGuide, giftGuides } from "@/data/gift-guides";
 import { renderSitemap } from "./seo-sitemap";
 import type { SitemapProduct } from "./seo-sitemap";
 
 describe("product discovery and search metadata", () => {
+  it("keeps the static guide sitemap aligned with canonical guide routes", () => {
+    const xml = readFileSync(resolve("public/sitemap-guides.xml"), "utf8");
+    const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+    const expected = [
+      "https://cutiutamagica.eu/cadouri",
+      ...giftGuides.map((guide) => `https://cutiutamagica.eu/cadouri/${guide.slug}`),
+    ];
+    expect(urls).toEqual(expected);
+    expect(new Set(urls).size).toBe(expected.length);
+    expect((xml.match(/<lastmod>/g) ?? []).length).toBe(expected.length);
+    expect(xml).toContain(`<lastmod>${DISCOVERY_UPDATED}</lastmod>`);
+    expect(readFileSync(resolve("public/robots.txt"), "utf8")).toContain(
+      "Sitemap: https://cutiutamagica.eu/sitemap-guides.xml",
+    );
+  });
   it("has distinct valid editorial profiles for all ten models", () => {
     const entries = Object.values(
       JSON.parse(readFileSync(resolve("content/product-discovery.json"), "utf8")),
