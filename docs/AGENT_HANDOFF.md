@@ -1,5 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-26 — integrare și Search Console
+
+- PR #43 a fost integrat în `codex/cutiuta-cloudflare-final` la `e55c7dc`; arborele rezultat corespunde ramurii PR, iar Workerul live `be7fd304-c38f-4809-bb21-9359a86b9569` conține codul final. Această intrare actualizează starea istorică a handoffurilor de mai jos, nu schimbă aplicația sau D1.
+- În Search Console au fost trimise ambele sitemapuri. Cel al ghidurilor este citit cu `Succes` și 23 de pagini descoperite. Pentru `/sitemap.xml`, raportul încă afișează „Nu s-a putut prelua” și 0 pagini, deși testul live Google a preluat XML-ul. Raportul de indexare din 23 octombrie afișa 7 URL-uri indexate; nu există acțiuni manuale sau probleme de securitate. Continuarea investigației și limitele dovezilor sunt în [verificarea releaseului](handoff/2026-10-26-release-verification.md).
+- Documentele de continuitate și handoff au fost actualizate după merge. Fără schimbări de runtime, migrații ori capturi UI noi în această etapă. Verificări pentru documentație: formatare și `git diff --check`; poarta CI completă se rulează prin PR-ul de predare.
+
 ## Handoff 2026-10-26 — release integrat
 
 - Starea după publicare, probele live și limitele verificării sunt în [verificarea releaseului](handoff/2026-10-26-release-verification.md).

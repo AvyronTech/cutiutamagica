@@ -37,10 +37,12 @@ Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți ag
 
 ## Stare de reluare la 26 octombrie 2026
 
-- Ramura locală `codex/customer-wallet-profile-20261026`, commit `2caac90`, are îmbunătățirile pentru cont, Portofel, checkout și meniul profilului. Nu este dovada unui release; detaliile și limitele testării sunt în primul handoff.
-- Lucrul SEO/indexare menționat în alte conversații/worktree-uri nu se combină automat cu această ramură. Compară ramurile și rezolvă conflictele printr-un PR revizuit.
+- PR #43 a integrat intro-ul cinematic, SEO/indexarea, contul și Portofelul în `codex/cutiuta-cloudflare-final` la `e55c7dc`. Codul final a fost publicat pe Workerul `cutiuta-magica-store`, versiunea `be7fd304-c38f-4809-bb21-9359a86b9569`; probele sunt în `docs/handoff/2026-10-26-release-verification.md`. Verifică din nou versiunea live înainte de o nouă lansare.
+- În Search Console, `/sitemap-guides.xml` a fost citit cu succes pe 26 octombrie, cu 23 de pagini descoperite. `/sitemap.xml` a fost retrimis în aceeași zi, dar raportul încă afișa „Nu s-a putut prelua” și 0 pagini; testul live Google a putut prelua sursa XML. Urmărește procesarea, fără să deduci indexarea din confirmarea trimiterii.
+- Raportul de indexare actualizat la 23 octombrie arăta 7 URL-uri indexate, inclusiv un vechi URL HTTP al paginii de start care acum redirecționează permanent la HTTPS. Rapoartele pentru acțiuni manuale și probleme de securitate nu indicau probleme la 26 octombrie.
+- Inspecția live din 26 octombrie a confirmat că pagina publică `/produs-cutiuta-muzicala-winter-is-coming` poate fi indexată și are elemente valide pentru produs, înregistrare comercială și breadcrumb. Indexul încă o marca necunoscută; solicitarea de indexare a fost confirmată și pusă în coada Google. Aceasta nu înseamnă că pagina este deja indexată.
 - Eroarea exactă de salvare a parolei după Google rămâne de identificat între aplicație și managerul de parole al browserului. Testul local Google → parolă → conectare trece, dar nu reproduce dispozitivul utilizatorului.
-- Plata cu cardul și salvarea cardului au fluxuri de cod și teste; o tranzacție live completă, cu întoarcere, webhook și reconciliere, nu a fost executată în această ramură.
+- Plata cu cardul și salvarea cardului au fluxuri de cod și teste; o tranzacție live completă, cu întoarcere, webhook și reconciliere, nu a fost executată în acest release.
 
 ## Cum se păstrează sincronizarea
 
