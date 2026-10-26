@@ -1,5 +1,15 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-26 — intro cinematic al magazinului
+
+- Ramura locală `codex/cinematic-loader-20261026` pornește din `origin/codex/cutiuta-cloudflare-final` la `c00dfe4`. Schimbarea privește numai overlayul de încărcare al paginilor publice, în special primul acces la pagina de start.
+- Cutiuța folosește imaginea universală existentă din `public/brand/music-box-universal.webp`, bazată pe aspectul modelelor reale. Capacul și corpul sunt două măști CSS ale aceleiași imagini, iar manivela SVG se rotește din același pivot vizual. Notele apar lângă mecanism; iluminarea fundalului rămâne localizată în jurul produsului. A fost eliminată scena WebGL a loaderului, care era schematică și adăuga un import greu la tranziții.
+- `BrandMark` acceptă prioritate de descărcare pentru imaginea primului cadru. Intro-ul rulează o singură dată pe sesiune cu cheia `cutiuta:cinematic-intro:v3`, are buton de continuare și limită de timp; `prefers-reduced-motion` păstrează ieșirea rapidă. Pe mobil, animațiile se încheie în fereastra mai scurtă de afișare. În `npm run dev`, `/?story-preview` ține intro-ul deschis pentru capturi și inspecție; parametrul nu are efect în buildul de producție.
+- Fișiere: `src/components/site/PageStoryLoader.tsx`, `BrandMark.tsx`, `src/routes/__root.tsx`, `src/styles.css`; `PageStoryScene.ts` a fost eliminat. Nu există migrații D1 sau configurări externe noi.
+- Măștile capacului și poziția manivelei depind de compoziția imaginii universale actuale. La înlocuirea acestei imagini, recadrează măștile și pivotul în CSS; revenirea completă se face prin revertul commitului acestei ramuri.
+- Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (56 fișiere, 314 teste), `npm run lint`, `npm run build`, `npm run cf:types:check`, `npm run cf:deploy:dry`, `git diff --check` și răspunsul HTTP 200 al homepageului local au trecut. Migrațiile 0001–0081 și seedul au fost aplicate numai în D1 local pentru preview.
+- Capturile desktop/mobil ale versiunii finale rămân de realizat: macOS a rămas blocat în timpul verificării cu browserul. Scena WebGL anterioară a fost inspectată vizual și respinsă ca prea schematică; verificarea ei nu se transferă asupra compoziției foto finale. Nu s-au făcut push, PR, migrare D1 remote sau deploy.
+
 ## Handoff 2026-10-22 — confirmarea plății înainte de acceptarea comenzii
 
 - Checkoutul cu card creează o înregistrare provizorie `pending/unpaid` necesară sesiunii de plată. Nu trimite e-mailuri, notificări de comandă nouă, evenimente de conversie și nu crește contorul/valoarea clientului înainte de confirmarea semnată a procesatorului. Webhookul validează furnizorul, mediul, sesiunea, suma și moneda, apoi marchează plata și pune notificările în coadă; trimiterea e-mailurilor și consumul outboxului refuză înregistrările încă neplătite.

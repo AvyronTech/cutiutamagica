@@ -3,9 +3,11 @@ import { memo } from "react";
 function BrandMarkImpl({
   className = "",
   sizes = "128px",
+  priority = false,
 }: {
   className?: string;
   sizes?: string;
+  priority?: boolean;
 }) {
   return (
     <span className={`music-box-mark ${className}`} aria-hidden="true">
@@ -17,6 +19,8 @@ function BrandMarkImpl({
         width={800}
         height={800}
         decoding="async"
+        loading={priority ? "eager" : undefined}
+        fetchPriority={priority ? "high" : undefined}
         className="music-box-mark__image"
       />
     </span>
