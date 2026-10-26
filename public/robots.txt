@@ -4,3 +4,4 @@ Disallow: /admin
 Disallow: /api/
 
 Sitemap: https://cutiutamagica.eu/sitemap.xml
+Sitemap: https://cutiutamagica.eu/sitemap-guides.xml

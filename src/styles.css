@@ -9805,6 +9805,19 @@ body::-webkit-scrollbar,
   height: 18px;
   accent-color: #725227;
 }
+.catalog-search-submit {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: #6e4b25;
+  color: #fff9ed;
+  font-size: 13px;
+  font-weight: 600;
+}
+.catalog-search-submit:focus-visible {
+  outline: 2px solid #342e25;
+  outline-offset: 3px;
+}
 .catalog-result-heading {
   display: flex;
   justify-content: space-between;

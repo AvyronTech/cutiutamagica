@@ -22,6 +22,7 @@ import {
   X,
   Bell,
   Search,
+  SearchCheck,
   ShoppingBag,
   Truck,
   Wallet,
@@ -109,6 +110,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { path: "/admin/statistics", label: "Statistici", icon: BarChart3 },
       { path: "/admin/traffic", label: "Trafic", icon: TrendingUp },
+      { path: "/admin/seo", label: "SEO și indexare", icon: SearchCheck },
       { path: "/admin/notifications", label: "Notificări", icon: BellRing },
       { path: "/admin/integrations", label: "Integrări", icon: Plug },
       { path: "/admin/accounts", label: "Conturi și dispozitive", icon: ShieldCheck },

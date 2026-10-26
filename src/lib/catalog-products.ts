@@ -26,6 +26,7 @@ export function catalogProducts(catalog: CatalogProduct[]): Product[] {
     name: row.name,
     shortName: row.shortName,
     category: row.category,
+    material: row.material ?? undefined,
     brand: row.brand,
     gtin: row.gtin ?? undefined,
     mpn: row.mpn ?? undefined,
