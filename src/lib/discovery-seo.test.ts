@@ -123,4 +123,9 @@ describe("product discovery and search metadata", () => {
       "<url><loc>https://cutiutamagica.eu/produs-cutiuta-muzicala-future</loc></url>",
     );
   });
+  it("does not invent product URLs when the published catalog is empty", () => {
+    const xml = renderSitemap([]);
+    expect(xml).not.toContain("/produs-cutiuta-muzicala-");
+    expect(xml).toContain("https://cutiutamagica.eu/cadouri");
+  });
 });

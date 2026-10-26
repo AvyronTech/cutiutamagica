@@ -11,12 +11,13 @@
 
 - `public/sitemap-guides.xml` oferă separat hubul `/cadouri` și cele 22 de ghiduri ca asset static Cloudflare, fără interogare D1 sau randare Worker. Generatorul citește slugurile și data editorială direct din `src/data/gift-guides.ts`; buildurile obișnuite și de producție îl regenerează. Testul verifică toate URL-urile canonice și referința din `robots.txt`.
 - `robots.txt` declară și noul sitemap. `public/_headers` setează tipul XML și cacheul pentru assetul static. Sitemapul existent continuă să reflecte catalogul public D1 și păstrează URL-urile ghidurilor pentru compatibilitate.
-- Fișiere: `scripts/generate-guide-sitemap.mjs`, `public/sitemap-guides.xml`, `public/robots.txt`, `public/_headers`, `package.json`, `src/lib/discovery-seo.test.ts`, acest handoff. Migrații noi: niciuna.
+- Sitemapul dinamic nu mai publică produsele editoriale de rezervă când catalogul D1 este gol. O eroare de citire D1 produce HTTP 503 cu `no-store`, pentru ca un răspuns temporar incomplet să nu fie cache-uit ca sitemap valid.
+- Fișiere: `scripts/generate-guide-sitemap.mjs`, `public/sitemap-guides.xml`, `public/robots.txt`, `public/_headers`, `package.json`, `src/routes/sitemap[.]xml.ts`, `src/lib/discovery-seo.test.ts`, acest handoff. Migrații noi: niciuna.
 
 ## Verificări
 
-- `npm run typecheck`, `npm test -- --maxWorkers=2` (56 fișiere, 315 teste), `npm run lint`, `npm run build`, `npm run cf:deploy:dry`, `git diff --check` și verificarea generatorului au trecut.
-- D1 local a fost inițializat cu toate migrațiile. Local, `/`, `/produse`, `/cadouri`, `/cadouri/pentru-mama`, `/auth`, `/cont`, `/comanda`, ambele sitemapuri și `robots.txt` au răspuns 200; `/admin` a redirecționat corect. Ambele sitemapuri locale sunt XML valid, cu URL-uri unice: 41 în cel dinamic și 23 în cel static. Diferența față de cele 38 de URL-uri live reflectă catalogul D1 local.
+- `npm run typecheck`, `npm test -- --maxWorkers=2` (56 fișiere, 316 teste), `npm run lint`, `npm run build`, `npm run cf:deploy:dry`, `git diff --check` și verificarea generatorului au trecut.
+- D1 local a fost inițializat cu toate migrațiile. Local, `/`, `/produse`, `/cadouri`, `/cadouri/pentru-mama`, `/auth`, `/cont`, `/comanda`, ambele sitemapuri și `robots.txt` au răspuns 200; `/admin` a redirecționat corect. Cu catalogul D1 local gol, sitemapul dinamic actual are 31 de URL-uri valide și zero produse; cel static are 23. Înaintea corecției fallbackului, cel dinamic introducea 10 URL-uri editoriale de produs care nu corespundeau catalogului local.
 - Hubul ghidurilor a fost inspectat la 390 × 844 și 1440 × 900 px, fără depășire orizontală; toate cele 22 de legături către ghiduri erau în HTML. Nu există modificări vizuale. Autentificarea administrativă și plasarea unei comenzi nu au fost efectuate.
 
 ## Activare și limită
