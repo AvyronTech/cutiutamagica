@@ -2,6 +2,8 @@
 
 ## Actualizare sitemap — 26 octombrie
 
+- PR #46 (`c2de006`) a adăugat sitemapul text din aceeași listă ca XML-ul. Workerul `88b46512-1e4e-49e0-b64d-070af88f97a0` este distribuit 100%. Live, `/sitemap.xml`, `/sitemap.txt`, `/sitemap-guides.xml`, `/robots.txt` și `/llms.txt` au răspuns 200; XML-ul și textul au câte 38 URL-uri unice și identice, iar robots declară toate cele trei sitemapuri. Search Console a citit `/sitemap.txt` cu `Succes` și 38 pagini descoperite imediat după trimitere. XML-ul a fost retrimis, dar raportul încă afișa eroarea generică și 0 pagini; ghidurile rămân `Succes` cu 23. Testele locale și CI au trecut. Cauza exactă a erorii XML nu este demonstrată, iar descoperirea prin text nu dovedește indexarea efectivă.
+
 - PR #45 (`3aa0bea`) a introdus păstrarea ultimei versiuni valide a sitemapului din catalog în KV. Workerul live este `2aadd988-c6ba-4682-b34d-b9e272555609`, distribuit 100%; `/sitemap.xml` a răspuns 200, cu 38 URL-uri și XML valid, inclusiv pentru user-agent Googlebot. Testul live Search Console de la 20:23 a confirmat „Preluarea paginii: Reușit”. Retrimiterea a fost confirmată de Google, însă raportul sitemapului afișa încă eroarea veche și 0 URL-uri la verificarea imediată. Detaliile de diagnostic și testare sunt în cel mai nou handoff din `docs/AGENT_HANDOFF.md`.
 - Cauza exactă a erorii din Search Console rămâne nedemonstrată: interfața a afișat numai „Sitemapul nu a putut fi citit”, fără cod HTTP ori eroare de parsare. Fișierul static al ghidurilor a rămas `Succes` cu 23 URL-uri. Nu echivala testul live sau retrimiterea cu acceptarea sitemapului și nu echivala descoperirea URL-urilor cu indexarea lor.
 
