@@ -41,9 +41,10 @@ export const getMarketingCenter = createServerFn({ method: "GET" })
          ORDER BY occurred_on DESC,created_at DESC LIMIT 150`,
       ).all<Record<string, string | number | null>>(),
       env.DB.prepare(
-        `SELECT sp.id,sp.post_type AS postType,sp.status,sp.caption,sp.scheduled_at AS scheduledAt,
+        `SELECT sp.id,sp.post_type AS postType,sp.status,sp.publication_state AS publicationState,
+         sp.caption,sp.scheduled_at AS scheduledAt,
          sp.created_at AS createdAt,sa.provider,sa.label AS accountLabel
-         FROM social_posts sp LEFT JOIN social_accounts sa ON sa.id=sp.account_id
+         FROM v_social_publication_state sp LEFT JOIN social_accounts sa ON sa.id=sp.account_id
          ORDER BY sp.created_at DESC LIMIT 100`,
       ).all<Record<string, string | null>>(),
       env.DB.prepare(

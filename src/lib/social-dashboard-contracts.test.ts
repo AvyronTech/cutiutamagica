@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { socialSnapshotSchema } from "./social-dashboard-contracts";
+import {
+  metricoolScheduleReconciliationSchema,
+  socialSnapshotSchema,
+} from "./social-dashboard-contracts";
 
 const sample = {
   network: "facebook" as const,
@@ -47,5 +50,46 @@ describe("Metricool snapshot validation", () => {
       }).success,
     ).toBe(false);
     expect(socialSnapshotSchema.safeParse({ ...sample, followers: 0 }).success).toBe(true);
+  });
+});
+
+describe("Metricool schedule reconciliation", () => {
+  it("accepts only the fixed Free plan and a reviewed empty future schedule", () => {
+    expect(
+      metricoolScheduleReconciliationSchema.safeParse({
+        idempotencyKey: "451d3866-7fa5-4be2-b696-0ddad594713f",
+        quotaUsed: 6,
+        quotaLimit: 20,
+        futureSchedules: [],
+        evidenceNote: "Brandul 7230540 nu are programări viitoare.",
+      }).success,
+    ).toBe(true);
+    expect(
+      metricoolScheduleReconciliationSchema.safeParse({
+        idempotencyKey: "451d3866-7fa5-4be2-b696-0ddad594713f",
+        quotaUsed: 6,
+        quotaLimit: 20,
+        futureSchedules: [{ externalId: "inventat" }],
+        evidenceNote: "Programare neverificată.",
+      }).success,
+    ).toBe(false);
+    expect(
+      metricoolScheduleReconciliationSchema.safeParse({
+        idempotencyKey: "451d3866-7fa5-4be2-b696-0ddad594713f",
+        quotaUsed: 21,
+        quotaLimit: 20,
+        futureSchedules: [],
+        evidenceNote: "Contor invalid peste limita planului.",
+      }).success,
+    ).toBe(false);
+    expect(
+      metricoolScheduleReconciliationSchema.safeParse({
+        idempotencyKey: "not-a-uuid",
+        quotaUsed: 6,
+        quotaLimit: 20,
+        futureSchedules: [],
+        evidenceNote: "Cheia de idempotentă trebuie să fie validă.",
+      }).success,
+    ).toBe(false);
   });
 });

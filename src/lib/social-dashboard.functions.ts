@@ -2,7 +2,11 @@ import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { assertPermission, requireAdminAuth } from "@/lib/admin-auth";
-import { socialSnapshotSchema } from "@/lib/social-dashboard-contracts";
+import {
+  metricoolScheduleReconciliationSchema,
+  socialSnapshotSchema,
+} from "@/lib/social-dashboard-contracts";
+import { reconcileMetricoolSchedules } from "@/server/services/social-schedule-reconciliation";
 import { activity } from "@/server/services/growth-settings";
 
 type Snapshot = {
@@ -24,7 +28,7 @@ export const getSocialDashboard = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     assertPermission(context.admin, "marketing.read");
-    const [snapshots, accounts, metricool, postCounts] = await Promise.all([
+    const [snapshots, accounts, metricool, postCounts, latestScheduleSnapshot] = await Promise.all([
       env.DB.prepare(
         `SELECT id,network,period_start AS periodStart,period_end AS periodEnd,
           followers_observed_on AS followersObservedOn,followers,posts,views,interactions,
@@ -50,9 +54,24 @@ export const getSocialDashboard = createServerFn({ method: "GET" })
          WHERE owner='cutiuta_magica' AND provider='metricool' AND label='Metricool · brand 7230540'
          LIMIT 1`,
       ).first<{ status: string; lastVerifiedAt: string | null }>(),
-      env.DB.prepare(`SELECT status,COUNT(*) AS count FROM social_posts GROUP BY status`).all<{
-        status: string;
-        count: number;
+      env.DB.prepare(
+        `SELECT publication_state AS status,COUNT(*) AS count
+         FROM v_social_publication_state GROUP BY publication_state`,
+      ).all<{ status: string; count: number }>(),
+      env.DB.prepare(
+        `SELECT observed_at AS observedAt,quota_used AS quotaUsed,quota_limit AS quotaLimit,
+                future_schedule_count AS futureScheduleCount,reconciled_count AS reconciledCount,
+                evidence_note AS evidenceNote
+         FROM social_schedule_snapshots
+         WHERE provider='metricool_reviewed' AND brand_id='7230540'
+         ORDER BY observed_at DESC,created_at DESC LIMIT 1`,
+      ).first<{
+        observedAt: string;
+        quotaUsed: number;
+        quotaLimit: number;
+        futureScheduleCount: number;
+        reconciledCount: number;
+        evidenceNote: string;
       }>(),
     ]);
     return {
@@ -60,7 +79,20 @@ export const getSocialDashboard = createServerFn({ method: "GET" })
       accounts: accounts.results,
       metricool: metricool ?? { status: "setup_required", lastVerifiedAt: null },
       postCounts: postCounts.results,
+      latestScheduleSnapshot: latestScheduleSnapshot ?? null,
     };
+  });
+
+export const reconcileMetricoolSchedule = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(metricoolScheduleReconciliationSchema)
+  .handler(async ({ context, data }) => {
+    const request = getRequest();
+    const origin = request.headers.get("origin");
+    if (origin && origin !== new URL(request.url).origin) throw new Error("Cerere nepermisă.");
+    assertPermission(context.admin, "marketing.write");
+
+    return reconcileMetricoolSchedules(env.DB, context.admin.id, data);
   });
 
 export const saveSocialSnapshot = createServerFn({ method: "POST" })

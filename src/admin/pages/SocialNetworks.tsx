@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,7 +13,11 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getSocialDashboard, saveSocialSnapshot } from "@/lib/social-dashboard.functions";
+import {
+  getSocialDashboard,
+  reconcileMetricoolSchedule,
+  saveSocialSnapshot,
+} from "@/lib/social-dashboard.functions";
 import type { SocialSnapshotInput } from "@/lib/social-dashboard-contracts";
 
 const networks = [
@@ -70,6 +74,8 @@ export default function SocialNetworks() {
   const client = useQueryClient();
   const load = useServerFn(getSocialDashboard);
   const save = useServerFn(saveSocialSnapshot);
+  const reconcileSchedule = useServerFn(reconcileMetricoolSchedule);
+  const scheduleIdempotencyKey = useRef<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const query = useQuery({
     queryKey: ["admin", "social-dashboard"],
@@ -82,6 +88,31 @@ export default function SocialNetworks() {
       await client.invalidateQueries({ queryKey: ["admin", "social-dashboard"] });
       toast.success(result.imported ? "Cifrele au fost salvate" : "Acest raport este deja salvat");
       if (result.imported) setShowImport(false);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const scheduleMutation = useMutation({
+    mutationFn: (input: { quotaUsed: number; evidenceNote: string; idempotencyKey: string }) =>
+      reconcileSchedule({
+        data: {
+          idempotencyKey: input.idempotencyKey,
+          quotaUsed: input.quotaUsed,
+          quotaLimit: 20,
+          futureSchedules: [],
+          evidenceNote: input.evidenceNote,
+        },
+      }),
+    onSuccess: async (result) => {
+      scheduleIdempotencyKey.current = null;
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin", "social-dashboard"] }),
+        client.invalidateQueries({ queryKey: ["admin", "marketing"] }),
+      ]);
+      toast.success(
+        result.reconciledCount > 0
+          ? `${result.reconciledCount} programări locale au revenit în revizie`
+          : "Starea Metricool a fost verificată și salvată",
+      );
     },
     onError: (error) => toast.error(error.message),
   });
@@ -105,6 +136,18 @@ export default function SocialNetworks() {
       views: optionalCount("views"),
       interactions: optionalCount("interactions"),
       reels: optionalCount("reels"),
+    });
+  }
+
+  function reconcileEmptySchedule(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (scheduleMutation.isPending) return;
+    const values = new FormData(event.currentTarget);
+    scheduleIdempotencyKey.current ??= crypto.randomUUID();
+    scheduleMutation.mutate({
+      quotaUsed: Number(values.get("quotaUsed")),
+      evidenceNote: String(values.get("evidenceNote")),
+      idempotencyKey: scheduleIdempotencyKey.current,
     });
   }
 
@@ -152,7 +195,7 @@ export default function SocialNetworks() {
           role="alert"
           className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-100"
         >
-          Datele sociale nu pot fi încărcate. Verifică dacă migrația 0071 este aplicată și încearcă
+          Datele sociale nu pot fi încărcate. Verifică dacă migrația 0082 este aplicată și încearcă
           din nou.
         </div>
       ) : null}
@@ -324,9 +367,16 @@ export default function SocialNetworks() {
               <p className="mt-3 text-sm text-slate-300">
                 {number.format(postCounts.draft ?? 0)} drafturi ·{" "}
                 {number.format(postCounts.review ?? 0)} în revizie ·{" "}
-                {number.format(postCounts.approved ?? 0)} aprobate ·{" "}
-                {number.format(postCounts.scheduled ?? 0)} programate în baza magazinului.
+                {number.format(postCounts.approved_awaiting_connector ?? 0)} aprobate, așteaptă
+                conector · {number.format(postCounts.scheduled_verified ?? 0)} programate și
+                confirmate extern.
               </p>
+              {(postCounts.schedule_unverified ?? 0) > 0 ? (
+                <p className="mt-3 rounded-xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">
+                  {number.format(postCounts.schedule_unverified)} stări „programat” nu au chitanță
+                  externă și trebuie reconciliate.
+                </p>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to="/admin/posts"
@@ -364,6 +414,57 @@ export default function SocialNetworks() {
                 . Planul Free permite folosirea aplicației Metricool; importul automat în panou
                 necesită acces API dintr-un plan care îl include.
               </p>
+              {query.data.latestScheduleSnapshot ? (
+                <p className="mt-3 text-xs leading-5 text-slate-400">
+                  Ultima verificare: {date(query.data.latestScheduleSnapshot.observedAt)} · limită
+                  folosită {query.data.latestScheduleSnapshot.quotaUsed}/
+                  {query.data.latestScheduleSnapshot.quotaLimit} · programări viitoare{" "}
+                  {query.data.latestScheduleSnapshot.futureScheduleCount} · corectate{" "}
+                  {query.data.latestScheduleSnapshot.reconciledCount}.
+                </p>
+              ) : null}
+              <form
+                onSubmit={reconcileEmptySchedule}
+                className="mt-4 space-y-3 rounded-xl border border-white/10 bg-slate-950/30 p-3"
+              >
+                <p className="text-xs leading-5 text-slate-400">
+                  Folosește această confirmare numai după ce brandul 7230540 arată zero programări
+                  viitoare. Stările locale fără dovadă revin în revizie și cer o aprobare nouă; nu
+                  se publică și nu se șterge nimic extern.
+                </p>
+                <label className="block text-xs text-slate-300">
+                  Publicări folosite din 20
+                  <input
+                    name="quotaUsed"
+                    type="number"
+                    min="0"
+                    max="20"
+                    defaultValue={query.data.latestScheduleSnapshot?.quotaUsed ?? 6}
+                    required
+                    className={field}
+                  />
+                </label>
+                <label className="block text-xs text-slate-300">
+                  Dovada verificării
+                  <input
+                    name="evidenceNote"
+                    required
+                    minLength={10}
+                    maxLength={500}
+                    defaultValue="Metricool brand 7230540 verificat: nicio programare viitoare."
+                    className={field}
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={scheduleMutation.isPending}
+                  className="rounded-lg border border-amber-200/30 px-3 py-2 text-sm font-medium text-amber-100 hover:bg-amber-200/10 disabled:opacity-50"
+                >
+                  {scheduleMutation.isPending
+                    ? "Se reconciliază…"
+                    : "Confirmă zero programări viitoare"}
+                </button>
+              </form>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to="/admin/accounts"

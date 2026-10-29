@@ -1,5 +1,13 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-29 — reconciliere programări sociale
+
+- Ramura `codex/social-schedule-reconciliation` pornește din `origin/codex/cutiuta-cloudflare-final` la `0b3c611`. Separă programările confirmate prin chitanță provider de simplele stări locale și elimină discrepanța observată între cele cinci rânduri `scheduled` din magazin și zero programări viitoare în Metricool, brand `7230540`, cu limită Free observată `6/20`.
+- Migrarea append-only `0082_social_schedule_reconciliation.sql` adaugă registrul auditat și vederea stărilor de publicare; `0083_social_schedule_reapproval.sql` întărește fluxul astfel încât orice programare fără dovadă să revină în `review`, să piardă ora și aprobarea executabilă și să necesite o revizie nouă. Programările cu operațiune provider reușită și ID extern rămân neatinse.
+- Endpointul administrativ folosește o cheie de idempotentă stabilă, repetă verificarea chitanței în actualizarea tranzacțională, expiră aprobările vechi și raportează numărul real de programări confirmate. Dashboardul, Marketing Hub, Business Hub și monitorul orar disting stările verificate, neconfirmate și cele care cer reaprobare.
+- Verificarea locală autentificată a folosit cinci postări sintetice și o sesiune temporară, apoi le-a eliminat și a confirmat zero rânduri/sesiuni QA rămase. Interfața a fost inspectată la 1440 × 900 și 390 × 844; probele sunt în `docs/release-evidence/2026-10-29/`. Nu s-au publicat postări și nu s-au modificat media cu drepturi neverificate, conversații, comenzi sau conectori.
+- Detaliile verificărilor și ordinea releaseului sunt în [handofful dedicat](handoff/2026-10-28-social-schedule-reconciliation.md). Migrarea remote trebuie aplicată înaintea Workerului. Pushul/PR-ul sunt autorizate în conversația curentă; merge-ul și migrarea D1 remote rămân aprobări separate potrivit regulilor proiectului.
+
 ## Handoff 2026-10-26 — sitemap text pentru verificarea în Search Console
 
 - Ramura `codex/sitemap-verification-20261026` adaugă `/sitemap.txt`, generat din aceleași intrări canonice ca `/sitemap.xml` și păstrat împreună cu XML-ul în cache-ul KV. `robots.txt` îl declară, iar `/admin/seo` verifică ruta și declarația. Nu adaugă migrații D1, bindinguri sau secrete. Formatul text simplu oferă o cale suplimentară de diagnostic pentru raportul XML care încă afișa „Nu s-a putut prelua”.
