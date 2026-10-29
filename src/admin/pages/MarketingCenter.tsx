@@ -450,7 +450,17 @@ export default function MarketingCenter({
                   <span>
                     {String(post.provider ?? "neatribuit")} · {String(post.postType)}
                   </span>
-                  <span>{String(post.status)}</span>
+                  <span>
+                    {post.publicationState === "scheduled_verified"
+                      ? "programată · confirmată extern"
+                      : post.publicationState === "schedule_unverified"
+                        ? "programare neconfirmată"
+                        : post.publicationState === "approved_awaiting_connector"
+                          ? "aprobată · așteaptă conector"
+                          : post.publicationState === "review"
+                            ? "revizie nouă necesară"
+                            : String(post.status)}
+                  </span>
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">
                   {String(post.caption)}

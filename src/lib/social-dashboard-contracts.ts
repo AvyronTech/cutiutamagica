@@ -61,3 +61,15 @@ export const socialSnapshotSchema = z
   });
 
 export type SocialSnapshotInput = z.infer<typeof socialSnapshotSchema>;
+
+export const metricoolScheduleReconciliationSchema = z.object({
+  idempotencyKey: z.string().uuid(),
+  quotaUsed: z.number().int().min(0).max(20),
+  quotaLimit: z.literal(20),
+  futureSchedules: z.array(z.never()).length(0),
+  evidenceNote: z.string().trim().min(10).max(500),
+});
+
+export type MetricoolScheduleReconciliationInput = z.infer<
+  typeof metricoolScheduleReconciliationSchema
+>;

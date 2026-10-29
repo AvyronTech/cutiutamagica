@@ -13,12 +13,14 @@ type MonitorSnapshot = {
   failedExchanges: number;
   failedRetentionItems: number;
   pendingApprovals: number;
+  unverifiedScheduledPosts: number;
 };
 
 export type MarketingAgentBlocker =
   | "social_connector_unverified"
   | "gsc_credential_unverified"
   | "gsc_data_stale"
+  | "schedule_state_unverified"
   | "failed_operations";
 
 const fallbackSettings: MonitorSettings = {
@@ -71,6 +73,7 @@ export function evaluateMarketingAgentHealth(
   if (snapshot.failedSocialPosts + snapshot.failedExchanges + snapshot.failedRetentionItems > 0) {
     blockers.push("failed_operations");
   }
+  if (snapshot.unverifiedScheduledPosts > 0) blockers.push("schedule_state_unverified");
   return blockers;
 }
 
@@ -105,6 +108,11 @@ const blockerCopy: Record<MarketingAgentBlocker, { title: string; message: strin
     title: "Agentul are operațiuni eșuate",
     message:
       "Există publicări sau schimburi AVYRON eșuate. Verifică jurnalul înaintea unei reîncercări.",
+  },
+  schedule_state_unverified: {
+    title: "Programări sociale fără confirmare externă",
+    message:
+      "Cel puțin o postare este marcată local ca programată fără chitanță externă. Reconcilierea Metricool trebuie refăcută înaintea publicării.",
   },
 };
 
@@ -144,6 +152,7 @@ export async function processMarketingAgentMonitoring(db: D1Database, now = new 
     failedExchanges,
     failedRetention,
     approvals,
+    unverifiedScheduled,
   ] = await Promise.all([
     db
       .prepare("SELECT COUNT(*) AS total FROM social_accounts WHERE status = 'active'")
@@ -178,6 +187,11 @@ export async function processMarketingAgentMonitoring(db: D1Database, now = new 
     db
       .prepare("SELECT COUNT(*) AS total FROM approval_requests WHERE status = 'pending'")
       .first<{ total: number }>(),
+    db
+      .prepare(
+        "SELECT COUNT(*) AS total FROM v_social_publication_state WHERE publication_state='schedule_unverified'",
+      )
+      .first<{ total: number }>(),
   ]);
 
   const snapshot: MonitorSnapshot = {
@@ -189,6 +203,7 @@ export async function processMarketingAgentMonitoring(db: D1Database, now = new 
     failedExchanges: Number(failedExchanges?.total ?? 0),
     failedRetentionItems: Number(failedRetention?.total ?? 0),
     pendingApprovals: Number(approvals?.total ?? 0),
+    unverifiedScheduledPosts: Number(unverifiedScheduled?.total ?? 0),
   };
   const blockers = evaluateMarketingAgentHealth(snapshot, settings.staleAfterHours, now);
   const runId = crypto.randomUUID();

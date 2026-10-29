@@ -16,6 +16,7 @@ describe("marketing agent flow monitoring", () => {
           failedExchanges: 0,
           failedRetentionItems: 0,
           pendingApprovals: 2,
+          unverifiedScheduledPosts: 0,
         },
         26,
         now,
@@ -35,11 +36,17 @@ describe("marketing agent flow monitoring", () => {
           failedExchanges: 1,
           failedRetentionItems: 1,
           pendingApprovals: 4,
+          unverifiedScheduledPosts: 2,
         },
         26,
         now,
       ),
-    ).toEqual(["social_connector_unverified", "gsc_credential_unverified", "failed_operations"]);
+    ).toEqual([
+      "social_connector_unverified",
+      "gsc_credential_unverified",
+      "failed_operations",
+      "schedule_state_unverified",
+    ]);
   });
 
   it("flags stale GSC data only after the configured threshold", () => {
@@ -54,6 +61,7 @@ describe("marketing agent flow monitoring", () => {
           failedExchanges: 0,
           failedRetentionItems: 0,
           pendingApprovals: 0,
+          unverifiedScheduledPosts: 0,
         },
         26,
         now,
