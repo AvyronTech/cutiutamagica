@@ -19788,3 +19788,322 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
     transition: none;
   }
 }
+
+/* Product pages keep the purchase area primary and the supporting content quiet. */
+.product-world .product-world-intro {
+  padding-top: clamp(24px, 3vw, 36px);
+}
+.product-world .product-world-intro p {
+  font-size: clamp(25px, 3vw, 31px);
+}
+.product-world .product-detail-shell {
+  margin-top: 18px;
+  padding: clamp(18px, 2.6vw, 32px);
+  gap: clamp(22px, 3vw, 38px);
+}
+.product-world .product-purchase-actions {
+  grid-template-columns: 126px minmax(0, 1fr);
+  gap: 9px;
+  margin-top: 18px;
+}
+.product-world .product-quantity-control {
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  min-height: 58px;
+  border-color: color-mix(in srgb, var(--world-accent) 35%, transparent);
+  border-radius: 13px;
+}
+.product-world .product-quantity-control__label {
+  padding-top: 4px;
+  font-size: 9px;
+  letter-spacing: 0.11em;
+}
+.product-world .product-quantity-control button {
+  min-height: 42px;
+  height: 42px;
+}
+.product-world .product-quantity-control output {
+  font-family: var(--font-sans);
+  font-size: 19px;
+  font-weight: 700;
+}
+.product-world .product-available-link {
+  color: #f7d992;
+}
+.product-world .product-melody-player--unavailable {
+  opacity: 1;
+}
+.product-world .product-melody-player--unavailable .melody-content > strong,
+.product-world .product-melody-player--unavailable .melody-content small {
+  color: #ead9be;
+}
+.product-world .product-add-button {
+  min-height: 58px;
+  border-radius: 13px;
+}
+.product-world .product-checkout-link {
+  min-height: 48px;
+  padding: 9px 16px;
+  font-size: 14px;
+}
+.product-world .product-detail-highlights {
+  margin-top: 20px;
+}
+.product-world .product-detail-highlights ul {
+  margin-top: 10px;
+  gap: 7px;
+}
+.product-world .product-detail-highlights li {
+  min-height: 0;
+  padding: 7px 9px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.product-world .product-detail-copy > .product-delivery-promise {
+  margin-top: 14px;
+}
+.product-world .limited-edition-seal--detail {
+  top: 11px;
+  right: 11px;
+  gap: 5px;
+  padding: 6px 8px;
+  border-color: rgb(231 199 135 / 0.42);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.22);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.product-world .limited-edition-seal--detail > svg {
+  width: 11px;
+  height: 11px;
+}
+.product-world .limited-edition-seal--detail strong {
+  font-size: 9px;
+}
+.product-world .limited-edition-seal--detail small {
+  font-size: 7px;
+}
+.product-world .product-share {
+  margin-top: 14px;
+  padding: 11px 12px 8px;
+  border-color: #ffffff1c;
+  border-radius: 14px;
+  background: #ffffff05;
+  box-shadow: none;
+}
+.product-world .product-share::after {
+  display: none;
+}
+.product-world .product-share__heading {
+  gap: 6px;
+  padding-right: 0;
+}
+.product-world .product-share__heading strong {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+.product-world .product-share__emblem {
+  width: 19px;
+  height: 19px;
+  flex-basis: 19px;
+  border: 0;
+  background: transparent;
+}
+.product-world .product-share__emblem svg {
+  width: 14px;
+  height: 14px;
+}
+.product-world .product-share__channels {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+.product-world .product-share__native,
+.product-world .product-share__channel {
+  min-height: 38px;
+  flex-direction: row;
+  gap: 5px;
+  padding: 6px;
+  border-radius: 9px;
+  font-size: 10px;
+}
+.product-world .product-share__footer {
+  margin-top: 2px;
+}
+.product-world .product-share__copy {
+  min-height: 27px;
+  font-size: 10px;
+}
+.product-world .product-about-card {
+  margin-top: 16px;
+  padding: clamp(18px, 2.6vw, 30px);
+}
+.product-world .product-about-card h2 {
+  font-size: clamp(26px, 2.7vw, 34px);
+}
+.product-world .product-about-card__chapters,
+.product-world .product-about-card__practical {
+  gap: 17px;
+  margin-top: 19px;
+}
+.product-world .product-about-card__practical {
+  margin-top: 18px;
+  padding-top: 17px;
+}
+.product-world .product-about-card h3 {
+  font-size: clamp(18px, 1.6vw, 21px);
+}
+.product-world .product-about-card section p,
+.product-world .product-about-card__fallback p {
+  margin-top: 7px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.product-world .product-about-card__closing {
+  margin-top: 18px;
+  font-size: clamp(20px, 2vw, 24px);
+}
+.product-world .product-about-card__documents {
+  margin-top: 15px;
+  padding-top: 11px;
+}
+.product-world .product-about-card .product-making-note {
+  width: 100%;
+  margin: 11px 0 0;
+}
+.product-world .product-about-card .product-making-note__link {
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid #ffffff1a;
+  border-radius: 0;
+  color: #f1dfbf;
+  background: transparent;
+}
+.product-world .product-about-card .product-making-note__link:hover {
+  border-color: color-mix(in srgb, var(--world-accent) 55%, transparent);
+  background: transparent;
+}
+.product-world .product-about-card .product-making-note__link small {
+  color: color-mix(in srgb, var(--world-accent) 80%, #fff);
+}
+.product-world .product-about-card .product-making-note__link strong {
+  font-size: 12px;
+}
+.product-world .product-about-card .product-making-note__link > span:last-child {
+  color: color-mix(in srgb, var(--world-accent) 80%, #fff);
+  font-size: 18px;
+}
+.product-world .product-world-afterstory {
+  padding-top: 5px;
+}
+.product-world .product-discovery,
+.product-world .product-faq {
+  width: min(100% - 32px, 1040px);
+  margin: 16px auto 0;
+  padding: 18px 20px;
+  border: 1px solid #c5a67955;
+  border-radius: 18px;
+  color: #372c21;
+  background: #fff9f0;
+}
+.product-world .product-discovery__heading {
+  padding-bottom: 9px;
+}
+.product-world .product-discovery__heading h2,
+.product-world .product-faq h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(23px, 2.5vw, 28px);
+  line-height: 1.15;
+}
+.product-world .product-discovery__grid {
+  gap: 8px;
+  margin-top: 11px;
+}
+.product-world .product-discovery__grid article {
+  padding: 11px 12px;
+  border-radius: 12px;
+}
+.product-world .product-discovery__grid h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.product-world .product-discovery__grid p,
+.product-world .product-discovery__grid li {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.product-world .product-discovery .discovery-occasions,
+.product-world .product-discovery .discovery-moments {
+  gap: 5px;
+}
+.product-world .product-discovery .discovery-occasions li,
+.product-world .product-discovery .discovery-moments li {
+  padding: 5px 7px;
+  border-radius: 8px;
+}
+.product-world .discovery-guides {
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.product-world .product-faq {
+  padding: 16px 20px;
+  background: #fffaf2;
+}
+.product-world .product-faq .discovery-questions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
+  margin-top: 11px;
+}
+.product-world .product-faq .discovery-questions details {
+  align-self: start;
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid #92795433;
+  border-radius: 10px;
+  background: #fffdf8;
+}
+.product-world .product-faq .discovery-questions summary {
+  min-height: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.product-world .product-faq .discovery-questions p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.product-world .product-reviews {
+  margin-block: 18px;
+}
+@media (max-width: 767px) {
+  .product-world .product-world-intro {
+    padding: 23px 18px 0;
+  }
+  .product-world .product-detail-shell {
+    padding: 15px;
+    gap: 23px;
+  }
+  .product-world .product-detail-copy {
+    padding-bottom: 0;
+  }
+  .product-world .product-about-card {
+    width: min(100% - 20px, 720px);
+    padding: 17px;
+  }
+  .product-world .product-about-card__chapters,
+  .product-world .product-about-card__practical {
+    gap: 14px;
+  }
+  .product-world .product-discovery,
+  .product-world .product-faq {
+    width: min(100% - 20px, 720px);
+    padding: 15px;
+  }
+  .product-world .product-discovery__grid,
+  .product-world .product-faq .discovery-questions {
+    grid-template-columns: 1fr;
+  }
+}

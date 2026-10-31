@@ -6,7 +6,6 @@ describe("product share links", () => {
     id: "cutiuta-luna & stele",
     name: "Cutiuța Luna",
     tagline: "O poveste de seară",
-    image: "/images/luna.webp",
   };
 
   it("uses the canonical, encoded product URL", () => {
@@ -18,12 +17,15 @@ describe("product share links", () => {
   it("builds distinct destinations without tracking parameters", () => {
     const targets = productShareTargets(input);
 
-    expect(targets).toHaveLength(9);
-    expect(new Set(targets.map((target) => target.id)).size).toBe(9);
+    expect(targets.map((target) => target.id)).toEqual([
+      "whatsapp",
+      "telegram",
+      "email",
+      "sms",
+      "facebook",
+    ]);
+    expect(new Set(targets.map((target) => target.id)).size).toBe(5);
     expect(targets.every((target) => !target.href.includes("utm_"))).toBe(true);
-    expect(targets.find((target) => target.id === "pinterest")?.href).toContain(
-      encodeURIComponent("https://cutiutamagica.eu/images/luna.webp"),
-    );
     expect(targets.find((target) => target.id === "telegram")?.href).toContain(
       encodeURIComponent(productCanonicalUrl(input.id)),
     );

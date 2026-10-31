@@ -1,5 +1,5 @@
 export type ProductShareTarget = {
-  id: string;
+  id: "whatsapp" | "telegram" | "email" | "sms" | "facebook";
   label: string;
   group: "mesaje" | "retele";
   href: string;
@@ -9,7 +9,6 @@ type ProductShareInput = {
   id: string;
   name: string;
   tagline: string;
-  image: string;
 };
 
 export function productCanonicalUrl(productId: string) {
@@ -24,11 +23,9 @@ export function productShareTargets({
   id,
   name,
   tagline,
-  image,
 }: ProductShareInput): ProductShareTarget[] {
   const url = productCanonicalUrl(id);
   const message = productShareMessage(name, tagline);
-  const absoluteImage = image.startsWith("http") ? image : `https://cutiutamagica.eu${image}`;
   const encodedUrl = encodeURIComponent(url);
   const encodedMessage = encodeURIComponent(message);
   const messageWithUrl = encodeURIComponent(`${message}\n${url}`);
@@ -63,30 +60,6 @@ export function productShareTargets({
       label: "Facebook",
       group: "retele",
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-    },
-    {
-      id: "linkedin",
-      label: "LinkedIn",
-      group: "retele",
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-    },
-    {
-      id: "pinterest",
-      label: "Pinterest",
-      group: "retele",
-      href: `https://www.pinterest.com/pin/create/button/?url=${encodedUrl}&media=${encodeURIComponent(absoluteImage)}&description=${encodedMessage}`,
-    },
-    {
-      id: "x",
-      label: "X",
-      group: "retele",
-      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedMessage}`,
-    },
-    {
-      id: "bluesky",
-      label: "Bluesky",
-      group: "retele",
-      href: `https://bsky.app/intent/compose?text=${messageWithUrl}`,
     },
   ];
 }

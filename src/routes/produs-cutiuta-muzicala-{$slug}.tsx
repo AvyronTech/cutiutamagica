@@ -1,6 +1,6 @@
 import { ProductReviews } from "@/components/site/ProductReviews";
 import { getPublicReviews } from "@/lib/reviews.functions";
-import { ProductDiscovery } from "@/components/site/ProductDiscovery";
+import { ProductDiscovery, ProductMakingNote } from "@/components/site/ProductDiscovery";
 import { safeJsonLd } from "@/lib/product-discovery";
 import { ProductWorld } from "@/components/site/ProductWorld";
 import { animateIntoCart } from "@/lib/cart-flight";
@@ -191,7 +191,7 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
 
 function ProductPage() {
   const { product: loadedProduct, reviews } = Route.useLoaderData();
-  const { addToCart, products, totalQty } = useShop();
+  const { addToCart, products, itemsDetailed } = useShop();
   const product = products.find((p) => p.id === loadedProduct.id) ?? {
     ...loadedProduct,
     availability: "out_of_stock" as const,
@@ -224,8 +224,12 @@ function ProductPage() {
     [product.id, product.category, products],
   );
   const gallery = product.gallery;
-  const highlights = useMemo(() => productDetailHighlights(product.details), [product.details]);
+  const highlights = useMemo(
+    () => productDetailHighlights(product.details, product.id),
+    [product.details, product.id],
+  );
   const available = isAvailable(product);
+  const isInCart = itemsDetailed.some((item) => item.product.id === product.id);
   const [zoomOpen, setZoomOpen] = useState(false);
   const currentImage = gallery[active] ?? gallery[0] ?? { src: product.image, label: product.name };
   const spin = experienceQuery.data?.spin360 ?? null;
@@ -418,7 +422,7 @@ function ProductPage() {
               </div>
               <Link
                 to="/produse"
-                className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                className="product-available-link mt-3 inline-flex items-center gap-2 text-sm font-medium hover:underline"
               >
                 Vezi cutiuțele disponibile
               </Link>
@@ -461,12 +465,12 @@ function ProductPage() {
             )}
           </div>
 
-          {available && totalQty > 0 && (
+          {available && isInCart && (
             <Link
               to="/comanda"
               className="product-checkout-link mt-3 inline-flex items-center justify-center gap-2 font-medium"
             >
-              <Gift className="w-4 h-4" /> Finalizează comanda
+              <Gift className="w-4 h-4" /> Comandă acum
             </Link>
           )}
 
@@ -488,12 +492,7 @@ function ProductPage() {
 
           {available && <ProductDeliveryEstimate />}
 
-          <ProductShare
-            id={product.id}
-            name={product.name}
-            tagline={product.tagline}
-            image={product.image}
-          />
+          <ProductShare id={product.id} name={product.name} tagline={product.tagline} />
         </div>
       </div>
 
@@ -549,6 +548,7 @@ function ProductPage() {
           Documentele specifice produsului și informațiile despre eventualele licențe necesită
           verificare înainte de publicare.
         </p>
+        <ProductMakingNote />
       </article>
 
       <div className="product-world-afterstory">
