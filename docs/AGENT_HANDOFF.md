@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Reverificare SEO live — 31 octombrie 2026
+
+- Auditul public curent și noul `npm run seo:audit:live` confirmă 38 URL-uri canonice în indexul XML și lista text: 7 produse, 23 ghiduri și 8 pagini esențiale. Fiecare răspunde 200, cu title și description unice, H1, canonical propriu, robots de indexare și imagine socială; produsele au Product/Offer JSON-LD. Nu există pagini din sitemap fără legături interne.
+- Cele trei sitemapuri copil se parsează, 35 imagini distincte din XML răspund 200 cu tip imagine, iar feedul Merchant include 5 produse. `robots.txt`, `llms.txt` și toate rutele SEO răspund 200. HTTP și `www` redirecționează permanent spre originea canonică HTTPS. Paginile legale și rutele private verificate au `noindex` și sunt excluse din sitemap.
+- Cloudflare răspunde 403 pentru `Python-urllib/3.9` pe sitemapuri și produse, dar 200 pentru cereri de probă cu User-Agent Googlebot, OAI-SearchBot și clientul auditului. Acest test nu confirmă accesul crawlerelor reale de la IP-urile lor. `robots.txt` conține directivele Cloudflare Managed: căutarea este permisă, iar anumite crawlere de antrenare AI sunt excluse.
+- Sesiunea Opera cu Search Console nu a putut fi accesată deoarece Mac-ul este blocat. Starea actuală a raportului XML și indexarea fiecărui produs nu pot fi confirmate în această reverificare. Ultima probă GSC din auditul anterior rămâne istorică, nu un rezultat curent. Nu s-au schimbat conținutul public, migrațiile, bindingurile sau secretele. Raportul complet este în [reverificarea SEO](handoff/2026-10-31-seo-live-recheck.md).
+
 ## Corecție 2026-10-31 — sediul social scos din suprafețele publice
 
 - Release confirmat: PR #64 a trecut CI și a fost integrat la `7294662a5280c42e47b5d65696c007dec6ee43a5`. Migrarea 0087 a fost aplicată în D1 production; schema este 87, copia din setarea publică lipsește, adresa internă rămâne, iar `foreign_key_check` are zero erori. Workerul `cutiuta-magica-store` rulează versiunea `c28c3494-2ebc-4d02-8448-a244ffab9b70` distribuită 100%; health răspunde 200 cu `production` și schema 87.

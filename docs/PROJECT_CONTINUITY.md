@@ -2,6 +2,8 @@
 
 Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți agenți. Regulile obligatorii sunt în [AGENTS.md](../AGENTS.md); aici sunt harta proiectului și rutina de predare. Informațiile datate sunt un instantaneu, nu dovada stării live.
 
+Reverificare SEO live 31 octombrie: cele 38 pagini canonice, 35 imagini și 5 intrări Merchant verificate nu au defecte tehnice confirmate; `npm run seo:audit:live` repetă controlul. Raportul GSC actual nu a putut fi citit cât Mac-ul era blocat. Detaliile și limitele sunt în [handoff](handoff/2026-10-31-seo-live-recheck.md) și la începutul `docs/AGENT_HANDOFF.md`.
+
 ## Surse de adevăr
 
 | Întrebare                             | Sursa de verificat                                                                                                                  |
