@@ -1,6 +1,14 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
-## Pregătire release 2026-10-31 — cod, e-mail, securitate
+## Release production 2026-10-31 — magazin, SEO și securitate
+
+- PR #50 a integrat schimbările din `codex/admin-dashboard-ux-20261031` la `80a0b752565cd42af43a55fa6cfc52a8c7b631cb`. PR #51 a integrat corecția numelor accesibile pentru distribuirea produsului și documentarea lansării sociale anterioare la `314f2eaa355aefe4cae53911c2983bc6bcb6bc4d`. PR #49, devenit conflictual și duplicat ca documentație, a fost închis după preluarea conținutului în PR #51.
+- Migrațiile append-only `0084_transactional_email_templates.sql` și `0085_suspend_unrotated_admin_seeds.sql` au fost aplicate remote, în ordine. D1 production raportează schema 85, cinci șabloane e-mail active, provider principal `resend`, doi administratori `owner` activi și două conturi inițiale suspendate; `PRAGMA foreign_key_check` este curat și nu mai sunt migrații de aplicat.
+- Workerul `cutiuta-magica-store` a fost publicat din arborele integrat la versiunea `54c424a2-5b89-42c6-9853-7f3480fa8515`, distribuită 100% pe domeniile configurate. `/api/v1/health` răspunde 200 cu `production` și schema 85; ruta administrativă fără sesiune răspunde 401. `robots.txt`, indexul XML, sitemapul text și `llms.txt` răspund 200. Cele 38 de URL-uri din sitemapurile copil răspund 200, fără `noindex` sau canonical divergent la verificarea live.
+- Pagina de produs verificată mobil pe Fast 4G și CPU 4× are LCP 2,09 s și CLS 0 în trasarea de după primul deploy. Auditul Lighthouse după versiunea finală are 56 verificări trecute, zero eșuate și scoruri 100 pentru accesibilitate, bune practici, SEO și agentic browsing. La primul audit, trei canale de distribuire aveau nume accesibile diferite de eticheta vizibilă; PR #51 a remediat acest lucru.
+- Validări pentru PR #51: typecheck, 334/334 teste, lint, build, dry run de producție și CI GitHub trecute. Nu s-a plasat o comandă reală și nu s-a trimis un e-mail de probă; acceptarea și livrarea reală în inbox rămân de verificat. Indexarea efectivă în Google nu este dovedită de HTTP 200 sau de sitemap. Cheia Brave Search și runnerul local AI rămân neconfigurate conform stării documentate; constatările P1/P2 din auditul de securitate rămân deschise.
+
+## Pregătire anterioară releaseului 2026-10-31 — cod, e-mail, securitate
 
 - Pe `codex/admin-dashboard-ux-20261031` sunt cele șase commituri locale anterioare pentru sitemap/SEO, dashboard, audit de securitate, paginile de produs și runnerul AI, plus schimbările de e-mail din intrarea următoare. `origin/codex/cutiuta-cloudflare-final` nu avea commituri noi față de baza acestei ramuri la verificare.
 - Migrarea nouă `0085_suspend_unrotated_admin_seeds.sql` suspendă conturile cu credențiale inițiale doar când există un `owner` activ cu parola schimbată; revocă sesiunile și scrie audit. În D1 live condiția corespunde la două conturi, iar sesiunea activă este deja pe un cont rotit. Validarea locală a trecut.

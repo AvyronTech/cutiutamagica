@@ -2,7 +2,9 @@
 
 ## Actualizare de release
 
-Migrarea append-only `0085_suspend_unrotated_admin_seeds.sql` suspendă conturile administrative active cu credențiale inițiale și revocă sesiunile lor numai dacă rămâne activ cel puțin un `owner` cu parola schimbată. Verificarea D1 de producție înainte de release a găsit două astfel de conturi, două conturi `owner` cu parolă schimbată și o sesiune activă aparținând unui cont rotit. Migrarea a fost testată local; rezultatul live trebuie verificat după aplicarea remote.
+PR #50 a fost integrat, iar migrarea 0085 a fost aplicată în D1 production pe 31 octombrie. Verificarea remote ulterioară a găsit doi administratori `owner` activi cu parole schimbate și cele două conturi inițiale suspendate; `PRAGMA foreign_key_check` nu a raportat erori. Workerul final este versiunea `54c424a2-5b89-42c6-9853-7f3480fa8515`, distribuită 100%; ruta administrativă testată fără sesiune răspunde 401. Această măsură închide expunerea conturilor inițiale active observată mai jos, dar nu închide celelalte constatări P1/P2.
+
+Migrarea append-only `0085_suspend_unrotated_admin_seeds.sql` suspendă conturile administrative active cu credențiale inițiale și revocă sesiunile lor numai dacă rămâne activ cel puțin un `owner` cu parola schimbată. Verificarea D1 de producție înainte de release a găsit două astfel de conturi, două conturi `owner` cu parolă schimbată și o sesiune activă aparținând unui cont rotit. Migrarea a fost testată local; rezultatul live este consemnat mai sus.
 
 Actualizarea `zod` la 4.6.7 și override-urile `seroval` 1.6.11 / `undici` 7.30.1 au trecut typecheck, lint, 334 de teste și dry run-ul Workerului. `npm audit --omit=dev` raportează zero advisories; arborele complet mai are 14 moderate. Aceste rezultate nu închid restul constatărilor P1/P2 din tabelul de mai jos.
 
@@ -47,7 +49,7 @@ Constatările sunt aliniate cu [OWASP ASVS 5](https://asvs.owasp.org/), cu recom
 
 ## Plan de executare și criterii de închidere
 
-1. **Imediat, operațional (P0):** administratorul aprobă rotația/invalidarea celor două credențiale inițiale și revocarea sesiunilor; se verifică logurile de login și audit, apoi interogarea D1 arată zero conturi `owner` active cu hash de seed. Nu se publică parola în raport sau în tichete. Dacă există acces suspect, se deschide incident și se rotește orice token asociat.
+1. **P0 aplicat pe 31 octombrie:** migrarea 0085 a suspendat cele două conturi inițiale și a revocat sesiunile lor. D1 arată zero conturi `owner` active cu credențiale inițiale. Rămâne revizia logurilor de login și audit pentru acces suspect; dacă există, se deschide incident și se rotesc tokenurile asociate. Nu se publică parola în raport sau în tichete.
 2. **Prima livrare de cod:** elimină seedurile partajate, introduce invitații individuale și teste de regresie; adaugă protecție anti-abuz checkout/login/formulare cu limite atomice și Turnstile adaptiv. Măsoară rata de 429 și conversia checkoutului pentru a evita blocarea clienților reali.
 3. **A doua livrare:** MFA/passkey pentru admin, CSP etapizat, streaming strict și carantină pentru toate încărcările, plus actualizarea dependențelor. Pentru securitatea fișierelor, scanarea este completă doar când toate căile de citire și obiectele vechi sunt acoperite.
 4. **Lanț de livrare și operațiuni:** protejează ramura de referință și `main`; inventariază WAF/Access/Workers.dev/R2; monitorizează autentificările și costurile AI/e-mail/Queue; alertează la anomalii; rotește cheile; testează backupul; verifică periodic ASVS și regresiile pentru auth/checkout/webhooks/permisiuni. CI trebuie să blocheze vulnerabilitățile high noi și scurgerile de secrete, cu proces documentat pentru excepții.
