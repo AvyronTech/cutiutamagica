@@ -31,3 +31,9 @@ Acest repository este produsul comercial independent Cutiuța Magică. Lovable, 
 - Citește `docs/PROJECT_CONTINUITY.md` pentru harta surselor de adevăr, stările de livrare și pașii de sincronizare; folosește `docs/PROJECT_GLOSSARY.md` pentru termenii din produs și `docs/brand/AVYRON_LOGO_USAGE.md` când apare marca AVYRON. Dacă documentele diferă de cod sau de starea live, verifică sursa curentă și actualizează documentul înainte de predare.
 - Lovable și Claude livrează prin pull request. Nu editează direct producția, nu fac force-push și nu rescriu migrațiile D1 existente.
 - Un handoff include: scopul, fișierele modificate, migrațiile adăugate, verificările rulate, capturi desktop/mobil pentru schimbări vizuale și orice configurare externă rămasă.
+
+## Folosirea LLM-urilor interne
+
+- Înainte ca Codex să transfere o sarcină editorială repetitivă spre Studio AI, verifică disponibilitatea reală prin `npm run ai:runner -- --check` pentru runnerul local și prin heartbeat recent în `/admin/ai`. Un profil D1 sau un binding Cloudflare nu este o probă de generare funcțională.
+- Folosește întâi datele verificate din D1, documentația produsului și scripturile deterministe. Studio AI poate pregăti ciorne pentru scopurile acceptate în formular; Codex verifică datele și folosește numai materialele aprobate. Nu introduce date personale, secrete, plăți ori instrucțiuni privilegiate în prompturi.
+- Nu porni un model, serviciu cu cost, integrare live ori flux automat nou doar pentru a economisi apeluri Codex. Separă bugetul și starea fiecărui furnizor; păstrează aprobarea umană pentru acțiuni externe.

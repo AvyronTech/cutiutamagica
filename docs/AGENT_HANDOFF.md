@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-31 — AI intern și inventar Cloudflare Free
+
+- Scop: audit live read-only al Workers AI, studioului AI local și resurselor Cloudflare, plus corecții locale pentru disponibilitatea modelului și consumul D1. Raportul complet este în `docs/AI_CLOUDFLARE_RESOURCE_AUDIT_2026-10-31.md`; instrucțiunile runnerului sunt în `docs/AI_CONTENT_STUDIO.md`.
+- Producție: asistentul public are 7 răspunsuri AI trimise istoric, ultimul la 20 octombrie; studioul Ollama/ComfyUI are toate profilurile `setup_required`, zero heartbeat și zero lucrări. Secretul `AI_STUDIO_RUNNER_HMAC_SECRET` lipsește din Worker, iar pe computerul local nu rulează Ollama/ComfyUI. D1 și Queues au fost citite cu succes; o imagine publică aprobată din R2 a răspuns HTTP 200; inventarul administrativ KV/R2 a primit `Authentication error 10000` din tokenul Wrangler actual, deși bindingurile există în configurație și dry run. Nu s-a executat inferență live.
+- Runnerul verifică modelul exact `qwen3:8b` și sintaxa de bază a workflow-urilor înainte de a anunța capabilități. `npm run ai:runner -- --check` oferă diagnostic fără secret și fără generare. Heartbeatul implicit este la două minute, iar coada este verificată tot mai rar în repaus; nonce-urile expirate se curăță la heartbeat. Testul Workerului acoperă refuzul activării când modelul selectat nu corespunde profilului.
+- Fișiere modificate: `AGENTS.md`, `scripts/ai-studio-runner.mjs`, `src/server/api/admin-ai-studio.ts`, `src/server/ai-content-studio.test.ts`, documentele AI, `docs/PROJECT_CONTINUITY.md` și acest handoff. Fără migrare D1 sau schimbare vizuală; capturi desktop/mobil nu se aplică. Au trecut `npm run ai:runner -- --check`, `npm run typecheck`, `npm test` (330/330, 60 fișiere), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check`. Configurarea secretului, instalarea modelelor, activarea live și proba end-to-end rămân pași separați. Nu s-au făcut push, PR, merge, deploy ori migrare remote.
+
 ## Handoff 2026-10-31 — pagini de produs mai fluide
 
 - Scop: toate paginile de produs. Fotografia principală este afișată fără animația inițială Framer Motion, lightboxul se încarcă la deschidere, decorul atmosferic și mișcările continue din zona produsului au fost reduse, iar fotografia decorativă blurată de sub produs a fost eliminată. Caruselul de recenzii lucrează automat numai în viewport, iar cererea pentru configurația livrării pornește când cardul se apropie de ecran.

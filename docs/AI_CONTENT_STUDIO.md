@@ -44,6 +44,10 @@ Variabile locale acceptate:
 
 Pornire: `npm run ai:runner`.
 
+Diagnostic fără secret și fără generare: `npm run ai:runner -- --check`. Raportul arată separat accesul la Ollama/ComfyUI, prezența exactă a modelului `qwen3:8b`, validitatea de bază a fișierelor workflow și configurarea secretului local. Un server Ollama pornit fără modelul selectat nu este considerat pregătit. Acest diagnostic nu probează o generare completă ori modelele instalate în ComfyUI.
+
+Runnerul trimite heartbeat la două minute și reduce verificările cozii până la un minut când nu există lucrări. `AI_STUDIO_HEARTBEAT_MS` poate fi ajustat între 60 și 240 de secunde; limita de cinci minute din Worker trebuie păstrată. `AI_STUDIO_POLL_MS` are implicit 15 secunde. Astfel se evită scrierile D1 și apelurile locale la fiecare 15 secunde, fără a ascunde absența runnerului.
+
 Workflow-urile media trebuie să conțină markerii `__PROMPT__` și `__SOURCE_IMAGE_NAME__` și să compună fotografia originală ca strat final protejat. Runnerul refuză un workflow fără acești markeri. Nu sunt instalate automat custom nodes sau API nodes plătite. Pentru execuție complet locală, ComfyUI se pornește cu API nodes externe dezactivate.
 
 ## Limitări intenționate
@@ -54,3 +58,6 @@ Workflow-urile media trebuie să conțină markerii `__PROMPT__` și `__SOURCE_I
 - Repository-ul nu include greutățile modelelor.
 - Nu există auto-publicare, auto-like, auto-message sau acces la comenzi prin runner.
 - Aprobarea unei lucrări nu este echivalentă cu publicarea ei; integrarea socială are propriul control separat.
+- Codex poate folosi briefurile și rezultatele aprobate ca material de lucru, dar nu există o legătură directă care să îi transfere automat sarcini, tokenuri sau permisiuni. Runnerul local nu folosește abonamentul sau sesiunea Codex. Pentru folosirea modelului la alte tipuri de sarcini decât cele editoriale din formular este necesar un flux separat, cu contract de date și permisiuni proprii.
+
+Inventarul și limitele Cloudflare verificate la 31 octombrie 2026 sunt în [auditul AI și resurse](AI_CLOUDFLARE_RESOURCE_AUDIT_2026-10-31.md). Starea `setup_required` înseamnă că modelul nu rulează încă, chiar dacă profilul există în D1.

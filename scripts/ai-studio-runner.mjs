@@ -11,13 +11,12 @@ const config = {
   comfyUrl: (process.env.COMFYUI_URL || "http://127.0.0.1:8188").replace(/\/$/, ""),
   imageWorkflow: process.env.AI_STUDIO_IMAGE_WORKFLOW || "",
   videoWorkflow: process.env.AI_STUDIO_VIDEO_WORKFLOW || "",
-  pollMs: Math.max(5_000, Number(process.env.AI_STUDIO_POLL_MS || 15_000)),
+  pollMs: Math.max(5_000, Number(process.env.AI_STUDIO_POLL_MS) || 15_000),
+  heartbeatMs: Math.min(
+    240_000,
+    Math.max(60_000, Number(process.env.AI_STUDIO_HEARTBEAT_MS) || 120_000),
+  ),
 };
-
-if (!config.secret) {
-  console.error("Lipsește AI_STUDIO_RUNNER_SECRET. Runnerul nu pornește fără autentificare HMAC.");
-  process.exit(1);
-}
 
 function digest(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -73,9 +72,24 @@ async function health() {
     comfyHealthy = response.ok;
   } catch {}
   const capabilities = [];
-  if (comfyHealthy && config.imageWorkflow) capabilities.push("image");
-  if (comfyHealthy && config.videoWorkflow) capabilities.push("video");
-  return { ollama, comfyui: { healthy: comfyHealthy, capabilities } };
+  if (comfyHealthy && (await workflowReady(config.imageWorkflow))) capabilities.push("image");
+  if (comfyHealthy && (await workflowReady(config.videoWorkflow))) capabilities.push("video");
+  return {
+    ollama: { ...ollama, selectedModel: config.ollamaModel },
+    comfyui: { healthy: comfyHealthy, capabilities },
+  };
+}
+
+async function workflowReady(path) {
+  if (!path) return false;
+  try {
+    const raw = await readFile(path, "utf8");
+    if (!raw.includes("__PROMPT__") || !raw.includes("__SOURCE_IMAGE_NAME__")) return false;
+    const workflow = JSON.parse(raw);
+    return workflow !== null && typeof workflow === "object" && !Array.isArray(workflow);
+  } catch {
+    return false;
+  }
 }
 
 function systemPrompt(job) {
@@ -287,28 +301,82 @@ process.on("SIGTERM", () => {
   stopping = true;
 });
 
+if (process.argv.includes("--check")) {
+  const providers = await health();
+  console.log(
+    JSON.stringify(
+      {
+        runnerSecretConfigured: Boolean(config.secret),
+        ollamaReachable: providers.ollama.healthy,
+        textModelReady:
+          providers.ollama.healthy &&
+          providers.ollama.selectedModel === "qwen3:8b" &&
+          providers.ollama.models.includes(providers.ollama.selectedModel),
+        imageWorkflowReady: providers.comfyui.capabilities.includes("image"),
+        videoWorkflowReady: providers.comfyui.capabilities.includes("video"),
+        comfyuiReachable: providers.comfyui.healthy,
+      },
+      null,
+      2,
+    ),
+  );
+  process.exit(0);
+}
+
+if (!config.secret) {
+  console.error("Lipsește AI_STUDIO_RUNNER_SECRET. Runnerul nu pornește fără autentificare HMAC.");
+  process.exit(1);
+}
+
+let lastHeartbeatAt = 0;
+let capabilities = [];
+let idlePolls = 0;
 console.log(`Runner AI pornit ca ${config.runnerId}. Nicio publicare externă nu este permisă.`);
 while (!stopping) {
   try {
-    const providers = await health();
-    await signedRequest("/api/v1/integrations/ai-studio/runner/heartbeat", {
-      version: "1.0.0",
-      providers,
-    });
-    const capabilities = [];
-    if (providers.ollama.healthy) capabilities.push("text");
-    capabilities.push(...providers.comfyui.capabilities);
+    if (Date.now() - lastHeartbeatAt >= config.heartbeatMs) {
+      const providers = await health();
+      await signedRequest("/api/v1/integrations/ai-studio/runner/heartbeat", {
+        version: "1.1.0",
+        providers,
+      });
+      capabilities = [];
+      if (
+        providers.ollama.healthy &&
+        providers.ollama.selectedModel === "qwen3:8b" &&
+        providers.ollama.models.includes(providers.ollama.selectedModel)
+      )
+        capabilities.push("text");
+      capabilities.push(...providers.comfyui.capabilities);
+      lastHeartbeatAt = Date.now();
+    }
     if (capabilities.length) {
       const job = await signedRequest("/api/v1/integrations/ai-studio/runner/jobs/claim", {
         capabilities,
       });
-      if (job) await processJob(job);
+      if (job) {
+        idlePolls = 0;
+        await processJob(job);
+      } else {
+        idlePolls = Math.min(idlePolls + 1, 3);
+      }
     }
   } catch (error) {
+    capabilities = [];
+    lastHeartbeatAt = 0;
     console.error(
       `Runner indisponibil: ${error instanceof Error ? error.message : "eroare necunoscută"}`,
     );
   }
-  if (!stopping) await new Promise((resolve) => setTimeout(resolve, config.pollMs));
+  if (!stopping) {
+    const idleDelay = capabilities.length
+      ? Math.min(config.pollMs * 2 ** idlePolls, 60_000)
+      : 60_000;
+    const untilHeartbeat =
+      lastHeartbeatAt === 0
+        ? idleDelay
+        : Math.max(1_000, config.heartbeatMs - (Date.now() - lastHeartbeatAt));
+    await new Promise((resolve) => setTimeout(resolve, Math.min(idleDelay, untilHeartbeat)));
+  }
 }
 console.log("Runner AI oprit în siguranță.");
