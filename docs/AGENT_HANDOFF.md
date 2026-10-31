@@ -1,5 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Corecție production 2026-10-31 — conturi administrative reactivate
+
+- La cererea explicită a administratorului, migrarea append-only `0086_restore_initial_admin_accounts.sql` a anulat suspendarea introdusă de 0085 numai pentru cele două conturi `owner` identificate prin evenimentul `security.initial_admin_suspended`. Nu modifică parole, roluri, setări MFA sau sesiuni.
+- D1 production confirmă schema 86, ambele conturi afectate `active`, două evenimente `security.initial_admin_restored` și `PRAGMA foreign_key_check` fără rezultate. `/api/v1/health` răspunde 200 și raportează schema 86. Nu a fost necesar un nou deploy Worker, deoarece schimbarea privește doar D1.
+- Testul sintetic a confirmat reactivarea celor două conturi și păstrarea unui alt cont suspendat. Migrarea locală Cloudflare a fost blocată de un istoric local nealiniat la 0084 (`UNIQUE constraint failed: email_templates.code`); această eroare nu a afectat D1 production. Recomandările anterioare de suspendare și MFA sunt retrase pentru acest magazin; experiența de login rămâne cea existentă.
+
 ## Release production 2026-10-31 — magazin, SEO și securitate
 
 - PR #50 a integrat schimbările din `codex/admin-dashboard-ux-20261031` la `80a0b752565cd42af43a55fa6cfc52a8c7b631cb`. PR #51 a integrat corecția numelor accesibile pentru distribuirea produsului și documentarea lansării sociale anterioare la `314f2eaa355aefe4cae53911c2983bc6bcb6bc4d`. PR #49, devenit conflictual și duplicat ca documentație, a fost închis după preluarea conținutului în PR #51.
