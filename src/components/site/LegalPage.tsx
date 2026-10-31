@@ -43,12 +43,6 @@ export function SellerIdentity({
       <br />
       CUI {seller.tax_id} · neplătitor de TVA
       <br />
-      {seller.registered_address && (
-        <>
-          Sediu social: {normalizeRomanianDisplayText(seller.registered_address)}
-          <br />
-        </>
-      )}
       {seller.registration_number && (
         <>
           Registrul Comerțului: {normalizeRomanianDisplayText(seller.registration_number)}

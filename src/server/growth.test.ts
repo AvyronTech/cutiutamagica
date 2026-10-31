@@ -495,9 +495,37 @@ describe("growth and commerce integration", () => {
     ).toMatchObject({
       legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
       registration_number: "J2026041938009",
-      registered_address: "JUD. IAŞI, SAT DUMBRĂVIŢA COM. RUGINOASA, STR. RĂZEŞILOR, NR.14",
+      registered_address: null,
       vat_status: "non_vat_payer",
     });
+    sql
+      .prepare("UPDATE legal_entities SET registered_address=? WHERE id='legal_entity_main'")
+      .run("Adresă internă de test");
+    sql
+      .prepare(
+        "UPDATE site_settings SET value_json=json_set(value_json,'$.registered_address',?) WHERE key='business.legal_entity'",
+      )
+      .run("Adresă publică de test");
+    sql.exec(
+      readFileSync(
+        resolve("cloudflare/d1/migrations/0087_remove_public_registered_address.sql"),
+        "utf8",
+      ),
+    );
+    expect(
+      sql
+        .prepare(
+          "SELECT json_extract(value_json,'$.registered_address') AS address FROM site_settings WHERE key='business.legal_entity'",
+        )
+        .get(),
+    ).toEqual({ address: null });
+    expect(
+      sql
+        .prepare(
+          "SELECT registered_address AS address FROM legal_entities WHERE id='legal_entity_main'",
+        )
+        .get(),
+    ).toEqual({ address: "Adresă internă de test" });
   });
   it("verifies Merchant Center tokens against the current Merchant API", async () => {
     const { db } = database();

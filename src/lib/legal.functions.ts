@@ -3,11 +3,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { seoHead } from "./seo-head";
 export const getPublicSeller = createServerFn({ method: "GET" }).handler(async () => {
   const row = await env.DB.prepare(
-    "SELECT legal_name,tax_id,registered_address,registration_number,public_email,public_phone FROM legal_entities WHERE id='legal_entity_main'",
+    "SELECT legal_name,tax_id,registration_number,public_email,public_phone FROM legal_entities WHERE id='legal_entity_main'",
   ).first<{
     legal_name: string;
     tax_id: string;
-    registered_address: string | null;
     registration_number: string | null;
     public_email: string | null;
     public_phone: string | null;
@@ -16,7 +15,6 @@ export const getPublicSeller = createServerFn({ method: "GET" }).handler(async (
     row ?? {
       legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
       tax_id: "55055976",
-      registered_address: null,
       registration_number: null,
       public_email: "contact@cutiutamagica.eu",
       public_phone: null,
