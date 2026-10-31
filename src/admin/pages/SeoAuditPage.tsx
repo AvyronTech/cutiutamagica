@@ -9,16 +9,31 @@ const endpointChecks = [
     path: "/robots.txt",
     valid: (body: string) =>
       body.includes("Sitemap: https://cutiutamagica.eu/sitemap.xml") &&
-      body.includes("Sitemap: https://cutiutamagica.eu/sitemap.txt") &&
-      body.includes("sitemap-guides.xml"),
-    action: "Declară sitemapurile XML, text și ghiduri în robots.txt.",
+      body.includes("Sitemap: https://cutiutamagica.eu/sitemap.txt"),
+    action: "Declară indexul XML și sitemapul text în robots.txt.",
   },
   {
-    label: "Sitemap produse și pagini",
+    label: "Index sitemapuri",
     path: "/sitemap.xml",
     valid: (body: string) =>
+      body.includes("<sitemapindex") &&
+      body.includes("/sitemap-core.xml") &&
+      body.includes("/sitemap-products.xml") &&
+      body.includes("/sitemap-guides.xml"),
+    action: "Publică indexul XML cu cele trei sitemapuri.",
+  },
+  {
+    label: "Sitemap pagini esențiale",
+    path: "/sitemap-core.xml",
+    valid: (body: string) =>
       body.includes("<urlset") && body.includes("https://cutiutamagica.eu/produse"),
-    action: "Verifică ruta sitemap și citirea catalogului D1.",
+    action: "Publică paginile esențiale în sitemapul static.",
+  },
+  {
+    label: "Sitemap produse",
+    path: "/sitemap-products.xml",
+    valid: (body: string) => body.includes("<urlset") && body.includes("/produs-cutiuta-muzicala-"),
+    action: "Verifică citirea catalogului D1 și cache-ul produselor publicate.",
   },
   {
     label: "Sitemap text de rezervă",
@@ -147,16 +162,26 @@ export default function SeoAuditPage() {
                         <h3 className="font-medium text-white">{finding.title}</h3>
                         <p className="mt-1 text-sm text-slate-300">{finding.detail}</p>
                         <p className="mt-2 text-sm text-cyan-200">{finding.action}</p>
-                        {finding.path ? (
-                          <a
-                            href={finding.path}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-flex items-center gap-1 text-xs text-slate-400 underline underline-offset-2"
-                          >
-                            Vezi pagina publică <ExternalLink size={13} />
-                          </a>
-                        ) : null}
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                          {finding.adminPath && (
+                            <a
+                              href={finding.adminPath}
+                              className="text-xs font-semibold text-cyan-200 underline underline-offset-2"
+                            >
+                              Corectează în fișa produsului
+                            </a>
+                          )}
+                          {finding.path && (
+                            <a
+                              href={finding.path}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-slate-300 underline underline-offset-2"
+                            >
+                              Vezi pagina publică <ExternalLink size={13} />
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </li>

@@ -7,7 +7,7 @@ const payment = z
     environment: z.enum(["sandbox", "production"]).default("sandbox"),
     acceptanceTestReference: z.string().trim().max(120).default(""),
   })
-  .default({});
+  .default({ enabled: false, environment: "sandbox", acceptanceTestReference: "" });
 export const checkoutSettingsSchema = z.object({
   stripe: payment,
   revolut_pay: payment,

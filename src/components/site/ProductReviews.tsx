@@ -25,6 +25,7 @@ export function ProductReviews({
     [page, setPage] = useState(0),
     [slide, setSlide] = useState(0),
     [paused, setPaused] = useState(false),
+    [inView, setInView] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
@@ -48,6 +49,16 @@ export function ProductReviews({
   });
   const data = query.data;
   const displayedReviews = data?.reviews.slice(0, REVIEWS_PER_PAGE) ?? [];
+
+  useEffect(() => {
+    const node = carousel.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
+      rootMargin: "100px",
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [displayedReviews.length]);
 
   function inferredLocale() {
     if (typeof navigator === "undefined")
@@ -84,16 +95,17 @@ export function ProductReviews({
   );
 
   useEffect(() => {
+    if (!inView) return;
     setSlide(0);
     const frame = window.requestAnimationFrame(() => goToSlide(0));
     return () => window.cancelAnimationFrame(frame);
-  }, [goToSlide, page, slug]);
+  }, [goToSlide, inView, page, slug]);
 
   useEffect(() => {
-    if (reduced || paused || displayedReviews.length < 2) return;
+    if (!inView || reduced || paused || displayedReviews.length < 2) return;
     const timer = window.setInterval(() => goToSlide(slide + 1), 6200);
     return () => window.clearInterval(timer);
-  }, [displayedReviews.length, goToSlide, paused, reduced, slide]);
+  }, [displayedReviews.length, goToSlide, inView, paused, reduced, slide]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);

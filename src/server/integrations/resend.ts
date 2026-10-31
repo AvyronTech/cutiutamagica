@@ -1,7 +1,6 @@
 import {
   fetchWithTimeout,
   logProviderOperation,
-  requiredSecret,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
 import { credential } from "@/server/services/growth-settings";
@@ -26,6 +25,24 @@ type SendEmailInput = {
   entityId: string;
 };
 
+class SafeTransportFallback extends Error {}
+export class EmailDeliveryUncertainError extends Error {
+  constructor() {
+    super("Starea trimiterii este incertă. Verifică furnizorul înainte de retrimitere.");
+    this.name = "EmailDeliveryUncertainError";
+  }
+}
+
+export function mayFallbackFromCloudflare(error: unknown): boolean {
+  return (
+    error instanceof SafeTransportFallback ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "E_RECIPIENT_NOT_ALLOWED")
+  );
+}
+
 function emailError(error: unknown): { code: string; message: string } {
   if (error && typeof error === "object") {
     const value = error as { code?: unknown; message?: unknown };
@@ -48,7 +65,16 @@ async function wasAlreadySent(env: CommerceEnv, idempotencyKey: string): Promise
   )
     .bind(idempotencyKey)
     .first<{ sent: number }>();
-  return row?.sent === 1;
+  if (row?.sent === 1) return true;
+  const uncertain = await env.DB.prepare(
+    `SELECT 1 AS uncertain FROM provider_operations
+     WHERE provider IN ('cloudflare_email','resend') AND operation_type='email.send'
+       AND idempotency_key=?1 AND error_code='EMAIL_DELIVERY_UNCERTAIN' LIMIT 1`,
+  )
+    .bind(idempotencyKey)
+    .first<{ uncertain: number }>();
+  if (uncertain) throw new EmailDeliveryUncertainError();
+  return false;
 }
 
 export async function hasEmailTransport(env: CommerceEnv): Promise<boolean> {
@@ -62,7 +88,7 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
   if (await wasAlreadySent(env, input.idempotencyKey)) return;
 
   const cloudflare = async () => {
-    if (!env.EMAIL) throw new Error("Cloudflare Email Sending nu este configurat.");
+    if (!env.EMAIL) throw new SafeTransportFallback("Cloudflare Email Sending nu este configurat.");
     try {
       const configuredSender = fromAddress(settings, input.channel ?? "default");
       const sender = ["contact@cutiutamagica.eu", "comenzi@cutiutamagica.eu"].includes(
@@ -109,16 +135,19 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
         environment,
         status: "failed",
         responseSummary: {},
-        errorCode: detail.code,
+        errorCode: mayFallbackFromCloudflare(error) ? detail.code : "EMAIL_DELIVERY_UNCERTAIN",
         errorMessage: detail.message,
       });
+      // Only a definitive recipient-policy rejection permits a second provider.
+      // A timeout or an unknown result could mean that the first provider accepted it.
+      if (!mayFallbackFromCloudflare(error)) throw new EmailDeliveryUncertainError();
       throw error instanceof Error ? error : new Error(detail.message);
     }
   };
 
   const resend = async () => {
     const apiKey = await credential(env, "resend");
-    requiredSecret(apiKey ?? undefined, "RESEND_API_KEY");
+    if (!apiKey) throw new SafeTransportFallback("Resend nu are o cheie configurată.");
     const usage = await env.DB.prepare(
       `SELECT
          SUM(CASE WHEN substr(created_at,1,10)=substr(strftime('%Y-%m-%dT%H:%M:%fZ','now'),1,10)
@@ -132,23 +161,39 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
     // provider's disabled pay-as-you-go setting remains the final cost gate.
     if (Number(usage?.today ?? 0) >= 95 || Number(usage?.month ?? 0) >= 2900)
       throw new Error("Limita gratuită Resend este aproape atinsă; trimiterea a fost amânată.");
-    const response = await fetchWithTimeout("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        "content-type": "application/json",
-        "idempotency-key": input.idempotencyKey,
-      },
-      body: JSON.stringify({
-        from: `${settings.senderName} <${fromAddress(settings, input.channel ?? "default")}>`,
-        to: [input.to],
-        reply_to: settings.replyToEmail,
-        subject: input.subject,
-        html: input.html,
-        text: input.text,
-        tags: [{ name: "category", value: input.entityType }],
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetchWithTimeout("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json",
+          "idempotency-key": input.idempotencyKey,
+        },
+        body: JSON.stringify({
+          from: `${settings.senderName} <${fromAddress(settings, input.channel ?? "default")}>`,
+          to: [input.to],
+          reply_to: settings.replyToEmail,
+          subject: input.subject,
+          html: input.html,
+          text: input.text,
+          tags: [{ name: "category", value: input.entityType }],
+        }),
+      });
+    } catch {
+      await logProviderOperation(env.DB, {
+        provider: "resend",
+        operationType: "email.send",
+        entityType: input.entityType,
+        entityId: input.entityId,
+        idempotencyKey: input.idempotencyKey,
+        environment,
+        status: "failed",
+        errorCode: "EMAIL_DELIVERY_UNCERTAIN",
+        errorMessage: "Răspunsul Resend nu a fost primit; reconciliere manuală necesară.",
+      });
+      throw new EmailDeliveryUncertainError();
+    }
     const result = (await response.json().catch(() => null)) as {
       id?: string;
       message?: string;
@@ -164,30 +209,37 @@ export async function sendEmail(env: CommerceEnv, input: SendEmailInput): Promis
       externalId: result?.id ?? null,
       responseCode: response.status,
       responseSummary: result?.id ? { emailId: result.id } : {},
-      errorCode: response.ok ? null : "RESEND_SEND_FAILED",
-      errorMessage: response.ok ? null : result?.message || `HTTP ${response.status}`,
+      errorCode: response.ok
+        ? result?.id
+          ? null
+          : "EMAIL_DELIVERY_UNCERTAIN"
+        : "RESEND_SEND_FAILED",
+      errorMessage: response.ok
+        ? result?.id
+          ? null
+          : "Resend a răspuns fără identificator de mesaj."
+        : result?.message || `HTTP ${response.status}`,
     });
+    if (response.ok && !result?.id) throw new EmailDeliveryUncertainError();
     if (!response.ok || !result?.id)
       throw new Error(`Resend HTTP ${response.status}: trimitere neconfirmată`);
   };
 
-  const attempts = input.resendOnly
-    ? [resend]
-    : settings.provider === "resend"
-      ? [resend, cloudflare]
-      : [cloudflare, resend];
-  let lastError: unknown;
-  for (const attempt of attempts) {
+  if (input.resendOnly || settings.provider === "resend") {
     try {
-      await attempt();
-      return;
+      await resend();
     } catch (error) {
-      lastError = error;
+      if (input.resendOnly || !(error instanceof SafeTransportFallback)) throw error;
+      await cloudflare();
     }
+    return;
   }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("Niciun transport e-mail nu este configurat.");
+  try {
+    await cloudflare();
+  } catch (error) {
+    if (!mayFallbackFromCloudflare(error)) throw error;
+    await resend();
+  }
 }
 
 export async function sendOrderConfirmation(env: CommerceEnv, orderId: string): Promise<void> {
@@ -238,8 +290,9 @@ export async function sendOrderConfirmation(env: CommerceEnv, orderId: string): 
 }
 
 export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: string): Promise<void> {
-  const [settings, order, items] = await Promise.all([
+  const [settings, template, order, items] = await Promise.all([
     getEmailSettings(env.DB),
+    getEmailTemplate(env.DB, "order_owner_notification"),
     env.DB.prepare(
       `SELECT o.order_number, o.customer_name, o.customer_email, o.customer_phone_e164,
               o.customer_note, o.payment_method_requested, o.shipping_option_requested,
@@ -333,15 +386,108 @@ export async function sendOrderOwnerNotification(env: CommerceEnv, orderId: stri
     "Comanda este disponibilă și în panoul intern Cutiuța Magică.",
   ].join("\n");
 
+  if (!template?.enabled) return;
+  const rendered = renderEmailTemplate(template, {
+    order_number: order.order_number,
+    total: money(order.total_bani),
+    details: text,
+  });
   await sendEmail(env, {
     to: settings.orderNotificationEmail,
     channel: "orders",
-    subject: `Comandă nouă ${order.order_number} · ${money(order.total_bani)}`,
+    subject: rendered.subject,
     idempotencyKey: `order-owner-notification/${orderId}`,
     entityType: "order_internal_notification",
     entityId: orderId,
-    text,
-    html: emailTextToHtml(text),
+    text: rendered.text,
+    html: emailTextToHtml(rendered.text),
+  });
+}
+
+export async function sendOrderShippedNotification(
+  env: CommerceEnv,
+  orderId: string,
+): Promise<void> {
+  const [settings, template, order] = await Promise.all([
+    getEmailSettings(env.DB),
+    getEmailTemplate(env.DB, "order_shipped"),
+    env.DB.prepare(
+      `SELECT order_number,customer_name,customer_email,fulfillment_status,
+      payment_method_requested,payment_status,paid_bani,total_bani
+      FROM orders WHERE id=?1`,
+    )
+      .bind(orderId)
+      .first<{
+        order_number: string;
+        customer_name: string;
+        customer_email: string | null;
+        fulfillment_status: string;
+        payment_method_requested: string;
+        payment_status: string;
+        paid_bani: number;
+        total_bani: number;
+      }>(),
+  ]);
+  if (
+    !settings.customerEmailsEnabled ||
+    !template?.enabled ||
+    !order?.customer_email ||
+    order.fulfillment_status !== "shipped" ||
+    (order.payment_method_requested === "card" &&
+      (order.payment_status !== "paid" || order.paid_bani !== order.total_bani))
+  )
+    return;
+  const rendered = renderEmailTemplate(template, {
+    customer_name: order.customer_name,
+    order_number: order.order_number,
+  });
+  await sendEmail(env, {
+    to: order.customer_email,
+    channel: "orders",
+    subject: rendered.subject,
+    idempotencyKey: `order-shipped/${orderId}`,
+    entityType: "order_shipped",
+    entityId: orderId,
+    text: rendered.text,
+    html: emailTextToHtml(rendered.text),
+  });
+}
+
+export async function sendReturnOwnerNotification(
+  env: CommerceEnv,
+  returnId: string,
+): Promise<void> {
+  const [settings, template, row] = await Promise.all([
+    getEmailSettings(env.DB),
+    getEmailTemplate(env.DB, "return_owner_notification"),
+    env.DB.prepare(
+      `SELECT rr.return_number,rr.request_type,rr.customer_name,o.order_number
+      FROM return_requests rr JOIN orders o ON o.id=rr.order_id WHERE rr.id=?1`,
+    )
+      .bind(returnId)
+      .first<{
+        return_number: string;
+        request_type: string;
+        customer_name: string;
+        order_number: string;
+      }>(),
+  ]);
+  if (!row || !template?.enabled) return;
+  const rendered = renderEmailTemplate(template, {
+    return_number: row.return_number,
+    order_number: row.order_number,
+    request_type: row.request_type,
+    customer_name: row.customer_name,
+  });
+  await sendEmail(env, {
+    to: settings.orderNotificationEmail,
+    channel: "returns",
+    subject: rendered.subject,
+    idempotencyKey: `return-owner-notification/${returnId}`,
+    entityType: "return_internal_notification",
+    entityId: returnId,
+    text: rendered.text,
+    html: emailTextToHtml(rendered.text),
   });
 }
 
@@ -441,5 +587,27 @@ export async function sendReturnAcknowledgement(
     entityId: input.returnId,
     text: rendered.text,
     html: emailTextToHtml(rendered.text),
+  });
+}
+
+export async function sendReturnAcknowledgementForId(
+  env: CommerceEnv,
+  returnId: string,
+): Promise<void> {
+  const row = await env.DB.prepare(
+    `SELECT return_number,customer_name,customer_email FROM return_requests WHERE id=?1`,
+  )
+    .bind(returnId)
+    .first<{
+      return_number: string;
+      customer_name: string;
+      customer_email: string;
+    }>();
+  if (!row) throw new Error("Cererea de retur nu a fost găsită.");
+  await sendReturnAcknowledgement(env, {
+    returnId,
+    returnNumber: row.return_number,
+    customerName: row.customer_name,
+    email: row.customer_email,
   });
 }

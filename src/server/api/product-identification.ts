@@ -65,7 +65,7 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("personalization.status"),
     requestId: id,
-    status: z.enum(["approved", "in_production", "cancelled"]),
+    status: z.enum(["approved", "in_production", "shipped", "cancelled"]),
   }),
   z.object({
     action: z.literal("import"),
@@ -704,11 +704,11 @@ async function updatePersonalizationStatus(
 ) {
   const current = await db
     .prepare(
-      `SELECT pi.id,pr.status FROM personalization_identifiers pi
+      `SELECT pi.id,pr.status,pr.procurement_status AS procurementStatus FROM personalization_identifiers pi
     JOIN personalization_requests pr ON pr.id=pi.request_id WHERE pi.request_id=?1`,
     )
     .bind(input.requestId)
-    .first<{ id: string; status: string }>();
+    .first<{ id: string; status: string; procurementStatus: string }>();
   if (!current)
     return json(
       { error: { code: "CODE_NOT_ASSIGNED", message: "Alocă mai întâi un cod intern." } },
@@ -718,8 +718,21 @@ async function updatePersonalizationStatus(
     received: ["approved", "cancelled"],
     contacted: ["approved", "cancelled"],
     approved: ["in_production", "cancelled"],
-    in_production: ["cancelled"],
+    in_production: ["shipped", "cancelled"],
   };
+  if (
+    ["in_production", "shipped"].includes(input.status) &&
+    current.procurementStatus !== "received"
+  )
+    return json(
+      {
+        error: {
+          code: "PROCUREMENT_INCOMPLETE",
+          message: "Confirmă mai întâi primirea componentelor.",
+        },
+      },
+      409,
+    );
   if (!transitions[current.status]?.includes(input.status))
     return json(
       {

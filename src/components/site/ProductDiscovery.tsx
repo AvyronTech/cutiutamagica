@@ -84,8 +84,8 @@ export function ProductDiscovery({ product }: { product: Product }) {
         <details name="product-faq">
           <summary>Primesc și decorurile din fotografii?</summary>
           <p>
-            Nu. Comanda include cutiuța aleasă. Lumânările, cărțile și celelalte elemente folosite
-            pentru atmosferă în fotografii nu fac parte din produs.
+            Nu. Comanda include numai cutiuța aleasă. Decorurile folosite pentru atmosferă în
+            fotografii nu fac parte din produs.
           </p>
         </details>
         <details name="product-faq">

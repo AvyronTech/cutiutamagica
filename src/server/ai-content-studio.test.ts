@@ -125,7 +125,7 @@ describe("local AI content studio", () => {
       runnerId: "cutiuta-imac-test",
       version: "1.0.0-test",
       providers: {
-        ollama: { healthy: true, models: ["qwen3:8b"] },
+        ollama: { healthy: true, models: ["qwen3:8b"], selectedModel: "qwen3:8b" },
         comfyui: { healthy: true, capabilities: ["image", "video"] },
       },
     };
@@ -146,6 +146,27 @@ describe("local AI content studio", () => {
 
     const replay = await handleAdminAiStudioApi(signedRequest(secret, nonce, payload), env);
     expect(replay?.status).toBe(409);
+  });
+
+  it("does not activate the text profile when the selected Ollama model differs", async () => {
+    const { handleAdminAiStudioApi } = await import("./api/admin-ai-studio");
+    const { db, sql } = database();
+    const secret = "unit-test-ai-runner-secret";
+    const response = await handleAdminAiStudioApi(
+      signedRequest(secret, "nonce_for_ai_test_000002", {
+        runnerId: "cutiuta-imac-test",
+        version: "1.1.0-test",
+        providers: {
+          ollama: { healthy: true, models: ["qwen3:8b", "qwen3:4b"], selectedModel: "qwen3:4b" },
+          comfyui: { healthy: false, capabilities: [] },
+        },
+      }),
+      { DB: db, AI_STUDIO_RUNNER_HMAC_SECRET: secret } as unknown as Env,
+    );
+    expect(response?.status).toBe(200);
+    expect(
+      sql.prepare("SELECT status FROM ai_model_profiles WHERE id='ai_model_qwen3_ollama'").get(),
+    ).toMatchObject({ status: "degraded" });
   });
 
   it("persists one dashboard review without publishing generated content", async () => {

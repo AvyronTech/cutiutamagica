@@ -141,7 +141,12 @@ export function isPublicStoryPath(pathname: string) {
     pathname === "/comanda" ||
     pathname === "/cont" ||
     pathname.startsWith("/api/") ||
-    pathname === "/sitemap.xml"
+    pathname === "/sitemap.xml" ||
+    pathname === "/sitemap.txt" ||
+    pathname === "/sitemap-core.xml" ||
+    pathname === "/sitemap-guides.xml" ||
+    pathname === "/sitemap-products.xml" ||
+    pathname === "/llms.txt"
   );
 }
 

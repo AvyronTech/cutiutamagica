@@ -30,48 +30,12 @@ import SupplierResearch from "./SupplierResearch";
 import { productPath } from "@/lib/product-url";
 
 const SLOT_GUIDE = [
-  {
-    code: "01_hero",
-    number: "01",
-    title: "Hero",
-    hint: "Capac deschis, imagine principală, text scurt; fără Play desenat.",
-    example: "Pornește magia.",
-  },
-  {
-    code: "02_decor",
-    number: "02",
-    title: "Decor tematic",
-    hint: "Capac deschis, decor diferit, cinematic și sugestiv.",
-    example: "Mică cutie, vrajă mare.",
-  },
-  {
-    code: "03_closed",
-    number: "03",
-    title: "Capac închis",
-    hint: "Construcție și design vizibile clar.",
-    example: "Cadoul care vrăjește.",
-  },
-  {
-    code: "04_dimensions",
-    number: "04",
-    title: "Dimensiuni",
-    hint: "Unghi dreapta-față, dimensiuni în cm și inch.",
-    example: "Mică, dar memorabilă.",
-  },
-  {
-    code: "05_mechanism",
-    number: "05",
-    title: "Mecanism",
-    hint: "Cilindru, pieptene metalic și manivelă explicate vizual.",
-    example: "Fără baterii. Doar farmec.",
-  },
-  {
-    code: "06_melody",
-    number: "06",
-    title: "Melodie",
-    hint: "Unghi stânga-spate și numele melodiei.",
-    example: "O rotești. Te cucerește.",
-  },
+  { code: "01_hero", number: "01" },
+  { code: "02_decor", number: "02" },
+  { code: "03_closed", number: "03" },
+  { code: "04_dimensions", number: "04" },
+  { code: "05_mechanism", number: "05" },
+  { code: "06_melody", number: "06" },
 ] as const;
 
 type TabId =
@@ -226,10 +190,12 @@ function AssetEditor({
   asset,
   onChanged,
   developmentPreview,
+  gallery = false,
 }: {
   developmentPreview?: boolean;
   asset: MediaAsset;
   onChanged: () => Promise<unknown>;
+  gallery?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState(asset.title ?? "");
@@ -288,7 +254,9 @@ function AssetEditor({
     : `/api/v1/admin/media/${asset.id}/content`;
   return (
     <div className="space-y-3">
-      <div className="relative aspect-square overflow-hidden rounded-lg border border-[#334155] bg-[#07111f]">
+      <div
+        className={`relative overflow-hidden rounded-lg border border-[#334155] ${asset.media_type === "audio" ? "min-h-28 bg-slate-100" : "aspect-square bg-[#07111f]"}`}
+      >
         {asset.media_type === "image" || asset.media_type === "spin_360" ? (
           <img
             src={previewUrl}
@@ -296,7 +264,7 @@ function AssetEditor({
             className="h-full w-full object-contain"
           />
         ) : asset.media_type === "audio" ? (
-          <div className="flex h-full items-center p-3">
+          <div className="flex min-h-28 items-center p-3">
             <audio src={previewUrl} controls preload="metadata" className="w-full" />
           </div>
         ) : asset.media_type === "video" ? (
@@ -329,7 +297,7 @@ function AssetEditor({
           Fragment: {Math.round(asset.duration_seconds)} secunde
         </p>
       )}
-      {asset.media_type === "image" && (
+      {asset.media_type === "image" && !gallery && (
         <Field label="Ordine în galerie (valoarea mai mică apare prima)">
           <input
             type="number"
@@ -365,17 +333,25 @@ function AssetEditor({
           />
         </Field>
       )}
-      <Field label="Titlu">
-        <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
-      </Field>
-      <Field label="Text promo scurt">
-        <input
-          className={inputClass}
-          maxLength={90}
-          value={promo}
-          onChange={(e) => setPromo(e.target.value)}
-        />
-      </Field>
+      {!gallery && (
+        <>
+          <Field label="Titlu">
+            <input
+              className={inputClass}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </Field>
+          <Field label="Text promo scurt">
+            <input
+              className={inputClass}
+              maxLength={90}
+              value={promo}
+              onChange={(e) => setPromo(e.target.value)}
+            />
+          </Field>
+        </>
+      )}
       {(asset.media_type === "image" || asset.media_type === "spin_360") && (
         <Field label="Text alternativ">
           <textarea
@@ -439,7 +415,7 @@ function UploadButton({
         disabled={busy}
         onChange={(event) => {
           const files = Array.from(event.target.files ?? []);
-          if (files.length) onFiles(files);
+          if (files.length) void Promise.resolve(onFiles(files)).catch(() => undefined);
           event.currentTarget.value = "";
         }}
       />
@@ -636,6 +612,8 @@ function GeneralForm({ data, onChanged }: { data: StudioData; onChanged: () => P
 
 function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promise<unknown> }) {
   const [busy, setBusy] = useState(false);
+  const [seoTitle, setSeoTitle] = useState(data.product.seo_title ?? "");
+  const [seoDescription, setSeoDescription] = useState(data.product.seo_description ?? "");
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -686,24 +664,56 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
   }
   const p = data.product;
   const discovery = readProductDiscovery(p.discovery_json);
+  const canonical = `https://cutiutamagica.eu${productPath(p.slug)}`;
   return (
-    <form key={p.version} onSubmit={submit} className="max-w-3xl space-y-4">
+    <form onSubmit={submit} className="max-w-4xl space-y-5">
+      <section className="rounded-xl border border-cyan-300/25 bg-[#101c2f] p-4">
+        <h2 className="text-base font-semibold text-white">Previzualizare pentru căutare</h2>
+        <p className="mt-1 text-xs text-slate-300">
+          Google poate rescrie titlul sau descrierea. Păstrează informațiile identice cu produsul
+          public.
+        </p>
+        <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950 p-4">
+          <p className="break-all text-xs text-emerald-300">{canonical}</p>
+          <p className="mt-2 text-lg font-medium text-sky-300">
+            {seoTitle.trim() || `${p.name} | Cutiuța Magică`}
+          </p>
+          <p className="mt-1 text-sm text-slate-300">
+            {seoDescription.trim() ||
+              p.short_description?.trim() ||
+              p.description?.trim() ||
+              "Descrierea produsului lipsește. Completează mai întâi secțiunea General."}
+          </p>
+        </div>
+        <a
+          href={productPath(p.slug)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-1 text-xs text-cyan-200 underline underline-offset-2"
+        >
+          Verifică pagina publică <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </section>
       <Field label="Titlu SEO (max. 70)">
         <input
           name="seoTitle"
           maxLength={70}
-          defaultValue={p.seo_title ?? ""}
+          value={seoTitle}
+          onChange={(event) => setSeoTitle(event.target.value)}
           className={inputClass}
         />
+        <p className="mt-1 text-right text-xs text-slate-400">{seoTitle.length}/70</p>
       </Field>
       <Field label="Meta descriere (max. 180)">
         <textarea
           name="seoDescription"
           maxLength={180}
           rows={3}
-          defaultValue={p.seo_description ?? ""}
+          value={seoDescription}
+          onChange={(event) => setSeoDescription(event.target.value)}
           className={inputClass}
         />
+        <p className="mt-1 text-right text-xs text-slate-400">{seoDescription.length}/180</p>
       </Field>
       <Field label="Expresii de căutare">
         <textarea
@@ -712,6 +722,10 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
           defaultValue={p.search_terms ?? ""}
           className={inputClass}
         />
+        <p className="mt-1 text-xs text-slate-400">
+          Ajută filtrarea din catalog și descrierea structurată. Folosește numai expresii relevante
+          pentru produsul real; nu garantează poziții în Google.
+        </p>
       </Field>
       <fieldset className="space-y-4 rounded-xl border border-slate-700 p-4">
         <legend className="px-2 text-sm text-cyan-200">Ghid vizibil pe pagina produsului</legend>
@@ -784,9 +798,16 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
 }
 
 export default function ProductStudio({ productId }: { productId: string }) {
-  const [tab, setTab] = useState<TabId>("technical");
+  const [tab, setTab] = useState<TabId>("general");
   const [uploading, setUploading] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState("origin");
+  useEffect(() => {
+    if (window.location.hash === "#seo") setTab("seo");
+    if (window.location.hash === "#media") setTab("media");
+    if (window.location.hash === "#suppliers") setTab("suppliers");
+    if (window.location.hash === "#general") setTab("general");
+    if (window.location.hash === "#technical") setTab("technical");
+  }, [productId]);
   const query = useQuery({
     queryKey: ["admin", "product-studio", productId],
     queryFn: () => api<StudioData>(`/api/v1/admin/products/${productId}/media`),
@@ -872,7 +893,9 @@ export default function ProductStudio({ productId }: { productId: string }) {
     );
   const data = query.data;
   const mediaBySlot = new Map(
-    data.media.filter((asset) => asset.slot_code).map((asset) => [asset.slot_code, asset]),
+    data.media
+      .filter((asset) => asset.media_type === "image" && asset.slot_code)
+      .map((asset) => [asset.slot_code, asset]),
   );
   const audioAssets = data.media.filter((asset) => asset.media_type === "audio");
   const spinAssets = data.media.filter((asset) => asset.usage_type === "360");
@@ -881,15 +904,15 @@ export default function ProductStudio({ productId }: { productId: string }) {
   const documentAssets = data.media.filter((asset) => asset.media_type === "document");
 
   const tabs: Array<{ id: TabId; label: string; icon: typeof Library }> = [
-    { id: "technical", label: "Fișă tehnică", icon: Barcode },
     { id: "general", label: "General", icon: Search },
-    { id: "media", label: "Media 01–06", icon: Library },
-    { id: "documents", label: "Documente", icon: FileText },
+    { id: "media", label: "Imagini", icon: Library },
+    { id: "seo", label: "SEO", icon: Search },
+    { id: "technical", label: "Fișă tehnică", icon: Barcode },
     { id: "audio", label: "Audio", icon: Music2 },
+    { id: "documents", label: "Documente", icon: FileText },
+    { id: "suppliers", label: "Relevanță / furnizori", icon: Search },
     { id: "spin360", label: "360°", icon: Rotate3D },
     { id: "animation", label: "Animație", icon: Film },
-    { id: "seo", label: "SEO", icon: Search },
-    { id: "suppliers", label: "Relevanță / furnizori", icon: Search },
     { id: "avyron", label: "Sync AVYRON", icon: Send },
   ];
 
@@ -968,16 +991,30 @@ export default function ProductStudio({ productId }: { productId: string }) {
       >
         Recenzii și moderare pentru această cutiuță ↗
       </a>
-      {tab === "seo" && <SeoForm data={data} onChanged={() => query.refetch()} />}
+      {tab === "seo" && (
+        <SeoForm
+          key={`${data.product.id}:${data.product.version}`}
+          data={data}
+          onChanged={() => query.refetch()}
+        />
+      )}
       {tab === "suppliers" && <SupplierResearch productId={data.product.id} />}
 
       {tab === "media" && (
         <div className="space-y-5">
-          <section className="rounded-lg border border-cyan-400/20 bg-[#101c2f] p-4">
-            <h2 className="text-sm font-semibold text-white">Ghid galerie produs</h2>
-            <p className="mt-1 text-xs text-slate-400">
-              Texte în română, foarte scurte, calde și diferite. Fără blocuri mari de copy și fără
-              buton Play desenat în imagine.
+          <section className="rounded-xl border border-cyan-400/20 bg-[#101c2f] p-4">
+            <h2 className="text-base font-semibold text-white">Media · imaginile produsului</h2>
+            <p className="mt-1 text-sm text-slate-300">
+              Adaugă până la șase fotografii pentru {data.product.name}. Imaginea 01 este fotografia
+              principală. Fiecare fișier nou rămâne în verificare până îl aprobi mai jos.
+            </p>
+            <p className="mt-2 text-xs text-amber-200">
+              Dacă înlocuiești o imagine deja publică, cea veche se retrage imediat. Aprobă noua
+              imagine înainte să părăsești produsul.
+            </p>
+            <p className="mt-2 text-xs text-cyan-200">
+              {mediaBySlot.size} din 6 poziții ocupate · JPG, PNG, WebP sau AVIF · maximum 15 MB per
+              imagine
             </p>
           </section>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -990,31 +1027,43 @@ export default function ProductStudio({ productId }: { productId: string }) {
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-mono text-xs text-cyan-300">{slot.number}</p>
-                      <h3 className="text-sm font-semibold text-white">{slot.title}</h3>
+                      <p className="font-mono text-xs text-cyan-300">MEDIA {slot.number}</p>
+                      <h3 className="text-sm font-semibold text-white">
+                        {slot.number === "01" ? "Imagine principală" : `Imagine ${slot.number}`}
+                      </h3>
                     </div>
                     <ImagePlus className="h-5 w-5 text-slate-600" />
                   </div>
-                  <p className="min-h-10 text-xs leading-5 text-slate-500">{slot.hint}</p>
-                  <p className="mb-3 mt-1 text-xs italic text-slate-400">„{slot.example}”</p>
                   {asset && (
                     <AssetEditor
+                      key={asset.id}
                       asset={asset}
+                      gallery
                       developmentPreview={data.developmentPreview}
                       onChanged={() => query.refetch()}
                     />
+                  )}
+                  {!asset && (
+                    <p className="mb-3 rounded-lg border border-dashed border-slate-600 p-5 text-center text-xs text-slate-300">
+                      Nicio imagine adăugată
+                    </p>
                   )}
                   <div className="mt-3">
                     <UploadButton
                       accept="image/jpeg,image/png,image/webp,image/avif"
                       busy={uploading === slot.code}
-                      label={asset ? "Înlocuiește" : "Încarcă imaginea"}
+                      label={
+                        asset
+                          ? `Înlocuiește imaginea ${slot.number}`
+                          : `Adaugă imaginea ${slot.number}`
+                      }
                       onFiles={(files) =>
                         uploadFiles(files, slot.code, {
                           mediaType: "image",
                           usageType: slot.code === "01_hero" ? "hero" : "detail",
                           slotCode: slot.code,
-                          title: slot.title,
+                          title:
+                            slot.number === "01" ? "Imagine principală" : `Imagine ${slot.number}`,
                         })
                       }
                     />

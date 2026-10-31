@@ -2,7 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { createAdminOrder, createAdminProduct, listAdminProducts } from "./admin.repository";
+import {
+  createAdminOrder,
+  createAdminProduct,
+  getAdminSettingsData,
+  listAdminProducts,
+  saveAdminBusinessSettingsData,
+} from "./admin.repository";
 
 let sqlite: DatabaseSync;
 
@@ -74,6 +80,29 @@ beforeEach(() => {
 });
 
 afterEach(() => sqlite.close());
+
+describe("admin business settings", () => {
+  it("updates business details without rewriting hidden legacy settings", async () => {
+    sqlite
+      .prepare(
+        `INSERT INTO site_settings(key,value_json,visibility,validation_status)
+       VALUES ('admin.social','{"instagram":"kept"}','private','review_required')`,
+      )
+      .run();
+    const before = await getAdminSettingsData(database());
+    const saved = await saveAdminBusinessSettingsData(
+      database(),
+      { ...before.business, description: "Cutiuțe muzicale" },
+      "admin-test",
+      "business-settings-test",
+    );
+    expect(saved.business.description).toBe("Cutiuțe muzicale");
+    expect(saved.social.instagram).toBe("kept");
+    expect(
+      sqlite.prepare("SELECT value_json FROM site_settings WHERE key='admin.social'").get(),
+    ).toMatchObject({ value_json: '{"instagram":"kept"}' });
+  });
+});
 
 describe("admin creation flows", () => {
   it("creates a future product with a variant, price and tracked inventory", async () => {

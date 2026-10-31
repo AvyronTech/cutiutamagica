@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Check,
-  ChevronDown,
   Copy,
   Facebook,
   Linkedin,
@@ -46,7 +45,6 @@ function ChannelIcon({ channel }: { channel: string }) {
 }
 
 export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
-  const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const url = productCanonicalUrl(id);
   const message = productShareMessage(name, tagline);
@@ -100,16 +98,8 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
     }
-    setExpanded(true);
+    await copyLink();
   }
-
-  const featured = targets.filter(({ id: channel }) =>
-    ["whatsapp", "facebook", "telegram"].includes(channel),
-  );
-  const groups = [
-    { id: "mesaje", label: "Trimite direct" },
-    { id: "retele", label: "Publică pe o rețea" },
-  ] as const;
 
   return (
     <section className="product-share" aria-labelledby={`share-${id}`}>
@@ -119,82 +109,46 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
         </span>
         <span>
           <strong id={`share-${id}`}>Trimite mai departe povestea</strong>
-          <small>Distribuie exact această cutiuță, fără cont obligatoriu.</small>
+          <small>Alege unde ajunge această cutiuță.</small>
         </span>
       </div>
 
-      <div className="product-share__quick" aria-label="Opțiuni rapide de distribuire">
+      <div className="product-share__channels" aria-label="Canale de distribuire">
         <button type="button" onClick={shareNative} className="product-share__native">
           <Share2 aria-hidden />
           <span>Distribuie</span>
         </button>
-        {featured.map((target) => (
-          <a
-            key={target.id}
-            href={target.href}
-            target="_blank"
-            rel="nofollow noopener noreferrer"
-            className="product-share__quick-link"
-            data-channel={target.id}
-            onClick={() => void recordRewardShare(target.id)}
-            aria-label={`Distribuie pe ${target.label}`}
-          >
-            <ChannelIcon channel={target.id} />
-            <span>{target.label}</span>
-          </a>
-        ))}
+        {targets.map((target) => {
+          const isAppLink = target.id === "email" || target.id === "sms";
+          return (
+            <a
+              key={target.id}
+              href={target.href}
+              target={isAppLink ? undefined : "_blank"}
+              rel={isAppLink ? undefined : "nofollow noopener noreferrer"}
+              className="product-share__channel"
+              data-channel={target.id}
+              onClick={() => {
+                if (target.group === "retele") void recordRewardShare(target.id);
+              }}
+              aria-label={`Distribuie pe ${target.label}`}
+            >
+              <ChannelIcon channel={target.id} />
+              <span>{target.label}</span>
+            </a>
+          );
+        })}
+      </div>
+      <div className="product-share__footer">
         <button
           type="button"
           onClick={copyLink}
-          className="product-share__quick-link"
+          className="product-share__copy"
           aria-label={copied ? "Link copiat" : "Copiază linkul produsului"}
         >
           {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
-          <span>{copied ? "Copiat" : "Copiază"}</span>
+          <span>{copied ? "Link copiat" : "Copiază linkul"}</span>
         </button>
-      </div>
-
-      <button
-        type="button"
-        className="product-share__expand"
-        aria-expanded={expanded}
-        aria-controls={`share-options-${id}`}
-        onClick={() => setExpanded((current) => !current)}
-      >
-        {expanded ? "Ascunde canalele" : "Vezi toate cele 9 canale"}
-        <ChevronDown aria-hidden />
-      </button>
-
-      <div id={`share-options-${id}`} className="product-share__options" data-expanded={expanded}>
-        <div className="product-share__options-inner">
-          {groups.map((group) => (
-            <div key={group.id} className="product-share__group">
-              <p>{group.label}</p>
-              <div>
-                {targets
-                  .filter((target) => target.group === group.id)
-                  .map((target) => {
-                    const isAppLink = target.id === "email" || target.id === "sms";
-                    return (
-                      <a
-                        key={target.id}
-                        href={target.href}
-                        target={isAppLink ? undefined : "_blank"}
-                        rel={isAppLink ? undefined : "nofollow noopener noreferrer"}
-                        data-channel={target.id}
-                        onClick={() => {
-                          if (target.group === "retele") void recordRewardShare(target.id);
-                        }}
-                      >
-                        <ChannelIcon channel={target.id} />
-                        <span>{target.label}</span>
-                      </a>
-                    );
-                  })}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );

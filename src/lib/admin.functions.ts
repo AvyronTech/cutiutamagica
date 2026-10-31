@@ -14,6 +14,7 @@ import {
   hasEmailTransport,
   sendReferralInvitation,
   sendReferralReward,
+  sendOrderShippedNotification,
 } from "@/server/integrations/resend";
 import { awardMagicStarsForDeliveredOrder } from "@/server/services/magic-rewards";
 import { issueSmartShipAwb, reconcileSmartShipAwb } from "@/server/services/smartship-fulfillment";
@@ -37,6 +38,7 @@ import {
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
   saveAdminSettingsData,
+  saveAdminBusinessSettingsData,
   createAdminOrder,
   createAdminProduct,
   updateOrderStatus,
@@ -714,6 +716,15 @@ export const saveAdminSettings = createServerFn({ method: "POST" })
     return saveAdminSettingsData(env.DB, data, context.admin.id, requestId);
   });
 
+export const saveAdminBusinessSettings = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(adminSettingsInput.shape.business)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "team.write");
+    const requestId = getRequest().headers.get("x-request-id") ?? crypto.randomUUID();
+    return saveAdminBusinessSettingsData(env.DB, data, context.admin.id, requestId);
+  });
+
 const notificationIdInput = z.object({ notificationId: z.string().min(1).max(128) });
 
 export const markNotificationRead = createServerFn({ method: "POST" })
@@ -760,6 +771,23 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
       actorId: context.admin.id,
       requestId,
     });
+    if (data.status === "Expediată" && order.version !== data.expectedVersion) {
+      try {
+        await env.COMMERCE_EVENTS.send({
+          version: 3,
+          type: "order.shipped",
+          entityId: data.orderId,
+        });
+      } catch (error) {
+        console.error("order.shipped_email_queue_failed", { orderId: data.orderId, error });
+        await sendOrderShippedNotification(env as CommerceEnv, data.orderId).catch((sendError) =>
+          console.error("order.shipped_email_fallback_failed", {
+            orderId: data.orderId,
+            error: sendError,
+          }),
+        );
+      }
+    }
     if (data.status === "Livrată") {
       const referral = await issuePostDeliveryReferral(env.DB, data.orderId);
       await awardMagicStarsForDeliveredOrder(env.DB, data.orderId);

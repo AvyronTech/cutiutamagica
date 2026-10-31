@@ -323,6 +323,40 @@ describe("product identification API", () => {
     expect(
       sqlite.prepare("SELECT status FROM personalization_requests WHERE id='request-test'").get(),
     ).toMatchObject({ status: "approved" });
+    const premature = (await handleProductIdentification(
+      post(
+        { action: "personalization.status", requestId: "request-test", status: "in_production" },
+        "orders.write",
+      ),
+      env(),
+    ))!;
+    expect(premature.status).toBe(409);
+    sqlite
+      .prepare(
+        "UPDATE personalization_requests SET procurement_status='received' WHERE id='request-test'",
+      )
+      .run();
+    expect(
+      (await handleProductIdentification(
+        post(
+          { action: "personalization.status", requestId: "request-test", status: "in_production" },
+          "orders.write",
+        ),
+        env(),
+      ))!.status,
+    ).toBe(200);
+    expect(
+      (await handleProductIdentification(
+        post(
+          { action: "personalization.status", requestId: "request-test", status: "shipped" },
+          "orders.write",
+        ),
+        env(),
+      ))!.status,
+    ).toBe(200);
+    expect(
+      sqlite.prepare("SELECT status FROM personalization_requests WHERE id='request-test'").get(),
+    ).toMatchObject({ status: "shipped" });
     expect(
       sqlite
         .prepare(

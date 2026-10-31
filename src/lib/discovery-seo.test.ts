@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { readProductDiscovery, safeJsonLd } from "./product-discovery";
 import { DISCOVERY_UPDATED, giftGuide, giftGuides } from "@/data/gift-guides";
-import { renderSitemap, renderTextSitemap } from "./seo-sitemap";
+import { renderProductSitemap, renderSitemap, renderTextSitemap } from "./seo-sitemap";
 import type { SitemapProduct } from "./seo-sitemap";
 
 describe("product discovery and search metadata", () => {
@@ -18,8 +18,23 @@ describe("product discovery and search metadata", () => {
     expect(new Set(urls).size).toBe(expected.length);
     expect((xml.match(/<lastmod>/g) ?? []).length).toBe(expected.length);
     expect(xml).toContain(`<lastmod>${DISCOVERY_UPDATED}</lastmod>`);
+    const index = readFileSync(resolve("public/sitemap.xml"), "utf8");
+    const core = readFileSync(resolve("public/sitemap-core.xml"), "utf8");
+    expect(index).toContain("<sitemapindex");
+    for (const path of ["sitemap-core.xml", "sitemap-products.xml", "sitemap-guides.xml"])
+      expect(index).toContain(`<loc>https://cutiutamagica.eu/${path}</loc>`);
+    const coreUrls = [...core.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+    const allStaticUrls = [...renderSitemap([]).matchAll(/<url><loc>([^<]+)<\/loc>/g)].map(
+      (match) => match[1],
+    );
+    expect(coreUrls).toEqual(
+      allStaticUrls.filter(
+        (url) => url !== "https://cutiutamagica.eu/cadouri" && !url.includes("/cadouri/"),
+      ),
+    );
+    expect(new Set([...coreUrls, ...urls]).size).toBe(coreUrls.length + urls.length);
     expect(readFileSync(resolve("public/robots.txt"), "utf8")).toContain(
-      "Sitemap: https://cutiutamagica.eu/sitemap-guides.xml",
+      "Sitemap: https://cutiutamagica.eu/sitemap.xml",
     );
     expect(readFileSync(resolve("public/robots.txt"), "utf8")).toContain(
       "Sitemap: https://cutiutamagica.eu/sitemap.txt",
@@ -138,5 +153,11 @@ describe("product discovery and search metadata", () => {
     const xml = renderSitemap(products);
     const urls = [...xml.matchAll(/<url><loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
     expect(renderTextSitemap(products).trimEnd().split("\n")).toEqual(urls);
+    const productUrls = [
+      ...renderProductSitemap(products).matchAll(/<url><loc>([^<]+)<\/loc>/g),
+    ].map((match) => match[1]);
+    expect(productUrls).toEqual([
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming",
+    ]);
   });
 });

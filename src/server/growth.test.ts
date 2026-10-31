@@ -9,6 +9,7 @@ import { listPublicCatalog } from "./db/catalog.repository";
 import { previousMonth, reportSettingsSchema, marketplaceForUrl } from "@/lib/growth-contracts";
 import type { CommerceEnv } from "./integrations/provider-runtime";
 import { readProviderJson } from "./integrations/provider-runtime";
+import { EmailDeliveryUncertainError, sendEmail } from "./integrations/resend";
 import { checkConnection, syncTraffic } from "./services/traffic-integrations";
 import {
   getAdminShippingInsightsData,
@@ -72,6 +73,69 @@ afterEach(() => {
   for (const db of databases.splice(0)) db.close();
 });
 describe("growth and commerce integration", () => {
+  it("falls back after a recipient-policy rejection and deduplicates the accepted email", async () => {
+    const { db, sql } = database();
+    const send = vi.fn().mockRejectedValue(
+      Object.assign(new Error("Recipient denied"), {
+        code: "E_RECIPIENT_NOT_ALLOWED",
+      }),
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ id: "resend-synthetic-1" }), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const env = {
+      DB: db,
+      APP_ENV: "production",
+      EMAIL: { send },
+      RESEND_API_KEY: "synthetic-key",
+    } as unknown as CommerceEnv;
+    const input = {
+      to: "customer@example.test",
+      subject: "Test",
+      text: "Test",
+      html: "<p>Test</p>",
+      idempotencyKey: "synthetic-order/1",
+      entityType: "order",
+      entityId: "order-1",
+    };
+    await sendEmail(env, input);
+    await sendEmail(env, input);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      sql.prepare("SELECT provider,status FROM provider_operations WHERE status='succeeded'").get(),
+    ).toMatchObject({ provider: "resend", status: "succeeded" });
+  });
+
+  it("holds an uncertain Cloudflare send for reconciliation instead of switching providers", async () => {
+    const { db } = database();
+    const send = vi.fn().mockRejectedValue(new Error("Connection interrupted"));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const env = {
+      DB: db,
+      APP_ENV: "production",
+      EMAIL: { send },
+      RESEND_API_KEY: "synthetic-key",
+    } as unknown as CommerceEnv;
+    const input = {
+      to: "customer@example.test",
+      subject: "Test",
+      text: "Test",
+      html: "<p>Test</p>",
+      idempotencyKey: "synthetic-order/2",
+      entityType: "order",
+      entityId: "order-2",
+    };
+    await expect(sendEmail(env, input)).rejects.toBeInstanceOf(EmailDeliveryUncertainError);
+    await expect(sendEmail(env, input)).rejects.toBeInstanceOf(EmailDeliveryUncertainError);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("resolves a Bucharest easybox sector through the city and separate sector", async () => {
     const { db, actor } = database();
     const env = {

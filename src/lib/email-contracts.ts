@@ -34,7 +34,13 @@ export const emailSettingsSchema = z.object({
 
 export type EmailSettings = z.infer<typeof emailSettingsSchema>;
 
-export const emailTemplateCodeSchema = z.enum(["order_confirmation", "return_acknowledgement"]);
+export const emailTemplateCodeSchema = z.enum([
+  "order_confirmation",
+  "order_owner_notification",
+  "order_shipped",
+  "return_acknowledgement",
+  "return_owner_notification",
+]);
 export type EmailTemplateCode = z.infer<typeof emailTemplateCodeSchema>;
 
 export const emailTemplateInputSchema = z.object({
@@ -66,5 +72,8 @@ export type EmailChannel = z.infer<typeof emailTestSchema>["channel"];
 
 export const allowedTemplateVariables: Record<EmailTemplateCode, string[]> = {
   order_confirmation: ["customer_name", "order_number", "total"],
+  order_owner_notification: ["order_number", "total", "details"],
+  order_shipped: ["customer_name", "order_number"],
   return_acknowledgement: ["customer_name", "return_number"],
+  return_owner_notification: ["return_number", "order_number", "request_type", "customer_name"],
 };

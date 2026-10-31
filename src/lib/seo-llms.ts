@@ -64,6 +64,10 @@ export function renderLlmsTxt(products: LlmsProduct[]): string {
       ),
     ),
     "",
+    "## Liste de URL-uri canonice",
+    link("Index sitemapuri", "/sitemap.xml", "Pagini esențiale, produse publicate și ghiduri."),
+    link("Sitemap text", "/sitemap.txt", "Aceleași pagini publice, într-o listă simplă."),
+    "",
   ];
   return lines.join("\n");
 }

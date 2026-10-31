@@ -44,13 +44,7 @@ export type PersonalizationProcurementRequest = {
   totalBani: number;
   requestStatus: string;
   procurementStatus: z.infer<typeof procurementStatusSchema>;
-  sourceId: string | null;
-  sourceUrl: string | null;
-  listingTitle: string | null;
-  variantLabel: string | null;
-  priceText: string | null;
   createdAt: string;
-  orderedAt: string | null;
 };
 
 export type PersonalizationSource = {
@@ -64,42 +58,72 @@ export type PersonalizationSource = {
   lastVerifiedAt: string | null;
 };
 
+export const getPersonalizationSources = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    assertPermission(context.admin, "orders.read");
+    const sources = await env.DB.prepare(
+      `SELECT id,box_model_id AS boxModel,source_url AS sourceUrl,
+        listing_title AS listingTitle,variant_label AS variantLabel,price_text AS priceText,
+        status,last_verified_at AS lastVerifiedAt
+       FROM personalization_supplier_sources ORDER BY updated_at DESC LIMIT 100`,
+    ).all<PersonalizationSource>();
+    return { sources: sources.results };
+  });
+
+export type PersonalizationProcurementQueueItem = {
+  id: string;
+  internalCode: string | null;
+  boxModel: PersonalizationProcurementRequest["boxModel"];
+  procurementStatus: PersonalizationProcurementRequest["procurementStatus"];
+  sourceUrl: string | null;
+  listingTitle: string | null;
+  variantLabel: string | null;
+  priceText: string | null;
+};
+
+export const getPersonalizationProcurementQueue = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    assertPermission(context.admin, "orders.read");
+    const requests = await env.DB.prepare(
+      `SELECT pr.id,pi.code AS internalCode,pr.box_model AS boxModel,
+         pr.procurement_status AS procurementStatus,ps.source_url AS sourceUrl,
+         ps.listing_title AS listingTitle,ps.variant_label AS variantLabel,
+         ps.price_text AS priceText
+       FROM personalization_requests pr
+       LEFT JOIN personalization_identifiers pi ON pi.request_id=pr.id
+       LEFT JOIN personalization_supplier_sources ps ON ps.id=pr.supplier_source_id
+       ORDER BY CASE pr.procurement_status
+         WHEN 'ready_to_order' THEN 0 WHEN 'awaiting_source' THEN 1
+         WHEN 'ordered' THEN 2 WHEN 'received' THEN 3 ELSE 4 END,
+         pr.created_at DESC LIMIT 200`,
+    ).all<PersonalizationProcurementQueueItem>();
+    return { requests: requests.results };
+  });
+
 export const getPersonalizationProcurement = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     assertPermission(context.admin, "orders.read");
-    const [requests, sources] = await Promise.all([
-      env.DB.prepare(
-        `SELECT pr.id,pi.code AS internalCode,pr.status AS internalStatus,
+    const requests = await env.DB.prepare(
+      `SELECT pr.id,pi.code AS internalCode,pr.status AS internalStatus,
           pr.customer_name AS customerName,pr.email,pr.phone,
           pr.box_model AS boxModel,pr.box_color AS boxColor,pr.melody,pr.engraving,
           pr.gift_wrap AS giftWrap,pr.total_bani AS totalBani,pr.status AS requestStatus,
-          pr.procurement_status AS procurementStatus,pr.supplier_source_id AS sourceId,
-          ps.source_url AS sourceUrl,ps.listing_title AS listingTitle,
-          ps.variant_label AS variantLabel,ps.price_text AS priceText,
-          pr.created_at AS createdAt,pr.ordered_at AS orderedAt
+          pr.procurement_status AS procurementStatus,pr.created_at AS createdAt
          FROM personalization_requests pr
          LEFT JOIN personalization_identifiers pi ON pi.request_id=pr.id
-         LEFT JOIN personalization_supplier_sources ps ON ps.id=pr.supplier_source_id
          ORDER BY CASE pr.procurement_status
            WHEN 'ready_to_order' THEN 0 WHEN 'awaiting_source' THEN 1
            WHEN 'ordered' THEN 2 WHEN 'received' THEN 3 ELSE 4 END,
            pr.created_at DESC LIMIT 200`,
-      ).all<PersonalizationProcurementRequest>(),
-      env.DB.prepare(
-        `SELECT id,box_model_id AS boxModel,source_url AS sourceUrl,
-          listing_title AS listingTitle,variant_label AS variantLabel,price_text AS priceText,
-          status,last_verified_at AS lastVerifiedAt
-         FROM personalization_supplier_sources
-         ORDER BY updated_at DESC LIMIT 100`,
-      ).all<PersonalizationSource>(),
-    ]);
+    ).all<PersonalizationProcurementRequest>();
     return {
       requests: requests.results.map((item) => ({
         ...item,
         giftWrap: Number(item.giftWrap) === 1,
       })),
-      sources: sources.results,
     };
   });
 
@@ -181,24 +205,29 @@ export const updatePersonalizationProcurement = createServerFn({ method: "POST" 
       .bind(data.requestId)
       .first<{ id: string; sourceId: string | null; status: string }>();
     if (!request) throw new Error("Cererea nu mai există.");
+    const allowedTransitions: Record<string, string[]> = {
+      awaiting_source: ["cancelled"],
+      ready_to_order: ["ordered", "cancelled"],
+      ordered: ["received", "cancelled"],
+    };
+    if (!allowedTransitions[request.status]?.includes(data.status))
+      throw new Error("Aprovizionarea nu poate trece direct în această stare. Reîncarcă cererea.");
     if (data.status === "ordered" && !request.sourceId)
       throw new Error("Leagă mai întâi o sursă Temu verificată.");
-    if (data.status === "received" && request.status !== "ordered")
-      throw new Error("Produsul poate fi marcat primit numai după comandare.");
     const now = new Date().toISOString();
-    await env.DB.batch([
+    const result = await env.DB.batch([
       env.DB.prepare(
         `UPDATE personalization_requests
          SET procurement_status=?2,
            ordered_at=CASE WHEN ?2='ordered' THEN ?3 ELSE ordered_at END,
-           updated_at=?3 WHERE id=?1`,
-      ).bind(data.requestId, data.status, now),
+           updated_at=?3 WHERE id=?1 AND procurement_status=?4`,
+      ).bind(data.requestId, data.status, now, request.status),
       env.DB.prepare(
         `INSERT INTO audit_log(
           id,actor_admin_user_id,actor_label,action,entity_type,entity_id,
           before_json,after_json,metadata_json
-        ) VALUES(?1,?2,?3,'personalization.procurement.update','personalization_request',
-          ?4,?5,?6,'{}')`,
+        ) SELECT ?1,?2,?3,'personalization.procurement.update','personalization_request',
+          ?4,?5,?6,'{}' WHERE changes()=1`,
       ).bind(
         crypto.randomUUID(),
         context.admin.id,
@@ -208,5 +237,7 @@ export const updatePersonalizationProcurement = createServerFn({ method: "POST" 
         JSON.stringify({ status: data.status }),
       ),
     ]);
+    if (!result[0].meta.changes)
+      throw new Error("Cererea s-a modificat între timp. Reîncarcă lista.");
     return { ok: true };
   });

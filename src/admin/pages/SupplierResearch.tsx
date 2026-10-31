@@ -2,11 +2,21 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExternalLink, Search } from "lucide-react";
-import { getSupplierResearch, runSupplierResearch } from "@/lib/growth.functions";
+import {
+  getGrowthSettings,
+  getSupplierResearch,
+  runSupplierResearch,
+} from "@/lib/growth.functions";
 
 export default function SupplierResearch({ productId }: { productId: string }) {
   const load = useServerFn(getSupplierResearch),
-    run = useServerFn(runSupplierResearch);
+    run = useServerFn(runSupplierResearch),
+    loadSettings = useServerFn(getGrowthSettings);
+  const settings = useQuery({
+    queryKey: ["admin", "growth"],
+    queryFn: () => loadSettings(),
+    staleTime: 30_000,
+  });
   const query = useQuery({
     queryKey: ["admin", "suppliers", productId],
     queryFn: () => load({ data: { productId } }),
@@ -14,7 +24,11 @@ export default function SupplierResearch({ productId }: { productId: string }) {
   const mutation = useMutation({
     mutationFn: () => run({ data: { productId } }),
     onSuccess: (r) => {
-      toast.success(`${r.count} surse relevante găsite`);
+      toast[r.count ? "success" : "info"](
+        r.count
+          ? `${r.count} surse relevante găsite`
+          : "Căutarea s-a încheiat fără surse eligibile",
+      );
       query.refetch();
     },
     onError: (e) => {
@@ -22,12 +36,14 @@ export default function SupplierResearch({ productId }: { productId: string }) {
       query.refetch();
     },
   });
+  const brave = settings.data?.credentials.find((item) => item.provider === "brave");
+  const ready = Boolean(settings.data?.research.enabled && brave?.configured);
   return (
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl text-white">Relevanță și aprovizionare</h2>
         <button
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || !ready}
           onClick={() => mutation.mutate()}
           className="flex items-center gap-2 rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
         >
@@ -39,8 +55,22 @@ export default function SupplierResearch({ productId }: { productId: string }) {
         Surse sugerate pentru verificare înainte de import. Clasamentul compară denumirea și
         descrierea; nu certifică autenticitatea produsului sau reputația vânzătorului.
       </p>
+      {settings.isError ? (
+        <p role="alert" className="text-sm text-rose-200">
+          Starea conexiunii Brave Search nu a putut fi citită.
+        </p>
+      ) : !settings.isPending && !ready ? (
+        <p
+          role="status"
+          className="rounded-lg border border-amber-300/25 bg-amber-300/5 p-3 text-sm text-amber-100"
+        >
+          {!brave?.configured
+            ? "Căutarea este în așteptare: cheia Brave Search lipsește. Configureaz-o securizat în Aprovizionare, apoi revino la produs."
+            : "Căutarea este dezactivată în Aprovizionare. Activează cercetarea și salvează setările înainte de a căuta."}
+        </p>
+      ) : null}
       <a href="/admin/suppliers" className="text-sm text-cyan-300 underline">
-        Setări agent și buget de căutare
+        Configurează Brave Search și bugetul de căutare
       </a>
       {query.isError ? (
         <p role="alert">Sursele nu au putut fi încărcate.</p>

@@ -70,18 +70,18 @@ export function AudioClipUpload({
     }
   }
   return (
-    <div className="rounded-2xl border bg-card p-4 space-y-4">
+    <div className="space-y-4 rounded-2xl border border-slate-700 bg-[#101a2c] p-4 text-slate-100">
       <div>
         <h3 className="flex items-center gap-2 font-semibold">
           <Music2 size={18} />
           {title}
         </h3>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="mt-1 text-sm text-slate-300">
           Încarcă înregistrarea reală. Alege un fragment de 15–30 secunde, apoi ascultă-l înainte de
           salvare.
         </p>
       </div>
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-3 text-sm">
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-cyan-300/40 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 hover:bg-cyan-300/20">
         <Upload size={16} />
         Alege înregistrarea
         <input
@@ -139,25 +139,31 @@ export function AudioClipUpload({
             </label>
           </div>
           {preview && (
-            <audio key={preview} src={preview} controls preload="metadata" className="w-full" />
+            <audio
+              key={preview}
+              src={preview}
+              controls
+              preload="metadata"
+              className="w-full rounded-lg bg-slate-100"
+            />
           )}
           <button
             type="button"
             disabled={busy || !clip}
-            className="rounded-lg bg-primary px-4 py-3 text-primary-foreground disabled:opacity-50"
+            className="rounded-lg bg-cyan-300 px-4 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
             onClick={() => {
               if (clip) onUpload(new File([clip], "melodie-cutiuta.wav", { type: "audio/wav" }));
             }}
           >
             {busy ? "Se încarcă…" : "Salvează fragmentul"}
           </button>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-slate-300">
             După încărcare, selectează fragmentul din listă și activează afișarea publică.
           </p>
         </>
       )}
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm text-rose-200">
           {error}
         </p>
       )}

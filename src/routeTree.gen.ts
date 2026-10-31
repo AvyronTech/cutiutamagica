@@ -27,8 +27,8 @@ import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as ProdusCutiutaMuzicalaChar123slugChar125RouteImport } from './routes/produs-cutiuta-muzicala-{$slug}'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as ReturRouteImport } from './routes/retur'
+import { Route as SitemapProductsDotxmlRouteImport } from './routes/sitemap-products[.]xml'
 import { Route as SitemapDottxtRouteImport } from './routes/sitemap[.]txt'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermeniDeUtilizareRouteImport } from './routes/termeni-de-utilizare'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as CadouriIndexRouteImport } from './routes/cadouri.index'
@@ -52,6 +52,7 @@ import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminPersonalizationsRouteImport } from './routes/_authenticated/admin/personalizations'
 import { Route as AuthenticatedAdminPlatformsRouteImport } from './routes/_authenticated/admin/platforms'
 import { Route as AuthenticatedAdminPostsRouteImport } from './routes/_authenticated/admin/posts'
+import { Route as AuthenticatedAdminProcurementRouteImport } from './routes/_authenticated/admin/procurement'
 import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin/products'
 import { Route as AuthenticatedAdminPromotionsRouteImport } from './routes/_authenticated/admin/promotions'
 import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_authenticated/admin/qr-generator'
@@ -162,14 +163,14 @@ const ReturRoute = ReturRouteImport.update({
   path: '/retur',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapProductsDotxmlRoute = SitemapProductsDotxmlRouteImport.update({
+  id: '/sitemap-products.xml',
+  path: '/sitemap-products.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDottxtRoute = SitemapDottxtRouteImport.update({
   id: '/sitemap.txt',
   path: '/sitemap.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermeniDeUtilizareRoute = TermeniDeUtilizareRouteImport.update({
@@ -300,6 +301,12 @@ const AuthenticatedAdminPostsRoute = AuthenticatedAdminPostsRouteImport.update({
   path: '/posts',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminProcurementRoute =
+  AuthenticatedAdminProcurementRouteImport.update({
+    id: '/procurement',
+    path: '/procurement',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminProductsRoute =
   AuthenticatedAdminProductsRouteImport.update({
     id: '/products',
@@ -420,8 +427,8 @@ export interface FileRoutesByFullPath {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap-products.xml': typeof SitemapProductsDotxmlRoute
   '/sitemap.txt': typeof SitemapDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/cadouri/$ocazie': typeof CadouriOcazieRoute
@@ -444,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/admin/personalizations': typeof AuthenticatedAdminPersonalizationsRoute
   '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/admin/procurement': typeof AuthenticatedAdminProcurementRoute
   '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
@@ -481,8 +489,8 @@ export interface FileRoutesByTo {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap-products.xml': typeof SitemapProductsDotxmlRoute
   '/sitemap.txt': typeof SitemapDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/cadouri/$ocazie': typeof CadouriOcazieRoute
   '/produs/$id': typeof ProdusIdRoute
@@ -504,6 +512,7 @@ export interface FileRoutesByTo {
   '/admin/personalizations': typeof AuthenticatedAdminPersonalizationsRoute
   '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/admin/procurement': typeof AuthenticatedAdminProcurementRoute
   '/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
@@ -542,8 +551,8 @@ export interface FileRoutesById {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap-products.xml': typeof SitemapProductsDotxmlRoute
   '/sitemap.txt': typeof SitemapDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/cadouri/$ocazie': typeof CadouriOcazieRoute
@@ -566,6 +575,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/personalizations': typeof AuthenticatedAdminPersonalizationsRoute
   '/_authenticated/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/_authenticated/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/_authenticated/admin/procurement': typeof AuthenticatedAdminProcurementRoute
   '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/_authenticated/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/_authenticated/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
@@ -605,8 +615,8 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap-products.xml'
     | '/sitemap.txt'
-    | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/admin'
     | '/cadouri/$ocazie'
@@ -629,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/personalizations'
     | '/admin/platforms'
     | '/admin/posts'
+    | '/admin/procurement'
     | '/admin/products'
     | '/admin/promotions'
     | '/admin/qr-generator'
@@ -666,8 +677,8 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap-products.xml'
     | '/sitemap.txt'
-    | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/cadouri/$ocazie'
     | '/produs/$id'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/admin/personalizations'
     | '/admin/platforms'
     | '/admin/posts'
+    | '/admin/procurement'
     | '/admin/promotions'
     | '/admin/qr-generator'
     | '/admin/referrals'
@@ -726,8 +738,8 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap-products.xml'
     | '/sitemap.txt'
-    | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/_authenticated/admin'
     | '/cadouri/$ocazie'
@@ -750,6 +762,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/personalizations'
     | '/_authenticated/admin/platforms'
     | '/_authenticated/admin/posts'
+    | '/_authenticated/admin/procurement'
     | '/_authenticated/admin/products'
     | '/_authenticated/admin/promotions'
     | '/_authenticated/admin/qr-generator'
@@ -789,8 +802,8 @@ export interface RootRouteChildren {
   ProdusCutiutaMuzicalaChar123slugChar125Route: typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   ProduseRoute: typeof ProduseRoute
   ReturRoute: typeof ReturRoute
+  SitemapProductsDotxmlRoute: typeof SitemapProductsDotxmlRoute
   SitemapDottxtRoute: typeof SitemapDottxtRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermeniDeUtilizareRoute: typeof TermeniDeUtilizareRoute
   CadouriOcazieRoute: typeof CadouriOcazieRoute
   ProdusIdRoute: typeof ProdusIdRoute
@@ -925,18 +938,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReturRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap-products.xml': {
+      id: '/sitemap-products.xml'
+      path: '/sitemap-products.xml'
+      fullPath: '/sitemap-products.xml'
+      preLoaderRoute: typeof SitemapProductsDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.txt': {
       id: '/sitemap.txt'
       path: '/sitemap.txt'
       fullPath: '/sitemap.txt'
       preLoaderRoute: typeof SitemapDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/termeni-de-utilizare': {
@@ -1100,6 +1113,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPostsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/procurement': {
+      id: '/_authenticated/admin/procurement'
+      path: '/procurement'
+      fullPath: '/admin/procurement'
+      preLoaderRoute: typeof AuthenticatedAdminProcurementRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/products': {
       id: '/_authenticated/admin/products'
       path: '/products'
@@ -1259,6 +1279,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPersonalizationsRoute: typeof AuthenticatedAdminPersonalizationsRoute
   AuthenticatedAdminPlatformsRoute: typeof AuthenticatedAdminPlatformsRoute
   AuthenticatedAdminPostsRoute: typeof AuthenticatedAdminPostsRoute
+  AuthenticatedAdminProcurementRoute: typeof AuthenticatedAdminProcurementRoute
   AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRouteWithChildren
   AuthenticatedAdminPromotionsRoute: typeof AuthenticatedAdminPromotionsRoute
   AuthenticatedAdminQrGeneratorRoute: typeof AuthenticatedAdminQrGeneratorRoute
@@ -1296,6 +1317,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminPersonalizationsRoute,
     AuthenticatedAdminPlatformsRoute: AuthenticatedAdminPlatformsRoute,
     AuthenticatedAdminPostsRoute: AuthenticatedAdminPostsRoute,
+    AuthenticatedAdminProcurementRoute: AuthenticatedAdminProcurementRoute,
     AuthenticatedAdminProductsRoute:
       AuthenticatedAdminProductsRouteWithChildren,
     AuthenticatedAdminPromotionsRoute: AuthenticatedAdminPromotionsRoute,
@@ -1350,8 +1372,8 @@ const rootRouteChildren: RootRouteChildren = {
     ProdusCutiutaMuzicalaChar123slugChar125Route,
   ProduseRoute: ProduseRoute,
   ReturRoute: ReturRoute,
+  SitemapProductsDotxmlRoute: SitemapProductsDotxmlRoute,
   SitemapDottxtRoute: SitemapDottxtRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermeniDeUtilizareRoute: TermeniDeUtilizareRoute,
   CadouriOcazieRoute: CadouriOcazieRoute,
   ProdusIdRoute: ProdusIdRoute,

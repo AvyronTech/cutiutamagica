@@ -20,7 +20,11 @@ const heartbeatSchema = z.object({
   runnerId: z.string().min(3).max(100),
   version: z.string().min(1).max(80),
   providers: z.object({
-    ollama: z.object({ healthy: z.boolean(), models: z.array(z.string().max(120)).max(50) }),
+    ollama: z.object({
+      healthy: z.boolean(),
+      models: z.array(z.string().max(120)).max(50),
+      selectedModel: z.string().max(120).optional(),
+    }),
     comfyui: z.object({
       healthy: z.boolean(),
       capabilities: z.array(z.enum(["image", "video"])).max(2),
@@ -98,6 +102,7 @@ async function registerRunnerNonce(
   env: AiStudioEnv,
   runnerId: string,
   nonce: string,
+  cleanupExpired: boolean,
 ): Promise<boolean> {
   const result = await env.DB.prepare(
     `INSERT OR IGNORE INTO ai_runner_nonces (nonce, runner_id, expires_at)
@@ -105,7 +110,8 @@ async function registerRunnerNonce(
   )
     .bind(nonce, runnerId)
     .run();
-  await env.DB.prepare("DELETE FROM ai_runner_nonces WHERE expires_at < datetime('now')").run();
+  if (cleanupExpired)
+    await env.DB.prepare("DELETE FROM ai_runner_nonces WHERE expires_at < datetime('now')").run();
   return Number(result.meta?.changes ?? 0) === 1;
 }
 
@@ -147,7 +153,7 @@ async function verifyRunnerRequest(
   if (!constantTimeEqual(supplied, expected)) {
     throw Object.assign(new Error("Semnătura runnerului nu este validă."), { statusCode: 401 });
   }
-  if (!(await registerRunnerNonce(env, runnerId, nonce))) {
+  if (!(await registerRunnerNonce(env, runnerId, nonce, url.pathname.endsWith("/heartbeat")))) {
     throw Object.assign(new Error("Cererea runnerului a fost deja procesată."), {
       statusCode: 409,
     });
@@ -169,7 +175,7 @@ async function signedJson<T extends z.ZodTypeAny>(
     throw Object.assign(new Error("Cererea JSON nu este validă."), { statusCode: 400 });
   }
   const parsed = schema.safeParse(payload);
-  if (!parsed.success || parsed.data.runnerId !== verified.runnerId) {
+  if (!parsed.success || (parsed.data as { runnerId?: unknown }).runnerId !== verified.runnerId) {
     throw Object.assign(new Error("Datele runnerului nu sunt valide."), { statusCode: 400 });
   }
   return { runnerId: verified.runnerId, data: parsed.data };
@@ -415,9 +421,10 @@ async function createJob(request: Request, env: Env): Promise<Response> {
 async function heartbeat(request: Request, env: AiStudioEnv): Promise<Response> {
   const { data } = await signedJson(request, env, heartbeatSchema);
   const now = new Date().toISOString();
-  const qwenReady = data.providers.ollama.models.some(
-    (model) => model === "qwen3:8b" || model.startsWith("qwen3:"),
-  );
+  const qwenReady =
+    data.providers.ollama.healthy &&
+    data.providers.ollama.selectedModel === "qwen3:8b" &&
+    data.providers.ollama.models.includes(data.providers.ollama.selectedModel);
   const imageReady =
     data.providers.comfyui.healthy && data.providers.comfyui.capabilities.includes("image");
   const videoReady =
