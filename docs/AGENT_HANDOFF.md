@@ -2,10 +2,11 @@
 
 ## Handoff 2026-10-31 — ordinea secțiunilor landing și calendar compact
 
+- Release confirmat: PR #58 a trecut CI și a fost integrat la `e87df051df966a1066a9dd0c839997f5a803197f`. Workerul `cutiuta-magica-store` a fost publicat din acest commit ca versiunea `8ff7cf32-3f4d-473d-bb11-9c87c2436f5f`, distribuită 100%; `/api/v1/health` răspunde 200 cu `production` și schema D1 86.
+- Verificare live: pe pagina principală, calendarul este înaintea Magic Drop și cardul „Despre noi” stă între „Urmărește-ne” și „Contactează-ne”. Există un singur memento demonstrativ; CTA-urile duc la `/cont?mod=creare`, `/cont` și `/despre-noi`. Calendarul are circa 286 px la 1440 px și 454 px la 390 px, fără overflow orizontal. Nu s-au creat conturi sau trimis notificări.
 - Scop: cardul „Despre noi” este acum între „Urmărește-ne” și „Contactează-ne”. Magic Drop urmează imediat după „Calendarul cadourilor”. Calendarul păstrează CTA-ul de creare a contului și canalele opționale, dar afișează un singur exemplu de memento, fără caruselul și listele repetitive; secțiunea este mai scurtă și nu pornește animația continuă a caruselului.
 - Ramura `codex/landing-section-order-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `4c285c0`. Fișiere: `src/routes/index.tsx`, `src/components/site/{ConnectSection,GiftCalendarSpotlight}.tsx`, `src/styles.css`, acest handoff și `docs/PROJECT_CONTINUITY.md`. Fără migrare D1 sau configurare externă.
 - Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Capturile paginii locale la 390×844 și 1440×900 au fost inspectate în Chrome DevTools: ordinea DOM este corectă, calendarul are circa 454 px mobil / 286 px desktop, iar lățimea paginii încape în viewport. CTA-urile existente au rămas legate la `/cont` și `/despre-noi`; nu s-au creat conturi ori notificări.
-- Stare la redactare: implementare locală verificată; PR și verificarea live urmează separat.
 
 ## Handoff 2026-10-31 — subsol clar și compact
 
