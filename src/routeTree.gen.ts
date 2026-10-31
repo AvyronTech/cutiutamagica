@@ -27,8 +27,8 @@ import { Route as PovesteRouteImport } from './routes/poveste'
 import { Route as ProdusCutiutaMuzicalaChar123slugChar125RouteImport } from './routes/produs-cutiuta-muzicala-{$slug}'
 import { Route as ProduseRouteImport } from './routes/produse'
 import { Route as ReturRouteImport } from './routes/retur'
+import { Route as SitemapProductsDotxmlRouteImport } from './routes/sitemap-products[.]xml'
 import { Route as SitemapDottxtRouteImport } from './routes/sitemap[.]txt'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermeniDeUtilizareRouteImport } from './routes/termeni-de-utilizare'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as CadouriIndexRouteImport } from './routes/cadouri.index'
@@ -162,14 +162,14 @@ const ReturRoute = ReturRouteImport.update({
   path: '/retur',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapProductsDotxmlRoute = SitemapProductsDotxmlRouteImport.update({
+  id: '/sitemap-products.xml',
+  path: '/sitemap-products.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDottxtRoute = SitemapDottxtRouteImport.update({
   id: '/sitemap.txt',
   path: '/sitemap.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermeniDeUtilizareRoute = TermeniDeUtilizareRouteImport.update({
@@ -420,8 +420,8 @@ export interface FileRoutesByFullPath {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap-products.xml': typeof SitemapProductsDotxmlRoute
   '/sitemap.txt': typeof SitemapDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/cadouri/$ocazie': typeof CadouriOcazieRoute
@@ -481,8 +481,8 @@ export interface FileRoutesByTo {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap-products.xml': typeof SitemapProductsDotxmlRoute
   '/sitemap.txt': typeof SitemapDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/cadouri/$ocazie': typeof CadouriOcazieRoute
   '/produs/$id': typeof ProdusIdRoute
@@ -542,8 +542,8 @@ export interface FileRoutesById {
   '/produs-cutiuta-muzicala-{$slug}': typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   '/produse': typeof ProduseRoute
   '/retur': typeof ReturRoute
+  '/sitemap-products.xml': typeof SitemapProductsDotxmlRoute
   '/sitemap.txt': typeof SitemapDottxtRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termeni-de-utilizare': typeof TermeniDeUtilizareRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/cadouri/$ocazie': typeof CadouriOcazieRoute
@@ -605,8 +605,8 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap-products.xml'
     | '/sitemap.txt'
-    | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/admin'
     | '/cadouri/$ocazie'
@@ -666,8 +666,8 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap-products.xml'
     | '/sitemap.txt'
-    | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/cadouri/$ocazie'
     | '/produs/$id'
@@ -726,8 +726,8 @@ export interface FileRouteTypes {
     | '/produs-cutiuta-muzicala-{$slug}'
     | '/produse'
     | '/retur'
+    | '/sitemap-products.xml'
     | '/sitemap.txt'
-    | '/sitemap.xml'
     | '/termeni-de-utilizare'
     | '/_authenticated/admin'
     | '/cadouri/$ocazie'
@@ -789,8 +789,8 @@ export interface RootRouteChildren {
   ProdusCutiutaMuzicalaChar123slugChar125Route: typeof ProdusCutiutaMuzicalaChar123slugChar125Route
   ProduseRoute: typeof ProduseRoute
   ReturRoute: typeof ReturRoute
+  SitemapProductsDotxmlRoute: typeof SitemapProductsDotxmlRoute
   SitemapDottxtRoute: typeof SitemapDottxtRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermeniDeUtilizareRoute: typeof TermeniDeUtilizareRoute
   CadouriOcazieRoute: typeof CadouriOcazieRoute
   ProdusIdRoute: typeof ProdusIdRoute
@@ -925,18 +925,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReturRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap-products.xml': {
+      id: '/sitemap-products.xml'
+      path: '/sitemap-products.xml'
+      fullPath: '/sitemap-products.xml'
+      preLoaderRoute: typeof SitemapProductsDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.txt': {
       id: '/sitemap.txt'
       path: '/sitemap.txt'
       fullPath: '/sitemap.txt'
       preLoaderRoute: typeof SitemapDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/termeni-de-utilizare': {
@@ -1350,8 +1350,8 @@ const rootRouteChildren: RootRouteChildren = {
     ProdusCutiutaMuzicalaChar123slugChar125Route,
   ProduseRoute: ProduseRoute,
   ReturRoute: ReturRoute,
+  SitemapProductsDotxmlRoute: SitemapProductsDotxmlRoute,
   SitemapDottxtRoute: SitemapDottxtRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermeniDeUtilizareRoute: TermeniDeUtilizareRoute,
   CadouriOcazieRoute: CadouriOcazieRoute,
   ProdusIdRoute: ProdusIdRoute,

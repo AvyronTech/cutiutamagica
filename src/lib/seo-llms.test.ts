@@ -15,6 +15,8 @@ describe("dynamic llms.txt", () => {
     expect(text).toMatch(/^# Cutiuța Magică\n>/);
     expect(text).toContain("https://cutiutamagica.eu/produs-cutiuta-muzicala-harry-potter-hedwig");
     expect(text).toContain("https://cutiutamagica.eu/cadouri/pentru-mama");
+    expect(text).toContain("https://cutiutamagica.eu/sitemap.xml");
+    expect(text).toContain("https://cutiutamagica.eu/sitemap.txt");
     expect(text).not.toContain("https://cutiutamagica.eu/personalizeaza");
   });
 

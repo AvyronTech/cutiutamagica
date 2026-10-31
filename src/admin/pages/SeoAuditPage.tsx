@@ -9,16 +9,31 @@ const endpointChecks = [
     path: "/robots.txt",
     valid: (body: string) =>
       body.includes("Sitemap: https://cutiutamagica.eu/sitemap.xml") &&
-      body.includes("Sitemap: https://cutiutamagica.eu/sitemap.txt") &&
-      body.includes("sitemap-guides.xml"),
-    action: "Declară sitemapurile XML, text și ghiduri în robots.txt.",
+      body.includes("Sitemap: https://cutiutamagica.eu/sitemap.txt"),
+    action: "Declară indexul XML și sitemapul text în robots.txt.",
   },
   {
-    label: "Sitemap produse și pagini",
+    label: "Index sitemapuri",
     path: "/sitemap.xml",
     valid: (body: string) =>
+      body.includes("<sitemapindex") &&
+      body.includes("/sitemap-core.xml") &&
+      body.includes("/sitemap-products.xml") &&
+      body.includes("/sitemap-guides.xml"),
+    action: "Publică indexul XML cu cele trei sitemapuri.",
+  },
+  {
+    label: "Sitemap pagini esențiale",
+    path: "/sitemap-core.xml",
+    valid: (body: string) =>
       body.includes("<urlset") && body.includes("https://cutiutamagica.eu/produse"),
-    action: "Verifică ruta sitemap și citirea catalogului D1.",
+    action: "Publică paginile esențiale în sitemapul static.",
+  },
+  {
+    label: "Sitemap produse",
+    path: "/sitemap-products.xml",
+    valid: (body: string) => body.includes("<urlset") && body.includes("/produs-cutiuta-muzicala-"),
+    action: "Verifică citirea catalogului D1 și cache-ul produselor publicate.",
   },
   {
     label: "Sitemap text de rezervă",
