@@ -6,26 +6,15 @@ import { ProductWorld } from "@/components/site/ProductWorld";
 import { animateIntoCart } from "@/lib/cart-flight";
 import { ProductInterest } from "@/components/site/ProductInterest";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useRef, useState } from "react";
-import {
-  ShoppingBag,
-  Music,
-  Package,
-  Gift,
-  Sparkles,
-  Minus,
-  Plus,
-  Rotate3D,
-  Hourglass,
-} from "lucide-react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
+import { ShoppingBag, Music, Gift, Sparkles, Minus, Plus, Rotate3D, Hourglass } from "lucide-react";
 import { isAvailable, MAX_QTY } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
 import { catalogProducts } from "@/lib/catalog-products";
 import { useShop } from "@/store/shop";
 import { ProductImage } from "@/components/site/ProductImage";
 import { ProductPrice } from "@/components/site/ProductPrice";
-import { ProductLightbox } from "@/components/site/ProductLightbox";
+import { productDetailHighlights } from "@/lib/product-detail-highlights";
 import { playTick } from "@/lib/sound";
 import { notifyAddedToCart } from "@/lib/notify";
 import { ProductCardCarousel } from "@/components/site/ProductCardCarousel";
@@ -43,6 +32,12 @@ import { ProductMobileBuyBar } from "@/components/site/ProductMobileBuyBar";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { seoHead } from "@/lib/seo-head";
 import { productIdFromPublicSlug, productPath } from "@/lib/product-url";
+
+const ProductLightbox = lazy(() =>
+  import("@/components/site/ProductLightbox").then((module) => ({
+    default: module.ProductLightbox,
+  })),
+);
 
 export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
   component: ProductPage,
@@ -229,6 +224,7 @@ function ProductPage() {
     [product.id, product.category, products],
   );
   const gallery = product.gallery;
+  const highlights = useMemo(() => productDetailHighlights(product.details), [product.details]);
   const available = isAvailable(product);
   const [zoomOpen, setZoomOpen] = useState(false);
   const currentImage = gallery[active] ?? gallery[0] ?? { src: product.image, label: product.name };
@@ -256,60 +252,54 @@ function ProductPage() {
               <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
             </div>
           ) : (
-            <motion.div className="product-main-visual relative overflow-hidden shadow-warm bg-card">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.button
-                  type="button"
-                  key={currentImage.src}
-                  onPointerDown={(event) => {
-                    if (event.pointerType === "mouse") return;
-                    gallerySwipe.current = {
-                      x: event.clientX,
-                      y: event.clientY,
-                      at: performance.now(),
-                    };
-                  }}
-                  onPointerUp={(event) => {
-                    const start = gallerySwipe.current;
-                    gallerySwipe.current = null;
-                    if (!start || event.pointerType === "mouse") return;
-                    const dx = event.clientX - start.x;
-                    const dy = event.clientY - start.y;
-                    const quick = performance.now() - start.at < 650;
-                    if (quick && Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.25) {
-                      suppressGalleryClick.current = true;
-                      moveGallery(dx < 0 ? 1 : -1);
-                    }
-                  }}
-                  onPointerCancel={() => {
-                    gallerySwipe.current = null;
-                  }}
-                  onClick={() => {
-                    if (suppressGalleryClick.current) {
-                      suppressGalleryClick.current = false;
-                      return;
-                    }
-                    setZoomOpen(true);
-                    trackGrowthEvent("gallery_open", { productSlug: product.id });
-                  }}
-                  aria-label="Vezi fotografia mărită"
-                  initial={{ opacity: 0, scale: 0.985 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.01 }}
-                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                  className="product-main-visual__trigger absolute inset-0 cursor-zoom-in"
-                >
-                  <ProductImage
-                    src={currentImage.src}
-                    alt={`${product.name} — ${currentImage.label}`}
-                    loading="eager"
-                    fetchPriority="high"
-                    sizes="(max-width: 768px) 92vw, 620px"
-                    className="h-full w-full object-cover"
-                    style={{ objectPosition: currentImage.position ?? "center" }}
-                  />
-                </motion.button>
-              </AnimatePresence>
+            <div className="product-main-visual relative overflow-hidden shadow-warm bg-card">
+              <button
+                type="button"
+                key={currentImage.src}
+                onPointerDown={(event) => {
+                  if (event.pointerType === "mouse") return;
+                  gallerySwipe.current = {
+                    x: event.clientX,
+                    y: event.clientY,
+                    at: performance.now(),
+                  };
+                }}
+                onPointerUp={(event) => {
+                  const start = gallerySwipe.current;
+                  gallerySwipe.current = null;
+                  if (!start || event.pointerType === "mouse") return;
+                  const dx = event.clientX - start.x;
+                  const dy = event.clientY - start.y;
+                  const quick = performance.now() - start.at < 650;
+                  if (quick && Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+                    suppressGalleryClick.current = true;
+                    moveGallery(dx < 0 ? 1 : -1);
+                  }
+                }}
+                onPointerCancel={() => {
+                  gallerySwipe.current = null;
+                }}
+                onClick={() => {
+                  if (suppressGalleryClick.current) {
+                    suppressGalleryClick.current = false;
+                    return;
+                  }
+                  setZoomOpen(true);
+                  trackGrowthEvent("gallery_open", { productSlug: product.id });
+                }}
+                aria-label="Vezi fotografia mărită"
+                className="product-main-visual__trigger absolute inset-0 cursor-zoom-in"
+              >
+                <ProductImage
+                  src={currentImage.src}
+                  alt={`${product.name} — ${currentImage.label}`}
+                  loading="eager"
+                  fetchPriority="high"
+                  sizes="(max-width: 768px) 92vw, 620px"
+                  className="h-full w-full object-cover"
+                  style={{ objectPosition: currentImage.position ?? "center" }}
+                />
+              </button>
               {/* Halou cald peste fotografie: dă senzația de lumină de lumânare, fără să acopere produsul. */}
               <span
                 aria-hidden
@@ -321,11 +311,11 @@ function ProductPage() {
               />
               <LimitedEditionBadge edition={product.limitedEdition} surface="detail" />
               {product.melody ? (
-                <motion.div className="absolute top-4 left-4 flex items-center gap-1.5 rounded-full border border-[#694523]/25 bg-[#fffaf0]/95 px-3 py-1.5 text-xs font-semibold text-[#322317] shadow-[0_4px_18px_#1f150f33] backdrop-blur">
+                <div className="absolute top-4 left-4 flex items-center gap-1.5 rounded-full border border-[#694523]/25 bg-[#fffaf0]/95 px-3 py-1.5 text-xs font-semibold text-[#322317] shadow-[0_4px_18px_#1f150f33] backdrop-blur">
                   <Music className="w-3 h-3" /> {product.melody}
-                </motion.div>
+                </div>
               ) : null}
-            </motion.div>
+            </div>
           )}
           <p className="mt-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
             {show360 ? (
@@ -410,7 +400,6 @@ function ProductPage() {
               {!experienceQuery.isLoading && !experienceQuery.data?.audio && (
                 <ProductAudioUnavailable melody={product.melody} />
               )}
-              <ProductDeliveryEstimate />
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 p-4">
@@ -481,34 +470,30 @@ function ProductPage() {
             </Link>
           )}
 
+          {highlights.length > 0 && (
+            <div className="product-detail-highlights mt-7">
+              <h2 className="font-display text-xl">Detalii care contează</h2>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {highlights.map((detail) => (
+                  <li key={detail} className="flex gap-2 text-sm">
+                    <span className="text-[color:var(--gold)]" aria-hidden>
+                      ✦
+                    </span>{" "}
+                    {detail}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {available && <ProductDeliveryEstimate />}
+
           <ProductShare
             id={product.id}
             name={product.name}
             tagline={product.tagline}
             image={product.image}
           />
-
-          <div className="product-detail-assurances mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2 rounded-xl border p-3">
-              <Music className="w-4 h-4" /> Mecanism manual
-            </div>
-            <div className="flex items-center gap-2 rounded-xl border p-3">
-              <Package className="w-4 h-4" /> Fotografia produsului
-            </div>
-          </div>
-
-          {product.details.length > 0 && (
-            <div className="mt-8">
-              <h2 className="font-display text-xl">Detalii</h2>
-              <ul className="mt-3 space-y-2">
-                {product.details.map((d: string) => (
-                  <li key={d} className="flex gap-2 text-sm">
-                    <span className="text-[color:var(--gold)]">✦</span> {d}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
 
@@ -568,12 +553,6 @@ function ProductPage() {
 
       <div className="product-world-afterstory">
         <div className="product-world-afterstory__scene" aria-hidden>
-          <ProductImage
-            src={product.gallery[0]?.src ?? product.image}
-            alt=""
-            loading="lazy"
-            sizes="(max-width: 767px) 100vw, 70vw"
-          />
           <span className="product-world-afterstory__horizon" />
         </div>
         <ProductDiscovery product={product} />
@@ -601,8 +580,8 @@ function ProductPage() {
         )}
       </div>
 
-      <AnimatePresence>
-        {zoomOpen && (
+      {zoomOpen && (
+        <Suspense fallback={null}>
           <ProductLightbox
             images={gallery}
             index={active}
@@ -610,8 +589,8 @@ function ProductPage() {
             onClose={() => setZoomOpen(false)}
             onIndexChange={setActive}
           />
-        )}
-      </AnimatePresence>
+        </Suspense>
+      )}
       {available && (
         <ProductMobileBuyBar
           product={product}

@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { productScene } from "@/lib/product-themes";
 import type { Product } from "@/data/products";
-import { SceneAtmosphere } from "./SceneAtmosphere";
 
 const sceneLabel = {
   library: "Arhivă fermecată",
@@ -33,7 +32,6 @@ export function ProductWorld({ product, children }: { product: Product; children
         <div className="product-world-orbit" />
         <div className="product-world-horizon" />
         <div className="product-world-grid" />
-        <SceneAtmosphere />
       </div>
       <div className="relative">
         <div className="product-world-intro">

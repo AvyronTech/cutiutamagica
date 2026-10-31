@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-31 — pagini de produs mai fluide
+
+- Scop: toate paginile de produs. Fotografia principală este afișată fără animația inițială Framer Motion, lightboxul se încarcă la deschidere, decorul atmosferic și mișcările continue din zona produsului au fost reduse, iar fotografia decorativă blurată de sub produs a fost eliminată. Caruselul de recenzii lucrează automat numai în viewport, iar cererea pentru configurația livrării pornește când cardul se apropie de ecran.
+- Cele nouă canale de distribuire sunt vizibile imediat într-o grilă compactă. Cardurile „Mecanism manual” și „Fotografia produsului” au fost eliminate; detaliile D1 sunt afișate prin rezumate factuale, scurte și pozitive. Cardul „Livrare în România” este după detalii și înainte de distribuire.
+- Fișiere: `src/routes/produs-cutiuta-muzicala-{$slug}.tsx`, `src/components/site/{ProductShare,ProductWorld,ProductReviews,ProductDeliveryEstimate}.tsx`, `src/lib/product-detail-highlights.ts`, `src/styles.css`, `docs/release-evidence/2026-10-31-product-performance/`. Nu există migrare D1 nouă. Datele temporare din D1 local pentru capturi au fost restaurate.
+- Baseline Chrome DevTools, verificarea DOM și capturile desktop/mobil sunt în `docs/release-evidence/2026-10-31-product-performance/README.md`. `npm run typecheck`, `npm test` (329/329, 60 fișiere), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Primul test paralel cu buildul a avut un timeout, iar rerularea izolată a trecut complet. Prima încercare dry a avut o eroare CSS tranzitorie; buildul de producție și rerularea dry au trecut. Optimizările sunt locale; performanța după release și pe dispozitive reale rămâne de verificat. Nu s-au făcut push, PR, merge, deploy, migrare remote ori modificări DNS.
+
 ## Handoff 2026-10-31 — audit de securitate read-only
 
 - Raportul și planul sunt în `docs/SECURITY_AUDIT_2026-10-31.md`. Scop: codul local, dependențe, antete HTTP publice și agregări D1 de producție; fără scanare intruzivă, autentificare, mutații remote sau configurare externă. Nu există migrare nouă și nu s-a schimbat aplicația.

@@ -1,24 +1,45 @@
 import { CalendarDays, Sparkles, Truck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function ProductDeliveryEstimate() {
+  const root = useRef<HTMLElement>(null);
   const [easyboxEnabled, setEasyboxEnabled] = useState(false);
 
   useEffect(() => {
-    fetch("/api/v1/commerce/config", { credentials: "same-origin" })
-      .then(async (response) =>
-        response.ok
-          ? ((await response.json()) as {
-              data?: { shipping?: { easyboxEnabled?: boolean } };
-            })
-          : null,
-      )
-      .then((payload) => setEasyboxEnabled(Boolean(payload?.data?.shipping?.easyboxEnabled)))
-      .catch(() => undefined);
+    const node = root.current;
+    if (!node) return;
+    let loaded = false;
+    const controller = new AbortController();
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting || loaded) return;
+        loaded = true;
+        observer.disconnect();
+        fetch("/api/v1/commerce/config", {
+          credentials: "same-origin",
+          signal: controller.signal,
+        })
+          .then(async (response) =>
+            response.ok
+              ? ((await response.json()) as {
+                  data?: { shipping?: { easyboxEnabled?: boolean } };
+                })
+              : null,
+          )
+          .then((payload) => setEasyboxEnabled(Boolean(payload?.data?.shipping?.easyboxEnabled)))
+          .catch(() => undefined);
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      controller.abort();
+    };
   }, []);
 
   return (
-    <section className="product-delivery-promise" aria-label="Informații despre livrare">
+    <section ref={root} className="product-delivery-promise" aria-label="Informații despre livrare">
       <div className="product-delivery-promise__orbit" aria-hidden />
       <div className="product-delivery-promise__heading">
         <span className="product-delivery-promise__icon">
