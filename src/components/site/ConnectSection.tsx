@@ -87,13 +87,6 @@ export function ConnectSection() {
       accent: "bg-[color:var(--gold)] text-[color:var(--wood-dark)]",
       external: false,
     },
-    {
-      name: "Messenger",
-      href: "https://m.me/61590919580877",
-      Icon: MessageCircle,
-      accent: "bg-[#075ab8] text-white",
-      external: true,
-    },
   ];
 
   return (
