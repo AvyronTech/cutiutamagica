@@ -37,6 +37,8 @@ Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți ag
 
 ## Stare de reluare
 
+- Actualizare locală 31 octombrie: `codex/landing-section-order-20261031` mută cardul „Despre noi” între social și contact, pune Magic Drop imediat sub calendar și reduce calendarul la un mesaj, canalele opționale, un exemplu și CTA. Verificările locale și capturile desktop/mobil au trecut; detaliile sunt în primul handoff. Această intrare nu atestă publicarea.
+
 - Release 31 octombrie: PR #56, integrat la `13a15c9`, reordonează subsolul comun, grupează contactul și comenzile, mută invitația spre catalog mai jos, termină cu identitatea magazinului și elimină Messenger din „Contactează-ne”. Workerul rulează versiunea `f88feb30-e9ec-4be4-a8a4-81eceee1eb68` la 100%; pagina principală și health au fost verificate live. Detalii în primul handoff.
 
 - Release 31 octombrie: PR #54, integrat la `3dbf6f5`, compactează fișele tuturor celor zece produse, limitează distribuirea la cinci canale plus distribuirea nativă, schimbă CTA-ul din fișa produsului în „Comandă acum”, separă „Dincolo de capac” de FAQ și înlocuiește eticheta generică de vârstă cu formulări tematice. Workerul rulează versiunea `c9fcbacb-5a8c-499b-aefb-47ff7a5b7621` la 100%. Pagina „Winter Is Coming” și health au fost verificate live; detaliile și limitele sunt în primul handoff. Indexarea Google nu este atestată de această verificare.

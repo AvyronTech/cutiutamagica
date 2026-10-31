@@ -12,6 +12,7 @@ import {
   Feather,
   Compass,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { PHONE_TEL, PHONE_DISPLAY, waLink, messageForPath, B2B_MESSAGE } from "@/lib/whatsapp";
 
@@ -60,7 +61,7 @@ const socials: SocialCard[] = [
   },
 ];
 
-export function ConnectSection() {
+export function ConnectSection({ children }: { children?: ReactNode }) {
   const { pathname } = useLocation();
   const waHref = waLink(messageForPath(pathname));
   const b2bHref = waLink(B2B_MESSAGE);
@@ -167,7 +168,9 @@ export function ConnectSection() {
         ))}
       </div>
 
-      <div className="mt-12 text-center">
+      {children}
+
+      <div className="mt-8 text-center">
         <div className="flex items-center justify-center gap-3 md:gap-4 mb-3">
           <span
             aria-hidden
