@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-31 — ordinea secțiunilor landing și calendar compact
+
+- Scop: cardul „Despre noi” este acum între „Urmărește-ne” și „Contactează-ne”. Magic Drop urmează imediat după „Calendarul cadourilor”. Calendarul păstrează CTA-ul de creare a contului și canalele opționale, dar afișează un singur exemplu de memento, fără caruselul și listele repetitive; secțiunea este mai scurtă și nu pornește animația continuă a caruselului.
+- Ramura `codex/landing-section-order-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `4c285c0`. Fișiere: `src/routes/index.tsx`, `src/components/site/{ConnectSection,GiftCalendarSpotlight}.tsx`, `src/styles.css`, acest handoff și `docs/PROJECT_CONTINUITY.md`. Fără migrare D1 sau configurare externă.
+- Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Capturile paginii locale la 390×844 și 1440×900 au fost inspectate în Chrome DevTools: ordinea DOM este corectă, calendarul are circa 454 px mobil / 286 px desktop, iar lățimea paginii încape în viewport. CTA-urile existente au rămas legate la `/cont` și `/despre-noi`; nu s-au creat conturi ori notificări.
+- Stare la redactare: implementare locală verificată; PR și verificarea live urmează separat.
+
 ## Handoff 2026-10-31 — subsol clar și compact
 
 - Release confirmat: PR #56 a trecut CI și a fost integrat la `13a15c92f3b23aa5d751268a2a049ed2a83da1c7`. Workerul `cutiuta-magica-store` a fost publicat din acest commit ca versiunea `f88feb30-e9ec-4be4-a8a4-81eceee1eb68`, distribuită 100%. `/api/v1/health` răspunde 200 cu `production` și schema D1 86.

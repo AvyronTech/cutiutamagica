@@ -201,9 +201,9 @@ function Index() {
             <ArrowUpRight size={17} />
           </Link>
         </section>
-        <ChristmasDrop />
         <ReviewCarousel data={reviews} />
         <GiftCalendarSpotlight />
+        <ChristmasDrop />
         <section className="landing-faq" data-world="atelier" aria-labelledby="faq-heading">
           <p className="scene-eyebrow">Lucrurile simple, explicate</p>
           <h2 id="faq-heading">
@@ -248,21 +248,22 @@ function Index() {
             ))}
           </div>
         </section>
-        <section className="landing-about-entry" aria-labelledby="landing-about-title">
-          <div>
-            <p className="scene-eyebrow">Cine se află în spatele poveștii</p>
-            <h2 id="landing-about-title">Alegem melodii care apropie oamenii.</h2>
-            <p>
-              Descoperă cum alegem cutiuțele, ce detalii contează pentru noi și de ce fiecare
-              comandă începe cu o emoție, nu cu un produs.
-            </p>
-          </div>
-          <Link to="/despre-noi" className="magic-button magic-button--outline">
-            Despre noi <ArrowUpRight size={17} aria-hidden />
-          </Link>
-        </section>
         <MagicRewardsSpotlight program={rewards.program} activities={rewards.activities} />
-        <ConnectSection />
+        <ConnectSection>
+          <section className="landing-about-entry" aria-labelledby="landing-about-title">
+            <div>
+              <p className="scene-eyebrow">Cine se află în spatele poveștii</p>
+              <h2 id="landing-about-title">Alegem melodii care apropie oamenii.</h2>
+              <p>
+                Descoperă cum alegem cutiuțele, ce detalii contează pentru noi și de ce fiecare
+                comandă începe cu o emoție, nu cu un produs.
+              </p>
+            </div>
+            <Link to="/despre-noi" className="magic-button magic-button--outline">
+              Despre noi <ArrowUpRight size={17} aria-hidden />
+            </Link>
+          </section>
+        </ConnectSection>
         <CompactReturn />
       </HeroWorld>
       <FloatingContacts />
