@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-31 — audit de securitate read-only
+
+- Raportul și planul sunt în `docs/SECURITY_AUDIT_2026-10-31.md`. Scop: codul local, dependențe, antete HTTP publice și agregări D1 de producție; fără scanare intruzivă, autentificare, mutații remote sau configurare externă. Nu există migrare nouă și nu s-a schimbat aplicația.
+- **Constatare critică confirmată live:** două conturi administrative `owner` active au încă hashul credențialei inițiale cunoscute din repository. Parola nu este reprodusă în raport. Oprirea acestui acces și revocarea sesiunilor sunt prima acțiune propusă, supusă aprobării administratorului. Toate cele patru conturi active au `mfa_required=0`; nu există implementare MFA admin. Verificarea nu a încercat login live.
+- Alte priorități: anti-abuz la checkout/formulare/chat, CSP pe HTML, limite de corp reale pentru unele uploaduri/mesaje, scanarea fișierelor, actualizarea dependențelor, politică uniformă CSRF, inventar Workers.dev/WAF și backupuri. `npm audit` a raportat 20 de advisories în arborele complet și două high în dependențele de producție (`seroval`, `zod`). Interogările SQL inspectate folosesc bind/allowlist; nu s-a confirmat SQL injection exploatabil. API-ul GitHub confirmă că ramura de referință nu este protejată și nu există rulesets. WAF/Access și revizia exactă a Workerului live rămân neverificate.
+- Validări de predare: `npm run typecheck`, `npm test` (329/329, 60 fișiere), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Fișiere modificate: acest handoff și raportul de securitate. Fără capturi UI deoarece nu s-a schimbat interfața. Nu s-au făcut push, PR, merge sau deploy.
+
 ## Handoff 2026-10-31 — administrare produs, SEO și personalizare
 
 - Ramura locală `codex/admin-dashboard-ux-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `c08fac5` și include separat cele două commituri locale SEO din `codex/seo-indexing-20261031` (`7a3528f`, `5f3d333`). Worktree-ul SEO inițial rămâne neatins. Nu există migrații D1 noi.
