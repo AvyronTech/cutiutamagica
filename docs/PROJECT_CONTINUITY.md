@@ -37,6 +37,8 @@ Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți ag
 
 ## Stare de reluare
 
+- Corecție locală 31 octombrie: `codex/remove-public-registered-address-20261031` elimină sediul social din paginile și datele serializate publice; migrarea 0087 curăță doar copia din setarea publică. Adresa internă din `legal_entities` se păstrează pentru admin și facturare. Fișierul migrației 0050 este redactat în versiunea curentă a repository-ului la cererea explicită a utilizatorului; istoricul Git nu a fost rescris. Vezi primul handoff și verifică separat publicarea.
+
 - Corecție publicată 31 octombrie: PR #62 (`df956f4`) mută invitația cu „O melodie poate spune atât de mult” imediat după descrierea de sub sigla Cutiuța Magică. Contactele și cele trei coloane de navigare urmează după acest grup pe mobil. Workerul rulează versiunea `33a29c78-b191-4e1a-b6e3-a934e2c3a970` la 100%; pagina principală și health au fost verificate live. Vezi primul handoff.
 
 - Corecție publicată 31 octombrie: PR #60 (`ea84e36`) mută identitatea Cutiuța Magică la începutul subsolului și păstrează „Alege cutiuța”, „Comanda ta” și „Informații” pe un singur rând inclusiv la 320 px. Înlocuiește aranjarea subsolului din PR #56, unde sigla era la final. Workerul rulează versiunea `5c6b02d9-d16d-471b-8dd9-ba26fcaa8a19` la 100%; pagina principală și health au fost verificate live. Vezi primul handoff.

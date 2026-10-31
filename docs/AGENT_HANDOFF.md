@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Corecție 2026-10-31 — sediul social scos din suprafețele publice
+
+- La cererea utilizatorului, adresa sediului social nu mai este afișată în blocul comerciantului din „Termeni de utilizare” și „Politica de confidențialitate”. `getPublicSeller` nu mai citește și nu mai serializează `registered_address` către client. Identitatea comercială, CUI, registrul, e-mailul și telefonul rămân.
+- Migrarea append-only `0087_remove_public_registered_address.sql` elimină numai copia `registered_address` din setarea `business.legal_entity` marcată publică; `legal_entities.registered_address` rămâne pentru admin și facturare. La confirmarea explicită a utilizatorului, fișierul public al migrației 0050 și testul au fost redactate în versiunea curentă a repository-ului. Versiunile vechi din istoricul Git rămân accesibile fără o rescriere separată a istoricului.
+- Ramura `codex/remove-public-registered-address-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `fe940a2`. Fișiere: `src/components/site/LegalPage.tsx`, `src/lib/legal.functions.ts`, migrațiile 0050/0087, testele aferente și documentele de continuitate. `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Capturile locale pentru „Termeni” la 1440×900 și „Confidențialitate” la 390×844 au fost inspectate; adresa lipsește și din HTML serializat, fără overflow.
+- Toate migrațiile până la 0087 au fost aplicate cu succes într-o bază D1 locală izolată: schema 87, fără copia publică. Baza D1 locală preexistentă este în urmă cu patru migrații și reluarea 0084 întâlnește un șablon e-mail duplicat; nu a fost modificată prin această încercare. Migrarea remote și starea live se completează după release.
+
 ## Corecție 2026-10-31 — invitația imediat sub identitatea magazinului
 
 - Release confirmat: PR #62 a trecut CI și a fost integrat la `df956f42b1514dc3b9b36cc4c4e0f18aa593d5eb`. Workerul `cutiuta-magica-store` a fost publicat din această revizie ca versiunea `33a29c78-b191-4e1a-b6e3-a934e2c3a970`, distribuită 100%. `/api/v1/health` răspunde 200 cu `production` și schema D1 86.
