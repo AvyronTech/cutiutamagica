@@ -1,0 +1,696 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { DatabaseSync } from "node:sqlite";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { credential, storeCredential, saveSetting } from "./services/growth-settings";
+import { processOwnerReports } from "./services/owner-reports";
+import { researchProduct, rankSupplierResults } from "./services/supplier-research";
+import { listPublicCatalog } from "./db/catalog.repository";
+import { previousMonth, reportSettingsSchema, marketplaceForUrl } from "@/lib/growth-contracts";
+import type { CommerceEnv } from "./integrations/provider-runtime";
+import { readProviderJson } from "./integrations/provider-runtime";
+import { EmailDeliveryUncertainError, sendEmail } from "./integrations/resend";
+import { checkConnection, syncTraffic } from "./services/traffic-integrations";
+import {
+  getAdminShippingInsightsData,
+  refreshSmartShipTracking,
+} from "./services/shipping-insights";
+import {
+  createSmartShipAwb,
+  diagnoseSmartShipQuote,
+  getSmartShipAccountOverview,
+  quoteSmartShip,
+  resolveSmartShipCity,
+} from "./integrations/smartship";
+
+const databases: DatabaseSync[] = [];
+function database() {
+  const sql = new DatabaseSync(":memory:");
+  databases.push(sql);
+  for (const name of readdirSync(resolve("cloudflare/d1/migrations")).sort())
+    sql.exec(readFileSync(resolve("cloudflare/d1/migrations", name), "utf8"));
+  sql.exec(readFileSync(resolve("cloudflare/d1/seed/0001_music_boxes.sql"), "utf8"));
+  const prepare = (query: string) => {
+    let values: Array<string | number | null> = [];
+    const statement = {
+      bind(...args: Array<string | number | null>) {
+        values = args;
+        return statement;
+      },
+      async first() {
+        return sql.prepare(query).get(...values) ?? null;
+      },
+      async all() {
+        return { success: true, results: sql.prepare(query).all(...values) };
+      },
+      async run() {
+        const result = sql.prepare(query).run(...values);
+        return { success: true, results: [], meta: { changes: Number(result.changes) } };
+      },
+    };
+    return statement;
+  };
+  const db = {
+    prepare,
+    async batch(statements: Array<ReturnType<typeof prepare>>) {
+      sql.exec("BEGIN");
+      try {
+        const results = [];
+        for (const statement of statements) results.push(await statement.all());
+        sql.exec("COMMIT");
+        return results;
+      } catch (e) {
+        sql.exec("ROLLBACK");
+        throw e;
+      }
+    },
+  } as unknown as D1Database;
+  const actor = String(sql.prepare("SELECT id FROM admin_users LIMIT 1").get()!.id);
+  return { sql, db, actor };
+}
+afterEach(() => {
+  vi.unstubAllGlobals();
+  for (const db of databases.splice(0)) db.close();
+});
+describe("growth and commerce integration", () => {
+  it("falls back after a recipient-policy rejection and deduplicates the accepted email", async () => {
+    const { db, sql } = database();
+    const send = vi.fn().mockRejectedValue(
+      Object.assign(new Error("Recipient denied"), {
+        code: "E_RECIPIENT_NOT_ALLOWED",
+      }),
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ id: "resend-synthetic-1" }), { status: 200 }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const env = {
+      DB: db,
+      APP_ENV: "production",
+      EMAIL: { send },
+      RESEND_API_KEY: "synthetic-key",
+    } as unknown as CommerceEnv;
+    const input = {
+      to: "customer@example.test",
+      subject: "Test",
+      text: "Test",
+      html: "<p>Test</p>",
+      idempotencyKey: "synthetic-order/1",
+      entityType: "order",
+      entityId: "order-1",
+    };
+    await sendEmail(env, input);
+    await sendEmail(env, input);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      sql.prepare("SELECT provider,status FROM provider_operations WHERE status='succeeded'").get(),
+    ).toMatchObject({ provider: "resend", status: "succeeded" });
+  });
+
+  it("holds an uncertain Cloudflare send for reconciliation instead of switching providers", async () => {
+    const { db } = database();
+    const send = vi.fn().mockRejectedValue(new Error("Connection interrupted"));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const env = {
+      DB: db,
+      APP_ENV: "production",
+      EMAIL: { send },
+      RESEND_API_KEY: "synthetic-key",
+    } as unknown as CommerceEnv;
+    const input = {
+      to: "customer@example.test",
+      subject: "Test",
+      text: "Test",
+      html: "<p>Test</p>",
+      idempotencyKey: "synthetic-order/2",
+      entityType: "order",
+      entityId: "order-2",
+    };
+    await expect(sendEmail(env, input)).rejects.toBeInstanceOf(EmailDeliveryUncertainError);
+    await expect(sendEmail(env, input)).rejects.toBeInstanceOf(EmailDeliveryUncertainError);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("resolves a Bucharest easybox sector through the city and separate sector", async () => {
+    const { db, actor } = database();
+    const env = {
+      DB: db,
+      INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)),
+      CACHE: { get: async () => null, put: async () => undefined },
+    } as unknown as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string) =>
+        Promise.resolve(
+          Response.json(
+            new URL(input).pathname === "/geolocation/counties"
+              ? { counties: [{ id: 1, county: "Bucuresti" }] }
+              : { cities: [{ id: 255154, city: "Bucuresti" }] },
+          ),
+        ),
+      ),
+    );
+
+    expect(await resolveSmartShipCity(env, "București", "Sectorul 1")).toBe(255154);
+    expect(await resolveSmartShipCity(env, "Bucuresti", "Sector 2")).toBe(255154);
+  });
+  it("returns honest empty shipping statistics before the first AWB", async () => {
+    const { db } = database();
+    const insights = await getAdminShippingInsightsData(db);
+    expect(insights.summary).toMatchObject({
+      total: 0,
+      inTransit: 0,
+      delivered: 0,
+      quotes30d: 0,
+    });
+    expect(insights.shipments).toEqual([]);
+  });
+  it("reads bounded SmartShip account statistics without exposing recipient or IBAN data", async () => {
+    const { db, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    const fixtures: Record<string, unknown> = {
+      "/account/balance": {
+        status: 200,
+        balance: 10,
+        credit_limit: 50,
+        available_for_shipping: 60,
+        currency: "RON",
+      },
+      "/awbs?per_page=10": {
+        status: 200,
+        total_awbs_count: 2,
+        awbs: [
+          {
+            awb: "AWB123",
+            status: 1,
+            courier_name: "Cargus",
+            order_id: "CM-1",
+            recipient_name: "Private",
+          },
+        ],
+      },
+      "/payouts?per_page=5": {
+        status: 200,
+        total_payouts_count: 1,
+        payouts: [
+          { number: "PN1", date: "2026-10-17", valoare: 100, awb_count: 1, iban: "PRIVATE" },
+        ],
+      },
+      "/invoices?per_page=5": {
+        status: 200,
+        total_invoices_count: 1,
+        invoices: [
+          {
+            number: "SS1",
+            date: "2026-10-17",
+            total: 20,
+            currency: "RON",
+            pdf_link: "https://smartship.ro/factura/example",
+          },
+        ],
+      },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string) => {
+        const path = new URL(input).pathname + new URL(input).search;
+        return Promise.resolve(
+          new Response(JSON.stringify(fixtures[path] ?? { status: 404 }), {
+            status: fixtures[path] ? 200 : 404,
+          }),
+        );
+      }),
+    );
+    const overview = await getSmartShipAccountOverview(env);
+    expect(overview).toMatchObject({
+      balance: { availableForShipping: 60 },
+      shipments: { total: 2, recent: [{ awb: "AWB123" }] },
+      payouts: { total: 1 },
+      invoices: { total: 1 },
+      errors: [],
+    });
+    expect(JSON.stringify(overview)).not.toContain("Private");
+    expect(JSON.stringify(overview)).not.toContain("PRIVATE");
+  });
+  it("isolates a SmartShip quote rejection without creating an AWB or exposing sender contact data", async () => {
+    const { db, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    const paths: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string, init?: RequestInit) => {
+        paths.push(new URL(input).pathname);
+        const body = JSON.parse(String(init?.body)) as {
+          show_byoc: number;
+          sender: { name: string };
+        };
+        const payload =
+          body.sender.name === "Atelier Test SRL"
+            ? { status: 91929, message: "Contact: atelier@test.ro 0720123456" }
+            : {
+                status: 200,
+                costs: [
+                  { courier_id: 5, courier_name: "Necesită imprimare", cost: 11 },
+                  { courier_id: 1, courier_name: "Curier eligibil", cost: 23.81 },
+                ],
+              };
+        return Promise.resolve(new Response(JSON.stringify(payload), { status: 200 }));
+      }),
+    );
+    const result = await diagnoseSmartShipQuote(
+      env,
+      {
+        name: "Atelier Test SRL",
+        address: "Str. Test 6A",
+        email: "atelier@test.ro",
+        phone: "0720123456",
+        cityId: 259539,
+        sector: 0,
+      },
+      { weightKg: 0.35, lengthCm: 12, widthCm: 8, heightCm: 6 },
+    );
+    expect(paths).toEqual(["/cost", "/cost", "/cost"]);
+    expect(
+      result.probes.map(({ variant, providerStatus, courierCount }) => ({
+        variant,
+        providerStatus,
+        courierCount,
+      })),
+    ).toEqual([
+      { variant: "configured", providerStatus: 91929, courierCount: 0 },
+      { variant: "without_own_contracts", providerStatus: 91929, courierCount: 0 },
+      { variant: "documented_sample", providerStatus: 200, courierCount: 2 },
+    ]);
+    expect(result.probes[2].eligibleOffers).toEqual([
+      { courier: "Curier eligibil", costRon: 23.81 },
+    ]);
+    expect(JSON.stringify(result)).not.toContain("atelier@test.ro");
+    expect(JSON.stringify(result)).not.toContain("0720123456");
+  });
+  it("sends ASCII delivery text to SmartShip for quotes and AWBs while preserving customer data", async () => {
+    const { db, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    const bodies: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string, init?: RequestInit) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        const result =
+          new URL(input).pathname === "/cost"
+            ? {
+                status: 200,
+                costs: [{ courier_id: 12, courier_name: "SAMEDAY Easybox", cost: 15 }],
+              }
+            : { status: 200, awb: "AWB123" };
+        return Promise.resolve(new Response(JSON.stringify(result), { status: 200 }));
+      }),
+    );
+    const sender = {
+      name: "Cutiuța Magică",
+      address: "Str. Prof. Anton Șesan 6A, Iași",
+      phone: "0720123456",
+      email: "atelier@example.test",
+      cityId: 259539,
+    };
+    const recipient = {
+      name: "Ana Țăran",
+      address: "Șoseaua Florilor 8, București",
+      phone: "0720333444",
+      email: "ana@example.test",
+      cityId: 255154,
+      sector: 1,
+    };
+    const shipment = {
+      packageContent: "Jucării și cutiuțe muzicale",
+      parcels: 1,
+      weightKg: 0.35,
+      lengthCm: 12,
+      widthCm: 8,
+      heightCm: 6,
+      cashOnDeliveryRon: 0,
+    };
+    expect(await quoteSmartShip(env, { sender, recipient, content: shipment })).toHaveLength(1);
+    expect(
+      await createSmartShipAwb(env, {
+        courierId: 12,
+        useOwnContract: false,
+        sender,
+        recipient,
+        content: shipment,
+      }),
+    ).toMatchObject({ awb: "AWB123" });
+    expect(bodies).toHaveLength(2);
+    for (const body of bodies) {
+      expect(body.sender).toMatchObject({
+        name: "Cutiuta Magica",
+        address: "Str. Prof. Anton Sesan 6A, Iasi",
+      });
+      expect(body.recipient).toMatchObject({
+        name: "Ana Taran",
+        address: "Soseaua Florilor 8, Bucuresti",
+      });
+      expect(body.content).toMatchObject({ package_content: "Jucarii si cutiute muzicale" });
+    }
+    expect(sender.name).toBe("Cutiuța Magică");
+    expect(recipient.address).toBe("Șoseaua Florilor 8, București");
+  });
+  it("refreshes one AWB twice without duplicating tracking events", async () => {
+    const { db, sql, actor } = database();
+    const channel = sql.prepare("SELECT id FROM sales_channels LIMIT 1").get() as { id: string };
+    sql
+      .prepare(
+        `INSERT INTO orders(id,order_number,public_token,idempotency_key,channel_id,
+       order_status,fulfillment_status,subtotal_bani,total_bani,customer_name,customer_phone_e164)
+       VALUES('order-tracking','CM-TRACK-1','token-tracking','idem-tracking',?1,
+       'confirmed','packed',1000,1000,'Client Test','+40712345678')`,
+      )
+      .run(channel.id);
+    sql
+      .prepare(
+        `INSERT INTO shipments(id,order_id,provider,external_shipment_id,awb,status)
+       VALUES('shipment-tracking','order-tracking','smartship','AWB123','AWB123','label_created')`,
+      )
+      .run();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("s".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "test-smartship-key", actor);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              status: 200,
+              awb: "AWB123",
+              awb_status: 1,
+              awb_status_desc: "În tranzit",
+              carrier: "Cargus",
+              tracking_link: "https://smartship.ro/tracking/AWB123",
+              tracking: [
+                {
+                  date: "2026-10-17 11:20:00",
+                  event_id: "received",
+                  description: "Ridicat",
+                  locality: "Iași",
+                },
+              ],
+            }),
+            { status: 200 },
+          ),
+        ),
+      ),
+    );
+    await refreshSmartShipTracking(env, "shipment-tracking", actor);
+    await refreshSmartShipTracking(env, "shipment-tracking", actor);
+    expect(
+      sql.prepare("SELECT status,tracking_url FROM shipments WHERE id='shipment-tracking'").get(),
+    ).toMatchObject({ status: "in_transit", tracking_url: "https://smartship.ro/tracking/AWB123" });
+    expect(
+      sql
+        .prepare(
+          "SELECT COUNT(*) AS count FROM shipment_events WHERE shipment_id='shipment-tracking'",
+        )
+        .get(),
+    ).toMatchObject({ count: 1 });
+    expect(
+      sql
+        .prepare(
+          "SELECT COUNT(*) AS count FROM audit_log WHERE action='shipping.smartship_tracking.refresh'",
+        )
+        .get(),
+    ).toMatchObject({ count: 2 });
+  });
+  it("rejects oversized provider bodies", async () => {
+    await expect(
+      readProviderJson(new Response(JSON.stringify({ text: "x".repeat(100) })), 20),
+    ).rejects.toThrow();
+  });
+  it("replaces traffic intervals without accumulating duplicate imports", async () => {
+    const { db, sql, actor } = database();
+    await saveSetting(db, "traffic", { gaPropertyId: "12345" }, actor);
+    const day = new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10);
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            rows: [
+              {
+                dimensionValues: [{ value: day.replaceAll("-", "") }],
+                metricValues: [{ value: "10" }, { value: "25" }],
+              },
+            ],
+          }),
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const env = { DB: db, GOOGLE_ACCESS_TOKEN: "test" } as CommerceEnv;
+    await syncTraffic(env, "ga4");
+    await syncTraffic(env, "ga4");
+    expect(
+      sql.prepare("SELECT COUNT(*) AS count,SUM(value) AS total FROM traffic_daily_metrics").get(),
+    ).toMatchObject({ count: 2, total: 35 });
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(new Response("Unauthorized", { status: 401 })),
+    );
+    await expect(syncTraffic(env, "ga4")).rejects.toThrow();
+    expect(sql.prepare("SELECT COUNT(*) AS count FROM traffic_daily_metrics").get()).toMatchObject({
+      count: 2,
+    });
+  });
+  it("replays all migrations and returns one public row per product", async () => {
+    const { db, sql } = database();
+    const rows = await listPublicCatalog(db);
+    expect(rows.length).toBe(8);
+    expect(new Set(rows.map((r) => r.slug)).size).toBe(rows.length);
+    sql
+      .prepare(
+        `INSERT INTO growth_event_daily(event_day,event_name,product_slug,path,event_count)
+         VALUES('2026-10-04','page_view','','/',1),
+               ('2026-10-04','product_view','hp-keeper','/produs-cutiuta-muzicala-harry-potter-hedwig',1)`,
+      )
+      .run();
+    expect(
+      sql
+        .prepare(
+          "SELECT event_name FROM growth_event_daily WHERE event_name IN ('page_view','product_view') ORDER BY event_name",
+        )
+        .all(),
+    ).toEqual([{ event_name: "page_view" }, { event_name: "product_view" }]);
+    expect(sql.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    expect(
+      sql
+        .prepare(
+          "SELECT legal_name,registration_number,registered_address,vat_status FROM legal_entities WHERE id='legal_entity_main'",
+        )
+        .get(),
+    ).toMatchObject({
+      legal_name: "DIGITAL ECOTECH SOLUTIONS S.R.L.",
+      registration_number: "J2026041938009",
+      registered_address: null,
+      vat_status: "non_vat_payer",
+    });
+    sql
+      .prepare("UPDATE legal_entities SET registered_address=? WHERE id='legal_entity_main'")
+      .run("Adresă internă de test");
+    sql
+      .prepare(
+        "UPDATE site_settings SET value_json=json_set(value_json,'$.registered_address',?) WHERE key='business.legal_entity'",
+      )
+      .run("Adresă publică de test");
+    sql.exec(
+      readFileSync(
+        resolve("cloudflare/d1/migrations/0087_remove_public_registered_address.sql"),
+        "utf8",
+      ),
+    );
+    expect(
+      sql
+        .prepare(
+          "SELECT json_extract(value_json,'$.registered_address') AS address FROM site_settings WHERE key='business.legal_entity'",
+        )
+        .get(),
+    ).toEqual({ address: null });
+    expect(
+      sql
+        .prepare(
+          "SELECT registered_address AS address FROM legal_entities WHERE id='legal_entity_main'",
+        )
+        .get(),
+    ).toEqual({ address: "Adresă internă de test" });
+  });
+  it("verifies Merchant Center tokens against the current Merchant API", async () => {
+    const { db } = database();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ accounts: [] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const env = { DB: db, GOOGLE_MERCHANT_ACCESS_TOKEN: "merchant-test-token" } as CommerceEnv;
+    await expect(checkConnection(env, "google_merchant")).resolves.toMatchObject({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://merchantapi.googleapis.com/accounts/v1/accounts?pageSize=1",
+      expect.objectContaining({
+        headers: { authorization: "Bearer merchant-test-token" },
+        redirect: "manual",
+      }),
+    );
+  });
+  it("encrypts credentials and binds ciphertext to its provider", async () => {
+    const { db, sql, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("a".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "smartship", "private-api-value", actor);
+    expect(await credential(env, "smartship")).toBe("private-api-value");
+    expect(
+      JSON.stringify(sql.prepare("SELECT * FROM integration_credentials").all()),
+    ).not.toContain("private-api-value");
+    sql.exec("UPDATE integration_credentials SET provider='stripe'");
+    await expect(credential(env, "stripe")).rejects.toThrow();
+  });
+  it("keeps Oblio onboarding inactive while storing its secret encrypted", async () => {
+    const { db, sql, actor } = database();
+    const env = { DB: db, INTEGRATION_ENCRYPTION_KEY: btoa("b".repeat(32)) } as CommerceEnv;
+    await storeCredential(env, "oblio", "oblio-private-test-value", actor);
+    expect(await credential(env, "oblio")).toBe("oblio-private-test-value");
+    expect(
+      sql
+        .prepare(
+          "SELECT status FROM provider_configurations WHERE provider='oblio' AND environment='production'",
+        )
+        .get(),
+    ).toMatchObject({ status: "ready_for_test" });
+    expect(
+      JSON.stringify(sql.prepare("SELECT * FROM integration_credentials").all()),
+    ).not.toContain("oblio-private-test-value");
+  });
+  it("deduplicates monthly reports and excludes customer identity", async () => {
+    const { db, actor } = database();
+    const env = { DB: db, APP_ENV: "production", RESEND_API_KEY: "test-token" } as CommerceEnv;
+    await saveSetting(
+      db,
+      "owner_reports",
+      {
+        enabled: true,
+        recipients: ["cutiutamagica@gmail.com"],
+        day: 5,
+        hour: 9,
+        sales: true,
+        products: true,
+        traffic: false,
+      },
+      actor,
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ id: "email-test" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const now = new Date("2026-09-15T10:00:00Z");
+    await processOwnerReports(env, now);
+    await processOwnerReports(env, now);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.to).toEqual(["cutiutamagica@gmail.com"]);
+    expect(body.text).not.toContain("customer_email");
+  });
+  it("stops reports when the owner account is suspended", async () => {
+    const { db, sql, actor } = database();
+    await saveSetting(
+      db,
+      "owner_reports",
+      { enabled: true, recipients: ["cutiutamagica@gmail.com"], day: 5, hour: 9 },
+      actor,
+    );
+    sql.exec("UPDATE admin_users SET status='suspended' WHERE email='cutiutamagica@gmail.com'");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await processOwnerReports(
+      { DB: db, APP_ENV: "production" } as CommerceEnv,
+      new Date("2026-09-15T10:00:00Z"),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("does not send reports before the configured local hour", async () => {
+    const { db, actor } = database();
+    await saveSetting(
+      db,
+      "owner_reports",
+      { enabled: true, recipients: ["owner@example.com"], day: 5, hour: 9 },
+      actor,
+    );
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await processOwnerReports(
+      { DB: db, APP_ENV: "production" } as CommerceEnv,
+      new Date("2026-09-05T05:00:00Z"),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("keeps supplier searches within daily budget and reuses recent successful runs", async () => {
+    const { db, sql, actor } = database();
+    await saveSetting(
+      db,
+      "supplier_research",
+      { enabled: true, maxDailyRuns: 1, refreshDays: 7 },
+      actor,
+    );
+    const id = String(
+      sql.prepare("SELECT id FROM products WHERE product_type='music_box' LIMIT 1").get()!.id,
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          web: {
+            results: [
+              {
+                title: "Wooden hand crank music box",
+                url: "https://www.alibaba.com/product-detail/test.html",
+                description: "Wooden music box USD 8.50 per item",
+              },
+            ],
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const env = { DB: db, BRAVE_SEARCH_API_KEY: "test" } as CommerceEnv;
+    expect((await researchProduct(env, id)).count).toBe(1);
+    await expect(researchProduct(env, id)).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      sql.prepare("SELECT price_text,price_status FROM supplier_suggestions").get(),
+    ).toMatchObject({ price_text: "USD 8.50", price_status: "unverified" });
+  });
+  it("rejects spoofed supplier URLs and normalizes duplicate tracking links", () => {
+    expect(marketplaceForUrl("https://alibaba.com.evil.test/x")).toBeNull();
+    expect(marketplaceForUrl("https://user:secret@alibaba.com/x")).toBeNull();
+    const rows = rankSupplierResults("music box", [
+      {
+        title: "Music box",
+        description: "USD 12.50",
+        url: "https://alibaba.com/product/x?utm_source=a",
+      },
+      {
+        title: "Music box",
+        description: "USD 12.50",
+        url: "https://alibaba.com/product/x?utm_source=b",
+      },
+    ]);
+    expect(rows).toHaveLength(1);
+  });
+  it("validates owner settings and year boundaries", () => {
+    expect(reportSettingsSchema.safeParse({ enabled: true, recipients: [] }).success).toBe(false);
+    expect(
+      reportSettingsSchema.safeParse({ recipients: ["TEST@example.com", "test@example.com"] })
+        .success,
+    ).toBe(false);
+    expect(previousMonth(new Date("2026-01-01T12:00:00Z"))).toBe("2025-12");
+  });
+});

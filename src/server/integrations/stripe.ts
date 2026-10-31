@@ -4,41 +4,137 @@ import {
   hmacHex,
   ProviderError,
   requiredSecret,
+  readProviderJson,
   type CommerceEnv,
 } from "@/server/integrations/provider-runtime";
+import { credential } from "@/server/services/growth-settings";
+import { readSetting } from "@/server/services/growth-settings";
+import { financeSettingsSchema } from "@/lib/growth-contracts";
 
 export interface StripeCheckoutInput {
   orderId: string;
   orderNumber: string;
   customerEmail: string;
+  customerId?: string | null;
   amountBani: number;
   currency: string;
   description: string;
-  publicToken: string;
 }
 
 type StripeSession = { id?: string; url?: string; payment_intent?: string };
+
+export async function expireStripeCheckoutSession(
+  env: CommerceEnv,
+  sessionId: string,
+  orderId: string,
+): Promise<void> {
+  if (!/^cs_(?:live|test)_[A-Za-z0-9]+$/.test(sessionId))
+    throw new ProviderError("Sesiune de plată invalidă.", "INVALID_STRIPE_SESSION", 400);
+  const key = requiredSecret((await credential(env, "stripe")) ?? undefined, "STRIPE_SECRET_KEY");
+  const base = `https://api.stripe.com/v1/checkout/sessions/${sessionId}`;
+  const headers = { authorization: `Bearer ${key}`, accept: "application/json" };
+  const lookup = await fetchWithTimeout(base, { method: "GET", headers, redirect: "manual" });
+  const session = (await readProviderJson(lookup).catch(() => null)) as {
+    status?: string;
+    payment_status?: string;
+    client_reference_id?: string;
+  } | null;
+  if (!lookup.ok || !session)
+    throw new ProviderError(
+      "Sesiunea de plată necesită verificare.",
+      "STRIPE_SESSION_UNVERIFIED",
+      409,
+    );
+  if (session.client_reference_id !== orderId)
+    throw new ProviderError("Sesiunea nu aparține comenzii.", "PAYMENT_MISMATCH", 409);
+  if (session.status === "expired" && session.payment_status === "unpaid") return;
+  if (session.status !== "open" || session.payment_status !== "unpaid")
+    throw new ProviderError(
+      "Plata poate fi în curs de confirmare.",
+      "PAYMENT_RECONCILIATION_REQUIRED",
+      409,
+    );
+  const response = await fetchWithTimeout(`${base}/expire`, {
+    method: "POST",
+    headers,
+    redirect: "manual",
+  });
+  const expired = (await readProviderJson(response).catch(() => null)) as {
+    status?: string;
+    payment_status?: string;
+  } | null;
+  if (!response.ok || expired?.status !== "expired" || expired.payment_status !== "unpaid")
+    throw new ProviderError(
+      "Plata poate fi în curs de confirmare.",
+      "PAYMENT_RECONCILIATION_REQUIRED",
+      409,
+    );
+}
+
+export async function verifyStripeMerchantAccount(env: CommerceEnv, key: string) {
+  const finance = await readSetting(env.DB, "finance", financeSettingsSchema);
+  if (!finance.stripeAccount)
+    throw new ProviderError(
+      "Completează Stripe Account ID al firmei Cutiuța Magică în Conexiuni financiare.",
+      "STRIPE_ACCOUNT_ID_MISSING",
+      409,
+    );
+  const response = await fetchWithTimeout("https://api.stripe.com/v1/account", {
+    method: "GET",
+    redirect: "manual",
+    headers: { authorization: `Bearer ${key}`, accept: "application/json" },
+  });
+  const account = (await readProviderJson(response).catch(() => null)) as {
+    id?: string;
+    country?: string;
+    charges_enabled?: boolean;
+  } | null;
+  if (!response.ok || !account?.id)
+    throw new ProviderError(
+      "Contul Stripe nu a putut fi verificat.",
+      "STRIPE_ACCOUNT_UNVERIFIED",
+      409,
+    );
+  if (account.id !== finance.stripeAccount || account.country !== "RO")
+    throw new ProviderError(
+      "Cheia Stripe aparține altui cont decât cel Cutiuța Magică configurat în magazin.",
+      "STRIPE_ACCOUNT_MISMATCH",
+      409,
+    );
+  if (env.APP_ENV === "production" && account.charges_enabled !== true)
+    throw new ProviderError(
+      "Contul Stripe Cutiuța Magică nu poate încasa încă plăți live.",
+      "STRIPE_CHARGES_UNAVAILABLE",
+      409,
+    );
+  return account.id;
+}
 
 export async function createStripeCheckoutSession(
   env: CommerceEnv,
   input: StripeCheckoutInput,
 ): Promise<{ id: string; url: string; paymentIntentId: string | null }> {
-  const key = requiredSecret(env.STRIPE_SECRET_KEY, "STRIPE_SECRET_KEY");
+  const key = requiredSecret((await credential(env, "stripe")) ?? undefined, "STRIPE_SECRET_KEY");
+  if (env.APP_ENV === "production") await verifyStripeMerchantAccount(env, key);
   const params = new URLSearchParams();
   params.set("mode", "payment");
-  params.set(
-    "success_url",
-    `${env.PUBLIC_SITE_URL}/comanda?payment=success&order=${input.orderNumber}`,
-  );
-  params.set(
-    "cancel_url",
-    `${env.PUBLIC_SITE_URL}/comanda?payment=cancelled&order=${input.orderNumber}`,
-  );
-  params.set("customer_email", input.customerEmail);
+  params.set("success_url", `${env.PUBLIC_SITE_URL}/comanda?payment=return`);
+  params.set("cancel_url", `${env.PUBLIC_SITE_URL}/comanda?payment=cancelled`);
+  const savedCustomer = input.customerId
+    ? await env.DB.prepare(
+        `SELECT external_customer_id AS id FROM billing_customers
+         WHERE customer_id=?1 AND provider='stripe' AND environment=?2 AND status='active'`,
+      )
+        .bind(input.customerId, env.APP_ENV === "production" ? "production" : "sandbox")
+        .first<{ id: string }>()
+    : null;
+  if (savedCustomer?.id) params.set("customer", savedCustomer.id);
+  else params.set("customer_email", input.customerEmail);
   params.set("client_reference_id", input.orderId);
   params.set("metadata[order_id]", input.orderId);
   params.set("metadata[order_number]", input.orderNumber);
-  params.set("metadata[public_token]", input.publicToken);
+  // Stripe shows the eligible methods enabled for this account and currency.
+  params.set("locale", "ro");
   params.set("line_items[0][quantity]", "1");
   params.set("line_items[0][price_data][currency]", input.currency.toLowerCase());
   params.set("line_items[0][price_data][unit_amount]", String(input.amountBani));
@@ -46,6 +142,7 @@ export async function createStripeCheckoutSession(
   params.set("payment_intent_data[metadata][order_id]", input.orderId);
   const response = await fetchWithTimeout("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
+    redirect: "manual",
     headers: {
       authorization: `Bearer ${key}`,
       "content-type": "application/x-www-form-urlencoded",
@@ -53,7 +150,7 @@ export async function createStripeCheckoutSession(
     },
     body: params,
   });
-  const result = (await response.json().catch(() => null)) as StripeSession & {
+  const result = (await readProviderJson(response).catch(() => null)) as StripeSession & {
     error?: { message?: string; code?: string };
   };
   if (!response.ok || !result?.id || !result.url) {
@@ -78,15 +175,14 @@ export async function verifyStripeWebhook(
 ): Promise<boolean> {
   const webhookSecret = requiredSecret(secret, "STRIPE_WEBHOOK_SECRET");
   if (!signatureHeader) return false;
-  const values = Object.fromEntries(
-    signatureHeader.split(",").map((entry) => {
-      const [key, value] = entry.split("=", 2);
-      return [key, value];
-    }),
+  const fields = signatureHeader.split(",").map((v) => v.trim().split("=", 2));
+  const timestampText = fields.find(([k]) => k === "t")?.[1];
+  if (!timestampText || !/^\d+$/.test(timestampText)) return false;
+  const timestamp = Number(timestampText);
+  if (!Number.isSafeInteger(timestamp) || Math.abs(Date.now() / 1000 - timestamp) > 300)
+    return false;
+  const expected = await hmacHex(webhookSecret, `${timestampText}.${payload}`);
+  return fields.some(
+    ([k, v]) => k === "v1" && /^[a-f0-9]{64}$/.test(v ?? "") && constantTimeEqual(expected, v),
   );
-  if (!values.t || !values.v1) return false;
-  const timestamp = Number(values.t);
-  if (!Number.isFinite(timestamp) || Math.abs(Date.now() / 1000 - timestamp) > 300) return false;
-  const expected = await hmacHex(webhookSecret, `${values.t}.${payload}`);
-  return constantTimeEqual(expected, values.v1);
 }

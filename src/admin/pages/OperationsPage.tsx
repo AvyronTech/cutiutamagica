@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -27,6 +28,15 @@ const statusLabels: Record<string, string> = {
   disabled: "Dezactivat",
   setup_required: "Configurare necesară",
   paused: "În pauză",
+};
+
+const nextSteps: Partial<Record<BusinessArea, { label: string; path: string }>> = {
+  ai: { label: "Vezi aprobările", path: "/admin/marketing" },
+  billing: { label: "Verifică plățile", path: "/admin/financiar" },
+  shipping: { label: "Deschide comenzile", path: "/admin/orders" },
+  inventory: { label: "Deschide produsele", path: "/admin/products" },
+  posts: { label: "Deschide marketingul", path: "/admin/marketing" },
+  customers: { label: "Vezi conversațiile", path: "/admin/chat" },
 };
 
 function displayMetric(value: number, unit?: string): string {
@@ -59,16 +69,29 @@ export default function OperationsPage({
 
   return (
     <div className="space-y-5 md:space-y-6">
-      <header className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-cyan-400/20 bg-cyan-400/10">
-          <Icon className="h-5 w-5 text-cyan-300" />
+      <header className="flex flex-col gap-4 rounded-[1.35rem] border border-white/10 bg-[radial-gradient(circle_at_95%_5%,rgba(208,170,112,.15),transparent_35%),linear-gradient(135deg,#17233a,#111c2e)] p-5 shadow-[0_20px_60px_rgba(0,0,0,.15)] sm:flex-row sm:items-center sm:justify-between md:p-7">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-200/25 bg-amber-200/10">
+            <Icon className="h-5 w-5 text-amber-200" />
+          </div>
+          <div>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[.18em] text-amber-200/75">
+              Centru operațional
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-white md:text-[1.75rem]">
+              {title}
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{description}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-semibold text-white md:text-2xl">{title}</h1>
-          <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400 md:text-sm">
-            {description}
-          </p>
-        </div>
+        {nextSteps[area] && (
+          <Link
+            to={nextSteps[area].path}
+            className="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-200/25 bg-amber-100/10 px-4 py-2.5 text-xs font-semibold text-amber-100 transition hover:bg-amber-100/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+          >
+            {nextSteps[area].label}
+          </Link>
+        )}
       </header>
 
       {query.isError && (
@@ -78,24 +101,24 @@ export default function OperationsPage({
         </div>
       )}
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section aria-label="Indicatori" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className={`rounded-lg border p-4 ${metric.attention ? "border-amber-400/30 bg-amber-400/8" : "border-[#28364d] bg-[#111c2e]"}`}
+            className={`min-w-0 rounded-2xl border p-4 md:p-5 ${metric.attention ? "border-amber-300/35 bg-amber-300/10" : "border-white/10 bg-white/[.045]"}`}
           >
-            <p className="text-xl font-semibold text-white md:text-2xl">
+            <p className="break-words text-xl font-semibold tabular-nums text-white md:text-2xl">
               {query.isLoading ? "..." : displayMetric(metric.value, metric.unit)}
             </p>
-            <p className="mt-1 text-xs text-slate-400">{metric.label}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-300">{metric.label}</p>
           </div>
         ))}
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr_.85fr]">
-        <section className="rounded-lg border border-[#28364d] bg-[#111c2e]">
+        <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[.045]">
           <div className="border-b border-[#28364d] px-4 py-3">
-            <h2 className="text-sm font-semibold text-white">Sisteme și conectori</h2>
+            <h2 className="text-sm font-semibold text-white">Stare și conexiuni</h2>
           </div>
           <div className="divide-y divide-[#28364d]">
             {systems.length === 0 ? (
@@ -130,10 +153,10 @@ export default function OperationsPage({
           </div>
         </section>
 
-        <section className="rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
+        <section className="rounded-2xl border border-white/10 bg-white/[.045] p-5">
           <div className="flex items-center gap-2">
             <Database className="h-4 w-4 text-cyan-300" />
-            <h2 className="text-sm font-semibold text-white">Infrastructură pregătită</h2>
+            <h2 className="text-sm font-semibold text-white">Ce poți face aici</h2>
           </div>
           <div className="mt-4 space-y-3">
             {capabilities.map((capability) => (

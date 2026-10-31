@@ -65,9 +65,11 @@ export async function getBusinessHubData(db: D1Database): Promise<BusinessHubDat
       SELECT
         COUNT(*) AS total,
         COALESCE(SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END), 0) AS published,
-        COALESCE(SUM(CASE WHEN status IN ('review', 'approved', 'scheduled') THEN 1 ELSE 0 END), 0) AS scheduled,
-        COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) AS attention_failed
-      FROM social_posts
+        COALESCE(SUM(CASE WHEN publication_state = 'scheduled_verified' THEN 1 ELSE 0 END), 0) AS scheduled,
+        COALESCE(SUM(CASE WHEN publication_state = 'review' THEN 1 ELSE 0 END), 0) AS attention_review,
+        COALESCE(SUM(CASE WHEN publication_state IN ('approved_awaiting_connector','schedule_unverified') THEN 1 ELSE 0 END), 0) AS attention_unverified,
+        COALESCE(SUM(CASE WHEN publication_state = 'failed' THEN 1 ELSE 0 END), 0) AS attention_failed
+      FROM v_social_publication_state
     `),
     db.prepare(`
       SELECT
@@ -131,6 +133,7 @@ export async function getBusinessHubData(db: D1Database): Promise<BusinessHubDat
     "ai",
   ];
   const definitions: Record<BusinessArea, Array<[string, string, string?]>> = {
+    traffic: [],
     inventory: [
       ["locations", "Locații"],
       ["on_hand", "În stoc"],
@@ -159,6 +162,8 @@ export async function getBusinessHubData(db: D1Database): Promise<BusinessHubDat
       ["total", "Postări"],
       ["published", "Publicate"],
       ["scheduled", "Planificate"],
+      ["attention_review", "Necesită reaprobare"],
+      ["attention_unverified", "Așteaptă conector"],
       ["attention_failed", "Eșuate"],
     ],
     customers: [
@@ -198,6 +203,7 @@ export async function getBusinessHubData(db: D1Database): Promise<BusinessHubDat
     status: stringValue(row.status),
     detail: stringValue(row.detail),
   }));
+  metricMap.traffic = [];
 
   return { metrics: metricMap, systems, generatedAt: new Date().toISOString() };
 }

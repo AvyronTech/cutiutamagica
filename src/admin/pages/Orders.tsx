@@ -20,15 +20,37 @@ import {
   X,
   XCircle,
   Clock,
+  Plus,
+  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   ADMIN_ORDER_STATUSES,
   type AdminOrder,
   type AdminOrderStatus,
+  type AdminProduct,
 } from "@/lib/admin-contracts";
-import { getAdminOrders, updateAdminOrderStatus } from "@/lib/admin.functions";
+import {
+  createAdminOrderEntry,
+  getAdminOrders,
+  getAdminProducts,
+  issueAdminSmartShipAwb,
+  reconcileAdminSmartShipAwb,
+  refreshAdminSmartShipTracking,
+  updateAdminOrderStatus,
+} from "@/lib/admin.functions";
 import { canTransitionOrderStatus } from "@/lib/order-status";
+
+const localDateTime = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("ro-RO", {
+        dateStyle: "short",
+        timeStyle: "short",
+        timeZone: "Europe/Bucharest",
+      }).format(date);
+};
 
 const PLATFORM_COLORS: Record<string, string> = {
   "Cutiuța Magică": "platform-cutiuta",
@@ -37,7 +59,43 @@ const PLATFORM_COLORS: Record<string, string> = {
   Instagram: "platform-instagram",
   TikTok: "platform-tiktok",
   Facebook: "platform-facebook",
+  Vinted: "platform-vinted",
+  "Okazii.ro": "bg-rose-500/15 text-rose-200",
+  "Google Merchant Center": "bg-blue-500/15 text-blue-200",
 };
+
+const SALES_CHANNELS = [
+  {
+    code: "website",
+    label: "Magazin online",
+    platform: "Cutiuța Magică",
+    kind: "Comenzi directe",
+    color: "bg-violet-400",
+  },
+  { code: "emag", label: "eMAG", platform: "eMAG", kind: "Marketplace", color: "bg-amber-400" },
+  {
+    code: "vinted",
+    label: "Vinted",
+    platform: "Vinted",
+    kind: "Import manual",
+    color: "bg-teal-400",
+  },
+  { code: "olx", label: "OLX", platform: "OLX", kind: "Import manual", color: "bg-emerald-400" },
+  {
+    code: "okazii",
+    label: "Okazii",
+    platform: "Okazii.ro",
+    kind: "Import manual",
+    color: "bg-rose-400",
+  },
+  {
+    code: "google_merchant",
+    label: "Google Merchant",
+    platform: "Google Merchant Center",
+    kind: "Catalog și atribuire",
+    color: "bg-blue-400",
+  },
+] as const;
 
 function StatusIcon({ status }: { status: AdminOrderStatus }) {
   switch (status) {
@@ -89,14 +147,38 @@ function OrderDetailPanel({
   order,
   onClose,
   onUpdateStatus,
+  onAwbAction,
+  onTrackingRefresh,
 }: {
   order: AdminOrder;
   onClose: () => void;
   onUpdateStatus: (status: AdminOrderStatus) => Promise<void>;
+  onAwbAction: (reconcile: boolean) => Promise<void>;
+  onTrackingRefresh: () => Promise<void>;
 }) {
   const [currentStatus, setCurrentStatus] = useState(order.status);
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [awbBusy, setAwbBusy] = useState(false);
+  const [trackingBusy, setTrackingBusy] = useState(false);
+  const awaitingOnlinePayment =
+    order.paymentMethod === "card" && order.paymentStatus !== "paid" && order.status !== "Anulată";
+
+  async function handleAwb(reconcile: boolean) {
+    if (
+      !reconcile &&
+      !window.confirm(
+        `Emiți AWB-ul SmartShip pentru ${order.orderNumber}? Operația poate avea cost și poate comanda ridicarea coletului.`,
+      )
+    )
+      return;
+    setAwbBusy(true);
+    try {
+      await onAwbAction(reconcile);
+    } finally {
+      setAwbBusy(false);
+    }
+  }
 
   const save = async () => {
     if (currentStatus === order.status) {
@@ -170,6 +252,12 @@ function OrderDetailPanel({
         </section>
 
         <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3 text-sm">
+          {awaitingOnlinePayment && (
+            <p className="mb-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100">
+              Plata online nu este confirmată. Această solicitare nu poate fi pregătită sau
+              expediată.
+            </p>
+          )}
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Comandă
           </p>
@@ -193,6 +281,113 @@ function OrderDetailPanel({
               {order.awb} <Copy className="h-3 w-3" /> {copied && "Copiat"}
             </button>
           )}
+          {order.trackingUrl && (
+            <a
+              href={order.trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex min-h-10 items-center text-xs font-medium text-cyan-300 underline underline-offset-4"
+            >
+              Urmărește coletul la SmartShip
+            </a>
+          )}
+          {order.shipmentStatus && (
+            <p className="mt-2 text-xs text-slate-300">
+              Status SmartShip:{" "}
+              <strong className="text-white">
+                {{
+                  label_created: "AWB emis",
+                  picked_up: "Ridicat",
+                  in_transit: "În tranzit",
+                  delivered: "Livrat",
+                  returned: "Returnat",
+                  cancelled: "Anulat",
+                  exception: "Necesită verificare",
+                }[order.shipmentStatus] ?? order.shipmentStatus}
+              </strong>
+              {order.shipmentUpdatedAt
+                ? ` · actualizat ${localDateTime(order.shipmentUpdatedAt)}`
+                : ""}
+            </p>
+          )}
+          {order.shipmentId && (
+            <button
+              type="button"
+              disabled={trackingBusy}
+              onClick={async () => {
+                setTrackingBusy(true);
+                try {
+                  await onTrackingRefresh();
+                } finally {
+                  setTrackingBusy(false);
+                }
+              }}
+              className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-cyan-300/30 px-3 text-xs font-semibold text-cyan-200 disabled:opacity-50"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />{" "}
+              {trackingBusy ? "Verificăm…" : "Actualizează trackingul"}
+            </button>
+          )}
+          {order.awbRequestStatus === "issued" && order.awb && (
+            <a
+              href={`/api/v1/admin/shipping/orders/${order.id}/label`}
+              className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg border border-cyan-300/30 px-3 text-xs font-medium text-cyan-200"
+            >
+              <Download className="h-3.5 w-3.5" /> Descarcă eticheta AWB
+            </a>
+          )}
+          {!order.awb && order.awbRequestStatus && (
+            <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
+              Emiterea AWB necesită verificare după numărul comenzii la SmartShip.
+            </p>
+          )}
+          {!order.awb && order.awbRequestStatus && (
+            <button
+              type="button"
+              disabled={awbBusy}
+              onClick={() => void handleAwb(true)}
+              className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 text-xs font-medium text-amber-200 disabled:opacity-50"
+            >
+              {awbBusy ? "Verificăm…" : "Verifică AWB după numărul comenzii"}
+            </button>
+          )}
+          {!order.awb &&
+            !order.awbRequestStatus &&
+            (Boolean(order.smartshipCourierId) ||
+              (order.channelCode === "website" && order.shippingOption === "home_delivery")) && (
+              <button
+                type="button"
+                disabled={
+                  awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+                }
+                onClick={() => void handleAwb(false)}
+                className="mt-3 min-h-10 w-full rounded-lg bg-cyan-300 px-3 text-xs font-semibold text-[#07111f] disabled:opacity-50"
+              >
+                {awbBusy
+                  ? "Emitem AWB…"
+                  : order.smartshipCourierId
+                    ? "Emite AWB SmartShip"
+                    : "Alege curierul disponibil și emite AWB"}
+              </button>
+            )}
+          {!order.awb && !order.awbRequestStatus && order.smartshipCourierId === 0 && (
+            <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
+              <p>
+                Pentru acest Easybox, creează AWB-ul în SmartShip cu numărul comenzii{" "}
+                <strong>{order.orderNumber}</strong>, apoi sincronizează-l aici.
+              </p>
+              <button
+                type="button"
+                disabled={
+                  awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+                }
+                onClick={() => void handleAwb(true)}
+                className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 font-medium disabled:opacity-50"
+              >
+                {awbBusy ? "Verificăm…" : "Sincronizează AWB-ul SmartShip"}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
@@ -201,7 +396,9 @@ function OrderDetailPanel({
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ADMIN_ORDER_STATUSES.map((status) => {
-              const allowed = canTransitionOrderStatus(order.status, status);
+              const allowed =
+                canTransitionOrderStatus(order.status, status) &&
+                (!awaitingOnlinePayment || status === "Anulată" || status === order.status);
               return (
                 <button
                   key={status}
@@ -236,13 +433,182 @@ function OrderDetailPanel({
             Salvează
           </button>
           <a
-            href={`/qr-generator?order=${encodeURIComponent(order.orderNumber)}`}
+            href={`/admin/qr-generator?order=${encodeURIComponent(order.orderNumber)}`}
             className="flex items-center justify-center gap-2 rounded-lg bg-[#334155] px-4 py-2.5 text-sm font-medium text-white"
           >
             <QrCode className="h-4 w-4" /> QR
           </a>
         </div>
       </div>
+    </div>
+  );
+}
+
+type ManualOrderInput = {
+  channelCode: (typeof SALES_CHANNELS)[number]["code"];
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  productId: string;
+  quantity: number;
+  shippingBani: number;
+  externalOrderId?: string;
+  internalNote?: string;
+};
+
+function CreateOrderDialog({
+  products,
+  saving,
+  onClose,
+  onCreate,
+}: {
+  products: AdminProduct[];
+  saving: boolean;
+  onClose: () => void;
+  onCreate: (data: ManualOrderInput) => Promise<void>;
+}) {
+  const inputClass =
+    "mt-1.5 w-full rounded-lg border border-[#334155] bg-[#0b1423] px-3 py-2.5 text-sm text-white outline-none focus:border-purple-400/60";
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm md:items-center md:p-4">
+      <form
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl border border-[#334155] bg-[#111b2d] p-5 md:rounded-2xl md:p-6"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          const values = new FormData(event.currentTarget);
+          await onCreate({
+            channelCode: String(values.get("channelCode")) as ManualOrderInput["channelCode"],
+            customerName: String(values.get("customerName")),
+            customerPhone: String(values.get("customerPhone")),
+            customerEmail: String(values.get("customerEmail") || ""),
+            productId: String(values.get("productId")),
+            quantity: Number(values.get("quantity")),
+            shippingBani: Math.round(Number(values.get("shipping")) * 100),
+            externalOrderId: String(values.get("externalOrderId") || ""),
+            internalNote: String(values.get("internalNote") || ""),
+          });
+        }}
+      >
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-300">
+              Intrare asistată
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-white">Adaugă o comandă</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-400">
+              Pornește neplătită și neexpediată; stocul nu este rezervat automat.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-400 hover:bg-[#223048]"
+            aria-label="Închide"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="text-xs text-slate-400">
+            Canal
+            <select name="channelCode" required className={inputClass}>
+              {SALES_CHANNELS.map((channel) => (
+                <option key={channel.code} value={channel.code}>
+                  {channel.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-slate-400">
+            Referință externă (opțional)
+            <input name="externalOrderId" maxLength={120} className={inputClass} />
+          </label>
+          <label className="text-xs text-slate-400">
+            Nume client
+            <input
+              name="customerName"
+              required
+              minLength={2}
+              maxLength={120}
+              className={inputClass}
+            />
+          </label>
+          <label className="text-xs text-slate-400">
+            Telefon
+            <input
+              name="customerPhone"
+              required
+              inputMode="tel"
+              placeholder="07…"
+              className={inputClass}
+            />
+          </label>
+          <label className="text-xs text-slate-400 sm:col-span-2">
+            E-mail (opțional)
+            <input name="customerEmail" type="email" className={inputClass} />
+          </label>
+          <label className="text-xs text-slate-400 sm:col-span-2">
+            Produs disponibil
+            <select name="productId" required className={inputClass} defaultValue="">
+              <option value="" disabled>
+                Alege produsul
+              </option>
+              {products
+                .filter((product) => product.status === "activ" && product.price > 0)
+                .map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name} · {product.price.toLocaleString("ro-RO")} lei
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="text-xs text-slate-400">
+            Bucăți
+            <input
+              name="quantity"
+              type="number"
+              min="1"
+              max="20"
+              defaultValue="1"
+              required
+              className={inputClass}
+            />
+          </label>
+          <label className="text-xs text-slate-400">
+            Livrare (lei)
+            <input
+              name="shipping"
+              type="number"
+              min="0"
+              max="1000"
+              step="0.01"
+              defaultValue="25"
+              required
+              className={inputClass}
+            />
+          </label>
+          <label className="text-xs text-slate-400 sm:col-span-2">
+            Notă internă (opțional)
+            <textarea name="internalNote" rows={3} maxLength={1000} className={inputClass} />
+          </label>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-[#334155] px-4 py-2.5 text-sm text-slate-300"
+          >
+            Renunță
+          </button>
+          <button
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{" "}
+            Creează comanda
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -283,17 +649,44 @@ function exportOrdersCsv(orders: AdminOrder[]): void {
 export default function Orders() {
   const queryClient = useQueryClient();
   const fetchOrders = useServerFn(getAdminOrders);
+  const fetchProducts = useServerFn(getAdminProducts);
+  const createOrder = useServerFn(createAdminOrderEntry);
   const changeOrderStatus = useServerFn(updateAdminOrderStatus);
+  const issueAwb = useServerFn(issueAdminSmartShipAwb);
+  const reconcileAwb = useServerFn(reconcileAdminSmartShipAwb);
+  const refreshTracking = useServerFn(refreshAdminSmartShipTracking);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("Toate");
   const [selectedStatus, setSelectedStatus] = useState("Toate");
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
 
   const ordersQuery = useQuery({
     queryKey: ["admin", "orders"],
     queryFn: () => fetchOrders(),
     staleTime: 30_000,
+  });
+  const productsQuery = useQuery({
+    queryKey: ["admin", "products"],
+    queryFn: () => fetchProducts(),
+    staleTime: 30_000,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: ManualOrderInput) => createOrder({ data }),
+    onSuccess: async () => {
+      setShowCreate(false);
+      toast.success("Comanda a fost adăugată");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
+      ]);
+    },
+    onError: (error) =>
+      toast.error("Comanda nu a putut fi creată", {
+        description: error instanceof Error ? error.message : "Verifică datele introduse.",
+      }),
   });
 
   const statusMutation = useMutation({
@@ -337,6 +730,12 @@ export default function Orders() {
     const matchesStatus = selectedStatus === "Toate" || order.status === selectedStatus;
     return matchesSearch && matchesPlatform && matchesStatus;
   });
+  const channelCounts = new Map(
+    SALES_CHANNELS.map((channel) => [
+      channel.code,
+      orders.filter((order) => order.channelCode === channel.code).length,
+    ]),
+  );
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -347,7 +746,14 @@ export default function Orders() {
             {filteredOrders.length} comenzi din sursa centrală D1
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-950/30 hover:bg-purple-500"
+          >
+            <Plus className="h-4 w-4" /> Adaugă comandă
+          </button>
           <button
             type="button"
             onClick={() => ordersQuery.refetch()}
@@ -367,6 +773,33 @@ export default function Orders() {
           </button>
         </div>
       </div>
+
+      <section>
+        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <Store className="h-4 w-4" /> Canale comerciale
+        </div>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+          {SALES_CHANNELS.map((channel) => (
+            <button
+              type="button"
+              key={channel.code}
+              onClick={() =>
+                setSelectedPlatform(channelCounts.get(channel.code) ? channel.platform : "Toate")
+              }
+              className="glass-card rounded-xl p-3 text-left transition hover:border-purple-400/40"
+            >
+              <div className="flex items-center justify-between">
+                <span className={`h-2.5 w-2.5 rounded-full ${channel.color}`} />
+                <strong className="text-lg text-white">
+                  {channelCounts.get(channel.code) ?? 0}
+                </strong>
+              </div>
+              <p className="mt-3 text-xs font-semibold text-slate-200">{channel.label}</p>
+              <p className="mt-0.5 text-[10px] text-slate-500">{channel.kind}</p>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <div className="glass-card rounded-xl p-3 md:p-4">
         <div className="flex flex-col gap-3">
@@ -451,6 +884,13 @@ export default function Orders() {
                     <p className="text-[10px] text-slate-500">{order.date}</p>
                   </div>
                   <StatusBadge status={order.status} />
+                  {order.paymentMethod === "card" &&
+                    order.paymentStatus !== "paid" &&
+                    order.status !== "Anulată" && (
+                      <span className="inline-flex rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] text-amber-200 md:text-xs">
+                        Așteaptă plata
+                      </span>
+                    )}
                   <Eye className="hidden h-4 w-4 text-slate-600 group-hover:text-purple-400 md:block" />
                 </div>
               </div>
@@ -474,6 +914,54 @@ export default function Orders() {
           onUpdateStatus={async (status) => {
             await statusMutation.mutateAsync({ order: selectedOrder, status });
           }}
+          onAwbAction={async (reconcile) => {
+            try {
+              const result = await (reconcile ? reconcileAwb : issueAwb)({
+                data: { orderId: selectedOrder.id },
+              });
+              setSelectedOrder({ ...selectedOrder, awb: result.awb, awbRequestStatus: "issued" });
+              await queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
+              await queryClient.invalidateQueries({ queryKey: ["admin", "business-hub"] });
+              toast.success(`AWB ${result.awb} a fost înregistrat.`);
+            } catch (error) {
+              setSelectedOrder(null);
+              await ordersQuery.refetch();
+              toast.error("AWB-ul nu a fost confirmat", {
+                description: error instanceof Error ? error.message : "Verifică la SmartShip.",
+              });
+            }
+          }}
+          onTrackingRefresh={async () => {
+            if (!selectedOrder.shipmentId) return;
+            try {
+              const result = await refreshTracking({
+                data: { shipmentId: selectedOrder.shipmentId },
+              });
+              setSelectedOrder({
+                ...selectedOrder,
+                shipmentStatus: result.status,
+                shipmentUpdatedAt: result.checkedAt,
+              });
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["admin", "orders"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "shipping-insights"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
+              ]);
+              toast.success("Trackingul AWB a fost actualizat.");
+            } catch (error) {
+              toast.error("Trackingul nu a putut fi actualizat", {
+                description: error instanceof Error ? error.message : "Verifică la SmartShip.",
+              });
+            }
+          }}
+        />
+      )}
+      {showCreate && (
+        <CreateOrderDialog
+          products={productsQuery.data?.products ?? []}
+          saving={createMutation.isPending}
+          onClose={() => setShowCreate(false)}
+          onCreate={(data) => createMutation.mutateAsync(data).then(() => undefined)}
         />
       )}
     </div>
