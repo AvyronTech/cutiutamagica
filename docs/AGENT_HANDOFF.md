@@ -1,5 +1,21 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Pregătire release 2026-10-31 — cod, e-mail, securitate
+
+- Pe `codex/admin-dashboard-ux-20261031` sunt cele șase commituri locale anterioare pentru sitemap/SEO, dashboard, audit de securitate, paginile de produs și runnerul AI, plus schimbările de e-mail din intrarea următoare. `origin/codex/cutiuta-cloudflare-final` nu avea commituri noi față de baza acestei ramuri la verificare.
+- Migrarea nouă `0085_suspend_unrotated_admin_seeds.sql` suspendă conturile cu credențiale inițiale doar când există un `owner` activ cu parola schimbată; revocă sesiunile și scrie audit. În D1 live condiția corespunde la două conturi, iar sesiunea activă este deja pe un cont rotit. Validarea locală a trecut.
+- `package.json` și `package-lock.json` actualizează Zod la 4.6.7 și fixează Seroval 1.6.11 / Undici 7.30.1; două adaptări de tipuri sunt în `src/lib/checkout-settings.ts` și `src/server/api/admin-ai-studio.ts`. `npm audit --omit=dev` este zero; auditul complet raportează 14 moderate și zero high/critical.
+- Verificări după aceste schimbări: typecheck, 334/334 teste, lint și `npm run cf:deploy:dry` au trecut. Buildul simplu și verificarea live urmează în această etapă de release. Nu considera aceste pregătiri drept dovadă de deploy sau de livrare în inbox.
+
+## Handoff 2026-10-31 — Resend și e-mailuri tranzacționale
+
+- Scop: audit read-only al transportului de producție și pregătirea mesajelor pentru comenzi, expediere și retururi. Ramura locală `codex/admin-dashboard-ux-20261031` pornește din `origin/codex/cutiuta-cloudflare-final`; starea Git era curată înaintea acestui lucru. Detaliile și limitele sunt în `docs/EMAIL_DELIVERY_2026-10-31.md`.
+- În producție, cheia `resend` este prezentă criptat și verificată istoric, dar transportul principal este încă Cloudflare. Jurnalul arată refuzuri `E_RECIPIENT_NOT_ALLOWED` și o acceptare Resend pentru e-mailul unei comenzi la 22 octombrie. DNS public are DKIM/CNAME Resend; inventarul Cloudflare Email Sending a fost refuzat de tokenul Wrangler (`Authentication error 10000`). Nu s-a verificat livrarea actuală în inbox.
+- Migrarea append-only `0084_transactional_email_templates.sql` adaugă trei șabloane păstrând editările existente și schimbă transportul principal în Resend numai dacă cheia verificată și refuzul Cloudflare sunt prezente. Codul folosește Queue pentru expediere și retururi, evită fallback între furnizori la rezultate incerte și arată acceptarea API cu formulare corectă în Centru e-mail.
+- Fișiere: `cloudflare/d1/migrations/0084_transactional_email_templates.sql`, `src/server/integrations/resend.ts`, `src/server/queue/commerce-consumer.ts`, `src/server/api/commerce.ts`, `src/lib/{admin.functions,email-contracts,email.functions}.ts`, `src/admin/pages/EmailHub.tsx`, `src/server/{email-center,growth}.test.ts`, documentul de audit, continuitatea și acest handoff. Migrarea a fost executată numai în D1 local; cinci șabloane au fost confirmate.
+- Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (333/333, 60 fișiere), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Nu există capturi noi desktop/mobil: Mac-ul a fost blocat și automatizarea UI nu l-a putut debloca; testele acoperă contractele și scenariile de fallback, nu livrarea reală.
+- Nu s-au făcut push, PR, merge, deploy, migrare remote, schimbări DNS ori trimiteri reale. Sunt necesare aprobarea de release, testul către contul administratorului și verificarea `Delivered` în Resend. Webhookurile de livrare și un outbox durabil pentru eșecul simultan Queue + fallback rămân lucrări distincte înainte de a revendica livrare end-to-end garantată.
+
 ## Handoff 2026-10-31 — AI intern și inventar Cloudflare Free
 
 - Scop: audit live read-only al Workers AI, studioului AI local și resurselor Cloudflare, plus corecții locale pentru disponibilitatea modelului și consumul D1. Raportul complet este în `docs/AI_CLOUDFLARE_RESOURCE_AUDIT_2026-10-31.md`; instrucțiunile runnerului sunt în `docs/AI_CONTENT_STUDIO.md`.

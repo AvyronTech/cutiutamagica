@@ -175,7 +175,7 @@ async function signedJson<T extends z.ZodTypeAny>(
     throw Object.assign(new Error("Cererea JSON nu este validă."), { statusCode: 400 });
   }
   const parsed = schema.safeParse(payload);
-  if (!parsed.success || parsed.data.runnerId !== verified.runnerId) {
+  if (!parsed.success || (parsed.data as { runnerId?: unknown }).runnerId !== verified.runnerId) {
     throw Object.assign(new Error("Datele runnerului nu sunt valide."), { statusCode: 400 });
   }
   return { runnerId: verified.runnerId, data: parsed.data };

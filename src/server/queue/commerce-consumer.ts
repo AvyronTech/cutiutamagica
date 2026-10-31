@@ -3,7 +3,14 @@ import {
   processAvyronSync,
   type AvyronQueueMessage,
 } from "@/server/queue/avyron-sync-consumer";
-import { sendOrderConfirmation, sendOrderOwnerNotification } from "@/server/integrations/resend";
+import {
+  EmailDeliveryUncertainError,
+  sendOrderConfirmation,
+  sendOrderOwnerNotification,
+  sendOrderShippedNotification,
+  sendReturnAcknowledgementForId,
+  sendReturnOwnerNotification,
+} from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 
 interface CommerceNotificationQueueMessage {
@@ -17,8 +24,17 @@ interface OrderEmailQueueMessage {
   orderId: string;
 }
 
+interface TransactionalEmailQueueMessage {
+  version: 3;
+  type: "order.shipped" | "return.email";
+  entityId: string;
+}
+
 type CommerceQueueMessage =
-  CommerceNotificationQueueMessage | OrderEmailQueueMessage | AvyronQueueMessage;
+  | CommerceNotificationQueueMessage
+  | OrderEmailQueueMessage
+  | TransactionalEmailQueueMessage
+  | AvyronQueueMessage;
 
 type OutboxRow = Record<string, string | number | null>;
 
@@ -36,6 +52,34 @@ function isOrderEmailQueueMessage(value: unknown): value is OrderEmailQueueMessa
     candidate.type === "order.email" &&
     typeof candidate.orderId === "string"
   );
+}
+
+function isTransactionalEmailQueueMessage(value: unknown): value is TransactionalEmailQueueMessage {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    candidate.version === 3 &&
+    (candidate.type === "order.shipped" || candidate.type === "return.email") &&
+    typeof candidate.entityId === "string"
+  );
+}
+
+async function settleEmailTasks(
+  tasks: Array<Promise<void>>,
+  label: string,
+  entityId: string,
+): Promise<"ack" | "retry"> {
+  const results = await Promise.allSettled(tasks);
+  const failures = results.filter((result) => result.status === "rejected");
+  for (const failure of failures) {
+    if (failure.status === "rejected") console.error(label, { entityId, error: failure.reason });
+  }
+  return failures.some(
+    (failure) =>
+      failure.status === "rejected" && !(failure.reason instanceof EmailDeliveryUncertainError),
+  )
+    ? "retry"
+    : "ack";
 }
 
 function parseNotificationPayload(payload: string): {
@@ -178,19 +222,34 @@ export async function consumeCommerceEvents(batch: MessageBatch<unknown>, env: E
       continue;
     }
     if (isOrderEmailQueueMessage(message.body)) {
-      try {
-        await Promise.all([
+      const action = await settleEmailTasks(
+        [
           sendOrderConfirmation(env as CommerceEnv, message.body.orderId),
           sendOrderOwnerNotification(env as CommerceEnv, message.body.orderId),
-        ]);
-        message.ack();
-      } catch (error) {
-        console.error("order.email_queue_failed", {
-          orderId: message.body.orderId,
-          error,
-        });
-        message.retry({ delaySeconds: 60 });
-      }
+        ],
+        "order.email_queue_failed",
+        message.body.orderId,
+      );
+      if (action === "retry") message.retry({ delaySeconds: 60 });
+      else message.ack();
+      continue;
+    }
+    if (isTransactionalEmailQueueMessage(message.body)) {
+      const body = message.body;
+      const tasks =
+        body.type === "order.shipped"
+          ? [sendOrderShippedNotification(env as CommerceEnv, body.entityId)]
+          : [
+              sendReturnAcknowledgementForId(env as CommerceEnv, body.entityId),
+              sendReturnOwnerNotification(env as CommerceEnv, body.entityId),
+            ];
+      const action = await settleEmailTasks(
+        tasks,
+        "transactional.email_queue_failed",
+        body.entityId,
+      );
+      if (action === "retry") message.retry({ delaySeconds: 60 });
+      else message.ack();
       continue;
     }
     if (!isCommerceQueueMessage(message.body)) {

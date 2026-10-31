@@ -71,6 +71,51 @@ afterEach(() => {
 });
 
 describe("admin password authentication", () => {
+  it("suspends unrotated seed accounts once a rotated owner is available", async () => {
+    const { db, sql } = database();
+    const rotatedLogin = await loginAdminWithPassword(
+      db,
+      request(),
+      "cutiutamagica@gmail.com",
+      "Magic123",
+    );
+    await changeAdminPassword(db, request(rotatedLogin.token), rotatedLogin.admin, "NouaParola123");
+    const seedLogin = await loginAdminWithPassword(
+      db,
+      request(undefined, "203.0.113.41"),
+      "ana@cutiutamagica.ro",
+      "Magic123",
+    );
+    sql.exec(
+      readFileSync(
+        resolve("cloudflare/d1/migrations/0085_suspend_unrotated_admin_seeds.sql"),
+        "utf8",
+      ),
+    );
+    expect(
+      sql.prepare("SELECT COUNT(*) AS count FROM admin_users WHERE status='suspended'").get(),
+    ).toMatchObject({ count: 1 });
+    await expect(authenticateAdminSession(db, request(seedLogin.token))).rejects.toMatchObject({
+      statusCode: 401,
+    });
+    await expect(
+      loginAdminWithPassword(
+        db,
+        request(undefined, "203.0.113.42"),
+        "ana@cutiutamagica.ro",
+        "Magic123",
+      ),
+    ).rejects.toMatchObject({ statusCode: 401 });
+    await expect(
+      loginAdminWithPassword(
+        db,
+        request(undefined, "203.0.113.43"),
+        "cutiutamagica@gmail.com",
+        "NouaParola123",
+      ),
+    ).resolves.toMatchObject({ admin: { mustChangePassword: false } });
+  }, 20_000);
+
   it("allows exactly the four seeded owners with the temporary password", async () => {
     const { db, sql } = database();
     const emails = [

@@ -5,6 +5,7 @@ import {
   emailTextToHtml,
   renderEmailTemplate,
 } from "./services/email-center";
+import { mayFallbackFromCloudflare } from "./integrations/resend";
 
 describe("email center", () => {
   it("accepts only branded sender addresses", () => {
@@ -38,5 +39,11 @@ describe("email center", () => {
     const html = emailTextToHtml("Salut <script>alert(1)</script>\n\nCutiuța Magică");
     expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("<script>");
+  });
+
+  it("permits provider fallback only after a definitive recipient rejection", () => {
+    expect(mayFallbackFromCloudflare({ code: "E_RECIPIENT_NOT_ALLOWED" })).toBe(true);
+    expect(mayFallbackFromCloudflare({ code: "PROVIDER_TIMEOUT" })).toBe(false);
+    expect(mayFallbackFromCloudflare(new Error("Network error"))).toBe(false);
   });
 });

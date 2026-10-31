@@ -22,7 +22,11 @@ import {
   sendPartnerMessage,
   setPartnerContactStatus,
 } from "@/lib/email.functions";
-import type { EmailChannel, EmailTemplateCode } from "@/lib/email-contracts";
+import {
+  allowedTemplateVariables,
+  type EmailChannel,
+  type EmailTemplateCode,
+} from "@/lib/email-contracts";
 import { CredentialPanel } from "./GrowthSettings";
 
 const input =
@@ -191,9 +195,10 @@ export default function EmailHub() {
           <div>
             <h2 className="font-semibold text-white">Starea serviciului</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Cloudflare Email Sending: {data.emailService ? "binding activ" : "neconfigurat"}.
+              Cloudflare Email Sending:{" "}
+              {data.emailService ? "binding prezent (livrarea necesită test)" : "neconfigurat"}.
               {data.resend?.configured
-                ? ` Resend: cheie configurată (${data.resend.status}).`
+                ? ` Resend: cheie configurată (${data.resend.status}); transport principal: ${data.settings.provider === "resend" ? "Resend" : "Cloudflare"}.`
                 : " Resend nu este configurat."}
             </p>
           </div>
@@ -249,7 +254,8 @@ export default function EmailHub() {
               <option value="resend">Resend</option>
             </select>
             <span className="block text-xs text-slate-500">
-              Dacă transportul principal eșuează, sistemul încearcă automat alternativa configurată.
+              Alternativa este încercată doar când furnizorul principal nu este configurat sau
+              refuză explicit destinatarul. O trimitere incertă nu este duplicată automat.
             </span>
           </label>
           <Field label="Nume expeditor" name="senderName" defaultValue={data.settings.senderName} />
@@ -348,10 +354,9 @@ export default function EmailHub() {
         <div className="grid gap-4 xl:grid-cols-2">
           {data.templates.map((template) => {
             const code = template.code as EmailTemplateCode;
-            const variables =
-              code === "order_confirmation"
-                ? "{{customer_name}}, {{order_number}}, {{total}}"
-                : "{{customer_name}}, {{return_number}}";
+            const variables = allowedTemplateVariables[code]
+              .map((variable) => `{{${variable}}}`)
+              .join(", ");
             return (
               <form
                 key={code}
@@ -528,7 +533,7 @@ export default function EmailHub() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-semibold text-white">Ultimele livrări Resend</h2>
+        <h2 className="font-semibold text-white">Ultimele încercări de trimitere</h2>
         {!data.operations.length ? (
           <p className="text-sm text-slate-400">Nu există încă trimiteri înregistrate.</p>
         ) : (
@@ -557,7 +562,7 @@ export default function EmailHub() {
                     <td className="max-w-sm truncate px-4 py-3 text-slate-400">
                       {operation.errorMessage
                         ? String(operation.errorMessage)
-                        : "Livrare acceptată"}
+                        : "Acceptat de furnizor; livrarea finală se verifică separat"}
                     </td>
                   </tr>
                 ))}

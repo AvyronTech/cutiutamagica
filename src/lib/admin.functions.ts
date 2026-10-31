@@ -14,6 +14,7 @@ import {
   hasEmailTransport,
   sendReferralInvitation,
   sendReferralReward,
+  sendOrderShippedNotification,
 } from "@/server/integrations/resend";
 import { awardMagicStarsForDeliveredOrder } from "@/server/services/magic-rewards";
 import { issueSmartShipAwb, reconcileSmartShipAwb } from "@/server/services/smartship-fulfillment";
@@ -770,6 +771,23 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
       actorId: context.admin.id,
       requestId,
     });
+    if (data.status === "Expediată" && order.version !== data.expectedVersion) {
+      try {
+        await env.COMMERCE_EVENTS.send({
+          version: 3,
+          type: "order.shipped",
+          entityId: data.orderId,
+        });
+      } catch (error) {
+        console.error("order.shipped_email_queue_failed", { orderId: data.orderId, error });
+        await sendOrderShippedNotification(env as CommerceEnv, data.orderId).catch((sendError) =>
+          console.error("order.shipped_email_fallback_failed", {
+            orderId: data.orderId,
+            error: sendError,
+          }),
+        );
+      }
+    }
     if (data.status === "Livrată") {
       const referral = await issuePostDeliveryReferral(env.DB, data.orderId);
       await awardMagicStarsForDeliveredOrder(env.DB, data.orderId);

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { assertPermission, requireAdminAuth } from "./admin-auth";
 import {
   emailSettingsSchema,
+  emailTemplateCodeSchema,
   emailTemplateInputSchema,
   emailTestSchema,
   partnerContactInputSchema,
@@ -220,7 +221,7 @@ export const sendPartnerMessage = createServerFn({ method: "POST" })
 
 export const getEmailTemplatePreview = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
-  .validator(z.object({ code: z.enum(["order_confirmation", "return_acknowledgement"]) }))
+  .validator(z.object({ code: emailTemplateCodeSchema }))
   .handler(async ({ context, data }) => {
     assertPermission(context.admin, "integrations.read");
     const template = await getEmailTemplate(env.DB, data.code);

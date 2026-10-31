@@ -5,7 +5,11 @@ import {
   createReturnRequest,
   getCommercePublicConfig,
 } from "@/server/db/commerce-operations.repository";
-import { hasEmailTransport, sendReturnAcknowledgement } from "@/server/integrations/resend";
+import {
+  hasEmailTransport,
+  sendReturnAcknowledgementForId,
+  sendReturnOwnerNotification,
+} from "@/server/integrations/resend";
 import { digestHex, ProviderError, type CommerceEnv } from "@/server/integrations/provider-runtime";
 import { credentialStatuses } from "@/server/services/growth-settings";
 
@@ -56,16 +60,30 @@ async function handleCreateReturn(
   }
   const result = await createReturnRequest(env.DB, parsed.data);
   if (await hasEmailTransport(env)) {
-    ctx.waitUntil(
-      sendReturnAcknowledgement(env, {
-        returnId: result.returnId,
-        returnNumber: result.returnNumber,
-        customerName: parsed.data.customerName,
-        email: parsed.data.email,
-      }).catch((error) =>
-        console.error("return.email_failed", { returnId: result.returnId, error }),
-      ),
-    );
+    try {
+      await env.COMMERCE_EVENTS.send({
+        version: 3,
+        type: "return.email",
+        entityId: result.returnId,
+      });
+    } catch (error) {
+      console.error("return.email_queue_failed", { returnId: result.returnId, error });
+      ctx.waitUntil(
+        Promise.allSettled([
+          sendReturnAcknowledgementForId(env, result.returnId),
+          sendReturnOwnerNotification(env, result.returnId),
+        ]).then((results) => {
+          for (const [index, outcome] of results.entries()) {
+            if (outcome.status === "rejected")
+              console.error("return.email_fallback_failed", {
+                returnId: result.returnId,
+                audience: index === 0 ? "customer" : "staff",
+                error: outcome.reason,
+              });
+          }
+        }),
+      );
+    }
   }
   const { returnId: _returnId, ...publicResult } = result;
   return json({ data: publicResult }, { status: 201 });

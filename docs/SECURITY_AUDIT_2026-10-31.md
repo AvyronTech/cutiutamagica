@@ -1,5 +1,11 @@
 # Audit de securitate — Cutiuța Magică — 31 octombrie 2026
 
+## Actualizare de release
+
+Migrarea append-only `0085_suspend_unrotated_admin_seeds.sql` suspendă conturile administrative active cu credențiale inițiale și revocă sesiunile lor numai dacă rămâne activ cel puțin un `owner` cu parola schimbată. Verificarea D1 de producție înainte de release a găsit două astfel de conturi, două conturi `owner` cu parolă schimbată și o sesiune activă aparținând unui cont rotit. Migrarea a fost testată local; rezultatul live trebuie verificat după aplicarea remote.
+
+Actualizarea `zod` la 4.6.7 și override-urile `seroval` 1.6.11 / `undici` 7.30.1 au trecut typecheck, lint, 334 de teste și dry run-ul Workerului. `npm audit --omit=dev` raportează zero advisories; arborele complet mai are 14 moderate. Aceste rezultate nu închid restul constatărilor P1/P2 din tabelul de mai jos.
+
 ## Scop și nivel de certitudine
 
 Audit read-only al codului din ramura locală `codex/admin-dashboard-ux-20261031`, al dependențelor instalate, al câtorva răspunsuri HTTP publice, al unor agregări D1 de producție și al protecției ramurii GitHub prin API. Am inspectat autentificarea administrativă și a clienților, checkoutul, plățile, formularele, chatul AI, încărcările media, Workerul, D1/R2/KV, PWA, backupurile și CI. Nu am încercat autentificări cu parola inițială, payloaduri de atac, teste de volum, plăți sau modificări remote. Configurația WAF/Bot Management, regulile de acces Cloudflare și drepturile efective R2 nu au putut fi confirmate prin această inspecție. Codul local nu este presupus identic cu Workerul publicat; datele marcate „live” provin numai din citiri publice ori D1 remote.
