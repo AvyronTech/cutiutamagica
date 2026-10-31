@@ -20108,43 +20108,45 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
   }
 }
 
-/* The shared footer ends with the brand; shopping and help stay easy to scan. */
+/* Compact footer: identity first, useful links together, invitation near the end. */
 .magic-footer {
   background: linear-gradient(150deg, #151b1a, #101718 62%, #111817);
 }
 .magic-footer-details {
-  padding: 30px 0 18px;
+  width: min(1120px, calc(100% - 32px));
+  padding: 24px 0 12px;
   border-top: 0;
 }
-.magic-footer-grid {
-  grid-template-columns: minmax(0, 2.15fr) minmax(260px, 0.85fr);
-  gap: clamp(24px, 4vw, 56px);
+.magic-footer-top {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  align-items: start;
+  gap: 28px;
 }
-.magic-footer-nav {
-  gap: clamp(16px, 2.5vw, 30px);
+.magic-footer-brand > a {
+  gap: 9px;
+  font-size: 22px;
 }
-.magic-footer-help > strong {
-  display: block;
-  margin-bottom: 10px;
-  color: #e4c18a;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
+.magic-footer-brandmark {
+  width: 38px;
+  height: 38px;
 }
-.magic-footer-help > p {
-  max-width: 270px;
-  color: #c1b5a5;
-  font-size: 12px;
-  line-height: 1.5;
+.magic-footer-brand p {
+  max-width: 300px;
+  margin-top: 6px;
+  color: #bfb09d;
+  font-size: 11px;
+  line-height: 1.4;
 }
 .magic-footer-contact {
-  gap: 9px;
-  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 2px 0 0;
 }
 .magic-footer-contact > div {
   display: grid;
-  gap: 1px;
+  gap: 3px;
 }
 .magic-footer-contact span {
   color: #a99f91;
@@ -20156,13 +20158,29 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
   color: #f0d8b4;
   font-size: 12px;
 }
+.magic-footer-nav {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 18px;
+  padding-top: 13px;
+  border-top: 1px solid #cfb07a22;
+}
+.magic-footer-nav > div {
+  gap: 1px;
+}
+.magic-footer-nav strong {
+  margin-bottom: 4px;
+}
+.magic-footer-nav a {
+  min-height: 25px;
+  font-size: 11px;
+}
 .magic-footer-invitation {
   width: 100%;
   max-width: none;
-  margin: 26px 0 0;
-  padding: 22px 0;
-  border-top: 1px solid #cfb07a26;
-  border-bottom: 1px solid #cfb07a1c;
+  margin: 16px 0 0;
+  padding: 14px 0;
+  border-top: 1px solid #cfb07a22;
   text-align: left;
 }
 .magic-footer-invitation-copy > span {
@@ -20173,7 +20191,7 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
 .magic-footer-invitation h2 {
   max-width: 680px;
   margin: 5px 0 0;
-  font-size: clamp(24px, 2.6vw, 32px);
+  font-size: clamp(23px, 2.5vw, 30px);
   line-height: 1.14;
 }
 .magic-footer .magic-footer-cta {
@@ -20182,26 +20200,13 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
   padding: 9px 17px;
   white-space: nowrap;
 }
-.magic-footer-trust {
-  margin: 0;
-  padding: 15px 0 13px;
-  border-top: 0;
-}
 .magic-footer-bottom {
   align-items: center;
   margin: 0;
-  padding: 15px 0 0;
-  border-top: 1px solid #cfb07a26;
+  padding: 12px 0 0;
+  border-top: 1px solid #cfb07a22;
   text-transform: none;
   letter-spacing: normal;
-}
-.magic-footer-brand > a {
-  gap: 9px;
-  font-size: 21px;
-}
-.magic-footer-brandmark {
-  width: 36px;
-  height: 36px;
 }
 .magic-footer-bottom > p {
   color: #b7a996;
@@ -20211,37 +20216,22 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
   height: 27px;
 }
 @media (max-width: 900px) {
-  .magic-footer-grid {
+  .magic-footer-top {
     grid-template-columns: 1fr;
-    gap: 22px;
-  }
-  .magic-footer-help {
-    padding-top: 18px;
-    border-top: 1px solid #cfb07a1c;
-  }
-  .magic-footer-help > p {
-    max-width: none;
+    gap: 15px;
   }
   .magic-footer-contact {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-  .magic-footer-invitation {
-    grid-template-columns: minmax(0, 1fr) auto;
+    margin-top: 0;
   }
 }
 @media (max-width: 767px) {
   .magic-footer-details {
-    padding: 25px 0 16px;
-  }
-  .magic-footer-nav {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    padding: 20px 0 12px;
   }
   .magic-footer-invitation {
     grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 18px 0;
+    gap: 10px;
+    padding: 13px 0;
   }
   .magic-footer-invitation .magic-footer-cta {
     grid-column: 1;
@@ -20252,28 +20242,43 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
   }
 }
 @media (max-width: 520px) {
-  .magic-footer-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px 12px;
+  .magic-footer-brand p {
+    max-width: 330px;
   }
   .magic-footer-contact {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 3px;
   }
   .magic-footer-contact > div {
-    grid-template-columns: 75px minmax(0, 1fr);
+    grid-template-columns: 65px minmax(0, 1fr);
     align-items: baseline;
-    gap: 7px;
+    gap: 8px;
+  }
+  .magic-footer-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 13px;
+    padding-top: 10px;
+  }
+  .magic-footer-nav strong {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .magic-footer-nav a {
+    min-height: 24px;
+    font-size: 10px;
+    line-height: 1.3;
   }
   .magic-footer-invitation h2 {
-    font-size: clamp(23px, 6vw, 28px);
+    font-size: clamp(22px, 6vw, 27px);
   }
   .magic-footer-invitation .magic-footer-cta {
     width: 100%;
   }
   .magic-footer-bottom {
     display: flex;
-    gap: 10px;
+    gap: 9px;
   }
   .magic-footer-bottom > p {
     width: 100%;

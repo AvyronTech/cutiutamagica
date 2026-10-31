@@ -7,10 +7,10 @@ const navGroups = [
   {
     title: "Alege cutiuța",
     items: [
-      { to: "/produse", label: "Cutiuțe muzicale" },
+      { to: "/produse", label: "Cutiuțe" },
       { to: "/cadouri", label: "Idei de cadouri" },
       { to: "/ghid-cadouri-personalizate", label: "Ghid de alegere" },
-      { to: "/personalizeaza", label: "Personalizare · în curând" },
+      { to: "/personalizeaza", label: "Personalizare" },
     ],
   },
   {
@@ -27,8 +27,8 @@ const navGroups = [
     title: "Informații",
     items: [
       { to: "/despre-cutiuta", label: "Despre cutiuță" },
-      { to: "/termeni-de-utilizare", label: "Termeni de utilizare" },
-      { to: "/politica-de-confidentialitate", label: "Politica de confidențialitate" },
+      { to: "/termeni-de-utilizare", label: "Termeni" },
+      { to: "/politica-de-confidentialitate", label: "Confidențialitate" },
       { to: "/despre-noi", label: "Despre noi" },
     ],
   },
@@ -39,39 +39,44 @@ export function Footer() {
   return (
     <footer className="magic-footer text-[color:var(--cream)]">
       <div className="magic-footer-details">
-        <div className="magic-footer-grid">
-          <nav className="magic-footer-nav" aria-label="Navigare subsol">
-            {navGroups.map((group) => (
-              <div key={group.title}>
-                <strong>{group.title}</strong>
-                {group.items.map((item) => (
-                  <Link key={item.to} to={item.to}>
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            ))}
-          </nav>
-
-          <div className="magic-footer-help">
-            <strong>Vorbim despre cutiuța ta</strong>
-            <p>Întrebări despre alegere sau o comandă? Scrie-ne direct.</p>
-            <address className="magic-footer-contact">
-              <div>
-                <span>Întrebări</span>
-                <a href="mailto:contact@cutiutamagica.eu">contact@cutiutamagica.eu</a>
-              </div>
-              <div>
-                <span>Comenzi</span>
-                <a href="mailto:comenzi@cutiutamagica.eu">comenzi@cutiutamagica.eu</a>
-              </div>
-              <div>
-                <span>Telefon</span>
-                <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
-              </div>
-            </address>
+        <div className="magic-footer-top">
+          <div className="magic-footer-brand">
+            <Link to="/" aria-label="Cutiuța Magică — Acasă">
+              <BrandMark className="magic-footer-brandmark" />
+              <span>
+                Cutiuța <em>Magică</em>
+              </span>
+            </Link>
+            <p>O cutiuță din lemn, o manivelă și o melodie pentru cineva drag.</p>
           </div>
+          <address className="magic-footer-contact">
+            <div>
+              <span>Întrebări</span>
+              <a href="mailto:contact@cutiutamagica.eu">contact@cutiutamagica.eu</a>
+            </div>
+            <div>
+              <span>Comenzi</span>
+              <a href="mailto:comenzi@cutiutamagica.eu">comenzi@cutiutamagica.eu</a>
+            </div>
+            <div>
+              <span>Telefon</span>
+              <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
+            </div>
+          </address>
         </div>
+
+        <nav className="magic-footer-nav" aria-label="Navigare subsol">
+          {navGroups.map((group) => (
+            <div key={group.title}>
+              <strong>{group.title}</strong>
+              {group.items.map((item) => (
+                <Link key={item.to} to={item.to}>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
 
         <div className="magic-footer-invitation">
           <div className="magic-footer-invitation-copy">
@@ -85,19 +90,8 @@ export function Footer() {
           </Link>
         </div>
 
-        <div className="magic-footer-trust">
-          <FooterTrustBadges />
-        </div>
-
         <div className="magic-footer-bottom">
-          <div className="magic-footer-brand">
-            <Link to="/" aria-label="Cutiuța Magică — Acasă">
-              <BrandMark className="magic-footer-brandmark" />
-              <span>
-                Cutiuța <em>Magică</em>
-              </span>
-            </Link>
-          </div>
+          <FooterTrustBadges />
           <p>© {year} Cutiuța Magică</p>
           <a
             href="https://avyron.ro"
