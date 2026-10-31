@@ -2,10 +2,11 @@
 
 ## Handoff 2026-10-31 — subsol clar și compact
 
+- Release confirmat: PR #56 a trecut CI și a fost integrat la `13a15c92f3b23aa5d751268a2a049ed2a83da1c7`. Workerul `cutiuta-magica-store` a fost publicat din acest commit ca versiunea `f88feb30-e9ec-4be4-a8a4-81eceee1eb68`, distribuită 100%. `/api/v1/health` răspunde 200 cu `production` și schema D1 86.
+- Verificare live după deploy: subsolul paginii principale are circa 513 px desktop și 1049 px la 390 px mobil, fără overflow orizontal. DOM confirmă contactul și comenzile înaintea invitației, marca la final, trei legături `mailto`/`tel` corecte, fără decorul animat. În „Contactează-ne” rămân WhatsApp, Telefon și Email; Messenger lipsește. Nu au fost trimise mesaje sau plasate comenzi.
 - Scop: subsolul comun începe cu navigarea și un grup separat pentru întrebări, comenzi și telefon; invitația „O melodie poate spune atât de mult” este mai jos, într-o bandă discretă, iar ultimul rând conține marca Cutiuța Magică, copyrightul și creditul secundar AVYRON. Decorul animat al vechiului footer nu se mai montează. Messenger a fost eliminat numai din „Contactează-ne”; WhatsApp, telefonul și e-mailul rămân.
 - Ramura `codex/footer-clarity-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `cc2dfeb`. Fișiere: `src/components/site/{Footer,ConnectSection}.tsx`, `src/styles.css`, `docs/AGENT_HANDOFF.md` și `docs/PROJECT_CONTINUITY.md`. Nu există migrare D1 sau configurare externă.
 - Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Capturile desktop 1440×900 și mobil 390×844 au fost inspectate în Chrome DevTools pe pagina locală; subsolul are circa 513 px desktop și 1049 px mobil, fără overflow orizontal. Toate linkurile de navigare și cele trei contactări rămân în DOM; Messenger lipsește. Nu au fost testate trimiteri de mesaj sau comenzi.
-- Stare la redactare: schimbare locală verificată; PR și verificarea live sunt pași separați.
 
 ## Handoff 2026-10-31 — pagină de produs compactă și conversie
 
