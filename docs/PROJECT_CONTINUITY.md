@@ -37,6 +37,8 @@ Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți ag
 
 ## Stare de reluare
 
+- Actualizare locală 31 octombrie: ramura `codex/footer-clarity-20261031` reordonează subsolul comun, grupează contactul și comenzile, mută invitația spre catalog mai jos, termină cu identitatea magazinului și elimină Messenger din „Contactează-ne”. Verificările locale și capturile desktop/mobil au trecut; vezi primul handoff. Această intrare nu atestă publicarea.
+
 - Release 31 octombrie: PR #54, integrat la `3dbf6f5`, compactează fișele tuturor celor zece produse, limitează distribuirea la cinci canale plus distribuirea nativă, schimbă CTA-ul din fișa produsului în „Comandă acum”, separă „Dincolo de capac” de FAQ și înlocuiește eticheta generică de vârstă cu formulări tematice. Workerul rulează versiunea `c9fcbacb-5a8c-499b-aefb-47ff7a5b7621` la 100%. Pagina „Winter Is Coming” și health au fost verificate live; detaliile și limitele sunt în primul handoff. Indexarea Google nu este atestată de această verificare.
 
 - Corecție production 31 octombrie, după release: la cererea administratorului, migrarea 0086 a reactivat exact cele două conturi `owner` suspendate de 0085. D1 este la schema 86, ambele conturi sunt `active`, parolele/rolurile/MFA nu au fost modificate, iar health răspunde 200 cu schema 86. Nu reintroduce suspendarea și nu planifica MFA pentru acest magazin fără o cerere nouă și explicită. Detaliile sunt în primul handoff.

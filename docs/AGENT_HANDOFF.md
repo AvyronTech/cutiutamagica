@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-31 — subsol clar și compact
+
+- Scop: subsolul comun începe cu navigarea și un grup separat pentru întrebări, comenzi și telefon; invitația „O melodie poate spune atât de mult” este mai jos, într-o bandă discretă, iar ultimul rând conține marca Cutiuța Magică, copyrightul și creditul secundar AVYRON. Decorul animat al vechiului footer nu se mai montează. Messenger a fost eliminat numai din „Contactează-ne”; WhatsApp, telefonul și e-mailul rămân.
+- Ramura `codex/footer-clarity-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `cc2dfeb`. Fișiere: `src/components/site/{Footer,ConnectSection}.tsx`, `src/styles.css`, `docs/AGENT_HANDOFF.md` și `docs/PROJECT_CONTINUITY.md`. Nu există migrare D1 sau configurare externă.
+- Verificări: `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Capturile desktop 1440×900 și mobil 390×844 au fost inspectate în Chrome DevTools pe pagina locală; subsolul are circa 513 px desktop și 1049 px mobil, fără overflow orizontal. Toate linkurile de navigare și cele trei contactări rămân în DOM; Messenger lipsește. Nu au fost testate trimiteri de mesaj sau comenzi.
+- Stare la redactare: schimbare locală verificată; PR și verificarea live sunt pași separați.
+
 ## Handoff 2026-10-31 — pagină de produs compactă și conversie
 
 - Release confirmat: PR #54 a trecut CI și a fost integrat la `3dbf6f5501e64b338b246f427efbee2dcebf0388`. Workerul `cutiuta-magica-store` a fost publicat din acest commit ca versiunea `c9fcbacb-5a8c-499b-aefb-47ff7a5b7621`; `wrangler deployments list` o arată distribuită 100% pe domeniile configurate. `/api/v1/health` răspunde 200 cu `production` și schema 86.

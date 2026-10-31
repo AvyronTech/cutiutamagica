@@ -1,27 +1,26 @@
 import { Link } from "@tanstack/react-router";
 import { BrandMark } from "./BrandMark";
-import { FooterScene } from "./FooterScene";
 import avyronLogo from "@/assets/avyron-logo.jpg";
 import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/whatsapp";
 
 const navGroups = [
   {
-    title: "Descoperă",
+    title: "Alege cutiuța",
     items: [
       { to: "/produse", label: "Cutiuțe muzicale" },
-      { to: "/personalizeaza", label: "Personalizare · în curând" },
       { to: "/cadouri", label: "Idei de cadouri" },
       { to: "/ghid-cadouri-personalizate", label: "Ghid de alegere" },
-      { to: "/magic-rewards", label: "Magic Rewards" },
+      { to: "/personalizeaza", label: "Personalizare · în curând" },
     ],
   },
   {
-    title: "Ajutor",
+    title: "Comanda ta",
     items: [
-      { to: "/livrare", label: "Livrare" },
       { to: "/comanda", label: "Comandă" },
+      { to: "/livrare", label: "Livrare" },
       { to: "/retur", label: "Retur și garanție" },
       { to: "/cont", label: "Contul meu" },
+      { to: "/magic-rewards", label: "Magic Rewards" },
     ],
   },
   {
@@ -39,37 +38,8 @@ export function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer className="magic-footer text-[color:var(--cream)]">
-      <FooterScene />
-      <div className="magic-footer-invitation">
-        <div className="magic-footer-invitation-copy">
-          <span>O melodie poate spune atât de mult.</span>
-          <h2>
-            Alege amintirea pe care
-            <br />
-            <em>o vei dărui.</em>
-          </h2>
-        </div>
-        <Link to="/produse" className="magic-footer-cta">
-          Găsește cutiuța potrivită <span aria-hidden>↗</span>
-        </Link>
-      </div>
       <div className="magic-footer-details">
         <div className="magic-footer-grid">
-          <div className="magic-footer-brand">
-            <Link to="/" aria-label="Cutiuța Magică — Acasă">
-              <BrandMark className="magic-footer-brandmark" />
-              <span>
-                Cutiuța <em>Magică</em>
-              </span>
-            </Link>
-            <p>O cutiuță din lemn, o manivelă și o melodie aleasă pentru cineva drag.</p>
-            <address className="magic-footer-contact">
-              <a href="mailto:contact@cutiutamagica.eu">Contact: contact@cutiutamagica.eu</a>
-              <a href="mailto:comenzi@cutiutamagica.eu">Comenzi: comenzi@cutiutamagica.eu</a>
-              <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
-            </address>
-          </div>
-
           <nav className="magic-footer-nav" aria-label="Navigare subsol">
             {navGroups.map((group) => (
               <div key={group.title}>
@@ -82,11 +52,53 @@ export function Footer() {
               </div>
             ))}
           </nav>
+
+          <div className="magic-footer-help">
+            <strong>Vorbim despre cutiuța ta</strong>
+            <p>Întrebări despre alegere sau o comandă? Scrie-ne direct.</p>
+            <address className="magic-footer-contact">
+              <div>
+                <span>Întrebări</span>
+                <a href="mailto:contact@cutiutamagica.eu">contact@cutiutamagica.eu</a>
+              </div>
+              <div>
+                <span>Comenzi</span>
+                <a href="mailto:comenzi@cutiutamagica.eu">comenzi@cutiutamagica.eu</a>
+              </div>
+              <div>
+                <span>Telefon</span>
+                <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>
+              </div>
+            </address>
+          </div>
+        </div>
+
+        <div className="magic-footer-invitation">
+          <div className="magic-footer-invitation-copy">
+            <span>O melodie poate spune atât de mult.</span>
+            <h2>
+              Alege amintirea pe care <em>o vei dărui.</em>
+            </h2>
+          </div>
+          <Link to="/produse" className="magic-footer-cta">
+            Găsește cutiuța potrivită <span aria-hidden>↗</span>
+          </Link>
         </div>
 
         <div className="magic-footer-trust">
           <FooterTrustBadges />
+        </div>
 
+        <div className="magic-footer-bottom">
+          <div className="magic-footer-brand">
+            <Link to="/" aria-label="Cutiuța Magică — Acasă">
+              <BrandMark className="magic-footer-brandmark" />
+              <span>
+                Cutiuța <em>Magică</em>
+              </span>
+            </Link>
+          </div>
+          <p>© {year} Cutiuța Magică</p>
           <a
             href="https://avyron.ro"
             target="_blank"
@@ -103,11 +115,6 @@ export function Footer() {
               decoding="async"
             />
           </a>
-        </div>
-
-        <div className="magic-footer-bottom">
-          <p>© {year} Cutiuța Magică</p>
-          <p>Lemn · manivelă · melodie</p>
         </div>
       </div>
     </footer>
