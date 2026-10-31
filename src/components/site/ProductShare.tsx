@@ -131,7 +131,6 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
               onClick={() => {
                 if (target.group === "retele") void recordRewardShare(target.id);
               }}
-              aria-label={`Distribuie pe ${target.label}`}
             >
               <ChannelIcon channel={target.id} />
               <span>{target.label}</span>
