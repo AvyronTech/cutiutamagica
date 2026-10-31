@@ -40,9 +40,22 @@ interpretată drept programare reușită.
   revizie, 0 programate confirmat, snapshot 6/20, 0 viitoare și 5 corectate; Marketing afișează
   „revizie nouă necesară”. Capturi: `docs/release-evidence/2026-10-29/`.
 
-## Efecte externe rămase
+## Release production — 2026-10-29
 
-Nu s-au făcut încă push, merge, deploy, migrare D1 remote, publicare socială sau modificare de
-conector. Pentru producție, migrațiile `0082` și `0083` trebuie aplicate în ordine înaintea codului.
-Media `review_required`, conversațiile-test și comenzile nu sunt mutate automat de această
-remediere.
+- PR #48 a fost integrat în ramura de referință la commitul `c08fac5271a7dbd7b8b9e2bae53a965fe6a1593d`;
+- înaintea migrării a fost salvat bookmarkul D1 Time Travel
+  `00000b80-00000000-00005113-4bf7f1f7175d591dead44d723eac67eb`;
+- migrațiile `0082` și `0083` au fost aplicate remote în această ordine, fără migrații rămase;
+- D1 remote a confirmat schema 83, snapshotul Metricool 6/20 cu zero programări viitoare, exact
+  cinci postări în `review`, zero operațiuni provider confirmate pentru programare și
+  `PRAGMA foreign_key_check` fără rezultate;
+- Workerul `cutiuta-magica-store` a fost publicat la versiunea
+  `0c6e0af0-ab0c-4a11-a5fa-4f1de059db52` pe domeniile configurate;
+- `https://cutiutamagica.eu/` și `/api/v1/health` au răspuns 200; health a confirmat mediul
+  `production` și schema 83; endpointul administrativ a răspuns 401 fără sesiune.
+
+## Blocaje păstrate intenționat
+
+Conectorul backend de publicare rămâne neconfirmat până la o citire oficială și o probă controlată.
+Media `review_required` nu este promovată automat, iar conversațiile-test și comenzile nu sunt
+mutate de această remediere. Nu s-a executat nicio publicare socială, reîncercare sau duplicare.
