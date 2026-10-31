@@ -24,6 +24,8 @@ FAQ-ul produsului descrie acum decorurile din fotografii fără să enumere lum�
 
 Tipizarea, 328 teste, lint, build, dry-run-ul Cloudflare și `git diff --check` au trecut. XML-urile statice construite se parsează: indexul conține trei sitemapuri, paginile esențiale opt URL-uri și sitemapul ghidurilor 23. Testele verifică alinierea listelor canonice și cache-ul produselor.
 
+FAQ-ul schimbat a fost verificat în preview cu D1 local la 1440 × 900 și 390 × 844: răspunsul este lizibil și fără depășire orizontală. [Captura desktop](../release-evidence/2026-10-31-seo/product-faq-desktop-1440.jpg) și [captura mobilă](../release-evidence/2026-10-31-seo/product-faq-mobile-390.jpg) păstrează dovada vizuală.
+
 Nu s-a făcut deploy. Noua structură trebuie verificată public și trimisă în GSC după o lansare aprobată; până atunci GSC vede structura anterioară. Eroarea generică actuală a XML-ului nu are o cauză demonstrată, iar schimbarea statică este o măsură de fiabilitate, nu o remediere Google confirmată. Google poate alege să nu indexeze URL-uri eligibile, mai ales pe un site nou cu puține semnale externe.
 
 Pentru conversii, codul emite evenimente de vizualizare produs, adăugare în coș și început de checkout; evenimentul de cumpărare este înregistrat de server după comanda confirmată. Numărul mic de afișări organice nu susține încă experimente de text orientate spre rată de conversie. Prioritatea este descoperirea celor cinci produse comandabile și a paginilor de alegere cu intenție comercială reală, apoi măsurarea clicurilor și comenzilor confirmate.
