@@ -35,7 +35,10 @@ Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți ag
 3. Adaugă în capul `docs/AGENT_HANDOFF.md`: scop, ramură/bază/commit, fișiere, migrații, verificări cu rezultat, capturi desktop/mobil, ce a fost verificat live, ce lipsește și orice aprobare/configurare externă rămasă.
 4. Predă prin PR către `codex/cutiuta-cloudflare-final` numai după cererea explicită de push/PR. Merge, deploy, migrarea remote, DNS, activarea unui furnizor și plățile reale sunt decizii separate, cu aprobare explicită în conversația curentă.
 
-## Stare de reluare la 26 octombrie 2026
+## Stare de reluare
+
+- Release production 31 octombrie: PR #50 (`80a0b75`) și PR #51 (`314f2ea`) sunt integrate în `codex/cutiuta-cloudflare-final`. Migrațiile 0084–0085 sunt aplicate în D1 production, schema este 85, iar Workerul `cutiuta-magica-store` rulează versiunea `54c424a2-5b89-42c6-9853-7f3480fa8515`, distribuită 100%. Resend este transportul principal, cinci șabloane e-mail sunt active, doi `owner` cu parolă schimbată rămân activi, iar două conturi inițiale sunt suspendate. `foreign_key_check` este curat. Toate cele 38 de URL-uri din sitemapurile copil răspund 200 și `/api/v1/health` confirmă mediul `production`/schema 85. Auditul mobil final al unui produs are 56 verificări trecute, zero eșuate. Detaliile și limitele sunt în prima intrare din `docs/AGENT_HANDOFF.md`.
+- Blocaje rămase: GSC trebuie să proceseze din nou sitemapul și să confirme indexarea; nu există dovadă nouă de livrare a e-mailului în inbox. Cheia Brave Search a fost amânată de utilizator, iar runnerul AI local necesită secretul HMAC și modelele locale. Constatările P1/P2 de securitate sunt în `docs/SECURITY_AUDIT_2026-10-31.md`. Intrările „Actualizare locală” de mai jos descriu starea anterioară releaseului.
 
 - Actualizare locală 31 octombrie: release-ul include migrarea 0085 pentru suspendarea controlată a conturilor admin cu credențiale inițiale și actualizări ale dependențelor Zod/Seroval/Undici. Auditul de producție al pachetelor este zero după actualizare; constatările P1/P2 din auditul de securitate rămân deschise. Starea publicată se verifică separat de această pregătire.
 

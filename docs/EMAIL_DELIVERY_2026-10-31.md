@@ -1,6 +1,10 @@
 # E-mail tranzacțional — audit și pregătire, 31 octombrie 2026
 
-## Stare verificată
+## Actualizare după release — 31 octombrie
+
+PR #50 a fost integrat și migrarea 0084 a fost aplicată în D1 production. Providerul principal este acum `resend`, iar toate cele cinci șabloane sunt active. Workerul final este versiunea `54c424a2-5b89-42c6-9853-7f3480fa8515`. Health confirmă schema 85. Nu s-a făcut o comandă reală sau o trimitere de probă după release, deci livrarea în inbox și webhookurile de livrare rămân neconfirmate. Datele de mai jos descriu auditul dinaintea releaseului.
+
+## Stare verificată înainte de release
 
 - D1 de producție are o cheie `resend` criptată, marcată `verified` la 17 octombrie. Valoarea cheii nu a fost citită ori afișată.
 - Transportul principal din D1 este încă `cloudflare_email`. Jurnalul are trei refuzuri `E_RECIPIENT_NOT_ALLOWED`; un mesaj de comandă a fost apoi acceptat de Resend (HTTP 200) la 22 octombrie. Acceptarea API nu dovedește livrarea finală în inbox.
