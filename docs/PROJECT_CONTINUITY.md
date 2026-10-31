@@ -37,6 +37,8 @@ Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți ag
 
 ## Stare de reluare
 
+- Corecție locală 31 octombrie: `codex/footer-invitation-under-brand-20261031` mută invitația cu „O melodie poate spune atât de mult” imediat după descrierea de sub sigla Cutiuța Magică. Contactele și cele trei coloane de navigare urmează după acest grup pe mobil. Vezi primul handoff; verifică separat starea live după publicare.
+
 - Corecție publicată 31 octombrie: PR #60 (`ea84e36`) mută identitatea Cutiuța Magică la începutul subsolului și păstrează „Alege cutiuța”, „Comanda ta” și „Informații” pe un singur rând inclusiv la 320 px. Înlocuiește aranjarea subsolului din PR #56, unde sigla era la final. Workerul rulează versiunea `5c6b02d9-d16d-471b-8dd9-ba26fcaa8a19` la 100%; pagina principală și health au fost verificate live. Vezi primul handoff.
 
 - Release 31 octombrie: PR #58, integrat la `e87df05`, mută cardul „Despre noi” între social și contact, pune Magic Drop imediat sub calendar și reduce calendarul la un mesaj, canalele opționale, un exemplu și CTA. Workerul rulează versiunea `8ff7cf32-3f4d-473d-bb11-9c87c2436f5f` la 100%; pagina principală și health au fost verificate live. Detalii în primul handoff.

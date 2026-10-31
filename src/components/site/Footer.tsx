@@ -48,6 +48,17 @@ export function Footer() {
               </span>
             </Link>
             <p>O cutiuță din lemn, o manivelă și o melodie pentru cineva drag.</p>
+            <div className="magic-footer-invitation">
+              <div className="magic-footer-invitation-copy">
+                <span>O melodie poate spune atât de mult.</span>
+                <h2>
+                  Alege amintirea pe care <em>o vei dărui.</em>
+                </h2>
+              </div>
+              <Link to="/produse" className="magic-footer-cta">
+                Găsește cutiuța potrivită <span aria-hidden>↗</span>
+              </Link>
+            </div>
           </div>
           <address className="magic-footer-contact">
             <div>
@@ -77,18 +88,6 @@ export function Footer() {
             </div>
           ))}
         </nav>
-
-        <div className="magic-footer-invitation">
-          <div className="magic-footer-invitation-copy">
-            <span>O melodie poate spune atât de mult.</span>
-            <h2>
-              Alege amintirea pe care <em>o vei dărui.</em>
-            </h2>
-          </div>
-          <Link to="/produse" className="magic-footer-cta">
-            Găsește cutiuța potrivită <span aria-hidden>↗</span>
-          </Link>
-        </div>
 
         <div className="magic-footer-bottom">
           <FooterTrustBadges />
