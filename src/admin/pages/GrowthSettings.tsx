@@ -188,6 +188,9 @@ export default function GrowthSettings({
     );
   if (!query.data) return <p role="status">Se încarcă setările...</p>;
   const data = query.data;
+  const braveConfigured = data.credentials.some(
+    (item) => item.provider === "brave" && item.configured,
+  );
   const title = {
     owner_reports: "E-mail și rapoarte proprietari",
     traffic: "Trafic și audiență",
@@ -364,6 +367,18 @@ export default function GrowthSettings({
         )}
         {section === "supplier_research" && (
           <>
+            <div
+              className={`rounded-lg border p-4 text-sm ${braveConfigured ? "border-emerald-300/25 bg-emerald-300/5 text-emerald-100" : "border-amber-300/25 bg-amber-300/5 text-amber-100"}`}
+            >
+              <strong>
+                {braveConfigured ? "Cheie Brave Search configurată" : "Cheia Brave Search lipsește"}
+              </strong>
+              <p className="mt-1 leading-6">
+                {braveConfigured
+                  ? "Pentru a confirma accesul și relevanța, rulează o cercetare din fișa unui produs. Rezultatele rămân sugestii de verificat."
+                  : "Adaugă cheia în panoul Conexiuni API de mai jos sau ca secret Worker BRAVE_SEARCH_API_KEY. Fără cheie, căutarea din fișa produsului rămâne dezactivată."}
+              </p>
+            </div>
             {toggle("enabled", "Activează agentul de cercetare asistată", data.research.enabled)}
             {field(
               "maxDailyRuns",
@@ -405,6 +420,11 @@ export default function GrowthSettings({
                   : ["brave"]
           }
         />
+      )}
+      {section === "supplier_research" && (
+        <a href="/admin/procurement" className="inline-flex text-sm text-cyan-200 underline">
+          Surse pentru atelierul de personalizare
+        </a>
       )}
       {(section === "owner_reports" || section === "finance") && (
         <div className="space-y-4">

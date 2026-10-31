@@ -52,6 +52,7 @@ import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminPersonalizationsRouteImport } from './routes/_authenticated/admin/personalizations'
 import { Route as AuthenticatedAdminPlatformsRouteImport } from './routes/_authenticated/admin/platforms'
 import { Route as AuthenticatedAdminPostsRouteImport } from './routes/_authenticated/admin/posts'
+import { Route as AuthenticatedAdminProcurementRouteImport } from './routes/_authenticated/admin/procurement'
 import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin/products'
 import { Route as AuthenticatedAdminPromotionsRouteImport } from './routes/_authenticated/admin/promotions'
 import { Route as AuthenticatedAdminQrGeneratorRouteImport } from './routes/_authenticated/admin/qr-generator'
@@ -300,6 +301,12 @@ const AuthenticatedAdminPostsRoute = AuthenticatedAdminPostsRouteImport.update({
   path: '/posts',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminProcurementRoute =
+  AuthenticatedAdminProcurementRouteImport.update({
+    id: '/procurement',
+    path: '/procurement',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminProductsRoute =
   AuthenticatedAdminProductsRouteImport.update({
     id: '/products',
@@ -444,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/admin/personalizations': typeof AuthenticatedAdminPersonalizationsRoute
   '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/admin/procurement': typeof AuthenticatedAdminProcurementRoute
   '/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
@@ -504,6 +512,7 @@ export interface FileRoutesByTo {
   '/admin/personalizations': typeof AuthenticatedAdminPersonalizationsRoute
   '/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/admin/procurement': typeof AuthenticatedAdminProcurementRoute
   '/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
@@ -566,6 +575,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/personalizations': typeof AuthenticatedAdminPersonalizationsRoute
   '/_authenticated/admin/platforms': typeof AuthenticatedAdminPlatformsRoute
   '/_authenticated/admin/posts': typeof AuthenticatedAdminPostsRoute
+  '/_authenticated/admin/procurement': typeof AuthenticatedAdminProcurementRoute
   '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRouteWithChildren
   '/_authenticated/admin/promotions': typeof AuthenticatedAdminPromotionsRoute
   '/_authenticated/admin/qr-generator': typeof AuthenticatedAdminQrGeneratorRoute
@@ -629,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/personalizations'
     | '/admin/platforms'
     | '/admin/posts'
+    | '/admin/procurement'
     | '/admin/products'
     | '/admin/promotions'
     | '/admin/qr-generator'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/admin/personalizations'
     | '/admin/platforms'
     | '/admin/posts'
+    | '/admin/procurement'
     | '/admin/promotions'
     | '/admin/qr-generator'
     | '/admin/referrals'
@@ -750,6 +762,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/personalizations'
     | '/_authenticated/admin/platforms'
     | '/_authenticated/admin/posts'
+    | '/_authenticated/admin/procurement'
     | '/_authenticated/admin/products'
     | '/_authenticated/admin/promotions'
     | '/_authenticated/admin/qr-generator'
@@ -1100,6 +1113,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPostsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/procurement': {
+      id: '/_authenticated/admin/procurement'
+      path: '/procurement'
+      fullPath: '/admin/procurement'
+      preLoaderRoute: typeof AuthenticatedAdminProcurementRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/products': {
       id: '/_authenticated/admin/products'
       path: '/products'
@@ -1259,6 +1279,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPersonalizationsRoute: typeof AuthenticatedAdminPersonalizationsRoute
   AuthenticatedAdminPlatformsRoute: typeof AuthenticatedAdminPlatformsRoute
   AuthenticatedAdminPostsRoute: typeof AuthenticatedAdminPostsRoute
+  AuthenticatedAdminProcurementRoute: typeof AuthenticatedAdminProcurementRoute
   AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRouteWithChildren
   AuthenticatedAdminPromotionsRoute: typeof AuthenticatedAdminPromotionsRoute
   AuthenticatedAdminQrGeneratorRoute: typeof AuthenticatedAdminQrGeneratorRoute
@@ -1296,6 +1317,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminPersonalizationsRoute,
     AuthenticatedAdminPlatformsRoute: AuthenticatedAdminPlatformsRoute,
     AuthenticatedAdminPostsRoute: AuthenticatedAdminPostsRoute,
+    AuthenticatedAdminProcurementRoute: AuthenticatedAdminProcurementRoute,
     AuthenticatedAdminProductsRoute:
       AuthenticatedAdminProductsRouteWithChildren,
     AuthenticatedAdminPromotionsRoute: AuthenticatedAdminPromotionsRoute,

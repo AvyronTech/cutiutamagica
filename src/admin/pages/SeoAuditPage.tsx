@@ -162,16 +162,26 @@ export default function SeoAuditPage() {
                         <h3 className="font-medium text-white">{finding.title}</h3>
                         <p className="mt-1 text-sm text-slate-300">{finding.detail}</p>
                         <p className="mt-2 text-sm text-cyan-200">{finding.action}</p>
-                        {finding.path ? (
-                          <a
-                            href={finding.path}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-flex items-center gap-1 text-xs text-slate-400 underline underline-offset-2"
-                          >
-                            Vezi pagina publică <ExternalLink size={13} />
-                          </a>
-                        ) : null}
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                          {finding.adminPath && (
+                            <a
+                              href={finding.adminPath}
+                              className="text-xs font-semibold text-cyan-200 underline underline-offset-2"
+                            >
+                              Corectează în fișa produsului
+                            </a>
+                          )}
+                          {finding.path && (
+                            <a
+                              href={finding.path}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-slate-300 underline underline-offset-2"
+                            >
+                              Vezi pagina publică <ExternalLink size={13} />
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </li>

@@ -37,6 +37,8 @@ Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți ag
 
 ## Stare de reluare la 26 octombrie 2026
 
+- Actualizare locală 31 octombrie: `codex/admin-dashboard-ux-20261031` include schimbările SEO locale anterioare și reorganizează fișa produsului, auditul SEO, cercetarea furnizorilor și administrarea personalizării. Cheia Brave Search rămâne neconfigurată la cererea utilizatorului; interfața arată blocajul și nu pornește căutarea. Ecranele administrative nu au fost încă inspectate vizual prin sesiune autentificată. Vezi primul handoff din `docs/AGENT_HANDOFF.md`.
+
 - Actualizare locală 31 octombrie: ramura `codex/seo-indexing-20261031` pregătește un index `sitemap.xml` static, sitemapuri copil pentru pagini esențiale, produse din D1 și ghiduri, plus sitemap text de rezervă. GSC încă raportează eroare generică pentru vechiul XML, în timp ce textul și ghidurile sunt citite cu succes. Produsul „Winter Is Coming” este confirmat în index prin inspecție individuală; pentru „You Are My Sunshine” și `/cadouri/pentru-mama` Google a confirmat doar solicitările de indexare. Schimbarea de cod nu este publicată. Vezi [handofful auditului](handoff/2026-10-31-seo-indexing-audit.md).
 
 - La 29 octombrie, reconcilierea programărilor sociale este pregătită pe ramura `codex/social-schedule-reconciliation`: o stare locală `scheduled` nu mai este adevăr extern fără chitanță provider reușită și ID extern. Migrarea 0082 adaugă evidența/snapshotul, iar 0083 mută programările neconfirmate în revizie și invalidează aprobările vechi. În producție, cele două migrații trebuie aplicate în ordine înaintea Workerului; un conector Metricool configurat sau o sesiune Opera nu devin automat conector backend verificat.

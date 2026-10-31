@@ -1041,6 +1041,33 @@ export async function saveAdminSettingsData(
   return getAdminSettingsData(db);
 }
 
+export async function saveAdminBusinessSettingsData(
+  db: D1Database,
+  business: AdminSettingsData["business"],
+  actorId: string,
+  requestId: string,
+): Promise<AdminSettingsData> {
+  const now = new Date().toISOString();
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO site_settings (key,value_json,visibility,validation_status,updated_at)
+       VALUES ('admin.business',?1,'private','review_required',?2)
+       ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,
+         visibility=excluded.visibility,validation_status=excluded.validation_status,
+         updated_at=excluded.updated_at`,
+      )
+      .bind(JSON.stringify(business), now),
+    db
+      .prepare(
+        `INSERT INTO audit_log (id,actor_label,action,entity_type,entity_id,request_id,after_json,metadata_json)
+       VALUES (?1,?2,'settings.business.update','site_settings','admin.business',?3,?4,'{}')`,
+      )
+      .bind(crypto.randomUUID(), actorId, requestId, JSON.stringify(business)),
+  ]);
+  return getAdminSettingsData(db);
+}
+
 export interface UpdateOrderStatusInput {
   orderId: string;
   status: AdminOrderStatus;

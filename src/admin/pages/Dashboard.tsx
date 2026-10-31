@@ -5,14 +5,12 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
   ArrowRight,
-  Bot,
   CalendarDays,
   CheckCircle2,
   Clock3,
   FileText,
   Mail,
   Package,
-  PackageCheck,
   Search,
   ShoppingBag,
   ShoppingCart,
@@ -172,6 +170,66 @@ export default function Dashboard() {
         </div>
       )}
 
+      <div className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
+        <section className="glass-card rounded-2xl p-4 md:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-white">Necesită atenție</h2>
+              <p className="mt-1 text-xs text-slate-500">Priorități calculate din datele reale.</p>
+            </div>
+            <Link
+              to="/admin/notifications"
+              className="text-xs font-medium text-purple-300 hover:text-purple-200"
+            >
+              Toate alertele
+            </Link>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {attention.map(({ label, value, hint, path, icon: Icon, tone }) => (
+              <Link
+                key={label}
+                to={path}
+                className={`group rounded-xl border p-4 transition hover:-translate-y-0.5 ${tone}`}
+              >
+                <div className="flex items-center justify-between">
+                  <Icon className="h-5 w-5" />
+                  <span className="text-2xl font-bold text-white">{isLoading ? "…" : value}</span>
+                </div>
+                <p className="mt-4 text-sm font-semibold text-white">{label}</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-400">{hint}</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold">
+                  Deschide <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="glass-card rounded-2xl p-4 md:p-5">
+          <h2 className="text-base font-semibold text-white">Acțiuni rapide</h2>
+          <p className="mt-1 text-xs text-slate-500">Continuă un flux fără pași în plus.</p>
+          <div className="mt-4 grid gap-2">
+            {[
+              { label: "Gestionează produsele", path: "/admin/products", icon: Package },
+              { label: "Verifică SEO și indexarea", path: "/admin/seo", icon: Search },
+              { label: "Vezi situația financiară", path: "/admin/financiar", icon: TrendingUp },
+              { label: "Rapoarte și statistici", path: "/admin/statistics", icon: TrendingUp },
+            ].map(({ label, path, icon: Icon }) => (
+              <Link
+                key={label}
+                to={path}
+                className="group flex items-center justify-between rounded-lg border border-[#2b3950] bg-[#0d1727] px-3 py-2.5 text-xs font-medium text-slate-300 transition hover:border-purple-400/40 hover:text-white"
+              >
+                <span className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-purple-300" /> {label}
+                </span>
+                <ArrowRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-purple-300" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+
       <section
         aria-label="Fluxul magazinului"
         className="rounded-2xl border border-white/10 bg-white/[.045] p-4 md:p-5"
@@ -246,38 +304,6 @@ export default function Dashboard() {
         )}
       </section>
 
-      <section
-        aria-label="SEO și indexare"
-        className="rounded-2xl border border-white/10 bg-white/[.045] p-4 md:p-5"
-      >
-        <div className="mb-4 flex items-center gap-2">
-          <Search className="h-4 w-4 text-amber-200" />
-          <h2 className="text-base font-semibold text-white">SEO și indexare</h2>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <a
-            href="/sitemap.xml"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-xl border border-white/10 bg-[#0e1a2b] p-3 text-sm text-white transition hover:border-amber-200/30 focus-visible:outline-2 focus-visible:outline-amber-200"
-          >
-            Verifică sitemapul public <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
-          </a>
-          <Link
-            to="/admin/products"
-            className="rounded-xl border border-white/10 bg-[#0e1a2b] p-3 text-sm text-white transition hover:border-amber-200/30 focus-visible:outline-2 focus-visible:outline-amber-200"
-          >
-            Completează SEO pentru produse <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
-          </Link>
-          <a
-            href="/admin/ai#search-console"
-            className="rounded-xl border border-white/10 bg-[#0e1a2b] p-3 text-sm text-white transition hover:border-amber-200/30 focus-visible:outline-2 focus-visible:outline-amber-200"
-          >
-            Verifică Search Console <ArrowRight className="ml-1 inline h-3.5 w-3.5" />
-          </a>
-        </div>
-      </section>
-
       <section aria-label="Indicatori esențiali" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           {
@@ -323,77 +349,6 @@ export default function Dashboard() {
           </article>
         ))}
       </section>
-
-      <div className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
-        <section className="glass-card rounded-2xl p-4 md:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-white">Necesită atenție</h2>
-              <p className="mt-1 text-xs text-slate-500">Priorități calculate din datele reale.</p>
-            </div>
-            <Link
-              to="/admin/notifications"
-              className="text-xs font-medium text-purple-300 hover:text-purple-200"
-            >
-              Toate alertele
-            </Link>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {attention.map(({ label, value, hint, path, icon: Icon, tone }) => (
-              <Link
-                key={label}
-                to={path}
-                className={`group rounded-xl border p-4 transition hover:-translate-y-0.5 ${tone}`}
-              >
-                <div className="flex items-center justify-between">
-                  <Icon className="h-5 w-5" />
-                  <span className="text-2xl font-bold text-white">{isLoading ? "…" : value}</span>
-                </div>
-                <p className="mt-4 text-sm font-semibold text-white">{label}</p>
-                <p className="mt-1 text-[11px] leading-4 text-slate-400">{hint}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold">
-                  Deschide <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="glass-card rounded-2xl p-4 md:p-5">
-          <h2 className="text-base font-semibold text-white">Acțiuni rapide</h2>
-          <p className="mt-1 text-xs text-slate-500">Continuă un flux fără pași în plus.</p>
-          <div className="mt-4 grid gap-2">
-            {[
-              { label: "Adaugă o comandă", path: "/admin/orders", icon: ShoppingCart },
-              { label: "Adaugă un produs", path: "/admin/products", icon: PackageCheck },
-              { label: "Deschide Social Media Agent", path: "/admin/ai", icon: Bot },
-              { label: "Vezi situația financiară", path: "/admin/financiar", icon: TrendingUp },
-              {
-                label: "Verifică livrările și deconturile SmartShip",
-                path: "/admin/shipping",
-                icon: Truck,
-              },
-              {
-                label: "Starea tuturor integrărilor",
-                path: "/admin/integrations",
-                icon: ShieldCheck,
-              },
-              { label: "Rapoarte și statistici", path: "/admin/statistics", icon: TrendingUp },
-            ].map(({ label, path, icon: Icon }) => (
-              <Link
-                key={label}
-                to={path}
-                className="group flex items-center justify-between rounded-lg border border-[#2b3950] bg-[#0d1727] px-3 py-2.5 text-xs font-medium text-slate-300 transition hover:border-purple-400/40 hover:text-white"
-              >
-                <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-purple-300" /> {label}
-                </span>
-                <ArrowRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-purple-300" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
         <section className="glass-card rounded-2xl p-4 md:p-5">

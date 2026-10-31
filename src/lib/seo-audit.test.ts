@@ -11,6 +11,7 @@ describe("SEO catalog audit", () => {
 
   it("flags concrete missing product fields without inventing live index status", () => {
     const product = {
+      id: "product-kitten",
       slug: "kitten",
       name: "Pisicuță",
       imageUrl: null,
@@ -28,5 +29,8 @@ describe("SEO catalog audit", () => {
       "Pisicuță: fără fotografie publică",
     );
     expect(audit.findings[0]?.path).toBe("/produs-cutiuta-muzicala-pisicuta-si-luna");
+    expect(
+      audit.findings.find((finding) => finding.title.includes("fără fotografie"))?.adminPath,
+    ).toBe("/admin/products/product-kitten#media");
   });
 });

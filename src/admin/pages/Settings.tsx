@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Bell, Building2, Save, Share2, Truck } from "lucide-react";
+import { AlertTriangle, Building2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { AboutSceneSettings } from "./AboutSceneSettings";
 import type { AdminSettingsData } from "@/lib/admin-contracts";
-import { getAdminIntegrations, getAdminSettings, saveAdminSettings } from "@/lib/admin.functions";
+import { getAdminSettings, saveAdminBusinessSettings } from "@/lib/admin.functions";
 
 const EMPTY_SETTINGS: Omit<AdminSettingsData, "updatedAt"> = {
   business: {
@@ -34,49 +34,15 @@ const EMPTY_SETTINGS: Omit<AdminSettingsData, "updatedAt"> = {
 const inputClass =
   "w-full rounded-lg border border-[#334155] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50";
 
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-2">
-      <span className="text-sm text-slate-200">{label}</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={onChange}
-        className={`relative h-6 w-11 rounded-full transition-colors ${checked ? "bg-purple-600" : "bg-[#334155]"}`}
-      >
-        <span
-          className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${checked ? "translate-x-5" : "translate-x-1"}`}
-        />
-      </button>
-    </div>
-  );
-}
-
 export default function Settings() {
   const queryClient = useQueryClient();
   const fetchSettings = useServerFn(getAdminSettings);
-  const fetchIntegrations = useServerFn(getAdminIntegrations);
-  const persistSettings = useServerFn(saveAdminSettings);
+  const persistSettings = useServerFn(saveAdminBusinessSettings);
   const [form, setForm] = useState(EMPTY_SETTINGS);
 
   const settingsQuery = useQuery({
     queryKey: ["admin", "settings"],
     queryFn: () => fetchSettings(),
-    staleTime: 60_000,
-  });
-  const integrationsQuery = useQuery({
-    queryKey: ["admin", "integrations"],
-    queryFn: () => fetchIntegrations(),
     staleTime: 60_000,
   });
 
@@ -87,7 +53,7 @@ export default function Settings() {
   }, [settingsQuery.data]);
 
   const saveMutation = useMutation({
-    mutationFn: () => persistSettings({ data: form }),
+    mutationFn: () => persistSettings({ data: form.business }),
     onSuccess: (saved) => {
       queryClient.setQueryData(["admin", "settings"], saved);
       toast.success("Setările au fost salvate în D1");
@@ -98,30 +64,28 @@ export default function Settings() {
       }),
   });
 
-  const shippingMethods = integrationsQuery.data?.shippingMethods ?? [];
-
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white md:text-2xl">Setări operaționale</h1>
+          <h1 className="text-xl font-bold text-white md:text-2xl">Datele magazinului</h1>
           <p className="mt-1 text-xs text-slate-400 md:text-sm">
-            Date persistate în D1, separate de secretele integrărilor.
+            Datele afacerii, separate de secretele și fluxurile integrărilor.
           </p>
         </div>
         <button
           type="button"
           onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending || settingsQuery.isLoading}
+          disabled={saveMutation.isPending || !settingsQuery.data || settingsQuery.isError}
           className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
         >
           <Save className="h-4 w-4" /> {saveMutation.isPending ? "Se salvează..." : "Salvează"}
         </button>
       </div>
 
-      {(settingsQuery.isError || integrationsQuery.isError) && (
+      {settingsQuery.isError && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-          O parte dintre setări nu a putut fi încărcată din D1.
+          Setările nu au putut fi încărcate din D1.
         </div>
       )}
 
@@ -132,8 +96,6 @@ export default function Settings() {
           trebuie făcută numai după confirmarea proprietarului.
         </p>
       </div>
-
-      <AboutSceneSettings />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="glass-card rounded-xl p-4 lg:col-span-2 md:p-5">
@@ -236,107 +198,16 @@ export default function Settings() {
             </label>
           </div>
         </section>
-
-        <section className="glass-card rounded-xl p-4 md:p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Share2 className="h-5 w-5 text-pink-400" /> Conturi sociale
-          </h2>
-          <div className="space-y-3">
-            {(["instagram", "facebook", "tiktok"] as const).map((network) => (
-              <label key={network} className="block text-xs capitalize text-slate-400">
-                {network}
-                <input
-                  className={`${inputClass} mt-1.5`}
-                  value={form.social[network]}
-                  onChange={(event) =>
-                    setForm({ ...form, social: { ...form.social, [network]: event.target.value } })
-                  }
-                  placeholder="URL sau identificator confirmat"
-                />
-              </label>
-            ))}
-          </div>
-        </section>
-
-        <section className="glass-card rounded-xl p-4 md:p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Bell className="h-5 w-5 text-amber-400" /> Alerte
-          </h2>
-          {[
-            ["newOrder", "Comandă nouă"],
-            ["paymentFailed", "Plată eșuată"],
-            ["orderShipped", "Comandă expediată"],
-            ["orderDelivered", "Comandă livrată"],
-            ["returnRequest", "Cerere de retur"],
-            ["integrationFailure", "Eroare de integrare"],
-            ["dailyReport", "Rezumat zilnic"],
-          ].map(([key, label]) => {
-            const typedKey = key as keyof typeof form.notifications;
-            return (
-              <Toggle
-                key={key}
-                label={label}
-                checked={form.notifications[typedKey]}
-                onChange={() =>
-                  setForm({
-                    ...form,
-                    notifications: {
-                      ...form.notifications,
-                      [typedKey]: !form.notifications[typedKey],
-                    },
-                  })
-                }
-              />
-            );
-          })}
-        </section>
-
-        <section className="glass-card rounded-xl p-4 lg:col-span-2 md:p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Truck className="h-5 w-5 text-emerald-400" /> Preferințe livrare
-          </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label className="text-xs text-slate-400">
-              Metodă implicită
-              <select
-                className={`${inputClass} mt-1.5`}
-                value={form.fulfillment.defaultShippingMethod}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    fulfillment: { ...form.fulfillment, defaultShippingMethod: event.target.value },
-                  })
-                }
-              >
-                <option value="">Neselectată</option>
-                {shippingMethods.map((method) => (
-                  <option key={method.id} value={method.id}>
-                    {method.name} ({method.status})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs text-slate-400">
-              Tip livrare implicit
-              <select
-                className={`${inputClass} mt-1.5`}
-                value={form.fulfillment.defaultDeliveryType}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    fulfillment: { ...form.fulfillment, defaultDeliveryType: event.target.value },
-                  })
-                }
-              >
-                <option value="">Neselectat</option>
-                <option value="locker">Locker</option>
-                <option value="home_delivery">La adresă</option>
-                <option value="pickup">Ridicare personală</option>
-              </select>
-            </label>
-          </div>
-        </section>
       </div>
+
+      <details className="glass-card rounded-xl p-4 md:p-5">
+        <summary className="cursor-pointer text-sm font-semibold text-white">
+          Aspectul paginii Despre
+        </summary>
+        <div className="mt-4">
+          <AboutSceneSettings />
+        </div>
+      </details>
 
       <p className="text-xs text-slate-500">
         Ultima actualizare:{" "}

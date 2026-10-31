@@ -8,6 +8,7 @@ export type SeoFinding = {
   detail: string;
   action: string;
   path?: string;
+  adminPath?: string;
 };
 
 export function auditSeoCatalog(products: CatalogProduct[]) {
@@ -27,14 +28,28 @@ export function auditSeoCatalog(products: CatalogProduct[]) {
 
   for (const product of products) {
     const path = productPath(product.slug);
-    const add = (severity: SeoFinding["severity"], title: string, detail: string, action: string) =>
-      findings.push({ severity, title, detail, action, path });
+    const add = (
+      severity: SeoFinding["severity"],
+      title: string,
+      detail: string,
+      action: string,
+      tab: "seo" | "media" | "general" | "technical" = "seo",
+    ) =>
+      findings.push({
+        severity,
+        title,
+        detail,
+        action,
+        path,
+        adminPath: `/admin/products/${encodeURIComponent(product.id)}#${tab}`,
+      });
     if (!product.imageUrl) {
       add(
         "critical",
         `${product.name}: fără fotografie publică`,
         "Pagina și feedul nu au imagine principală aprobată.",
         "Aprobă o fotografie publică în studioul produsului.",
+        "media",
       );
     }
     if (!product.description.trim() && !product.shortDescription.trim()) {
@@ -43,6 +58,7 @@ export function auditSeoCatalog(products: CatalogProduct[]) {
         `${product.name}: fără descriere`,
         "Pagina nu explică produsul în text.",
         "Completează o descriere factuală a produsului.",
+        "general",
       );
     } else if (!product.description.trim()) {
       add(
@@ -50,6 +66,7 @@ export function auditSeoCatalog(products: CatalogProduct[]) {
         `${product.name}: descriere detaliată lipsă`,
         "Pagina folosește numai rezumatul scurt al produsului.",
         "Adaugă caracteristicile și utilizarea reale ale modelului.",
+        "general",
       );
     }
     if (!product.seoTitle.trim()) {
@@ -85,6 +102,7 @@ export function auditSeoCatalog(products: CatalogProduct[]) {
         `${product.name}: fără SKU`,
         "Identificatorul intern lipsește din datele produsului.",
         "Completează SKU-ul real al variantei active.",
+        "technical",
       );
     }
     if (product.availability !== "coming_soon" && (product.price == null || product.price <= 0)) {
@@ -93,6 +111,7 @@ export function auditSeoCatalog(products: CatalogProduct[]) {
         `${product.name}: preț public lipsă`,
         "Datele structurate nu pot include o ofertă cu preț pentru acest model.",
         "Verifică prețul listei active pentru website.",
+        "technical",
       );
     }
   }

@@ -37,6 +37,7 @@ import {
   markAdminNotificationRead,
   markAllAdminNotificationsRead,
   saveAdminSettingsData,
+  saveAdminBusinessSettingsData,
   createAdminOrder,
   createAdminProduct,
   updateOrderStatus,
@@ -712,6 +713,15 @@ export const saveAdminSettings = createServerFn({ method: "POST" })
     assertPermission(context.admin, "team.write");
     const requestId = getRequest().headers.get("x-request-id") ?? crypto.randomUUID();
     return saveAdminSettingsData(env.DB, data, context.admin.id, requestId);
+  });
+
+export const saveAdminBusinessSettings = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator(adminSettingsInput.shape.business)
+  .handler(async ({ context, data }) => {
+    assertPermission(context.admin, "team.write");
+    const requestId = getRequest().headers.get("x-request-id") ?? crypto.randomUUID();
+    return saveAdminBusinessSettingsData(env.DB, data, context.admin.id, requestId);
   });
 
 const notificationIdInput = z.object({ notificationId: z.string().min(1).max(128) });
