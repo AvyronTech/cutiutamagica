@@ -2,9 +2,11 @@
 
 ## Corecție 2026-10-31 — invitația imediat sub identitatea magazinului
 
+- Release confirmat: PR #62 a trecut CI și a fost integrat la `df956f42b1514dc3b9b36cc4c4e0f18aa593d5eb`. Workerul `cutiuta-magica-store` a fost publicat din această revizie ca versiunea `33a29c78-b191-4e1a-b6e3-a934e2c3a970`, distribuită 100%. `/api/v1/health` răspunde 200 cu `production` și schema D1 86.
+- Verificare live pe `cutiutamagica.eu` la 390×844: invitația este succesorul imediat al descrierii din grupul siglei și apare vizual înaintea contactelor; cele trei grupuri de navigare sunt pe același rând, fără overflow orizontal. Captura mobilă live a fost inspectată în Chrome DevTools. Nu au fost trimise mesaje sau plasate comenzi.
 - La cererea utilizatorului, blocul „O melodie poate spune atât de mult. / Alege amintirea pe care o vei dărui. / Găsește cutiuța potrivită” este mutat imediat după „O cutiuță din lemn, o manivelă și o melodie pentru cineva drag.”, în același grup cu sigla Cutiuța Magică. Pe mobil, contactele urmează după invitație; cele trei grupuri de navigare rămân pe un singur rând.
 - Ramura `codex/footer-invitation-under-brand-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `5d97529`. Fișiere: `src/components/site/Footer.tsx`, `src/styles.css`, acest handoff și `docs/PROJECT_CONTINUITY.md`. Fără migrare D1 sau schimbări de destinație a linkurilor.
-- Verificare locală Chrome DevTools la 390×844, 320×700 și 1440×900: blocul invitației este succesorul imediat al descrierii în DOM; pe mobil este și vizual înaintea contactelor. Cele trei titluri de navigare au aceeași poziție verticală și nu există overflow orizontal. Capturile mobil și desktop au fost inspectate direct. `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Starea de publicare se completează după release.
+- Verificare locală Chrome DevTools la 390×844, 320×700 și 1440×900: blocul invitației este succesorul imediat al descrierii în DOM; pe mobil este și vizual înaintea contactelor. Cele trei titluri de navigare au aceeași poziție verticală și nu există overflow orizontal. Capturile mobil și desktop au fost inspectate direct. `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut.
 
 ## Corecție 2026-10-31 — sigla la începutul subsolului, trei grupuri pe un rând
 
