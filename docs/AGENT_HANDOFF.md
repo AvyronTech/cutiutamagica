@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Corecție 2026-10-31 — sigla la începutul subsolului, trei grupuri pe un rând
+
+- La cererea utilizatorului, corecția înlocuiește aranjarea subsolului din PR #56: sigla și numele Cutiuța Magică revin la început, urmate de contactele pentru întrebări, comenzi și telefon. „Alege cutiuța”, „Comanda ta” și „Informații” stau în trei coloane pe același rând și pe mobil; invitația spre catalog rămâne mai jos.
+- Ramura `codex/footer-correction-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `7b9f41f`. Fișiere: `src/components/site/Footer.tsx`, `src/styles.css`, acest handoff și `docs/PROJECT_CONTINUITY.md`. Fără migrare D1, schimbare de destinație a linkurilor sau configurare externă.
+- Verificare vizuală locală în Chrome DevTools: la 390×844, cele trei titluri au aceeași coordonată verticală, subsolul măsoară circa 715 px și pagina nu depășește 390 px; la 320 px titlurile rămân pe un rând fără overflow; la 1440×900, titlurile sunt pe același rând, subsolul măsoară circa 451 px și pagina nu depășește 1440 px. Capturile mobil și desktop au fost inspectate direct.
+- `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Prima rulare simultană a testelor și celor două builduri a produs timeouturi și a amestecat directorul `dist`; rerularea secvențială a testelor și a verificării de deploy a trecut. Starea de publicare se completează după release.
+
 ## Handoff 2026-10-31 — ordinea secțiunilor landing și calendar compact
 
 - Release confirmat: PR #58 a trecut CI și a fost integrat la `e87df051df966a1066a9dd0c839997f5a803197f`. Workerul `cutiuta-magica-store` a fost publicat din acest commit ca versiunea `8ff7cf32-3f4d-473d-bb11-9c87c2436f5f`, distribuită 100%; `/api/v1/health` răspunde 200 cu `production` și schema D1 86.
