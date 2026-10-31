@@ -17,8 +17,12 @@ export function LimitedEditionBadge({
     >
       <Gem aria-hidden />
       <span>
-        <strong>Limited Edition</strong>
-        <small>Serie de {edition.totalUnits} bucăți</small>
+        <strong>{surface === "detail" ? "Ediție limitată" : "Limited Edition"}</strong>
+        <small>
+          {surface === "detail"
+            ? `${edition.totalUnits} exemplare`
+            : `Serie de ${edition.totalUnits} bucăți`}
+        </small>
       </span>
     </span>
   );

@@ -1,14 +1,27 @@
+const storyHighlightByProduct: Record<string, string> = {
+  "hp-keeper": "Un strop de Hogwarts pentru raftul cu povești",
+  "got-winter": "Un semn din Nord pentru fanii legendelor",
+  kitten: "Un dar tandru pentru iubitorii de pisici",
+  halloween: "Farmec de Halloween într-o cutiuță",
+  sunshine: "O rază de bucurie pentru cineva drag",
+  "lotr-rings": "Pentru aventuri în Pământul de Mijloc",
+  "hp-always": "O poveste despre promisiuni care rămân",
+  fairy: "Un colț de basm pentru iubitorii naturii",
+  pirates: "O aventură pe mare, în câteva note",
+  "starwars-dad": "Un univers de amintiri pentru tata",
+};
+
 /** Short, factual product highlights for the purchase area. The full source stays in D1. */
-export function productDetailHighlights(details: string[]): string[] {
+export function productDetailHighlights(details: string[], productId: string): string[] {
+  const storyHighlight = storyHighlightByProduct[productId] ?? "Un mic dar cu poveste";
   return [
     ...new Set(
       details
         .map((detail) => {
           const text = detail.trim();
           if (!text) return "";
-          if (/nu este jucărie/i.test(text)) {
-            const age = text.match(/\b(\d{2})\+/)?.[1];
-            return age ? `Pentru colecționari ${age}+` : "Obiect de colecție";
+          if (/nu este jucărie|^recomandat\s+\d{2}\+/i.test(text)) {
+            return storyHighlight;
           }
           if (/^dimensiuni(?:\s+aprox\.)?\s*:/i.test(text)) {
             const metric = text
@@ -25,9 +38,6 @@ export function productDetailHighlights(details: string[]): string[] {
           }
           if (/^melodie\s*:/i.test(text)) {
             return `Melodia „${text.split(":").slice(1).join(":").trim()}”`;
-          }
-          if (/^recomandat\s+\d{2}\+/i.test(text)) {
-            return text.replace(/^recomandat\s+/i, "Recomandat de la ").replace("+", " ani");
           }
           if (/^mecanism (?:manual|clasic)(?: cu manivelă)?$/i.test(text)) {
             return "Melodia prinde viață la rotirea manivelei";

@@ -1,15 +1,5 @@
 import { useState } from "react";
-import {
-  Check,
-  Copy,
-  Facebook,
-  Linkedin,
-  Mail,
-  MessageCircle,
-  Send,
-  Share2,
-  Smartphone,
-} from "lucide-react";
+import { Check, Copy, Facebook, Mail, MessageCircle, Send, Share2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { productCanonicalUrl, productShareMessage, productShareTargets } from "@/lib/product-share";
 
@@ -17,7 +7,6 @@ type ProductShareProps = {
   id: string;
   name: string;
   tagline: string;
-  image: string;
 };
 
 const iconByChannel: Record<
@@ -29,29 +18,21 @@ const iconByChannel: Record<
   email: Mail,
   sms: Smartphone,
   facebook: Facebook,
-  linkedin: Linkedin,
 };
 
 function ChannelIcon({ channel }: { channel: string }) {
   const Icon = iconByChannel[channel];
-  if (Icon) return <Icon className="product-share__channel-icon" aria-hidden />;
-
-  const mark = channel === "pinterest" ? "P" : channel === "bluesky" ? "B" : "X";
-  return (
-    <span className="product-share__brand-mark" aria-hidden>
-      {mark}
-    </span>
-  );
+  return Icon ? <Icon className="product-share__channel-icon" aria-hidden /> : null;
 }
 
-export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
+export function ProductShare({ id, name, tagline }: ProductShareProps) {
   const [copied, setCopied] = useState(false);
   const url = productCanonicalUrl(id);
   const message = productShareMessage(name, tagline);
-  const targets = productShareTargets({ id, name, tagline, image });
+  const targets = productShareTargets({ id, name, tagline });
 
   async function recordRewardShare(channel: string) {
-    if (!["native", "facebook", "linkedin", "pinterest", "x", "bluesky"].includes(channel)) return;
+    if (channel !== "native" && channel !== "facebook") return;
     try {
       const response = await fetch("/api/v1/customer/rewards/share", {
         method: "POST",
@@ -107,10 +88,7 @@ export function ProductShare({ id, name, tagline, image }: ProductShareProps) {
         <span className="product-share__emblem" aria-hidden>
           <Share2 />
         </span>
-        <span>
-          <strong id={`share-${id}`}>Trimite mai departe povestea</strong>
-          <small>Alege unde ajunge această cutiuță.</small>
-        </span>
+        <strong id={`share-${id}`}>Trimite povestea mai departe</strong>
       </div>
 
       <div className="product-share__channels" aria-label="Canale de distribuire">

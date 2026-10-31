@@ -1,5 +1,13 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Handoff 2026-10-31 — pagină de produs compactă și conversie
+
+- Scop: paginile tuturor celor zece modele. Ramura `codex/product-page-conversion-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `f17e3de`. Distribuirea afișează nativ, WhatsApp, Telegram, Email, SMS și Facebook; X, Bluesky, Pinterest și LinkedIn au fost eliminate. CTA-ul din fișa produsului spune „Comandă acum” numai după ce produsul curent este în coș.
+- Cardul cantității, badge-ul ediției limitate, distribuirea, ideile de cadou, FAQ și spațiile dintre secțiuni au fost compactate. „Dincolo de capac” se află în articolul despre produs, separat de FAQ. Detaliile generice de vârstă devin formulări tematice pentru fiecare dintre cele zece modele. Contrastul mesajului audio indisponibil și al linkului spre catalog a fost îmbunătățit.
+- Fișiere: `src/components/site/{LimitedEditionBadge,ProductDiscovery,ProductShare}.tsx`, `src/lib/{product-detail-highlights,product-share,product-share.test}.ts`, `src/routes/produs-cutiuta-muzicala-{$slug}.tsx`, `src/styles.css`, acest handoff și `docs/PROJECT_CONTINUITY.md`. Fără migrare D1 sau configurare externă.
+- Verificări: typecheck, 334/334 teste, lint, build, `cf:deploy:dry` și `git diff --check` au trecut. Capturile vizuale au fost inspectate în sesiunea Chrome DevTools la 390×844 și 1440×900, pe produsul HP Keeper cu date temporare exclusiv în D1 local; datele locale au fost restaurate și verificate. Pe mobil, cardul cu idei de cadou a scăzut de la circa 1456 px în versiunea live de referință la 463 px în randarea locală; această comparație folosește produse diferite și este orientativă. Nu s-a plasat comandă.
+- Stare la redactare: implementare locală verificată; PR, merge, deploy și verificarea live urmează separat. Indexarea Google, livrarea e-mailurilor, cheia Brave Search și runnerul AI nu sunt demonstrate de această schimbare.
+
 ## Corecție production 2026-10-31 — conturi administrative reactivate
 
 - La cererea explicită a administratorului, migrarea append-only `0086_restore_initial_admin_accounts.sql` a anulat suspendarea introdusă de 0085 numai pentru cele două conturi `owner` identificate prin evenimentul `security.initial_admin_suspended`. Nu modifică parole, roluri, setări MFA sau sesiuni.
