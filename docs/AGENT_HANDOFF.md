@@ -2,10 +2,12 @@
 
 ## Corecție 2026-10-31 — sigla la începutul subsolului, trei grupuri pe un rând
 
+- Release confirmat: PR #60 a trecut CI și a fost integrat la `ea84e3658e07ec3594744ee877206f4850aadf36`. Workerul `cutiuta-magica-store` a fost publicat din această revizie ca versiunea `5c6b02d9-d16d-471b-8dd9-ba26fcaa8a19`, distribuită 100% pe domeniile configurate. `/api/v1/health` răspunde 200 cu `production` și schema D1 86.
+- Verificare live pe `cutiutamagica.eu`: sigla este primul element al subsolului, cele trei grupuri încep pe aceeași linie la 320, 390 și 1440 px, iar lățimea documentului rămâne în viewport. La 390 px subsolul măsoară circa 715 px; la 1440 px circa 451 px. Captura mobilă live a fost inspectată în Chrome DevTools. Nu au fost plasate comenzi sau trimise mesaje.
 - La cererea utilizatorului, corecția înlocuiește aranjarea subsolului din PR #56: sigla și numele Cutiuța Magică revin la început, urmate de contactele pentru întrebări, comenzi și telefon. „Alege cutiuța”, „Comanda ta” și „Informații” stau în trei coloane pe același rând și pe mobil; invitația spre catalog rămâne mai jos.
 - Ramura `codex/footer-correction-20261031` pornește din `origin/codex/cutiuta-cloudflare-final` la `7b9f41f`. Fișiere: `src/components/site/Footer.tsx`, `src/styles.css`, acest handoff și `docs/PROJECT_CONTINUITY.md`. Fără migrare D1, schimbare de destinație a linkurilor sau configurare externă.
 - Verificare vizuală locală în Chrome DevTools: la 390×844, cele trei titluri au aceeași coordonată verticală, subsolul măsoară circa 715 px și pagina nu depășește 390 px; la 320 px titlurile rămân pe un rând fără overflow; la 1440×900, titlurile sunt pe același rând, subsolul măsoară circa 451 px și pagina nu depășește 1440 px. Capturile mobil și desktop au fost inspectate direct.
-- `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Prima rulare simultană a testelor și celor două builduri a produs timeouturi și a amestecat directorul `dist`; rerularea secvențială a testelor și a verificării de deploy a trecut. Starea de publicare se completează după release.
+- `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut. Prima rulare simultană a testelor și celor două builduri a produs timeouturi și a amestecat directorul `dist`; rerularea secvențială a testelor și a verificării de deploy a trecut.
 
 ## Handoff 2026-10-31 — ordinea secțiunilor landing și calendar compact
 
