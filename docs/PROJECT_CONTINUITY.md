@@ -2,7 +2,7 @@
 
 Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți agenți. Regulile obligatorii sunt în [AGENTS.md](../AGENTS.md); aici sunt harta proiectului și rutina de predare. Informațiile datate sunt un instantaneu, nu dovada stării live.
 
-Reverificare SEO live 31 octombrie: cele 38 pagini canonice, 35 imagini și 5 intrări Merchant verificate nu au defecte tehnice confirmate; `npm run seo:audit:live` repetă controlul. Raportul GSC actual nu a putut fi citit cât Mac-ul era blocat. Detaliile și limitele sunt în [handoff](handoff/2026-10-31-seo-live-recheck.md) și la începutul `docs/AGENT_HANDOFF.md`.
+Verificare GSC 2 noiembrie: sitemapurile copil și lista text au „Succes” pentru toate cele 38 de URL-uri, dar `/sitemap.xml` păstrează eroarea generică de preluare. Inspecția individuală confirmă 5 din 7 produse în index; One Ring și Pirații din Caraibe sunt încă necunoscute pentru Google. One Ring trece testul live de eligibilitate, însă cererea de indexare a eșuat în consola cu serviciul reCAPTCHA inaccesibil. Rapoartele Product și Merchant au câte 5 elemente valide și zero invalide. `npm run seo:audit:live` trece fără probleme tehnice; detalii și limite în primul handoff din [AGENT_HANDOFF.md](AGENT_HANDOFF.md). Auditul anterior este în [handofful din 31 octombrie](handoff/2026-10-31-seo-live-recheck.md).
 
 ## Surse de adevăr
 
