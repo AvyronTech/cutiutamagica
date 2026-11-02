@@ -3,7 +3,7 @@
 ## Verificare GSC și conținutul ghidurilor — 3 noiembrie 2026
 
 - Inspecția URL actuală confirmă 8/8 pagini esențiale, 7/7 produse și 3/23 pagini de ghid indexate. Celelalte 20 de ghiduri sunt descoperite sau necunoscute; un test live confirmă că un ghid poate fi indexat. Hubul `/cadouri` este indexat, dar ultima accesare Googlebot a fost pe 20 octombrie. Solicitarea pentru un ghid nou a fost respinsă prin cota zilnică GSC.
-- Ramura `codex/gsc-guides-20261103`, din `e39cc26b`, corectează promisiunile neactuale despre configuratorul de personalizare, actualizează `lastmod` pentru cele 23 de pagini de ghid și păstrează toate legăturile și URL-urile existente. Fără migrare D1. `typecheck`, 334 teste, `lint`, `build`, `cf:deploy:dry` și `diff --check` au trecut. Detaliile, limitele GSC și starea livrării sunt în [handofful dedicat](handoff/2026-11-03-gsc-guides.md).
+- PR #71, din `e39cc26b`, corectează promisiunile neactuale despre configuratorul de personalizare, actualizează `lastmod` pentru cele 23 de pagini de ghid și păstrează toate legăturile și URL-urile existente. A fost integrat la `05f51d5`; versiunea Worker `087b9d2f-3408-45ce-9c47-bc094f4a2b85` este distribuită 100%. GSC a citit sitemapul retrimis pe 3 noiembrie cu „Succes” și 23 de pagini. Fără migrare D1. `typecheck`, 334 teste, `lint`, `build`, `cf:deploy:dry`, `diff --check`, auditul SEO live și verificarea vizuală desktop/mobil au trecut. Detaliile, capturile locale și limitele GSC sunt în [handofful dedicat](handoff/2026-11-03-gsc-guides.md).
 
 ## GSC și expresii de căutare — 2 noiembrie 2026
 
