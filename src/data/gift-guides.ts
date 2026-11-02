@@ -181,7 +181,7 @@ export const giftGuides = [
     ],
     question: "Pot cere altă melodie sau o gravură personalizată?",
     answer:
-      "Fiecare model are melodia și ilustrația prezentate în pagina sa. Nu presupune că poate fi schimbată melodia sau gravura; pentru o cerere specială, cere confirmare înainte de comandă.",
+      "Modelele disponibile au melodia și ilustrația prezentate în pagina fiecărui produs. Atelierul pentru opțiuni alese de tine este în pregătire; compară modelele actuale pentru melodia și tema dorite.",
   },
   {
     slug: "zi-de-nastere",
@@ -232,7 +232,7 @@ export const giftGuides = [
       },
       {
         title: "Adaugă povestea voastră",
-        text: "Scrie pe un cartonaș locul, momentul sau replica de care vă amintește cutiuța. Pentru o imagine ori gravură aleasă de voi, folosește configuratorul de personalizare și ține cont de termenul de realizare afișat acolo.",
+        text: "Scrie pe un cartonaș locul, momentul sau replica de care vă amintește cutiuța. Alege melodia și ilustrația modelului după această amintire și verifică disponibilitatea înainte de aniversare.",
       },
       {
         title: "Păstrați obiectul aproape",
@@ -241,7 +241,7 @@ export const giftGuides = [
     ],
     question: "Pot personaliza imaginea de pe capac pentru aniversare?",
     answer:
-      "Da, pagina de personalizare permite alegerea culorii, încărcarea unei imagini și solicitarea unei gravuri. Atelierul confirmă detaliile înainte de realizare.",
+      "Atelierul pentru imagini și finisaje la alegere este în pregătire. Modelele disponibile acum au ilustrația și melodia prezentate în pagina fiecărui produs; un mesaj scris de tine poate completa cadoul.",
   },
   {
     slug: "valentines-day",
@@ -262,11 +262,11 @@ export const giftGuides = [
       },
       {
         title: "Un dar care poate deveni al vostru",
-        text: "Configurarea cu fotografie și gravură este potrivită când vrei un obiect construit în jurul unei amintiri precise. Imaginea se previzualizează înainte de trimiterea cererii, iar varianta finală este confirmată de atelier.",
+        text: "Leagă melodia sau ilustrația modelului de o amintire precisă. Un bilețel cu locul ori momentul care vă unește poate transforma alegerea într-un dar cu sens pentru amândoi.",
       },
       {
-        title: "Comandă cu timp pentru pregătire",
-        text: "Pentru 14 februarie, verifică disponibilitatea produsului și timpul de livrare. Cutiuțele personalizate au nevoie de pregătire suplimentară, iar termenul estimat este afișat în formularul dedicat.",
+        title: "Verifică disponibilitatea pentru 14 februarie",
+        text: "Dacă vrei să oferi cadoul la o dată fixă, verifică stocul modelului ales și estimarea de livrare înainte de a confirma comanda.",
       },
     ],
     question: "Este obligatoriu să aleg un model cu mesaj romantic?",
@@ -325,8 +325,8 @@ export const giftGuides = [
         text: "Modelul cu pisicuță este potrivit când pasiunea este evidentă, iar cutiuțele fantasy se potrivesc unei cititoare sau colecționare. Pentru o colegă, păstrează mesajul simplu și alege după interesul pe care l-ați discutat.",
       },
       {
-        title: "Când vrei ceva unic",
-        text: "Configuratorul permite o imagine pe capac, culoare și gravură. Folosește o fotografie pe care ai dreptul să o trimiți și verifică previzualizarea înainte de formularul final.",
+        title: "Când vrei să-i rămână aproape",
+        text: "Compară ilustrația, melodia și dimensiunile modelelor disponibile cu lucrurile care îi plac. O dedicație scurtă, scrisă de tine, explică de ce ai ales tocmai acea cutiuță.",
       },
     ],
     question: "Cum aleg dacă nu îi cunosc melodia preferată?",
@@ -342,7 +342,7 @@ export const giftGuides = [
     title: "Cadou pentru iubită: o cutiuță muzicală aleasă din povestea voastră",
     seoTitle: "Cadou pentru iubită: cutiuță muzicală cu poveste",
     description:
-      "Idei de cadou pentru iubită, alese după melodia, amintirea sau universul vostru comun. Compară cutiuțe muzicale și opțiuni de personalizare.",
+      "Idei de cadou pentru iubită, alese după melodia, amintirea sau universul vostru comun. Compară cutiuțe muzicale din lemn, ilustrații și disponibilitatea modelelor.",
     intro:
       "Un cadou pentru iubită nu trebuie să repete aceleași simboluri romantice. Poate porni de la cântecul pe care îl fredonați, de la filmul pe care îl revedeți sau de la pisica despre care vorbiți în fiecare zi. Cutiuța potrivită este cea pe care o poți lega de o amintire concretă dintre voi.",
     sections: [
@@ -356,7 +356,7 @@ export const giftGuides = [
       },
       {
         title: "Când vrei o amintire numai a voastră",
-        text: "O fotografie pe capac și o gravură scurtă pot transforma cutiuța într-un obiect legat de un loc sau o zi precisă. Folosește configuratorul, verifică previzualizarea și lasă timp pentru confirmarea atelierului.",
+        text: "Alege un model a cărui melodie sau ilustrație amintește de un loc ori de o zi precisă. Spune-i legătura într-un bilețel; astfel, cadoul vorbește despre voi fără să schimbi produsul.",
       },
     ],
     decisionGuide: {
@@ -375,7 +375,7 @@ export const giftGuides = [
         {
           label: "Data este fixă?",
           guidance:
-            "Pentru aniversări apropiate, verifică stocul și livrarea; personalizarea are nevoie de timp suplimentar.",
+            "Pentru aniversări apropiate, verifică stocul modelului ales și estimarea de livrare înainte de comandă.",
         },
       ],
       avoid:
@@ -386,9 +386,9 @@ export const giftGuides = [
         "Pentru serile noastre cu…",
       ],
     },
-    question: "Este mai potrivit un model standard sau unul personalizat?",
+    question: "Cum fac cadoul mai personal?",
     answer:
-      "Alege modelul standard când melodia ori tema vă reprezintă deja. Alege personalizarea când o fotografie sau o gravură precisă este esențială pentru mesaj.",
+      "Alege un model cu o melodie ori o temă care vă reprezintă și adaugă un mesaj despre amintirea voastră. Atelierul pentru imagini și finisaje la alegere este încă în pregătire.",
   },
   {
     slug: "pentru-sora",
@@ -413,7 +413,7 @@ export const giftGuides = [
       },
       {
         title: "Pentru o amintire din familie",
-        text: "You Are My Sunshine poate însoți un mesaj cald, iar personalizarea poate folosi o fotografie pe care amândouă o prețuiți. Alege o imagine clară, verifică dreptul de folosire și termenul de pregătire.",
+        text: "You Are My Sunshine poate însoți un mesaj cald despre o amintire pe care o prețuiți amândouă. Scrie-l pe un cartonaș și oferă cutiuța lângă o fotografie de familie, dacă aceasta spune mai bine povestea voastră.",
       },
     ],
     decisionGuide: {
@@ -445,7 +445,7 @@ export const giftGuides = [
     },
     question: "Pot transforma cutiuța într-un cadou comun din partea familiei?",
     answer:
-      "Da. Adăugați un cartonaș semnat sau alegeți o fotografie de familie prin configurator, ținând cont de termenul suplimentar pentru personalizare.",
+      "Da. Alegeți împreună un model disponibil și adăugați un cartonaș semnat de toți. Ilustrația și melodia cutiuței sunt cele prezentate în pagina produsului.",
   },
   {
     slug: "pentru-el",
@@ -556,8 +556,8 @@ export const giftGuides = [
         text: "Ocazia oferă context, dar motivul alegerii dă valoare darului. Spune-i de ce melodia sau imaginea ți-a amintit de ea și arată-i cum funcționează manivela.",
       },
       {
-        title: "O fotografie pe capac",
-        text: "Pentru o amintire de familie, poți folosi pagina de personalizare. Încarcă doar o imagine potrivită și verifică termenul de pregătire înainte de data la care vrei să oferi cadoul.",
+        title: "Un detaliu de familie",
+        text: "Alege o cutiuță a cărei melodie ori ilustrație are sens pentru mama ta. O fotografie de familie și câteva rânduri scrise de mână pot însoți darul, fără să schimbe produsul.",
       },
     ],
     decisionGuide: {
@@ -569,9 +569,9 @@ export const giftGuides = [
             "Alege You Are My Sunshine dacă mesajul dintre voi este central; alege pisicuța dacă aceasta este pasiunea ei reală.",
         },
         {
-          label: "Cadou standard sau amintire?",
+          label: "Ce amintire îi dăruiești?",
           guidance:
-            "Pentru o fotografie de familie ori o gravură, verifică separat personalizarea și timpul ei de pregătire.",
+            "Alege o melodie care vă amintește de un moment comun sau o ilustrație legată de pasiunea ei.",
         },
         {
           label: "Cum îl oferi?",
@@ -587,9 +587,9 @@ export const giftGuides = [
         "Un mulțumesc mic pentru o grijă pe care nu o uit.",
       ],
     },
-    question: "Pot adăuga o fotografie de familie?",
+    question: "Cum adaug un mesaj personal pentru mama?",
     answer:
-      "Da, configuratorul de personalizare permite încărcarea unei imagini pentru capac și solicitarea unei gravuri, cu confirmare ulterioară din partea atelierului.",
+      "Scrie-i un bilețel despre motivul pentru care ai ales melodia sau ilustrația. Dacă vrei să-i dăruiești și o fotografie de familie, ofer-o alături de cutiuță; atelierul pentru imagini pe capac este încă în pregătire.",
   },
   {
     slug: "pentru-tata",
@@ -870,4 +870,4 @@ export const giftGuideGroups = (["Ocazii", "Pentru cine", "Pasiuni"] as const).m
   label,
   guides: giftGuides.filter((guide) => guide.group === label),
 }));
-export const DISCOVERY_UPDATED = "2026-10-09";
+export const DISCOVERY_UPDATED = "2026-11-03";

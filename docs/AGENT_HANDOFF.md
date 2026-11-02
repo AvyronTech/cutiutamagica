@@ -1,5 +1,10 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Verificare GSC și conținutul ghidurilor — 3 noiembrie 2026
+
+- Inspecția URL actuală confirmă 8/8 pagini esențiale, 7/7 produse și 3/23 pagini de ghid indexate. Celelalte 20 de ghiduri sunt descoperite sau necunoscute; un test live confirmă că un ghid poate fi indexat. Hubul `/cadouri` este indexat, dar ultima accesare Googlebot a fost pe 20 octombrie. Solicitarea pentru un ghid nou a fost respinsă prin cota zilnică GSC.
+- Ramura `codex/gsc-guides-20261103`, din `e39cc26b`, corectează promisiunile neactuale despre configuratorul de personalizare, actualizează `lastmod` pentru cele 23 de pagini de ghid și păstrează toate legăturile și URL-urile existente. Fără migrare D1. `typecheck`, 334 teste, `lint`, `build`, `cf:deploy:dry` și `diff --check` au trecut. Detaliile, limitele GSC și starea livrării sunt în [handofful dedicat](handoff/2026-11-03-gsc-guides.md).
+
 ## GSC și expresii de căutare — 2 noiembrie 2026
 
 - Inspecția GSC individuală confirmă acum **7/7 produse publicate indexate**. One Ring și Pirații din Caraibe au fost preluate cu succes de Googlebot pentru smartphone la 02:05 și au canonic propriu. GSC a acceptat cererile de indexare pentru ambele înainte ca noul status să devină vizibil. Validarea avertismentului vechi `audience` este începută; încă nu este finalizată.
