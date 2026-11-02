@@ -190,6 +190,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           },
           hasMerchantReturnPolicy: {
             "@type": "MerchantReturnPolicy",
+            "@id": "https://cutiutamagica.eu/retur#policy",
             applicableCountry: "RO",
             returnPolicyCountry: "RO",
             returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",

@@ -158,6 +158,9 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
                   itemCondition: "https://schema.org/NewCondition",
                   url,
                   seller: { "@id": "https://cutiutamagica.eu/#organization" },
+                  hasMerchantReturnPolicy: {
+                    "@id": "https://cutiutamagica.eu/retur#policy",
+                  },
                 }
               : undefined,
           }),

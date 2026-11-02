@@ -1,5 +1,12 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## GSC și expresii de căutare — 2 noiembrie 2026
+
+- Inspecția GSC individuală confirmă acum **7/7 produse publicate indexate**. One Ring și Pirații din Caraibe au fost preluate cu succes de Googlebot pentru smartphone la 02:05 și au canonic propriu. GSC a acceptat cererile de indexare pentru ambele înainte ca noul status să devină vizibil. Validarea avertismentului vechi `audience` este începută; încă nu este finalizată.
+- Cele trei sitemapuri copil și lista text sunt citite cu succes pentru 38 URL-uri. Indexul `/sitemap.xml` păstrează „Nu s-a putut prelua”, dar testul live Google din 2 noiembrie arată crawl permis și preluare reușită. Cauza raportului rămâne nedemonstrată. `robots.txt` declară acum și sitemapurile copil direct.
+- Ramura `codex/gsc-merchant-return-20261102` pornește din `origin/codex/cutiuta-cloudflare-final` la `17354e3`. Modifică schema de retur Offer/OnlineStore, textul SEO al catalogului și paginii despre mecanism, `lastmod` pentru paginile modificate și adaugă migrarea append-only 0088 pentru descrieri SEO factuale ale celor șapte produse, cu condiții care păstrează editările administrative noi. Auditul, sursele, expresiile și limitele sunt în [handofful dedicat](handoff/2026-11-02-gsc-remediation.md).
+- Verificări locale: `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry`, `git diff --check` și proba SQLite izolată a migrării 0088 au trecut. Publicarea, aplicarea migrației în D1 production și verificarea vizuală/live se înregistrează după release; nu sunt confirmate de aceste teste.
+
 ## Verificare Search Console — 2 noiembrie 2026
 
 - Scop: audit GSC după deblocarea Mac-ului, fără modificări de cod sau migrații. Bază `d848b54` pe `codex/cutiuta-cloudflare-final`; ramura de documentare `codex/gsc-verification-20261102`.
