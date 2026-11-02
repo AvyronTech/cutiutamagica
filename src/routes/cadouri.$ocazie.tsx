@@ -208,11 +208,11 @@ function GiftGuidePage() {
         <p>{guide.answer}</p>
       </section>
       <section>
-        <h2>Vrei o cutiuță făcută în jurul amintirii tale?</h2>
+        <h2>Cum alegi o cutiuță pentru cineva drag?</h2>
         <p>
-          În configurator poți alege culoarea, fotografia de pe capac, gravura și ambalarea. Vezi
-          opțiunile și termenul estimat în pagina de{" "}
-          <Link to="/personalizeaza">personalizare a cutiuței muzicale</Link>.
+          Pornește de la melodia și ilustrația care îi plac, apoi verifică fotografiile și
+          disponibilitatea în <Link to="/produse">catalogul de cutiuțe muzicale</Link>. Atelierul
+          pentru finisaj și imagine la alegere este în pregătire.
         </p>
       </section>
       <section>
