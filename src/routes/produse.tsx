@@ -127,8 +127,8 @@ function ProductsPage() {
             <em>care spune povestea ta.</em>
           </h1>
           <p>
-            Alege după melodie, emoție sau persoana căreia vrei să-i dăruiești un moment. Fiecare
-            cutiuță prinde viață când învârți manivela.
+            Explorează cutiuțe muzicale din lemn, cu manivelă. Alege după melodie, temă sau persoana
+            căreia vrei să-i dăruiești un moment.
           </p>
           <span className="catalog-intro-note">
             Descoperă colecțiile și caută povestea potrivită mai jos.

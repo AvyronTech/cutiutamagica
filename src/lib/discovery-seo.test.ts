@@ -33,12 +33,15 @@ describe("product discovery and search metadata", () => {
       ),
     );
     expect(new Set([...coreUrls, ...urls]).size).toBe(coreUrls.length + urls.length);
-    expect(readFileSync(resolve("public/robots.txt"), "utf8")).toContain(
-      "Sitemap: https://cutiutamagica.eu/sitemap.xml",
-    );
-    expect(readFileSync(resolve("public/robots.txt"), "utf8")).toContain(
-      "Sitemap: https://cutiutamagica.eu/sitemap.txt",
-    );
+    const robots = readFileSync(resolve("public/robots.txt"), "utf8");
+    for (const path of [
+      "sitemap.xml",
+      "sitemap-core.xml",
+      "sitemap-products.xml",
+      "sitemap-guides.xml",
+      "sitemap.txt",
+    ])
+      expect(robots).toContain(`Sitemap: https://cutiutamagica.eu/${path}`);
   });
   it("has distinct valid editorial profiles for all ten models", () => {
     const entries = Object.values(

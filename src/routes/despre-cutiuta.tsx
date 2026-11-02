@@ -9,7 +9,7 @@ export const Route = createFileRoute("/despre-cutiuta")({
   component: AboutBox,
   head: () => {
     const seo = seoHead({
-      title: "Despre cutiuță — cum prinde viață o melodie | Cutiuța Magică",
+      title: "Cum funcționează o cutiuță muzicală cu manivelă | Cutiuța Magică",
       description:
         "Descoperă cutiuța muzicală din lemn, de la capacul decorat la mecanismul cu manivelă. O poveste despre gesturi mici și emoții care rămân.",
       path: "/despre-cutiuta",
@@ -87,7 +87,7 @@ function AboutBox() {
           </article>
           <article>
             <span>02</span>
-            <h3>Un mecanism, un mic ritual</h3>
+            <h3>Cum funcționează manivela</h3>
             <p>
               Deschizi capacul. Învârți manivela ușor, constant, fără să o forțezi. Cilindrul atinge
               lamelele metalice, iar ritmul mâinii devine ritmul melodiei. Fără baterii. Păstrează
