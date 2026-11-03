@@ -1,5 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Release GSC și sitemapuri directe — 3 noiembrie 2026
+
+- PR [#75](https://github.com/AvyronTech/cutiutamagica/pull/75) a trecut CI și a fost integrat la `b5631f4ca43a505eab32b900f4407deceb5ce4fa`. Workerul de producție a fost publicat din acel commit ca versiunea `9be91ceb-574a-4bab-8a30-361c009d342f`, distribuită 100% potrivit `wrangler deployments list`.
+- Verificare după deploy: `robots.txt` public declară direct `/sitemap-core.xml`, `/sitemap-products.xml`, `/sitemap-guides.xml` și `/sitemap.txt`, toate cele cinci fișiere sitemap publice răspund 200, iar GSC arată „Succes” pentru cele patru surse trimise, cu 8, 7, 23 și 38 URL-uri descoperite. `/api/v1/health` răspunde 200 cu mediul `production` și schema D1 88. `npm run seo:audit:live` a trecut cu 38 URL-uri, 7 produse, 35 imagini, zero pagini orfane și zero probleme. Codul a trecut `typecheck`, 334 teste, `lint`, `build`, `cf:deploy:dry` și CI înainte de merge.
+- Ultima inspecție completă a URL-urilor a confirmat 27/38 indexate: toate paginile esențiale și produsele, plus 12/23 pagini Cadouri. Cele 11 ghiduri rămase sunt în [inventarul GSC](handoff/2026-11-03-gsc-guides.md); quota solicitărilor manuale a fost depășită pentru ziua respectivă. Fișierul `/sitemap.xml` rămâne public, dar intrarea lui cu eroare a fost eliminată numai din raportul GSC. Cauza eșecului acelei citiri nu este identificată, iar procesarea paginilor rămase aparține Google. Fără migrare D1.
+
 ## GSC și sitemapuri directe — 3 noiembrie 2026, 17:23
 
 - Inspecția URL confirmă **27/38 URL-uri canonice indexate**: 8 pagini esențiale, 7 produse și 12 pagini Cadouri. Unsprezece ghiduri mai așteaptă Google. Patru solicitări noi pentru ghiduri au fost acceptate și toate patru au ajuns în index; următoarea cerere a lovit cota zilnică și nu a fost acceptată.
