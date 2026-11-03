@@ -35,7 +35,6 @@ describe("product discovery and search metadata", () => {
     expect(new Set([...coreUrls, ...urls]).size).toBe(coreUrls.length + urls.length);
     const robots = readFileSync(resolve("public/robots.txt"), "utf8");
     for (const path of [
-      "sitemap.xml",
       "sitemap-core.xml",
       "sitemap-products.xml",
       "sitemap-guides.xml",
