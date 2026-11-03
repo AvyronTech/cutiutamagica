@@ -1,5 +1,13 @@
 # Indexarea ghidurilor de cadouri — 3 noiembrie 2026
 
+## Continuare GSC, după verificarea de la 00:13
+
+- În Safari, pe aceeași proprietate `sc-domain:cutiutamagica.eu`, GSC a confirmat explicit „Indexarea a fost solicitată” pentru cinci ghiduri: `/cadouri/craciun`, `/cadouri/secret-santa`, `/cadouri/mos-nicolae`, `/cadouri/zi-de-nastere` și `/cadouri/aniversare-cuplu`. Fiecare a intrat în coada de accesare prioritară. Încercările inițiale din Opera au eșuat la reCAPTCHA și nu au fost numărate drept solicitări acceptate. Niciuna dintre cele cinci confirmări nu dovedește indexarea efectivă; ultimul inventar individual confirmat rămâne 18/38.
+- GSC a confirmat retransmiterea `/sitemap.xml` pe 3 noiembrie, însă rândul încă arată „Nu s-a putut prelua”, tip necunoscut și fără citire nouă. Același XML a răspuns HTTP 200 pentru Googlebot, cu `application/xml` și trei sitemapuri copil valide. `/sitemap-core.xml`, `/sitemap-products.xml`, `/sitemap-guides.xml` și `/sitemap.txt` sunt în continuare „Succes”, cu 8, 7, 23 și respectiv 38 URL-uri descoperite. Nu există un diagnostic GSC care să justifice o altă modificare a formatului.
+- Raportul Merchant actualizat la 2 noiembrie arată 6 elemente valide, 0 invalide. Avertismentul opțional `hasMerchantReturnPolicy` în `offers` afectează încă 5 exemple din crawluri mai vechi; fiecare `Offer` public verificat include acum referința către politica reală. Validarea remedierii a fost pornită și GSC afișează „Validarea începută”, cu data de 3 noiembrie. Avertismentul istoric `audience` mai afișează un exemplu cu „Pare în regulă”. `shippingDetails` rămâne opțional: costul variază conform ofertei curente la checkout, deci nu publicăm un tarif fix inventat.
+- Rapoartele „Acțiuni manuale” și „Probleme de securitate” nu au probleme detectate. `npm run seo:audit:live` a trecut din nou: 38 URL-uri canonice, 7 produse, 35 imagini, 0 pagini orfane și 0 probleme. Raportul agregat „Pagini” rămâne datat 23 octombrie și nu poate măsura rezultatul solicitărilor de azi.
+- Continuarea schimbă numai documentația. `npm run typecheck`, `npm test -- --maxWorkers=2` (334/334), `npm run lint`, `npm run build`, `npm run cf:deploy:dry` și `git diff --check` au trecut; un nou deploy Worker nu este necesar pentru aceste note.
+
 ## Search Console și site public
 
 - Proprietatea verificată: `sc-domain:cutiutamagica.eu`. Inspecția individuală arată 8/8 pagini esențiale, 7/7 produse publicate și 3/23 pagini de ghid indexate: `/cadouri`, `/cadouri/pentru-mama`, `/cadouri/fani-harry-potter`. Total confirmat: 18/38 URL-uri canonice din sitemap. Raportul agregat „Pagini” este încă actualizat doar până la 23 octombrie, deci nu reflectă această inspecție.

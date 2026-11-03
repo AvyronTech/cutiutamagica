@@ -1,5 +1,10 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Continuare GSC — 3 noiembrie 2026
+
+- GSC a acceptat cereri individuale pentru cinci ghiduri încă neindexate: Crăciun, Secret Santa, Moș Nicolae, Zi de naștere și Aniversare de cuplu. Confirmarea este de intrare în coada Google, nu de indexare. Ultimul inventar individual rămâne 8/8 pagini esențiale, 7/7 produse și 3/23 ghiduri indexate. Eroarea reCAPTCHA din Opera a fost evitată folosind Safari, unde proprietatea era deja accesibilă.
+- `/sitemap.xml` a fost retrimis și acceptat la 3 noiembrie, dar rândul păstrează „Nu s-a putut prelua” fără citire nouă; XML-ul public este valid și preluabil, iar sitemapurile copil și lista text sunt „Succes”. Merchant arată 6 valide, 0 invalide la raportul din 2 noiembrie; validarea avertismentului opțional de retur a început la 3 noiembrie, iar `audience` încă este în validare. Acțiunile manuale și problemele de securitate sunt absente. Detalii în [handofful ghidurilor](handoff/2026-11-03-gsc-guides.md).
+
 ## Verificare GSC și conținutul ghidurilor — 3 noiembrie 2026
 
 - Inspecția URL actuală confirmă 8/8 pagini esențiale, 7/7 produse și 3/23 pagini de ghid indexate. Celelalte 20 de ghiduri sunt descoperite sau necunoscute; un test live confirmă că un ghid poate fi indexat. Hubul `/cadouri` este indexat, dar ultima accesare Googlebot a fost pe 20 octombrie. Solicitarea pentru un ghid nou a fost respinsă prin cota zilnică GSC.
