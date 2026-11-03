@@ -48,6 +48,8 @@ describe("seoHead", () => {
 
     expect(head.meta).toContainEqual({ name: "robots", content: "noindex, follow" });
     expect(robots).not.toMatch(/Disallow: \/(auth|comanda|cont|personalizeaza)\b/);
-    expect(robots).toContain("Sitemap: https://cutiutamagica.eu/sitemap.xml");
+    for (const path of ["sitemap-core.xml", "sitemap-products.xml", "sitemap-guides.xml"]) {
+      expect(robots).toContain(`Sitemap: https://cutiutamagica.eu/${path}`);
+    }
   });
 });

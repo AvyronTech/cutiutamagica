@@ -8,9 +8,11 @@ const endpointChecks = [
     label: "Robots",
     path: "/robots.txt",
     valid: (body: string) =>
-      body.includes("Sitemap: https://cutiutamagica.eu/sitemap.xml") &&
+      body.includes("Sitemap: https://cutiutamagica.eu/sitemap-core.xml") &&
+      body.includes("Sitemap: https://cutiutamagica.eu/sitemap-products.xml") &&
+      body.includes("Sitemap: https://cutiutamagica.eu/sitemap-guides.xml") &&
       body.includes("Sitemap: https://cutiutamagica.eu/sitemap.txt"),
-    action: "Declară indexul XML și sitemapul text în robots.txt.",
+    action: "Declară direct cele trei sitemapuri XML și lista text în robots.txt.",
   },
   {
     label: "Index sitemapuri",

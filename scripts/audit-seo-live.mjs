@@ -73,7 +73,7 @@ async function main() {
   }
 
   const robots = resources.get("/robots.txt");
-  for (const path of ["/sitemap.xml", "/sitemap.txt"]) {
+  for (const path of [...sitemapPaths, "/sitemap.txt"]) {
     if (!robots.includes(`Sitemap: ${new URL(path, site).href}`)) {
       problems.push(`robots.txt nu declară ${path}.`);
     }
