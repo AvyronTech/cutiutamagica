@@ -1,5 +1,11 @@
 # Indexarea ghidurilor de cadouri — 3 noiembrie 2026
 
+## Reinspecție URL după cererile acceptate
+
+- GSC confirmă acum indexarea a **7/23 pagini din secțiunea Cadouri**: `/cadouri`, `/cadouri/pentru-mama`, `/cadouri/fani-harry-potter`, `/cadouri/craciun`, `/cadouri/mos-nicolae`, `/cadouri/zi-de-nastere` și `/cadouri/aniversare-cuplu`. Ultimele patru au trecut din starea neindexată în „Adresa URL este pe Google” / „Pagina este indexată” după solicitările individuale. Împreună cu cele 8 pagini esențiale și 7 produse, totalul confirmat este **22/38 URL-uri canonice**.
+- Celelalte 16 ghiduri au fost reinspectate: `/cadouri/secret-santa` este „Accesată cu crawlere – nu este indexată”; 8 sunt „Descoperită – nu este indexată” (`valentines-day`, `multumire`, `pentru-ea`, `pentru-el`, `pentru-colegi`, `pentru-colega`, `iubitori-de-pisici`, `fani-game-of-thrones`); 7 sunt încă necunoscute (`halloween`, `pentru-iubita`, `pentru-sora`, `pentru-iubit`, `pentru-tata`, `fani-fantasy`, `cadouri-mici`). Cererea pentru Secret Santa a fost acceptată, iar accesarea cu crawlere nu a dus încă la indexare.
+- Nu a apărut o eroare nouă de HTTP, `robots.txt`, `noindex` sau date structurate care să explice aceste 16 decizii. Paginile sunt în sitemapul de ghiduri citit cu succes și în legăturile HTML ale hubului. Google precizează că [solicitarea de crawl nu garantează indexarea și că retrimiterile repetate nu grăbesc procesul](https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl). Raportul agregat „Pagini” încă este datat 23 octombrie; inspecția URL individuală este sursa pentru acest inventar.
+
 ## Continuare GSC, după verificarea de la 00:13
 
 - În Safari, pe aceeași proprietate `sc-domain:cutiutamagica.eu`, GSC a confirmat explicit „Indexarea a fost solicitată” pentru cinci ghiduri: `/cadouri/craciun`, `/cadouri/secret-santa`, `/cadouri/mos-nicolae`, `/cadouri/zi-de-nastere` și `/cadouri/aniversare-cuplu`. Fiecare a intrat în coada de accesare prioritară. Încercările inițiale din Opera au eșuat la reCAPTCHA și nu au fost numărate drept solicitări acceptate. Niciuna dintre cele cinci confirmări nu dovedește indexarea efectivă; ultimul inventar individual confirmat rămâne 18/38.
