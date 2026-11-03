@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Progresul indexării ghidurilor — 3 noiembrie 2026
+
+- Reinspecția URL după solicitările acceptate confirmă **7/23 pagini Cadouri indexate**, inclusiv patru noi: Crăciun, Moș Nicolae, Zi de naștere și Aniversare de cuplu. Totalul siteului este **22/38 URL-uri canonice** confirmate individual: 8 pagini esențiale, 7 produse, 7 pagini Cadouri. Secret Santa este acum accesată cu crawlere, dar neindexată; dintre celelalte 15, opt sunt descoperite și șapte încă necunoscute. Sitemapul ghidurilor este „Succes” cu 23 URL-uri; procesarea celor 16 rămase aparține Google. Inventarul exact este în [handofful ghidurilor](handoff/2026-11-03-gsc-guides.md).
+
 ## Continuare GSC — 3 noiembrie 2026
 
 - GSC a acceptat cereri individuale pentru cinci ghiduri încă neindexate: Crăciun, Secret Santa, Moș Nicolae, Zi de naștere și Aniversare de cuplu. Confirmarea este de intrare în coada Google, nu de indexare. Ultimul inventar individual rămâne 8/8 pagini esențiale, 7/7 produse și 3/23 ghiduri indexate. Eroarea reCAPTCHA din Opera a fost evitată folosind Safari, unde proprietatea era deja accesibilă.
