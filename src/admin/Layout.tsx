@@ -67,6 +67,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
       { path: "/admin/products", label: "Produse", icon: ShoppingBag },
+      { path: "/admin/dropshipping", label: "Dropshipping", icon: Boxes },
       { path: "/admin/products/identification", label: "Identificare & etichetare", icon: QrCode },
       { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
       { path: "/admin/personalizations", label: "Personalizări", icon: WandSparkles },
