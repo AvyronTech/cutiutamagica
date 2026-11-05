@@ -112,6 +112,13 @@ function OrderPage() {
     retry: false,
     staleTime: 30_000,
   });
+  const firstOrderBenefit = useQuery({
+    queryKey: ["customer", account.data?.id, "shipping-benefit"],
+    queryFn: () => reviewApi<{ eligible: boolean }>("/api/v1/customer/shipping-benefit"),
+    enabled: !!account.data,
+    staleTime: 0,
+    retry: false,
+  });
   const {
     products,
     promotion,
@@ -378,20 +385,29 @@ function OrderPage() {
       setPaymentProvider(preferredProvider);
   }, [config, easyboxLocker, paymentMethod, shippingOption, paymentProvider]);
 
+  const shippingBenefitBlocked =
+    Boolean(account.data) && (firstOrderBenefit.isPending || firstOrderBenefit.isError);
+  const firstOrderShipping =
+    firstOrderBenefit.isSuccess &&
+    firstOrderBenefit.data?.eligible === true &&
+    account.data?.email.toLowerCase() === form.email.trim().toLowerCase();
   const shippingCost = useMemo(() => {
-    if (activeQuote) return activeQuote.price;
+    if (activeQuote) return firstOrderShipping ? 0 : activeQuote.price;
     if (shippingOption === "easybox") return null;
-    if (!config || config.shipping.requiresConfirmation) return null;
+    if (!config) return null;
     if (config.shipping.liveQuotesEnabled) return null;
+    if (firstOrderShipping) return 0;
+    if (config.shipping.requiresConfirmation) return null;
     if (config.shipping.freeOver != null && productsAfterCode >= config.shipping.freeOver) return 0;
     return config.shipping.standardPrice;
-  }, [config, shippingOption, productsAfterCode, activeQuote]);
+  }, [config, shippingOption, productsAfterCode, activeQuote, firstOrderShipping]);
   const homeDeliveryPreview =
     shippingOption === "home_delivery"
       ? shippingCost
       : !config || config.shipping.requiresConfirmation || config.shipping.liveQuotesEnabled
         ? null
-        : config.shipping.freeOver != null && productsAfterCode >= config.shipping.freeOver
+        : firstOrderShipping ||
+            (config.shipping.freeOver != null && productsAfterCode >= config.shipping.freeOver)
           ? 0
           : config.shipping.standardPrice;
 
@@ -550,6 +566,10 @@ function OrderPage() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (shippingBenefitBlocked) {
+      setSubmitError("Verifică beneficiul de transport înainte de a confirma totalul comenzii.");
+      return;
+    }
     const fail = (message: string) => {
       setSubmitError(message);
       toast.error(message);
@@ -661,6 +681,32 @@ function OrderPage() {
                 ? `${totalQty} ${totalQty === 1 ? "cutiuță aleasă" : "cutiuțe alese"}. Verifică detaliile, apoi noi pregătim povestea pentru drum. ${account.data ? "Ești conectat în contul tău." : "Finalizezi ca invitat, fără să creezi cont."}`
                 : "Alege o cutiuță muzicală pentru a începe comanda."}
             </p>
+            {account.data && firstOrderBenefit.isPending && (
+              <p role="status" className="checkout-first-order-benefit">
+                Verificăm transportul pentru contul tău…
+              </p>
+            )}
+            {account.data && firstOrderBenefit.isError && (
+              <div role="alert" className="checkout-first-order-benefit">
+                <p>Nu putem verifica beneficiul de transport acum.</p>
+                <button
+                  type="button"
+                  className="mt-2 mr-4 min-h-10 underline"
+                  disabled={firstOrderBenefit.isFetching}
+                  onClick={() => void firstOrderBenefit.refetch()}
+                >
+                  {firstOrderBenefit.isFetching ? "Se verifică…" : "Reîncearcă"}
+                </button>
+                <Link to="/auth" className="inline-flex min-h-10 items-center underline">
+                  Reconectare
+                </Link>
+              </div>
+            )}
+            {firstOrderShipping && (
+              <p className="checkout-first-order-benefit" role="status">
+                Prima ta comandă are transport gratuit în România.
+              </p>
+            )}
             {totalQty > 0 && (
               <div className="checkout-assurances" aria-label="Avantajele comenzii">
                 <span>{account.data ? "✓ conectat în contul tău" : "✓ finalizare fără cont"}</span>
@@ -1174,6 +1220,7 @@ function OrderPage() {
                           selected={activeQuote?.id}
                           onSelect={(offer) => setQuote({ offer, context: deliveryContext })}
                           autoSelectBestOffer={shippingOption === "easybox"}
+                          freeShipping={firstOrderShipping}
                         />
                       )}
                     </ChoiceSection>
@@ -1382,7 +1429,12 @@ function OrderPage() {
                   )}
                   <button
                     ref={inlineSubmitRef}
-                    disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
+                    disabled={
+                      submitting ||
+                      shippingBenefitBlocked ||
+                      (totalQty === 0 && !submissionLocked) ||
+                      !config
+                    }
                     type="submit"
                     className="checkout-submit-action w-full disabled:cursor-not-allowed disabled:opacity-50"
                   >
@@ -1512,7 +1564,12 @@ function OrderPage() {
               <button
                 form="checkout-form"
                 type="submit"
-                disabled={submitting || (totalQty === 0 && !submissionLocked) || !config}
+                disabled={
+                  submitting ||
+                  shippingBenefitBlocked ||
+                  (totalQty === 0 && !submissionLocked) ||
+                  !config
+                }
                 aria-label="Finalizează comanda"
                 className="checkout-submit-action checkout-mobile-submit ml-auto min-h-11 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
               >

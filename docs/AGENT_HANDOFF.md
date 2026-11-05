@@ -1,9 +1,14 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Fișe de produs și prima livrare gratuită — 5 noiembrie 2026
+
+- Structură compactă comună, galerii 12/5 s, audiție sub comandă, panouri pliabile, recomandări automate fără săgeți și chat exclus de pe produs. Migrare append-only 0090 pentru transport gratuit la prima comandă înregistrată a clientului autentificat, verificată și revendicată atomic pe server. [Matricea verificărilor și regulile](handoff/2026-11-05-product-page-compact.md).
+- Contul normal de test solicitat ulterior de administrator este creat; datele lui rămân în conversație. Testul live a identificat incompatibilitatea PBKDF2/SubtleCrypto; implementarea Node păstrează hashurile la 210.000 de iterații. Proba de login din producție este separată de verificările locale și de deploy.
+
 ## Audit experiență client — 5 noiembrie 2026
 
 - Separare cache per client și curățare la logout inclusiv pentru cereri în curs, profil de cadouri fără pierderea ocaziilor/temelor, navigare și acces compacte, reîncercări la erori și mesaje corecte în checkout pentru contul conectat. Fără migrare sau modificări ale conturilor administrative, prețurilor ori plăților.
-- Fluxurile autentificate au fost verificate desktop/mobil cu un cont DEMO local. Contul reutilizabil din producție așteaptă adresa exactă de e-mail și codul de verificare; nu există încă un cont de producție de predat. [Matricea auditului și limitele](handoff/2026-11-05-customer-account-audit.md).
+- Fluxurile autentificate au fost verificate desktop/mobil cu un cont DEMO local. Contul reutilizabil a fost ulterior provisionat explicit ca test de administrator; verificarea compatibilității parolei este inclusă în revizia fișelor de produs. [Matricea auditului și limitele](handoff/2026-11-05-customer-account-audit.md).
 
 ## Carduri publice compacte — 5 noiembrie 2026
 

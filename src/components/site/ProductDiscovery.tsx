@@ -32,10 +32,10 @@ export function ProductDiscovery({ product }: { product: Product }) {
   const guides = giftGuidesForProduct(product.id).slice(0, 8);
   return (
     <>
-      <section className="product-discovery" aria-labelledby="discovery-title">
-        <header className="product-discovery__heading">
+      <details className="product-discovery" aria-labelledby="discovery-title">
+        <summary className="product-discovery__heading">
           <h2 id="discovery-title">Idei de dăruit</h2>
-        </header>
+        </summary>
         <div className="product-discovery__grid">
           <article>
             <h3>Pentru cine</h3>
@@ -69,7 +69,7 @@ export function ProductDiscovery({ product }: { product: Product }) {
             <Link to="/cadouri">Toate ghidurile ↗</Link>
           </nav>
         </details>
-      </section>
+      </details>
       <section className="product-faq" aria-labelledby="product-faq-title">
         <h2 id="product-faq-title">Întrebări frecvente</h2>
         <div className="discovery-questions">
@@ -100,7 +100,7 @@ export function ProductDiscovery({ product }: { product: Product }) {
             <summary>Cât de mare este cutiuța?</summary>
             <p>
               Este un obiect compact, potrivit pentru birou, bibliotecă sau vitrină. Dimensiunile
-              exacte ale acestui model sunt trecute în secțiunea „Detalii” de mai sus.
+              exacte sunt în „Povestea cutiuței”, la „Dimensiuni”.
             </p>
           </details>
           <details name="product-faq">

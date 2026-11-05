@@ -1,6 +1,6 @@
 import { handleReviews } from "./reviews";
 import { handlePersonalization } from "./personalization";
-import { handleReviewAccount } from "../review-accounts";
+import { currentReviewer, handleReviewAccount } from "../review-accounts";
 import { handleCustomerBilling } from "./customer-billing";
 import { localMediaPreview } from "@/server/media-policy";
 import { handleCheckoutAdmin } from "./checkout-admin";
@@ -122,18 +122,24 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
   }
 
   try {
-    const result = await createWebsiteOrder(env.DB, parsed.data, async () => {
-      if (parsed.data.paymentMethod === "bank_transfer")
-        throw new CheckoutError("Alege o metodă de plată disponibilă.", 409);
-      if (parsed.data.paymentMethod === "card") {
-        const ready = await checkoutReadiness(env as CommerceEnv);
-        if (!ready.options.some((o) => o.id === (parsed.data.paymentProvider ?? "stripe")))
-          throw new CheckoutError(
-            "Metoda de plată nu mai este disponibilă. Alege o altă opțiune.",
-            409,
-          );
-      }
-    });
+    const customerAccount = await currentReviewer(request, env);
+    const result = await createWebsiteOrder(
+      env.DB,
+      parsed.data,
+      async () => {
+        if (parsed.data.paymentMethod === "bank_transfer")
+          throw new CheckoutError("Alege o metodă de plată disponibilă.", 409);
+        if (parsed.data.paymentMethod === "card") {
+          const ready = await checkoutReadiness(env as CommerceEnv);
+          if (!ready.options.some((o) => o.id === (parsed.data.paymentProvider ?? "stripe")))
+            throw new CheckoutError(
+              "Metoda de plată nu mai este disponibilă. Alege o altă opțiune.",
+              409,
+            );
+        }
+      },
+      { customerAccountId: customerAccount?.id },
+    );
     // Card checkout creates a provisional record. Only a signed, captured
     // payment event may turn it into an accepted order.
     if (parsed.data.paymentMethod !== "card" && result.outboxId) {

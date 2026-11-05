@@ -1,3 +1,5 @@
+import { useReducedMotion } from "framer-motion";
+import { Pause, Play } from "lucide-react";
 import { ProductReviews } from "@/components/site/ProductReviews";
 import { getPublicReviews } from "@/lib/reviews.functions";
 import { ProductDiscovery, ProductMakingNote } from "@/components/site/ProductDiscovery";
@@ -6,7 +8,7 @@ import { ProductWorld } from "@/components/site/ProductWorld";
 import { animateIntoCart } from "@/lib/cart-flight";
 import { ProductInterest } from "@/components/site/ProductInterest";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { lazy, Suspense, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ShoppingBag, Music, Gift, Sparkles, Minus, Plus, Rotate3D, Hourglass } from "lucide-react";
 import { isAvailable, MAX_QTY } from "@/data/products";
 import { getStorePricing } from "@/lib/store-pricing.functions";
@@ -14,7 +16,6 @@ import { catalogProducts } from "@/lib/catalog-products";
 import { useShop } from "@/store/shop";
 import { ProductImage } from "@/components/site/ProductImage";
 import { ProductPrice } from "@/components/site/ProductPrice";
-import { productDetailHighlights } from "@/lib/product-detail-highlights";
 import { playTick } from "@/lib/sound";
 import { notifyAddedToCart } from "@/lib/notify";
 import { ProductCardCarousel } from "@/components/site/ProductCardCarousel";
@@ -234,10 +235,6 @@ function ProductPage() {
     [product.id, product.category, products],
   );
   const gallery = product.gallery;
-  const highlights = useMemo(
-    () => productDetailHighlights(product.details, product.id),
-    [product.details, product.id],
-  );
   const available = isAvailable(product);
   const isInCart = itemsDetailed.some((item) => item.product.id === product.id);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -249,6 +246,61 @@ function ProductPage() {
       (spin.spin_type === "turntable_video" && spin.primaryMediaUrl)),
   );
   const spinThumb = spin ? (spin.coverUrl ?? spin.frames[0]?.url ?? null) : null;
+  const galleryRoot = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+  const [galleryPaused, setGalleryPaused] = useState(false);
+  const [galleryInteracting, setGalleryInteracting] = useState(false);
+  const [galleryVisible, setGalleryVisible] = useState(false);
+  const [pageVisible, setPageVisible] = useState(true);
+  useEffect(() => {
+    setActive(0);
+    setShow360(false);
+    setGalleryPaused(false);
+  }, [product.id]);
+  useEffect(() => {
+    const node = galleryRoot.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setGalleryVisible(entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+    observer.observe(node);
+    const sync = () => setPageVisible(!document.hidden);
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, []);
+  useEffect(() => {
+    if (
+      gallery.length < 2 ||
+      reducedMotion ||
+      galleryPaused ||
+      galleryInteracting ||
+      !galleryVisible ||
+      !pageVisible ||
+      show360 ||
+      zoomOpen
+    )
+      return;
+    const timer = window.setTimeout(
+      () => setActive((index) => (index + 1) % gallery.length),
+      active === 0 ? 12_000 : 5_000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [
+    active,
+    gallery.length,
+    reducedMotion,
+    galleryPaused,
+    galleryInteracting,
+    galleryVisible,
+    pageVisible,
+    show360,
+    zoomOpen,
+  ]);
   const moveGallery = (delta: number) => {
     if (gallery.length < 2) return;
     setActive((current) => (current + delta + gallery.length) % gallery.length);
@@ -259,7 +311,22 @@ function ProductPage() {
   return (
     <ProductWorld product={product}>
       <div className="product-detail-shell max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-12 items-start">
-        <div className="product-detail-gallery perspective-1000">
+        <div
+          ref={galleryRoot}
+          className="product-detail-gallery perspective-1000"
+          onPointerEnter={(event) => {
+            if (event.pointerType === "mouse") setGalleryInteracting(true);
+          }}
+          onPointerLeave={() => setGalleryInteracting(false)}
+          onFocusCapture={(event) =>
+            setGalleryInteracting(
+              !(event.target as HTMLElement).closest(".product-gallery-autoplay"),
+            )
+          }
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setGalleryInteracting(false);
+          }}
+        >
           {show360 && spin && has360 ? (
             <div className="relative overflow-hidden rounded-2xl shadow-warm">
               <ProductSpinViewer spin={spin} productName={product.name} />
@@ -267,6 +334,22 @@ function ProductPage() {
             </div>
           ) : (
             <div className="product-main-visual relative overflow-hidden shadow-warm bg-card">
+              {gallery.length > 1 && !reducedMotion && (
+                <button
+                  type="button"
+                  className="product-gallery-autoplay"
+                  onClick={() => setGalleryPaused((value) => !value)}
+                  aria-label={
+                    galleryPaused
+                      ? "Pornește schimbarea fotografiilor"
+                      : "Oprește schimbarea fotografiilor"
+                  }
+                  aria-pressed={galleryPaused}
+                >
+                  {galleryPaused ? <Play size={14} aria-hidden /> : <Pause size={14} aria-hidden />}
+                </button>
+              )}
+
               <button
                 type="button"
                 key={currentImage.src}
@@ -397,25 +480,11 @@ function ProductPage() {
         </div>
 
         <div className="product-detail-copy">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            {product.category}
-          </p>
           <h1 className="font-display text-4xl md:text-5xl mt-2">{product.name}</h1>
           <p className="mt-3 text-lg text-muted-foreground">{product.tagline}</p>
           {available ? (
-            <div className="mt-6">
+            <div className="product-detail-price">
               <ProductPrice product={product} size="detail" tone="light" />
-              <span className="mt-1 block text-xs text-muted-foreground">preț pe cutiuță</span>
-              {experienceQuery.data?.audio && (
-                <ProductAudioOverlay
-                  key={experienceQuery.data.audio.media_id}
-                  audio={experienceQuery.data.audio}
-                  productSlug={product.id}
-                />
-              )}
-              {!experienceQuery.isLoading && !experienceQuery.data?.audio && (
-                <ProductAudioUnavailable melody={product.melody} />
-              )}
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 p-4">
@@ -486,19 +555,21 @@ function ProductPage() {
             </Link>
           )}
 
-          {highlights.length > 0 && (
-            <div className="product-detail-highlights mt-7">
-              <h2 className="font-display text-xl">Detalii care contează</h2>
-              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                {highlights.map((detail) => (
-                  <li key={detail} className="flex gap-2 text-sm">
-                    <span className="text-[color:var(--gold)]" aria-hidden>
-                      ✦
-                    </span>{" "}
-                    {detail}
-                  </li>
-                ))}
-              </ul>
+          {available && (
+            <div className="product-detail-audio" aria-busy={experienceQuery.isLoading}>
+              {experienceQuery.isLoading && (
+                <p className="product-audio-loading">Se pregătește audiția…</p>
+              )}
+              {experienceQuery.data?.audio && (
+                <ProductAudioOverlay
+                  key={experienceQuery.data.audio.media_id}
+                  audio={experienceQuery.data.audio}
+                  productSlug={product.id}
+                />
+              )}
+              {!experienceQuery.isLoading && !experienceQuery.data?.audio && (
+                <ProductAudioUnavailable melody={product.melody} />
+              )}
             </div>
           )}
 
@@ -587,6 +658,8 @@ function ProductPage() {
               products={related}
               ariaLabel="Alte cutiuțe care ți-ar putea plăcea"
               compact
+              continuous
+              hideArrows
             />
           </section>
         )}

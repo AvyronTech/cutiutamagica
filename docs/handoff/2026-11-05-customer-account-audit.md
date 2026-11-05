@@ -2,7 +2,7 @@
 
 ## Scop și stare
 
-Audit al experienței clientului obișnuit, fără privilegii administrative. Contul reutilizabil din producție încă așteaptă adresa exactă de e-mail aleasă de utilizator și verificarea codului primit acolo. Nu a fost înlocuit cu un cont fabricat în D1 și nu s-au ocolit verificările de înregistrare. Parolele și codurile nu se includ în repository sau în această fișă.
+Audit al experienței clientului obișnuit, fără privilegii administrative. Administratorul a furnizat ulterior datele și a cerut explicit un cont de test gata de utilizat, fără OTP. Contul a fost provisionat separat, fără modificarea altor conturi și fără drepturi administrative. Verificarea live a identificat incompatibilitatea autentificării cu parolă, remediată în [revizia fișelor de produs](2026-11-05-product-page-compact.md). Credentialele nu se includ în repository sau în această fișă.
 
 ## Corecții
 
@@ -32,6 +32,6 @@ Bază D1 izolată, date DEMO, fără e-mailuri, publicări, comenzi sau plăți 
 
 Capturi: `/Users/niss/.codex/visualizations/2026/11/05/cutiuta-customer-audit/`. Testele automate de sesiune acoperă golirea datelor private, meniul deja montat și răspunsurile sosite după deconectare. Verificările complete și releaseul se confirmă separat din CI/Cloudflare; autentificarea DEMO locală nu dovedește un cont de producție.
 
-## Rămase pentru contul reutilizabil
+## Continuarea verificării live
 
-Adresa exactă de e-mail și codul de verificare. Ulterior: creare prin fluxul normal, parolă dedicată, reconectare în producție și predarea credențialelor direct utilizatorului. Validarea livrării e-mailurilor, a plăților sau a unei comenzi reale nu este dedusă din testele locale.
+Contul de test este provisionat. Loginul și reconectarea se confirmă după publicarea implementării compatibile Workers. Nu se deduce livrarea unui e-mail, plata sau o comandă reală din testele locale. Datele contului se predau numai în conversația administratorului.

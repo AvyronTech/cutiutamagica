@@ -143,6 +143,10 @@ function DeliveryPage() {
           Alegi traseul potrivit și vezi în checkout costul final și estimarea de transport pentru
           adresa ta. Dacă alegi un model realizat la comandă, confirmăm și timpul de pregătire.
         </p>
+        <p className="font-semibold text-foreground">
+          Prima comandă în magazin are transport gratuit în România pentru clienții conectați în
+          cont. Folosește aceeași adresă de e-mail în checkout.
+        </p>
         {freeLabel && (
           <p className="font-semibold text-foreground">
             {freeLabel}. Pragul se aplică valorii produselor după reduceri; sub acest prag, costul

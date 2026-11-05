@@ -1,5 +1,6 @@
+import { pbkdf2 } from "node:crypto";
+
 const iterations = 210_000;
-const encoder = new TextEncoder();
 
 function hex(bytes: Uint8Array): string {
   return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
@@ -16,15 +17,14 @@ export function normalizeCustomerPhone(value: string): string | null {
 }
 
 async function derive(password: string, salt: string): Promise<string> {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, [
-    "deriveBits",
-  ]);
-  const result = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: encoder.encode(salt), iterations },
-    key,
-    256,
-  );
-  return hex(new Uint8Array(result));
+  // Workers' SubtleCrypto limits PBKDF2 iteration counts. The supported Node
+  // implementation preserves the existing 210,000-iteration hashes unchanged.
+  return new Promise((resolve, reject) => {
+    pbkdf2(password, salt, iterations, 32, "sha256", (error, result) => {
+      if (error) reject(error);
+      else resolve(result.toString("hex"));
+    });
+  });
 }
 
 export async function hashCustomerPassword(

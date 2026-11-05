@@ -1699,3 +1699,102 @@ describe("Stripe saved cards", () => {
     ).toMatchObject({ status: "deleted" });
   });
 });
+
+describe("registered first-order shipping", () => {
+  function register(id = "shipping-account", email = "test@example.test") {
+    sqlite
+      .prepare(
+        "INSERT INTO review_accounts(id,email,display_name,password_hash,password_salt,status,auth_mode) VALUES(?,?,'Test','unused','unused','active','password')",
+      )
+      .run(id, email);
+    return { customerAccountId: id };
+  }
+  it("applies zero delivery once, preserving totals and idempotent replay", async () => {
+    const context = register();
+    const body = input();
+    body.paymentMethod = "cash_on_delivery";
+    const first = await createWebsiteOrder(env.DB, body, undefined, context);
+    expect(first.shipping).toBe(0);
+    expect(first.total).toBe(first.subtotal - first.discount);
+    const replay = await createWebsiteOrder(env.DB, body, undefined, context);
+    expect(replay.orderId).toBe(first.orderId);
+    expect(replay.replayed).toBe(true);
+    const second = await createWebsiteOrder(
+      env.DB,
+      { ...body, idempotencyKey: crypto.randomUUID() },
+      undefined,
+      context,
+    );
+    expect(second.shipping).toBe(19);
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM first_order_shipping_redemptions").get()!.n).toBe(
+      1,
+    );
+  });
+  it("does not grant the benefit based only on an email or another account's identity", async () => {
+    const context = register("another-account", "other@example.test");
+    const body = input();
+    body.paymentMethod = "cash_on_delivery";
+    expect((await createWebsiteOrder(env.DB, body, undefined, context)).shipping).toBe(19);
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM first_order_shipping_redemptions").get()!.n).toBe(
+      0,
+    );
+  });
+  it("ignores a client-supplied account identifier without an authenticated session", async () => {
+    register();
+    const body = input();
+    body.paymentMethod = "cash_on_delivery";
+    const response = await handleApiRequest(
+      request("/api/v1/orders", { ...body, customerAccountId: "shipping-account" }),
+      env,
+      { waitUntil: vi.fn() } as unknown as ExecutionContext,
+    );
+    expect(response?.status).toBe(201);
+    const payload = (await response!.json()) as { data: { shipping: number } };
+    expect(payload.data.shipping).toBe(19);
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM first_order_shipping_redemptions").get()!.n).toBe(
+      0,
+    );
+  });
+  it("excludes a customer with an earlier guest order", async () => {
+    const body = input();
+    body.paymentMethod = "cash_on_delivery";
+    await createWebsiteOrder(env.DB, body);
+    const context = register();
+    const next = await createWebsiteOrder(
+      env.DB,
+      { ...body, idempotencyKey: crypto.randomUUID() },
+      undefined,
+      context,
+    );
+    expect(next.shipping).toBe(19);
+  });
+  it("rolls back competing free claims and never grants two first-order deliveries", async () => {
+    const context = register();
+    const body = input();
+    body.paymentMethod = "cash_on_delivery";
+    body.expectedTotalBani = await checkoutSubtotal(env.DB, body.items);
+    const results = await Promise.allSettled([
+      createWebsiteOrder(env.DB, body, undefined, context),
+      createWebsiteOrder(
+        env.DB,
+        { ...body, idempotencyKey: crypto.randomUUID() },
+        undefined,
+        context,
+      ),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM first_order_shipping_redemptions").get()!.n).toBe(
+      1,
+    );
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM orders").get()!.n).toBe(1);
+  });
+  it("still requires a real Easybox selection and quote before free delivery", async () => {
+    const context = register();
+    const body = input();
+    body.shippingOption = "easybox";
+    await expect(createWebsiteOrder(env.DB, body, undefined, context)).rejects.toThrow("easybox");
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM first_order_shipping_redemptions").get()!.n).toBe(
+      0,
+    );
+  });
+});

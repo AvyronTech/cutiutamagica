@@ -83,13 +83,13 @@ export function ProductShare({ id, name, tagline }: ProductShareProps) {
   }
 
   return (
-    <section className="product-share" aria-labelledby={`share-${id}`}>
-      <div className="product-share__heading">
+    <details className="product-share" aria-labelledby={`share-${id}`}>
+      <summary className="product-share__heading">
         <span className="product-share__emblem" aria-hidden>
           <Share2 />
         </span>
         <strong id={`share-${id}`}>Trimite povestea mai departe</strong>
-      </div>
+      </summary>
 
       <div className="product-share__channels" aria-label="Canale de distribuire">
         <button type="button" onClick={shareNative} className="product-share__native">
@@ -127,6 +127,6 @@ export function ProductShare({ id, name, tagline }: ProductShareProps) {
           <span>{copied ? "Link copiat" : "Copiază linkul"}</span>
         </button>
       </div>
-    </section>
+    </details>
   );
 }
