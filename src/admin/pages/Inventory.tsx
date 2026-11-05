@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { getAdminInventoryProducts } from "@/lib/admin.functions";
 import type { AdminProduct } from "@/lib/admin-contracts";
+import { localProductPhoto } from "@/lib/catalog-products";
+import { stableProductImageSource } from "@/lib/product-image-source";
+import { ProductImage } from "@/components/site/ProductImage";
 import { ProductInventory } from "./ProductInventory";
 
 function stockTone(product: AdminProduct): string {
@@ -128,42 +131,58 @@ export default function Inventory() {
             <span>Stoc intern</span>
             <span className="text-right">Acțiune</span>
           </div>
-          {filtered.map((product) => (
-            <article
-              key={product.id}
-              className="grid gap-3 border-b border-slate-800 p-4 last:border-0 md:grid-cols-[minmax(0,1fr)_130px_120px] md:items-center"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="grid h-11 w-11 flex-none place-items-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <PackageCheck className="h-5 w-5 text-slate-500" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <h2 className="truncate text-sm font-semibold text-slate-100">{product.name}</h2>
-                  <p className="mt-1 truncate font-mono text-[10px] text-slate-500">
-                    {product.sku}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <span
-                  className={`inline-flex rounded-lg border px-2.5 py-1.5 text-xs font-semibold tabular-nums ${stockTone(product)}`}
-                >
-                  {product.inventoryTracked ? `${product.stock ?? 0} disponibile` : "Neconfigurat"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedId(product.id)}
-                className="rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-200 md:justify-self-end"
+          {filtered.map((product) => {
+            const imageSrc = stableProductImageSource(
+              product.imageUrl || localProductPhoto(product.slug) || "",
+            );
+            return (
+              <article
+                key={product.id}
+                className="grid gap-3 border-b border-slate-800 p-4 last:border-0 md:grid-cols-[minmax(0,1fr)_130px_120px] md:items-center"
               >
-                Setează stocul
-              </button>
-            </article>
-          ))}
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="grid h-11 w-11 flex-none place-items-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+                    {imageSrc ? (
+                      <ProductImage
+                        src={imageSrc}
+                        alt=""
+                        width={44}
+                        height={44}
+                        thumbnail
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <PackageCheck className="h-5 w-5 text-slate-500" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-sm font-semibold text-slate-100">
+                      {product.name}
+                    </h2>
+                    <p className="mt-1 truncate font-mono text-[10px] text-slate-500">
+                      {product.sku}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <span
+                    className={`inline-flex rounded-lg border px-2.5 py-1.5 text-xs font-semibold tabular-nums ${stockTone(product)}`}
+                  >
+                    {product.inventoryTracked
+                      ? `${product.stock ?? 0} disponibile`
+                      : "Neconfigurat"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(product.id)}
+                  className="rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-200 md:justify-self-end"
+                >
+                  Setează stocul
+                </button>
+              </article>
+            );
+          })}
           {!filtered.length && (
             <p className="p-8 text-center text-sm text-slate-500">
               Nu există produse pentru filtrul ales.
