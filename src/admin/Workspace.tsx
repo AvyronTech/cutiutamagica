@@ -10,12 +10,16 @@ export function Workspace({
   active,
   onSelect,
   tabs,
+  toolbar,
+  compactTabs = false,
 }: {
   title: string;
   description: string;
   active: string;
   onSelect: (tab: string) => void;
   tabs: Tab[];
+  toolbar?: ReactNode;
+  compactTabs?: boolean;
 }) {
   const id = useId();
   const [visited, setVisited] = useState<string[]>([active]);
@@ -33,7 +37,12 @@ export function Workspace({
         <h1 className="mt-2 text-xl font-semibold text-white md:text-2xl">{title}</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{description}</p>
       </header>
-      <div role="tablist" aria-label={title} className="grid gap-2 sm:flex sm:flex-wrap">
+      {toolbar}
+      <div
+        role="tablist"
+        aria-label={title}
+        className={`grid gap-2 sm:flex sm:flex-wrap ${compactTabs ? "grid-cols-2" : ""}`}
+      >
         {tabs.map((tab, index) => {
           const Icon = tab.icon;
           return (
@@ -67,7 +76,11 @@ export function Workspace({
               <Icon className="h-4 w-4 flex-none text-amber-200" aria-hidden />
               <span>
                 <strong className="block text-sm font-semibold">{tab.label}</strong>
-                <span className="mt-0.5 block text-xs text-slate-400">{tab.description}</span>
+                <span
+                  className={`mt-0.5 text-xs text-slate-400 ${compactTabs ? "hidden sm:block" : "block"}`}
+                >
+                  {tab.description}
+                </span>
               </span>
             </button>
           );

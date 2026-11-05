@@ -1,3 +1,4 @@
+import { analyticsPeriod, type AnalyticsDays } from "@/lib/analytics-report";
 type ImportedTrafficMetric = {
   source: string;
   property_id: string;
@@ -8,13 +9,16 @@ type ImportedTrafficMetric = {
   last_day: string;
 };
 
-const storefrontActivity = `path NOT LIKE '/admin%' AND path NOT LIKE '/api/%'
+export const storefrontActivity = `path NOT LIKE '/admin%' AND path NOT LIKE '/api/%'
   AND path != '/auth'`;
 
 /** Observed storefront events and provider imports measure different things. */
-export async function readTrafficOverview(db: D1Database, now = new Date()) {
-  const endDay = now.toISOString().slice(0, 10);
-  const startDay = new Date(now.getTime() - 29 * 86_400_000).toISOString().slice(0, 10);
+export async function readTrafficOverview(
+  db: D1Database,
+  now = new Date(),
+  days: AnalyticsDays = 30,
+) {
+  const { startDay, endDay } = analyticsPeriod(days, now);
   const [imported, events, pages] = await Promise.all([
     db
       .prepare(
@@ -28,7 +32,7 @@ export async function readTrafficOverview(db: D1Database, now = new Date()) {
       .prepare(
         `SELECT event_name AS event,SUM(event_count) AS count,MAX(updated_at) AS lastEventAt
        FROM growth_event_daily WHERE event_day BETWEEN ?1 AND ?2 AND ${storefrontActivity}
-         AND event_name IN ('page_view','product_view','add_to_cart','checkout_start')
+
        GROUP BY event_name`,
       )
       .bind(startDay, endDay)
@@ -37,7 +41,7 @@ export async function readTrafficOverview(db: D1Database, now = new Date()) {
       .prepare(
         `SELECT path,SUM(event_count) AS views FROM growth_event_daily
        WHERE event_day BETWEEN ?1 AND ?2 AND ${storefrontActivity} AND event_name='page_view'
-       GROUP BY path ORDER BY views DESC,path LIMIT 5`,
+       GROUP BY path ORDER BY views DESC,path LIMIT 10`,
       )
       .bind(startDay, endDay)
       .all<{ path: string; views: number }>(),

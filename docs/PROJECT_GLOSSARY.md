@@ -46,3 +46,11 @@ Folosește forma din coloana „În interfață” pentru texte adresate clientu
 - **Rețele sociale și postări**: conturile oficiale, rezultate, ciorne, aprobări și propuneri de relații; aceeași identitate și același flux de aprobare.
 - **Stocuri și aprovizionare**: disponibilitate/depozite și cercetarea surselor pentru produsul selectat; recepția continuă în identificare.
 - **Cutiuțe Personalizate**: denumirea administrativă a cererilor, designului și producției de cutiuțe personalizate.
+
+## Raportare comună
+
+- **Statistici și trafic**: sinteză, vânzări, activitate și surse, pe aceeași perioadă UTC. Stocul și fluxurile de lucru arată separat situația curentă.
+- **Valoarea netă a comenzilor**: valoarea comenzilor neanulate, după rambursări, în moneda lor; nu înseamnă numerar încasat sau profit.
+- **Încasări nete**: sume plătite minus rambursări pentru comenzile plasate în perioadă; nu registru bancar după data plății.
+- **Acțiuni observate**: evenimente înregistrate, posibil repetate ori provenite din teste; nu vizitatori unici. Comenzile de pe site se calculează separat din datele comerciale.
+- **Date Google indisponibile**: nu există import pentru proprietatea și perioada selectate; nu echivalează cu zero trafic.

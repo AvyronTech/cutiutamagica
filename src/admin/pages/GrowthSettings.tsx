@@ -3,15 +3,13 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Download, RefreshCw, Save, KeyRound } from "lucide-react";
+import { Download, Save, KeyRound } from "lucide-react";
 import {
   getGrowthSettings,
   saveGrowthSettings,
   saveIntegrationCredential,
   verifyIntegration,
   previewOwnerReport,
-  getTrafficMetrics,
-  importTrafficMetrics,
 } from "@/lib/growth.functions";
 import type { CredentialProvider } from "@/lib/growth-contracts";
 import { ProviderSetupGuide } from "./ProviderSetupGuide";
@@ -40,7 +38,7 @@ const labels: Record<CredentialProvider, string> = {
   resend: "Resend",
   resend_marketing: "Resend · contacte și campanii (Full access)",
   brave: "Brave Search",
-  google: "Google Analytics și Search Console · token OAuth read-only",
+  google: "Google Analytics și Search Console · token OAuth cu acces de citire",
   meta: "Meta (token de acces)",
   esteto: "Esteto Marketplace · cod API",
   avyron_crm: "CRM intern · secret HMAC",
@@ -200,7 +198,7 @@ export default function GrowthSettings({
   );
   const title = {
     owner_reports: "E-mail și rapoarte proprietari",
-    traffic: "Trafic și audiență",
+    traffic: "Surse de date și conexiuni",
     finance: "Conexiuni financiare",
     supplier_research: "Cercetare furnizori",
   }[section];
@@ -291,18 +289,6 @@ export default function GrowthSettings({
       ) : (
         <h1 className="text-2xl font-semibold text-white">{title}</h1>
       )}
-      {section === "traffic" && (
-        <TrafficResults
-          googleConfigured={data.credentials.some(
-            (item) => item.provider === "google" && item.configured,
-          )}
-          gaPropertyId={data.traffic.gaPropertyId}
-          gscProperty={data.traffic.gscProperty}
-        />
-      )}
-      {section === "traffic" && (
-        <h2 className="text-lg font-semibold text-white">Conexiuni și proprietăți</h2>
-      )}
       <form key={section} onSubmit={submit} className="grid max-w-3xl gap-5">
         {section === "owner_reports" && (
           <>
@@ -327,22 +313,31 @@ export default function GrowthSettings({
         )}
         {section === "traffic" && (
           <>
-            {field("gaPropertyId", "Google Analytics 4 · Property ID", data.traffic.gaPropertyId)}
+            {field(
+              "gaPropertyId",
+              "Google Analytics 4 · identificator proprietate",
+              data.traffic.gaPropertyId,
+            )}
             {field(
               "gscProperty",
               "Search Console · sc-domain:cutiutamagica.eu",
               data.traffic.gscProperty,
             )}
-            {field("facebookPageId", "Facebook · Page ID", data.traffic.facebookPageId)}
+            {field(
+              "facebookPageId",
+              "Facebook · identificator pagină",
+              data.traffic.facebookPageId,
+            )}
             {field(
               "instagramAccountId",
-              "Instagram · Business Account ID",
+              "Instagram · identificator cont profesional",
               data.traffic.instagramAccountId,
             )}
-            {field("tiktokAccountId", "TikTok · Account ID", data.traffic.tiktokAccountId)}
+            {field("tiktokAccountId", "TikTok · identificator cont", data.traffic.tiktokAccountId)}
             <p className="text-xs text-slate-400">
-              Google: import la cerere cu token readonly valid. Conturile sociale sunt pregătite
-              pentru conectare; colectarea necesită aprobările și permisiunile fiecărei platforme.
+              Google: import la cerere cu token valid cu acces de citire. Conturile sociale sunt
+              pregătite pentru conectare; colectarea necesită aprobările și permisiunile fiecărei
+              platforme.
             </p>
           </>
         )}
@@ -353,13 +348,13 @@ export default function GrowthSettings({
               "Referință cont Revolut (fără date sensibile)",
               data.finance.revolutAccount,
             )}
-            {field("stripeAccount", "Stripe · Account ID", data.finance.stripeAccount)}
+            {field("stripeAccount", "Stripe · identificator cont", data.finance.stripeAccount)}
             {field(
               "oblioSeries",
               "Referință serie Oblio (seria operațională se gestionează în Facturare)",
               data.finance.oblioSeries,
             )}
-            {field("spvClientId", "ANAF SPV · Client ID", data.finance.spvClientId)}
+            {field("spvClientId", "ANAF SPV · identificator client", data.finance.spvClientId)}
             <p className="text-sm text-slate-400">
               Monede: RON și EUR. Oblio se gestionează în Facturare. SPV/e-Factura necesită
               autorizare ANAF și certificat. Tokenurile OAuth expiră și trebuie reînnoite.
@@ -474,176 +469,6 @@ export default function GrowthSettings({
             </>
           )}
         </div>
-      )}
-    </section>
-  );
-}
-function TrafficResults({
-  googleConfigured,
-  gaPropertyId,
-  gscProperty,
-}: {
-  googleConfigured: boolean;
-  gaPropertyId: string;
-  gscProperty: string;
-}) {
-  const load = useServerFn(getTrafficMetrics),
-    sync = useServerFn(importTrafficMetrics);
-  const query = useQuery({ queryKey: ["admin", "traffic"], queryFn: () => load() });
-  const mutation = useMutation({
-    mutationFn: sync,
-    onSuccess: () => {
-      query.refetch();
-      toast.success("Date importate");
-    },
-    onError: (e) => toast.error(e.message),
-  });
-  return (
-    <section className="space-y-5" aria-label="Măsurarea traficului">
-      {query.isError ? (
-        <p role="alert">
-          Statisticile nu au putut fi încărcate.{" "}
-          <button className="underline" onClick={() => query.refetch()}>
-            Reîncearcă
-          </button>
-        </p>
-      ) : !query.data ? (
-        <p role="status" className="text-slate-400">
-          Se încarcă activitatea magazinului…
-        </p>
-      ) : (
-        <>
-          <div className="rounded-xl border border-slate-700 bg-slate-950/30 p-4">
-            <h2 className="font-semibold text-white">Activitate în magazin · 30 de zile</h2>
-            <p className="mt-1 text-xs text-slate-400">
-              {query.data.startDay} – {query.data.endDay} (UTC). Evenimente înregistrate de magazin;
-              pot include administratori și teste. Numerele reprezintă acțiuni, nu vizitatori unici.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
-              {(
-                [
-                  ["page_view", "Afișări de pagină"],
-                  ["product_view", "Vizualizări de produs"],
-                  ["add_to_cart", "Adăugări în coș"],
-                  ["checkout_start", "Începuturi de comandă"],
-                ] as const
-              ).map(([event, label]) => (
-                <article key={event} className="rounded-lg border border-slate-700 p-3">
-                  <p className="text-xs text-slate-300">{label}</p>
-                  <p className="mt-2 text-2xl tabular-nums text-white">
-                    {(
-                      query.data.events.find((row) => row.event === event)?.count ?? 0
-                    ).toLocaleString("ro-RO")}
-                  </p>
-                </article>
-              ))}
-            </div>
-            {query.data.pages.length > 0 && (
-              <details className="mt-4 text-sm text-slate-300">
-                <summary className="cursor-pointer">Pagini cu activitate înregistrată</summary>
-                <ul className="mt-3 space-y-2">
-                  {query.data.pages.map((row) => (
-                    <li key={row.path} className="flex items-start justify-between gap-3">
-                      <span className="min-w-0 break-all">{row.path}</span>
-                      <span className="shrink-0 tabular-nums">
-                        {row.views.toLocaleString("ro-RO")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )}
-          </div>
-          <div>
-            <h2 className="font-semibold text-white">Vizibilitate și trafic din Google</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Search Console măsoară clicuri și afișări în căutare. GA4 măsoară vizitele urmărite de
-              Google Analytics. Conectarea din browser și importul în dashboard sunt conexiuni
-              distincte.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {(["gsc", "ga4"] as const).map((source) => {
-                const property = source === "gsc" ? gscProperty : gaPropertyId;
-                const reason = !property
-                  ? "Salvează mai jos identificatorul proprietății."
-                  : !googleConfigured
-                    ? "Configurează accesul Google read-only în Conturi și acces."
-                    : "Credențială salvată; accesul și valabilitatea se verifică la import.";
-                return (
-                  <article key={source} className="rounded-lg border border-slate-700 p-4">
-                    <h3 className="text-sm font-semibold text-white">
-                      {source === "gsc" ? "Google Search Console" : "Google Analytics 4"}
-                    </h3>
-                    <p className="my-2 text-xs text-slate-400">{reason}</p>
-                    <button
-                      className={button}
-                      disabled={mutation.isPending || !property || !googleConfigured}
-                      onClick={() => mutation.mutate({ data: { source } })}
-                    >
-                      <RefreshCw size={16} /> Importă {source.toUpperCase()}
-                    </button>
-                    {source === "gsc" && (
-                      <a
-                        className="mt-3 block text-xs text-cyan-200 underline"
-                        href="https://search.google.com/search-console/performance/search-analytics?resource_id=sc-domain%3Acutiutamagica.eu"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Deschide raportul Google
-                      </a>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-            {!googleConfigured && (
-              <a
-                className="mt-3 inline-flex text-sm text-cyan-200 underline"
-                href="/admin/accounts"
-              >
-                Conturi și acces · conectează Google
-              </a>
-            )}
-            {mutation.isError && (
-              <p role="alert" className="mt-3 text-sm text-rose-200">
-                {mutation.error.message}
-              </p>
-            )}
-            {query.data.imported.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-400">
-                Datele Google vor apărea după conectare și primul import reușit. Activitatea
-                magazinului este afișată mai sus.
-              </p>
-            ) : (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {query.data.imported.map((row) => (
-                  <article
-                    key={`${row.source}:${row.property_id}:${row.metric}`}
-                    className="rounded-lg border border-slate-700 p-4"
-                  >
-                    <p className="text-xs text-slate-300">
-                      {row.source.toUpperCase()} ·{" "}
-                      {(
-                        {
-                          clicks: "Clicuri",
-                          impressions: "Afișări în căutare",
-                          sessions: "Sesiuni",
-                          page_views: "Afișări de pagină",
-                        } as Record<string, string>
-                      )[row.metric] ?? row.metric}
-                    </p>
-                    <p className="my-2 text-2xl text-white">{row.value.toLocaleString("ro-RO")}</p>
-                    <p className="text-xs text-slate-400">
-                      {row.first_day} – {row.last_day}
-                      <br />
-                      Importat: {new Date(row.updated_at).toLocaleString("ro-RO")}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
       )}
     </section>
   );

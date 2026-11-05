@@ -26,7 +26,8 @@ export const Route = createFileRoute("/_authenticated/admin/ai")({
           </div>
         </div>
         <Link
-          to="/admin/marketing"
+          to="/admin/social"
+          search={{ tab: "posts" }}
           className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-amber-200/25 bg-amber-100/10 px-4 py-2.5 text-xs font-semibold text-amber-100 hover:bg-amber-100/20"
         >
           <ShieldCheck className="h-4 w-4" /> Aprobări postări

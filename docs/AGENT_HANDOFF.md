@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Statistici și trafic — 5 noiembrie 2026
+
+- Secțiune comună cu Sinteză, Vânzări și produse, Trafic și conversii, Surse și conexiuni; perioade 7/30/90 zile în URL și compatibilitate cu vechiul Trafic. Financiar folosește aceeași agregare, separat pe monede. Date Google/activitate/comenzi distincte, fără profit sau conversii presupuse; rapoartele se invalidează după modificările operaționale. Fără migrare sau activare externă. [Definiții, probe și limite](handoff/2026-11-05-statistics-traffic.md).
+
 ## Spații administrative unificate — 5 noiembrie 2026
 
 - Identificare/etichete/coduri QR, Rețele sociale/postări și Stocuri/aprovizionare au fiecare un singur spațiu cu file. Contextele produs/cont/comandă și formularele se păstrează, interogările ascunse sunt oprite, iar adresele vechi redirecționează. Cutiuțe Personalizate este noua denumire; Promoții, Newsletter și E-mail și rapoarte sunt în Operațiuni. Fără migrare sau activare de furnizori. [Implementare, verificări și limite](handoff/2026-11-05-unified-admin-workspaces.md).
