@@ -1,3 +1,4 @@
+import { subscribeReportSync } from "./report-sync";
 import { useState, useEffect, useRef } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -112,8 +113,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Analiză și control",
     items: [
-      { path: "/admin/statistics", label: "Statistici", icon: BarChart3 },
-      { path: "/admin/traffic", label: "Trafic", icon: TrendingUp },
+      { path: "/admin/statistics", label: "Statistici și trafic", icon: BarChart3 },
       { path: "/admin/seo", label: "SEO și indexare", icon: SearchCheck },
       { path: "/admin/notifications", label: "Notificări", icon: BellRing },
       { path: "/admin/integrations", label: "Integrări", icon: Plug },
@@ -141,6 +141,7 @@ function NotificationIcon({ type }: { type: string }) {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
+  useEffect(() => subscribeReportSync(queryClient), [queryClient]);
   const fetchNotifications = useServerFn(getAdminNotifications);
   const readNotification = useServerFn(markNotificationRead);
   const readAllNotifications = useServerFn(markAllNotificationsRead);

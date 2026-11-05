@@ -1,3 +1,4 @@
+import { readAnalyticsSearch } from "./analytics-report";
 import { readWorkspaceSearch, workspaceHref } from "./admin-workspaces";
 
 /** Notification destinations are local admin routes, never arbitrary URLs. */
@@ -8,6 +9,10 @@ export function adminNotificationLink(value: string | null): string | null {
     if (parsed.origin !== "https://cutiutamagica.eu" || !parsed.pathname.startsWith("/admin/"))
       return null;
     const search = Object.fromEntries(parsed.searchParams);
+    if (parsed.pathname === "/admin/traffic") {
+      const next = readAnalyticsSearch(search);
+      return `/admin/statistics?${new URLSearchParams({ tab: next.tab === "sources" ? "sources" : "traffic", days: String(next.days) })}`;
+    }
     if (parsed.pathname === "/admin/posts")
       return workspaceHref("social", { ...readWorkspaceSearch("social", search), tab: "posts" });
     if (parsed.pathname === "/admin/qr-generator")

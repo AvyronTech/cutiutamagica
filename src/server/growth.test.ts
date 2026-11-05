@@ -11,6 +11,7 @@ import type { CommerceEnv } from "./integrations/provider-runtime";
 import { readProviderJson } from "./integrations/provider-runtime";
 import { EmailDeliveryUncertainError, sendEmail } from "./integrations/resend";
 import { checkConnection, syncTraffic } from "./services/traffic-integrations";
+import { readAnalyticsOverview, readCommerceOverview } from "./services/analytics-overview";
 import { readTrafficOverview } from "./services/traffic-overview";
 import {
   getAdminShippingInsightsData,
@@ -510,6 +511,111 @@ describe("growth and commerce integration", () => {
     expect(overview.imported).toContainEqual(
       expect.objectContaining({ property_id: "456", value: 2 }),
     );
+  });
+  it("uses one bounded sales period, separates currencies and excludes provisional card payments", async () => {
+    const { db, sql } = database();
+    const channel = String(sql.prepare("SELECT id FROM sales_channels LIMIT 1").get()!.id);
+    const insert = sql.prepare(
+      `INSERT INTO orders(id,order_number,public_token,idempotency_key,channel_id,order_status,payment_status,currency,subtotal_bani,total_bani,paid_bani,refunded_bani,customer_name,customer_phone_e164,placed_at,payment_method_requested) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    );
+    const order = (
+      id: string,
+      stamp: string,
+      currency: string,
+      total: number,
+      paid: number,
+      refund: number,
+      status = "confirmed",
+      method = "card",
+    ) =>
+      insert.run(
+        id,
+        id,
+        id,
+        id,
+        channel,
+        status,
+        paid ? "paid" : "unpaid",
+        currency,
+        total,
+        total,
+        paid,
+        refund,
+        "DEMO",
+        "+40700000000",
+        stamp,
+        method,
+      );
+    order("ron", "2026-11-05T00:00:00.000Z", "RON", 12000, 12000, 2000);
+    order("eur", "2026-10-30 00:00:00", "EUR", 1000, 1000, 0);
+    order("pending-card", "2026-11-05T10:00:00Z", "RON", 90000, 0, 0, "pending");
+    order("draft", "2026-11-05T10:00:00Z", "RON", 90000, 0, 0, "draft");
+    order("cod", "2026-11-05T10:00:00Z", "RON", 5000, 0, 0, "pending", "cash_on_delivery");
+    order("cancelled", "2026-11-05T11:00:00Z", "RON", 5000, 5000, 5000, "cancelled");
+    order("old", "2026-10-29T23:59:59.999Z", "RON", 90000, 90000, 0);
+    order("future", "2026-11-06T00:00:00.000Z", "RON", 90000, 90000, 0);
+    const r = await readCommerceOverview(db, 7, new Date("2026-11-05T18:00:00Z"));
+    expect(r.summary).toMatchObject({ total: 4, orders: 3, cancelled: 1, customers: 1 });
+    expect(r.money).toContainEqual(
+      expect.objectContaining({
+        currency: "RON",
+        orders: 2,
+        ordered: 150,
+        collected: 100,
+        refunded: 70,
+      }),
+    );
+    expect(r.money).toContainEqual(
+      expect.objectContaining({ currency: "EUR", orders: 1, ordered: 10, collected: 10 }),
+    );
+    expect(r.daily.reduce((sum, row) => sum + row.orders, 0)).toBe(3);
+    expect(r.channels.reduce((sum, row) => sum + row.orders, 0)).toBe(3);
+    expect(r.delivery.reduce((sum, row) => sum + row.orders, 0)).toBe(3);
+  });
+  it("does not multiply order totals by item lines or estimate incomplete product costs", async () => {
+    const { db, sql } = database();
+    sql.exec(`INSERT INTO orders(id,order_number,public_token,idempotency_key,channel_id,order_status,payment_status,currency,subtotal_bani,total_bani,paid_bani,customer_name,customer_phone_e164,placed_at)
+      VALUES('cost-order','cost-order','cost-order','cost-order','channel_emag','confirmed','paid','RON',10000,10000,10000,'DEMO','+40700000000','2026-11-05T11:00:00Z');
+      INSERT INTO order_items(id,order_id,product_id,variant_id,sku,product_name,quantity,unit_price_bani,tax_rate_bps,line_subtotal_bani,line_total_bani,unit_cost_bani) VALUES
+      ('cost-a','cost-order','product_lotr_rings','variant_lotr_rings_standard','DEMO','Produs DEMO',1,5000,0,5000,5000,1000),
+      ('cost-b','cost-order','product_lotr_rings','variant_lotr_rings_standard','DEMO','Produs DEMO',1,5000,0,5000,5000,NULL);`);
+    const read = () => readCommerceOverview(db, 7, new Date("2026-11-05T18:00:00Z"));
+    const before = await read();
+    expect(before.summary.orders).toBe(1);
+    expect(before.channels[0].ordered).toBe(100);
+    expect(before.daily[0].ordered).toBe(100);
+    expect(before.products[0]).toMatchObject({ units: 2, value: 100, knownCost: null });
+    expect(before.money[0].knownCost).toBeNull();
+    sql.exec(
+      "UPDATE order_items SET unit_cost_bani=1000 WHERE id='cost-b';UPDATE orders SET estimated_cost_bani=2000 WHERE id='cost-order';",
+    );
+    const after = await read();
+    expect(after.products[0].knownCost).toBe(20);
+    expect(after.money[0].knownCost).toBe(20);
+  });
+  it("keeps all observed events within the selected period and only the selected Google properties", async () => {
+    const { db, sql, actor } = database();
+    await saveSetting(
+      db,
+      "traffic",
+      { gaPropertyId: "123", gscProperty: "sc-domain:cutiutamagica.eu" },
+      actor,
+    );
+    sql.exec(`INSERT INTO growth_event_daily(event_day,event_name,path,event_count) VALUES
+      ('2026-11-05','audio_play','/produs-demo',4),('2026-10-29','page_view','/',100),
+      ('2026-11-05','purchase','/comanda',2),('2026-11-05','audio_play','/admin/products',50);
+      INSERT INTO traffic_daily_metrics(source,property_id,day,metric,value,imported_at) VALUES
+      ('ga4','123','2026-11-01','sessions',0,'2026-11-05T09:00:00Z'),
+      ('ga4','old-property','2026-11-01','sessions',900,'2026-11-05T09:00:00Z');`);
+    const r = await readAnalyticsOverview(db, 7, new Date("2026-11-05T18:00:00Z"));
+    expect(r.traffic.startDay).toBe(r.commerce.period.startDay);
+    expect(r.traffic.endDay).toBe(r.commerce.period.endDay);
+    expect(r.traffic.events).toHaveLength(2);
+    expect(r.traffic.events).toContainEqual(
+      expect.objectContaining({ event: "audio_play", count: 4 }),
+    );
+    expect(r.traffic.imported).toEqual([expect.objectContaining({ property_id: "123", value: 0 })]);
+    expect(JSON.stringify(r)).not.toContain("+407");
   });
   it("replays all migrations and returns one public row per product", async () => {
     const { db, sql } = database();

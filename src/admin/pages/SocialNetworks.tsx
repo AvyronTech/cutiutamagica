@@ -496,10 +496,11 @@ export default function SocialNetworks({ embedded = false }: { embedded?: boolea
                   Integrări
                 </Link>
                 <Link
-                  to="/admin/traffic"
+                  to="/admin/statistics"
+                  search={{ tab: "traffic", days: 30 }}
                   className="rounded-lg border border-white/20 px-3 py-2 text-sm text-white hover:bg-white/10"
                 >
-                  Trafic magazin
+                  Statistici și trafic
                 </Link>
               </div>
             </div>

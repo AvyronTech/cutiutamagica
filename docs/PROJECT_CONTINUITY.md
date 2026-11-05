@@ -28,6 +28,8 @@ PR #80 adaugă bugetul Brave comun și este publicat ca Worker `78d62115-6260-47
 
 ## Hartă tehnică
 
+- Statistici și trafic folosesc `/admin/statistics`, cu perioadă 7/30/90 zile comună și file în URL. `/admin/traffic` redirecționează; Financiar citește aceleași agregări și separă monedele. Definițiile indicatorilor, proprietățile Google și limitele sunt în [handofful raportării](handoff/2026-11-05-statistics-traffic.md).
+
 - Administrarea folosește trei spații comune: identificare/etichete/QR (`/admin/products/identification`), conturi sociale/postări (`/admin/social`) și stoc/aprovizionare (`/admin/inventory`). Filele și contextul sunt în query string; rutele vechi redirecționează. Detalii în [handofful consolidării](handoff/2026-11-05-unified-admin-workspaces.md).
 
 - TanStack Start/React livrează SSR, frontend și API într-un Worker Cloudflare dedicat magazinului. D1 păstrează date relaționale, R2 media, KV numai cache/date efemere, iar Queue operații asincrone.

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { handleGrowthEvents } from "./api/growth-events";
+import { handleGrowthEvents, recordPurchaseGrowthEvent } from "./api/growth-events";
 
 function setup() {
   const run = vi.fn(async () => ({ success: true }));
@@ -73,6 +73,28 @@ describe("growth event ingestion", () => {
     expect(harness.run).toHaveBeenCalledOnce();
   });
 
+  it("still records an order confirmation through the trusted server path", async () => {
+    const harness = setup();
+    recordPurchaseGrowthEvent(harness.env, harness.ctx, {
+      orderId: crypto.randomUUID(),
+      total: 119,
+      quantity: 1,
+      shippingOption: "courier",
+    });
+    await Promise.all(harness.pending);
+    expect(harness.bind).toHaveBeenCalledWith("purchase", "", "/comanda", 119, 1);
+  });
+  it("rejects browser-forged purchases even from the storefront origin", async () => {
+    const harness = setup();
+    const response = await handleGrowthEvents(
+      request({ name: "purchase", sessionId: crypto.randomUUID(), path: "/comanda" }),
+      harness.env,
+      harness.ctx,
+    );
+    expect(response?.status).toBe(400);
+    expect(harness.pending).toHaveLength(0);
+    expect(harness.prepare).not.toHaveBeenCalled();
+  });
   it("rejects forged origins and events outside the allowlist", async () => {
     const harness = setup();
     const forged = await handleGrowthEvents(

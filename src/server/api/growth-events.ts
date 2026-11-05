@@ -93,6 +93,11 @@ export async function handleGrowthEvents(
     const parsed = eventSchema.safeParse(await boundedJson(request, 8_192));
     if (!parsed.success)
       return Response.json({ error: { message: "Eveniment invalid." } }, { status: 400 });
+    if (parsed.data.name === "purchase")
+      return Response.json(
+        { error: { message: "Confirmarea comenzilor este înregistrată numai de server." } },
+        { status: 400 },
+      );
     recordGrowthEvent(env, ctx, parsed.data);
     return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
   } catch {
