@@ -1,3 +1,4 @@
+import { firstOrderShippingEligible } from "../services/first-order-shipping";
 import { z } from "zod";
 import { boundedJson } from "./bounded-json";
 import { currentReviewer, reviewJson } from "../review-accounts";
@@ -73,6 +74,10 @@ export async function handleCustomerLoyalty(request: Request, env: Env): Promise
   try {
     const account = await currentReviewer(request, env);
     if (!account) return reviewJson({ error: { message: "Autentificare necesară." } }, 401);
+    if (url.pathname === "/api/v1/customer/shipping-benefit" && request.method === "GET")
+      return reviewJson({
+        data: { eligible: await firstOrderShippingEligible(env.DB, account.id) },
+      });
     if (url.pathname === "/api/v1/customer/rewards" && request.method === "GET")
       return reviewJson({ data: await magicRewardsDashboard(env.DB, account) });
     if (request.method !== "GET") sameOrigin(request);

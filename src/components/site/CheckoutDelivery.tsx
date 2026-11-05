@@ -36,6 +36,7 @@ export function CheckoutDelivery({
   onSelect,
   selected,
   autoSelectBestOffer = false,
+  freeShipping = false,
 }: {
   request: Pick<
     WebsiteOrderInput,
@@ -44,6 +45,7 @@ export function CheckoutDelivery({
   onSelect: (offer: DeliveryOffer) => void;
   selected: string | undefined;
   autoSelectBestOffer?: boolean;
+  freeShipping?: boolean;
 }) {
   const [offers, setOffers] = useState<DeliveryOffer[]>([]),
     [busy, setBusy] = useState(false),
@@ -186,7 +188,7 @@ export function CheckoutDelivery({
               )}
             </span>
             <span className="checkout-courier-card__price">
-              {offer.price === 0
+              {freeShipping || offer.price === 0
                 ? "Transport inclus"
                 : new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON" }).format(
                     offer.price,

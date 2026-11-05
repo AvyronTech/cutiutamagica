@@ -37,10 +37,7 @@ export function ProductWorld({ product, children }: { product: Product; children
         <div className="product-world-intro">
           <span>{sceneLabel[theme.scene]}</span>
           <p>{theme.occasion}</p>
-          <small>
-            {product.category}
-            {product.melody ? ` · ${product.melody}` : " · mecanism manual"}
-          </small>
+          <small>{product.melody || "Mecanism manual"}</small>
         </div>
         {children}
       </div>

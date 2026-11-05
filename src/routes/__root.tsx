@@ -11,7 +11,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "sonner";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { ShopProvider } from "@/store/shop";
@@ -20,7 +20,6 @@ import { PreviousPageLink } from "@/components/site/PreviousPageLink";
 import { Footer } from "@/components/site/Footer";
 import { SideScrollMagic } from "@/components/site/SideScrollMagic";
 import { PageStoryLoader } from "@/components/site/PageStoryLoader";
-import { ChatWidget } from "@/components/site/ChatWidget";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
 import { CookieConsent } from "@/components/site/CookieConsent";
 import { MetricoolTracker } from "@/components/site/MetricoolTracker";
@@ -28,6 +27,10 @@ import { getStorePricing } from "@/lib/store-pricing.functions";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
 import { isProductPath, productIdFromPathname } from "@/lib/product-url";
+
+const ChatWidget = lazy(() =>
+  import("@/components/site/ChatWidget").then((module) => ({ default: module.ChatWidget })),
+);
 
 function GrowthPageView({ pathname }: { pathname: string }) {
   useEffect(() => {
@@ -293,7 +296,11 @@ function RootComponent() {
           {isChrome && <Footer />}
           {isChrome && <ContextualMessages />}
           {isChrome && <SideScrollMagic />}
-          {isChrome && <ChatWidget />}
+          {isChrome && !isProductPage && (
+            <Suspense fallback={null}>
+              <ChatWidget />
+            </Suspense>
+          )}
           {isChrome && <MetricoolTracker pathname={pathname} />}
           {isChrome && <CookieConsent />}
           {isChrome ? (

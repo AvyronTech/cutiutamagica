@@ -1,3 +1,4 @@
+import { firstOrderShippingEligible } from "../services/first-order-shipping";
 import { shippingFingerprint } from "../services/shipping-fingerprint";
 import { MAX_CART_QUANTITY, STORE_CURRENCY } from "@/lib/pricing";
 import type { WebsiteOrderInput, WebsiteOrderPublicResult } from "@/lib/order-contracts";
@@ -295,6 +296,7 @@ export async function createWebsiteOrder(
   db: D1Database,
   input: WebsiteOrderInput,
   authorize?: () => Promise<void>,
+  context: { customerAccountId?: string } = {},
 ): Promise<WebsiteOrderResult> {
   const itemsBySlug = new Map<string, number>();
   for (const item of input.items) {
@@ -454,6 +456,12 @@ export async function createWebsiteOrder(
     selectedQuote = quote;
     shipping = { amountBani: quote.amount_bani, pending: false };
   }
+  const firstOrderShipping = await firstOrderShippingEligible(
+    db,
+    context.customerAccountId,
+    normalizedRequest.customer.email,
+  );
+  if (firstOrderShipping) shipping = { amountBani: 0, pending: false };
   if (input.paymentMethod === "card" && shipping.pending)
     throw new CheckoutError("Costul livrării trebuie confirmat înainte de plata online.", 409);
   const totalBani = productsTotalBani + shipping.amountBani;
@@ -627,6 +635,24 @@ export async function createWebsiteOrder(
         nowIso,
       ),
   );
+
+  if (firstOrderShipping) {
+    statements.push(
+      db
+        .prepare(
+          `
+      INSERT INTO first_order_shipping_redemptions(account_id,order_id,first_order_verified)
+      VALUES(?1,?2,CASE WHEN NOT EXISTS (
+        SELECT 1 FROM orders o LEFT JOIN customers c ON c.id=o.customer_id
+        WHERE o.id<>?2 AND (
+          lower(o.customer_email)=?3 OR c.account_subject=?1 OR c.id=(SELECT customer_id FROM review_accounts WHERE id=?1)
+        )
+      ) THEN 1 ELSE 0 END)
+    `,
+        )
+        .bind(context.customerAccountId!, orderId, normalizedRequest.customer.email),
+    );
+  }
 
   for (const item of pricedItems) {
     statements.push(
@@ -868,6 +894,14 @@ export async function createWebsiteOrder(
     if (message.includes("INSUFFICIENT_STOCK") || message.includes("PRODUCT_UNAVAILABLE"))
       throw new CheckoutError(
         "Stocul s-a schimbat. Verifică produsele și cantitățile din coș.",
+        409,
+      );
+    if (
+      message.includes("first_order_shipping_redemptions") ||
+      message.includes("first_order_verified")
+    )
+      throw new CheckoutError(
+        "Beneficiul pentru prima comandă s-a actualizat. Reîncarcă pagina și verifică totalul.",
         409,
       );
     if (message.includes("SHIPPING_QUOTE_EXPIRED"))
