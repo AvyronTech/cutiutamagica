@@ -10,7 +10,8 @@ import {
   validListingUrl,
   type OpportunityData,
 } from "@/lib/dropshipping";
-import { credential } from "@/server/services/growth-settings";
+import { credential, readSetting } from "@/server/services/growth-settings";
+import { researchSettingsSchema } from "@/lib/growth-contracts";
 import {
   digestHex,
   fetchWithTimeout,
@@ -198,6 +199,11 @@ export async function handleDropshipping(
       const rows = await env.DB.prepare(
         "SELECT * FROM dropshipping_opportunities ORDER BY archived,updated_at DESC LIMIT 101",
       ).all<Opportunity>();
+      const researchSettings = await readSetting(
+        env.DB,
+        "supplier_research",
+        researchSettingsSchema,
+      );
       const used = await env.DB.prepare(
         "SELECT COUNT(*) AS n FROM ai_runs WHERE agent_id='agent_dropshipping' AND created_at>=?1",
       )
@@ -217,6 +223,7 @@ export async function handleDropshipping(
                 : "Modul fără cost necesită confirmarea planului Workers AI Free. Codex și pregătirea manuală sunt disponibile.",
           },
           braveConfigured: Boolean(await credential(env, "brave")),
+          researchEnabled: researchSettings.enabled,
           guides: channelGuides,
         },
       });
@@ -322,6 +329,11 @@ export async function handleDropshipping(
       return response({ data: { archived: true } });
     }
     if (action === "research") {
+      const settings = await readSetting(env.DB, "supplier_research", researchSettingsSchema);
+      if (!settings.enabled)
+        throw fail(
+          "Cercetarea este dezactivată în Aprovizionare. Activeaz-o acolo sau continuă din Opera.",
+        );
       const key = await credential(env, "brave");
       if (!key)
         throw fail(
@@ -329,13 +341,14 @@ export async function handleDropshipping(
         );
       const runId = crypto.randomUUID();
       const reservation = await env.DB.prepare(
-        "INSERT INTO ai_runs(id,agent_id,trigger_type,status,requested_by,input_json) SELECT ?1,'agent_dropshipping','manual','running',?2,?3 WHERE (SELECT COUNT(*) FROM ai_runs WHERE agent_id='agent_dropshipping' AND created_at>=?4)<8 RETURNING id",
+        "INSERT INTO ai_runs(id,agent_id,trigger_type,status,requested_by,input_json) SELECT ?1,'agent_dropshipping','manual','running',?2,?3 WHERE (SELECT COUNT(*) FROM ai_runs WHERE agent_id='agent_dropshipping' AND created_at>=?4)<8 AND ((SELECT COUNT(*) FROM supplier_research_runs WHERE created_at>=?4)+(SELECT COUNT(*) FROM ai_runs WHERE agent_id='agent_dropshipping' AND json_extract(input_json,'$.kind')='supplier_search' AND created_at>=?4))<?5 RETURNING id",
       )
         .bind(
           runId,
           actor.id,
           JSON.stringify({ kind: "supplier_search", opportunityId: id, revision: row.version }),
           now().slice(0, 10),
+          settings.maxDailyRuns,
         )
         .first();
       if (!reservation) throw fail("Limita zilnică a cercetărilor a fost atinsă.", 429);

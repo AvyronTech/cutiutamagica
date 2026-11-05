@@ -10,6 +10,8 @@ Verificare GSC și release 3 noiembrie: inspecția individuală confirmă **8/8 
 
 Dropshipping, 5 noiembrie: modul privat nou în `codex/intelligent-dropshipping-20261105`, cu migrarea 0089, skill Codex instalat local, variante pe canal și aprobări/reconciliere. Orice categorie poate fi cercetată; schema websiteului acceptă încă numai catalogul specializat. Workers AI rămâne oprit până la confirmarea unui plan fără depășire facturată. Vezi [DROPSHIPPING.md](DROPSHIPPING.md) pentru arhitectură, probe și starea releaseului.
 
+PR #79 este integrat la `db5a43b`, publicat ca Worker `26fd120c-442e-4ff3-8745-c986552231a5`. Schema D1 este 89, `foreign_key_check` curat, fără date sintetice în producție. UI live este confirmată în Opera, iar auditul SEO public nu detectează probleme. Cheia Brave și activarea Workers AI Free rămân neconfigurate.
+
 | Întrebare                             | Sursa de verificat                                                                                                                  |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Ce are voie să facă agentul?          | `AGENTS.md` și instrucțiunile utilizatorului din conversația curentă                                                                |

@@ -87,7 +87,8 @@ export async function researchProduct(env: CommerceEnv, productId: string) {
   const claim = await env.DB.prepare(
     `INSERT INTO supplier_research_runs(id,product_id,query,status,created_at)
     SELECT ?1,?2,?3,'processing',?4 WHERE
-      (SELECT COUNT(*) FROM supplier_research_runs WHERE created_at>=?5)<?6 AND
+      ((SELECT COUNT(*) FROM supplier_research_runs WHERE created_at>=?5)+
+       (SELECT COUNT(*) FROM ai_runs WHERE agent_id='agent_dropshipping' AND json_extract(input_json,'$.kind')='supplier_search' AND created_at>=?5))<?6 AND
       NOT EXISTS(SELECT 1 FROM supplier_research_runs WHERE product_id=?2 AND
         (status='processing' OR (status='success' AND created_at>?7))) RETURNING id`,
   )
