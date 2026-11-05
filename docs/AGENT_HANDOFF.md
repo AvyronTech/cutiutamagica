@@ -1,5 +1,10 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Audit experiență client — 5 noiembrie 2026
+
+- Separare cache per client și curățare la logout inclusiv pentru cereri în curs, profil de cadouri fără pierderea ocaziilor/temelor, navigare și acces compacte, reîncercări la erori și mesaje corecte în checkout pentru contul conectat. Fără migrare sau modificări ale conturilor administrative, prețurilor ori plăților.
+- Fluxurile autentificate au fost verificate desktop/mobil cu un cont DEMO local. Contul reutilizabil din producție așteaptă adresa exactă de e-mail și codul de verificare; nu există încă un cont de producție de predat. [Matricea auditului și limitele](handoff/2026-11-05-customer-account-audit.md).
+
 ## Carduri publice compacte — 5 noiembrie 2026
 
 - Etichetele Limited Edition păstrează identitatea ediției, fără numărul de exemplare în carduri, hero, fișa produsului, etichetele accesibile și proprietatea SEO. Datele interne de ediție și stoc nu sunt modificate.

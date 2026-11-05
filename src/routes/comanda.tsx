@@ -643,7 +643,10 @@ function OrderPage() {
   return (
     <div className="checkout-page">
       <CheckoutAtmosphere />
-      <CheckoutMobileHeader totalQty={totalQty} />
+      <CheckoutMobileHeader
+        totalQty={totalQty}
+        subtitle={account.data ? "Contul tău · doar 3 pași" : undefined}
+      />
       <div
         className={`checkout-shell relative z-[1] mx-auto max-w-5xl px-4 pb-28 pt-16 sm:pt-20 lg:pb-16${hasItems ? "" : " checkout-shell--empty"}`}
       >
@@ -655,12 +658,12 @@ function OrderPage() {
             </h1>
             <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
               {totalQty > 0
-                ? `${totalQty} ${totalQty === 1 ? "cutiuță aleasă" : "cutiuțe alese"}. Verifică detaliile, apoi noi pregătim povestea pentru drum. Finalizezi ca invitat, fără să creezi cont.`
+                ? `${totalQty} ${totalQty === 1 ? "cutiuță aleasă" : "cutiuțe alese"}. Verifică detaliile, apoi noi pregătim povestea pentru drum. ${account.data ? "Ești conectat în contul tău." : "Finalizezi ca invitat, fără să creezi cont."}`
                 : "Alege o cutiuță muzicală pentru a începe comanda."}
             </p>
             {totalQty > 0 && (
               <div className="checkout-assurances" aria-label="Avantajele comenzii">
-                <span>✓ finalizare fără cont</span>
+                <span>{account.data ? "✓ conectat în contul tău" : "✓ finalizare fără cont"}</span>
                 <span>✦ verificare înainte de expediere</span>
                 <span>♩ mecanism manual, fără baterii</span>
               </div>
@@ -817,7 +820,7 @@ function OrderPage() {
                   </span>
                   <div>
                     <h2 id="gift-list-title">Lista ta de cadouri</h2>
-                    <p>Păstrată pe acest dispozitiv, fără cont.</p>
+                    <p>Păstrată pe acest dispozitiv.</p>
                   </div>
                 </div>
                 <ul>
@@ -1474,7 +1477,7 @@ function OrderPage() {
           )}
         </div>
 
-        {totalQty > 0 && (
+        {totalQty > 0 && account.isSuccess && !account.data && (
           <aside className="checkout-account-invite" aria-label="Contul Cutiuța Magică">
             <div className="checkout-account-invite__symbol" aria-hidden>
               ✦

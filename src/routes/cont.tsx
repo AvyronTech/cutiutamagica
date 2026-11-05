@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Camera,
   CreditCard,
+  ChevronDown,
   LogOut,
   ReceiptText,
   Repeat2,
@@ -23,6 +24,7 @@ import {
   type PersonalizationRequestSummary,
 } from "@/lib/personalization";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
+import { clearCustomerSession } from "@/lib/customer-session";
 import { CustomerMagicCenter } from "@/components/site/CustomerMagicCenter";
 import { seoHead } from "@/lib/seo-head";
 import { PreviousPageLink } from "@/components/site/PreviousPageLink";
@@ -130,13 +132,13 @@ function CustomerAccount() {
     staleTime: 30_000,
   });
   const requests = useQuery({
-    queryKey: ["personalization-requests"],
+    queryKey: ["personalization-requests", account.data?.id],
     queryFn: () => reviewApi<PersonalizationRequestSummary[]>("/api/v1/personalization/requests"),
     enabled: !!account.data,
     retry: false,
   });
   const billing = useQuery({
-    queryKey: ["customer-billing", orderPage],
+    queryKey: ["customer-billing", account.data?.id, orderPage],
     queryFn: () => reviewApi<CustomerBilling>(`/api/v1/customer/billing?page=${orderPage}`),
     enabled: !!account.data,
     retry: false,
@@ -160,6 +162,7 @@ function CustomerAccount() {
   const [accountPassword, setAccountPassword] = useState("");
   const [accountPhone, setAccountPhone] = useState("");
   const [showAccountPassword, setShowAccountPassword] = useState(false);
+  const [securityOpen, setSecurityOpen] = useState(false);
   const [securityBusy, setSecurityBusy] = useState(false);
   const [securitySaved, setSecuritySaved] = useState(false);
   const [securityError, setSecurityError] = useState("");
@@ -168,9 +171,12 @@ function CustomerAccount() {
     const section = locationHash.replace(/^#/, "");
     if (
       !account.data ||
-      !["securitatea-contului", "profil", "comenzi", "portofel"].includes(section)
+      !["securitatea-contului", "profil", "comenzi", "portofel", "beneficii", "calendar"].includes(
+        section,
+      )
     )
       return;
+    if (section === "profil" || section === "securitatea-contului") setSecurityOpen(true);
     const frame = requestAnimationFrame(() =>
       document
         .getElementById(section === "securitatea-contului" ? "profil" : section)
@@ -237,9 +243,10 @@ function CustomerAccount() {
     setBusy(true);
     try {
       await reviewApi("/api/v1/reviewer/logout", { method: "POST" });
-      queryClient.setQueryData(["reviewer"], null);
-      queryClient.removeQueries({ queryKey: ["personalization-requests"] });
-      queryClient.removeQueries({ queryKey: ["customer-billing"] });
+      await clearCustomerSession(queryClient);
+      setAccountPassword("");
+      setAccountPhone("");
+      setSecurityOpen(false);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Deconectarea nu a reușit.");
     } finally {
@@ -250,6 +257,22 @@ function CustomerAccount() {
   if (account.isLoading) {
     return (
       <div className="customer-account-page customer-account-loading">Se deschide contul tău…</div>
+    );
+  }
+
+  if (account.isError) {
+    return (
+      <section className="customer-account-page" role="alert">
+        <h1>Contul nu poate fi încărcat acum.</h1>
+        <p>Reîncearcă pentru a-ți regăsi datele și comenzile.</p>
+        <button
+          className="magic-button"
+          onClick={() => void account.refetch()}
+          disabled={account.isFetching}
+        >
+          {account.isFetching ? "Se reîncearcă…" : "Reîncearcă"}
+        </button>
+      </section>
     );
   }
 
@@ -424,15 +447,29 @@ function CustomerAccount() {
         </p>
       )}
 
-      <section id="profil" className="customer-security" aria-labelledby="customer-security-title">
-        <div>
-          <p className="catalog-eyebrow">Accesul tău</p>
-          <h2 id="customer-security-title">Securitatea contului</h2>
-          <p>
-            Setează sau schimbă parola. Poți adăuga și un număr pentru conectare cu aceeași parolă.
-          </p>
-        </div>
+      <nav className="customer-account-nav" aria-label="Secțiunile contului">
+        <a href="#beneficii">Magic Rewards</a>
+        <a href="#calendar">Calendar</a>
+        <a href="#comenzi">Comenzi</a>
+        <a href="#portofel">Portofel</a>
+        <a href="#profil">Profil și acces</a>
+      </nav>
+
+      <details
+        id="profil"
+        className="customer-security customer-security--compact"
+        open={securityOpen}
+        onToggle={(event) => setSecurityOpen(event.currentTarget.open)}
+      >
+        <summary>
+          <span>
+            <h2 id="customer-security-title">Profil și acces</h2>
+            <small>E-mail, parolă și telefon pentru conectare</small>
+          </span>
+          <ChevronDown size={18} aria-hidden />
+        </summary>
         <form onSubmit={(event) => void saveCustomerPassword(event)}>
+          <p>Setează o parolă pentru acces rapid. Telefonul este opțional.</p>
           <label>
             E-mail pentru conectare
             <input
@@ -487,9 +524,9 @@ function CustomerAccount() {
             <p role="status">Parola a fost salvată. O poți folosi la următoarea conectare.</p>
           )}
         </form>
-      </section>
+      </details>
 
-      <CustomerMagicCenter />
+      <CustomerMagicCenter accountId={account.data.id} />
 
       <section id="comenzi" className="customer-requests" aria-labelledby="customer-orders-title">
         <div className="customer-requests-heading">
@@ -501,9 +538,16 @@ function CustomerAccount() {
         {billing.isLoading ? (
           <p>Se încarcă situația contului…</p>
         ) : billing.isError ? (
-          <p className="personalization-error" role="alert">
-            Situația comenzilor nu poate fi încărcată acum.
-          </p>
+          <div className="personalization-error" role="alert">
+            <p>Situația comenzilor nu poate fi încărcată acum.</p>
+            <button
+              className="magic-button magic-button--outline"
+              onClick={() => void billing.refetch()}
+              disabled={billing.isFetching}
+            >
+              {billing.isFetching ? "Se reîncearcă…" : "Reîncearcă"}
+            </button>
+          </div>
         ) : (
           <div className="customer-billing-grid grid gap-4">
             <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 lg:col-span-2">
@@ -592,9 +636,16 @@ function CustomerAccount() {
         {billing.isLoading ? (
           <p>Se încarcă portofelul…</p>
         ) : billing.isError ? (
-          <p className="personalization-error" role="alert">
-            Portofelul nu poate fi încărcat acum.
-          </p>
+          <div className="personalization-error" role="alert">
+            <p>Portofelul nu poate fi încărcat acum.</p>
+            <button
+              className="magic-button magic-button--outline"
+              onClick={() => void billing.refetch()}
+              disabled={billing.isFetching}
+            >
+              {billing.isFetching ? "Se reîncearcă…" : "Reîncearcă"}
+            </button>
+          </div>
         ) : (
           <div className="customer-billing-grid grid gap-4 lg:grid-cols-2">
             <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
@@ -702,9 +753,16 @@ function CustomerAccount() {
         {requests.isLoading ? (
           <p>Se încarcă cererile…</p>
         ) : requests.isError ? (
-          <p className="personalization-error" role="alert">
-            Cererile nu pot fi încărcate acum. Reîncearcă.
-          </p>
+          <div className="personalization-error" role="alert">
+            <p>Cererile nu pot fi încărcate acum.</p>
+            <button
+              className="magic-button magic-button--outline"
+              onClick={() => void requests.refetch()}
+              disabled={requests.isFetching}
+            >
+              {requests.isFetching ? "Se reîncearcă…" : "Reîncearcă"}
+            </button>
+          </div>
         ) : requests.data?.length ? (
           <div className="customer-request-list">
             {requests.data.map((request) => {

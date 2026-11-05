@@ -3200,6 +3200,9 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
 .customer-magic-center__heading > button,
 .customer-calendar-list button {
   display: inline-flex;
+  min-height: 40px;
+  min-width: 40px;
+  justify-content: center;
   align-items: center;
   gap: 6px;
   border: 1px solid rgb(220 188 123 / 0.26);
@@ -3309,8 +3312,9 @@ body:has(.magic-rewards-page) .magic-scroll-rail {
   font-size: 11px;
 }
 .customer-birthday small {
-  color: #998b9e;
-  font-size: 8px;
+  color: #b4a6b7;
+  font-size: 10px;
+  line-height: 1.4;
 }
 .customer-birthday select,
 .customer-birthday button {
@@ -18730,6 +18734,82 @@ body.product-lightbox-open
     grid-template-columns: 1fr;
     padding: 18px;
   }
+}
+.customer-account-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.customer-account-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #d4b47a40;
+  border-radius: 999px;
+  color: #ead6af;
+  background: #ffffff08;
+  font-size: 12px;
+}
+.customer-account-nav a:hover {
+  background: #d4b47a18;
+}
+.customer-account-nav a:focus-visible,
+.customer-security--compact summary:focus-visible {
+  outline: 2px solid #d4b47a;
+  outline-offset: 3px;
+}
+.customer-dashboard-header {
+  margin-bottom: 18px;
+}
+.customer-security--compact {
+  display: block;
+  padding: 15px 18px;
+}
+.customer-security--compact summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.customer-security--compact summary::-webkit-details-marker {
+  display: none;
+}
+.customer-security--compact summary > span {
+  min-width: 0;
+}
+.customer-security--compact h2 {
+  margin: 0;
+  font-size: 23px;
+}
+.customer-security--compact summary small {
+  color: #705a43;
+  font-size: 11px;
+}
+.customer-security--compact summary > svg {
+  flex-shrink: 0;
+}
+.customer-security--compact[open] summary > svg {
+  transform: rotate(180deg);
+}
+.customer-security--compact form {
+  max-width: 580px;
+  margin-top: 14px;
+}
+.customer-security--compact form > p {
+  margin: 0 0 3px;
+}
+#beneficii,
+#calendar {
+  scroll-margin-top: 90px;
+}
+.customer-magic-form button:disabled,
+.customer-calendar-list button:disabled,
+.customer-birthday button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 .customer-login__error {
   margin-top: 14px;

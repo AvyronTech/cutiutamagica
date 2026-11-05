@@ -79,16 +79,21 @@ const monthNames = [
   "Decembrie",
 ];
 
-export function CustomerMagicCenter() {
+export function CustomerMagicCenter({ accountId }: { accountId: string }) {
   const client = useQueryClient();
   const [profileOpen, setProfileOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [calendarSaving, setCalendarSaving] = useState(false);
+  const [birthdaySaving, setBirthdaySaving] = useState(false);
+  const [calendarActionPending, setCalendarActionPending] = useState(false);
   const query = useQuery({
-    queryKey: ["customer", "magic-center"],
+    queryKey: ["customer", accountId, "magic-center"],
     queryFn: () => reviewApi<Dashboard>("/api/v1/customer/rewards"),
     staleTime: 20_000,
   });
-  const refresh = () => client.invalidateQueries({ queryKey: ["customer", "magic-center"] });
+  const refresh = () =>
+    client.invalidateQueries({ queryKey: ["customer", accountId, "magic-center"] });
   const redeem = useMutation({
     mutationFn: () =>
       reviewApi<{ code: string; valueBani: number }>("/api/v1/customer/rewards/redeem", {
@@ -107,7 +112,14 @@ export function CustomerMagicCenter() {
   if (!query.data || query.isError)
     return (
       <section className="customer-magic-center" role="alert">
-        Magic Stars și Calendarul cadourilor nu pot fi încărcate acum.
+        <p>Magic Stars și Calendarul cadourilor nu pot fi încărcate acum.</p>
+        <button
+          className="magic-button"
+          onClick={() => void query.refetch()}
+          disabled={query.isFetching}
+        >
+          {query.isFetching ? "Se reîncearcă…" : "Reîncearcă"}
+        </button>
       </section>
     );
   const data = query.data;
@@ -115,6 +127,7 @@ export function CustomerMagicCenter() {
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setProfileSaving(true);
     try {
       const form = new FormData(event.currentTarget);
       const split = (name: string) =>
@@ -135,11 +148,14 @@ export function CustomerMagicCenter() {
       toast.success("Profilul de cadouri a fost salvat.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Profilul nu a putut fi salvat.");
+    } finally {
+      setProfileSaving(false);
     }
   }
 
   async function addEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setCalendarSaving(true);
     try {
       const target = event.currentTarget;
       const form = new FormData(target);
@@ -163,11 +179,14 @@ export function CustomerMagicCenter() {
       toast.success("Momentul a fost adăugat în calendar.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Momentul nu a putut fi salvat.");
+    } finally {
+      setCalendarSaving(false);
     }
   }
 
   async function saveBirthday(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setBirthdaySaving(true);
     try {
       const form = new FormData(event.currentTarget);
       await reviewApi("/api/v1/customer/rewards/birthday", {
@@ -178,17 +197,21 @@ export function CustomerMagicCenter() {
       toast.success("Ziua ta magică a fost salvată.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Data nu a putut fi salvată.");
+    } finally {
+      setBirthdaySaving(false);
     }
   }
 
   return (
-    <section className="customer-magic-center" aria-labelledby="magic-center-title">
+    <section id="beneficii" className="customer-magic-center" aria-labelledby="magic-center-title">
       <div className="customer-magic-center__hero">
         <div className="customer-magic-center__orb" aria-hidden>
           <Star />
         </div>
         <div>
-          <p className="catalog-eyebrow">Program activ · Magic Rewards</p>
+          <p className="catalog-eyebrow">
+            {data.program.enabled ? "Magic Rewards" : "Magic Rewards · momentan indisponibil"}
+          </p>
           <h2 id="magic-center-title">{data.account.availableStars} Magic Stars ✦</h2>
           <p>
             {remaining
@@ -206,7 +229,7 @@ export function CustomerMagicCenter() {
       </div>
 
       <div className="customer-magic-center__grid">
-        <article>
+        <article id="calendar">
           <div className="customer-magic-center__heading">
             <div>
               <p className="catalog-eyebrow">Calendarul cadourilor</p>
@@ -218,20 +241,28 @@ export function CustomerMagicCenter() {
           </div>
           {calendarOpen && (
             <form className="customer-magic-form" onSubmit={(event) => void addEvent(event)}>
-              <input name="personName" required maxLength={80} placeholder="Maria" />
-              <select name="occasion" defaultValue="birthday">
+              <input
+                name="personName"
+                aria-label="Persoana căreia îi dăruiești"
+                required
+                maxLength={80}
+                placeholder="Maria"
+              />
+              <select name="occasion" aria-label="Ocazia" defaultValue="birthday">
                 {Object.entries(occasions).map(([value, label]) => (
                   <option value={value} key={value}>
                     {label}
                   </option>
                 ))}
               </select>
-              <input name="date" type="date" required />
+              <input name="date" type="date" aria-label="Data momentului" required />
               <label>
                 <input name="emailEnabled" type="checkbox" defaultChecked /> E-mail cu 7 și 3 zile
                 înainte
               </label>
-              <button className="magic-button">Salvează momentul</button>
+              <button className="magic-button" disabled={calendarSaving}>
+                {calendarSaving ? "Se salvează…" : "Salvează momentul"}
+              </button>
             </form>
           )}
           <div className="customer-calendar-list">
@@ -254,7 +285,9 @@ export function CustomerMagicCenter() {
                           ? `Oprește mementourile pentru ${event.personName}`
                           : `Activează mementourile pentru ${event.personName}`
                       }
+                      disabled={calendarActionPending}
                       onClick={async () => {
+                        setCalendarActionPending(true);
                         try {
                           await reviewApi(`/api/v1/customer/gift-calendar/${event.id}`, {
                             method: "PATCH",
@@ -272,6 +305,8 @@ export function CustomerMagicCenter() {
                               ? error.message
                               : "Preferința nu a putut fi salvată.",
                           );
+                        } finally {
+                          setCalendarActionPending(false);
                         }
                       }}
                     >
@@ -280,7 +315,9 @@ export function CustomerMagicCenter() {
                     <button
                       type="button"
                       aria-label={`Șterge momentul pentru ${event.personName}`}
+                      disabled={calendarActionPending}
                       onClick={async () => {
+                        setCalendarActionPending(true);
                         try {
                           await reviewApi(`/api/v1/customer/gift-calendar/${event.id}`, {
                             method: "DELETE",
@@ -293,6 +330,8 @@ export function CustomerMagicCenter() {
                               ? error.message
                               : "Momentul nu a putut fi șters.",
                           );
+                        } finally {
+                          setCalendarActionPending(false);
                         }
                       }}
                     >
@@ -321,6 +360,7 @@ export function CustomerMagicCenter() {
             <form className="customer-magic-form" onSubmit={(event) => void saveProfile(event)}>
               <input
                 name="recipients"
+                aria-label="Pentru cine dăruiești"
                 placeholder="Pentru cine: iubită, mamă, colegă"
                 defaultValue={
                   Array.isArray(data.profile?.preferences.recipients)
@@ -328,9 +368,30 @@ export function CustomerMagicCenter() {
                     : ""
                 }
               />
-              <input name="occasions" placeholder="Ocazii: aniversare, Crăciun" />
-              <input name="themes" placeholder="Teme preferate: fantasy, pisici" />
-              <button className="magic-button">Salvează profilul</button>
+              <input
+                name="occasions"
+                aria-label="Ocazii preferate"
+                placeholder="Ocazii: aniversare, Crăciun"
+                defaultValue={
+                  Array.isArray(data.profile?.preferences.occasions)
+                    ? data.profile.preferences.occasions.join(", ")
+                    : ""
+                }
+              />
+              <input
+                name="themes"
+                aria-label="Teme preferate"
+                placeholder="Teme preferate: fantasy, pisici"
+                defaultValue={
+                  Array.isArray(data.profile?.preferences.themes)
+                    ? data.profile.preferences.themes.join(", ")
+                    : ""
+                }
+              />
+              <small>Separă opțiunile prin virgulă.</small>
+              <button className="magic-button" disabled={profileSaving}>
+                {profileSaving ? "Se salvează…" : "Salvează profilul"}
+              </button>
             </form>
           )}
           <form className="customer-birthday" onSubmit={(event) => void saveBirthday(event)}>
@@ -359,7 +420,9 @@ export function CustomerMagicCenter() {
                 </option>
               ))}
             </select>
-            <button>Salvează</button>
+            <button disabled={birthdaySaving}>
+              {birthdaySaving ? "Se salvează…" : "Salvează"}
+            </button>
           </form>
           <div className="customer-star-history">
             {data.ledger.slice(0, 5).map((item) => (

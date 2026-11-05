@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { clearCustomerSession } from "@/lib/customer-session";
 import { reviewApi, reviewCountries, type Reviewer, type ReviewList } from "@/lib/reviews";
 import { ReviewCard, ReviewStars } from "./ReviewCard";
 import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
@@ -31,6 +32,7 @@ export function ProductReviews({
     [error, setError] = useState(""),
     [rating, setRating] = useState(0),
     reduced = useReducedMotion();
+  const queryClient = useQueryClient();
   const account = useQuery({
     queryKey: ["reviewer"],
     queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
@@ -207,7 +209,7 @@ export function ProductReviews({
                   setBusy(true);
                   try {
                     await reviewApi("/api/v1/reviewer/logout", { method: "POST" });
-                    await account.refetch();
+                    await clearCustomerSession(queryClient);
                   } catch (e) {
                     setError((e as Error).message);
                   } finally {
