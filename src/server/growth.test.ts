@@ -11,6 +11,7 @@ import type { CommerceEnv } from "./integrations/provider-runtime";
 import { readProviderJson } from "./integrations/provider-runtime";
 import { EmailDeliveryUncertainError, sendEmail } from "./integrations/resend";
 import { checkConnection, syncTraffic } from "./services/traffic-integrations";
+import { readTrafficOverview } from "./services/traffic-overview";
 import {
   getAdminShippingInsightsData,
   refreshSmartShipTracking,
@@ -465,6 +466,50 @@ describe("growth and commerce integration", () => {
     expect(sql.prepare("SELECT COUNT(*) AS count FROM traffic_daily_metrics").get()).toMatchObject({
       count: 2,
     });
+  });
+  it("reports observed storefront activity separately from missing Google imports", async () => {
+    const { db, sql } = database();
+    sql.exec(`INSERT INTO growth_event_daily(event_day,event_name,path,event_count) VALUES
+      ('2026-11-05','page_view','/',6),
+      ('2026-11-04','page_view','/produse',3),
+      ('2026-10-07','product_view','/produs-cutiuta-muzicala-one-ring',2),
+      ('2026-10-06','page_view','/',200),
+      ('2026-11-06','page_view','/',100),
+      ('2026-11-05','page_view','/admin/orders',50),
+      ('2026-11-05','page_view','/auth',50),
+      ('2026-11-05','page_view','/api/v1/health',50);`);
+    const overview = await readTrafficOverview(db, new Date("2026-11-05T18:00:00Z"));
+    expect(overview.startDay).toBe("2026-10-07");
+    expect(overview.endDay).toBe("2026-11-05");
+    expect(overview.imported).toEqual([]);
+    expect(overview.events).toEqual([
+      expect.objectContaining({ event: "page_view", count: 9 }),
+      expect.objectContaining({ event: "product_view", count: 2 }),
+    ]);
+    expect(overview.pages).toEqual([
+      { path: "/", views: 6 },
+      { path: "/produse", views: 3 },
+    ]);
+  });
+  it("preserves an imported zero and keeps different providers and properties distinct", async () => {
+    const { db, sql } = database();
+    sql.exec(`INSERT INTO traffic_daily_metrics(source,property_id,day,metric,value,imported_at) VALUES
+      ('gsc','sc-domain:cutiutamagica.eu','2026-11-01','clicks',0,'2026-11-05T09:00:00Z'),
+      ('gsc','sc-domain:cutiutamagica.eu','2026-11-02','impressions',8,'2026-11-05T09:00:00Z'),
+      ('ga4','123','2026-11-01','page_views',5,'2026-11-05T10:00:00Z'),
+      ('ga4','456','2026-11-01','page_views',2,'2026-11-05T10:00:00Z');`);
+    const overview = await readTrafficOverview(db, new Date("2026-11-05T18:00:00Z"));
+    expect(overview.events).toEqual([]);
+    expect(overview.imported).toHaveLength(4);
+    expect(overview.imported).toContainEqual(
+      expect.objectContaining({ source: "gsc", metric: "clicks", value: 0 }),
+    );
+    expect(overview.imported).toContainEqual(
+      expect.objectContaining({ property_id: "123", value: 5 }),
+    );
+    expect(overview.imported).toContainEqual(
+      expect.objectContaining({ property_id: "456", value: 2 }),
+    );
   });
   it("replays all migrations and returns one public row per product", async () => {
     const { db, sql } = database();

@@ -2,7 +2,8 @@ import type { CatalogProduct } from "@/server/db/catalog.repository";
 import { DISCOVERY_UPDATED, giftGuides } from "@/data/gift-guides";
 import { productPath } from "@/lib/product-url";
 const base = "https://cutiutamagica.eu";
-const PRODUCT_EXPERIENCE_UPDATED = "2026-11-02";
+const PRODUCT_EXPERIENCE_UPDATED = "2026-11-05";
+const CATALOG_UPDATED = "2026-11-02";
 export type SitemapProduct = Pick<CatalogProduct, "slug" | "updatedAt" | "imageUrl" | "gallery">;
 const xml = (value: string) =>
   value
@@ -26,10 +27,7 @@ function sitemapEntries(products: SitemapProduct[]) {
     { path: "/", lastmod: "2026-10-20", images: ["/produse/hp-keeper/1.webp"] },
     {
       path: "/produse",
-      lastmod:
-        catalogDate && catalogDate > PRODUCT_EXPERIENCE_UPDATED
-          ? catalogDate
-          : PRODUCT_EXPERIENCE_UPDATED,
+      lastmod: catalogDate && catalogDate > CATALOG_UPDATED ? catalogDate : CATALOG_UPDATED,
     },
     {
       path: "/despre-cutiuta",
@@ -38,7 +36,7 @@ function sitemapEntries(products: SitemapProduct[]) {
     },
     { path: "/despre-noi", lastmod: "2026-10-04", images: ["/scenes/catalog-atelier.webp"] },
     { path: "/magic-rewards", lastmod: "2026-10-04", images: ["/icon-512.png"] },
-    { path: "/livrare", lastmod: "2026-09-28" },
+    { path: "/livrare", lastmod: "2026-11-05" },
     { path: "/cadouri", lastmod: DISCOVERY_UPDATED, images: ["/scenes/catalog-atelier.webp"] },
     ...giftGuides.map((g) => ({
       path: `/cadouri/${g.slug}`,

@@ -22,6 +22,7 @@ import { researchProduct } from "@/server/services/supplier-research";
 import { checkConnection, syncTraffic } from "@/server/services/traffic-integrations";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
 import { normalizeIban } from "./iban";
+import { readTrafficOverview } from "@/server/services/traffic-overview";
 
 function sameOrigin() {
   const request = getRequest(),
@@ -127,11 +128,7 @@ export const getTrafficMetrics = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     assertPermission(context.admin, "reports.read");
-    return (
-      await env.DB.prepare(
-        "SELECT source,property_id,metric,SUM(value) AS value,MAX(imported_at) AS updated_at,MIN(day) AS first_day,MAX(day) AS last_day FROM traffic_daily_metrics WHERE day>=date('now','-30 days') GROUP BY source,property_id,metric",
-      ).all<Record<string, string | number | null>>()
-    ).results;
+    return readTrafficOverview(env.DB);
   });
 export const importTrafficMetrics = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])

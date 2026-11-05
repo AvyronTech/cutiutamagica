@@ -1,6 +1,6 @@
 import { renderProductSitemap, renderTextSitemap, type SitemapProduct } from "@/lib/seo-sitemap";
 
-const CACHE_KEY = "seo:sitemap:documents:v3";
+const CACHE_KEY = "seo:sitemap:documents:v4";
 const FRESH_FOR_MS = 15 * 60 * 1000;
 const RETAIN_FOR_SECONDS = 7 * 24 * 60 * 60;
 

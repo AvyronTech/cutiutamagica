@@ -284,6 +284,18 @@ export default function GrowthSettings({
       ) : (
         <h1 className="text-2xl font-semibold text-white">{title}</h1>
       )}
+      {section === "traffic" && (
+        <TrafficResults
+          googleConfigured={data.credentials.some(
+            (item) => item.provider === "google" && item.configured,
+          )}
+          gaPropertyId={data.traffic.gaPropertyId}
+          gscProperty={data.traffic.gscProperty}
+        />
+      )}
+      {section === "traffic" && (
+        <h2 className="text-lg font-semibold text-white">Conexiuni și proprietăți</h2>
+      )}
       <form key={section} onSubmit={submit} className="grid max-w-3xl gap-5">
         {section === "owner_reports" && (
           <>
@@ -456,11 +468,18 @@ export default function GrowthSettings({
           )}
         </div>
       )}
-      {section === "traffic" && <TrafficResults />}
     </section>
   );
 }
-function TrafficResults() {
+function TrafficResults({
+  googleConfigured,
+  gaPropertyId,
+  gscProperty,
+}: {
+  googleConfigured: boolean;
+  gaPropertyId: string;
+  gscProperty: string;
+}) {
   const load = useServerFn(getTrafficMetrics),
     sync = useServerFn(importTrafficMetrics);
   const query = useQuery({ queryKey: ["admin", "traffic"], queryFn: () => load() });
@@ -473,42 +492,151 @@ function TrafficResults() {
     onError: (e) => toast.error(e.message),
   });
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap gap-3">
-        {(["ga4", "gsc"] as const).map((source) => (
-          <button
-            key={source}
-            className={button}
-            disabled={mutation.isPending}
-            onClick={() => mutation.mutate({ data: { source } })}
-          >
-            <RefreshCw size={16} />
-            Importă {source.toUpperCase()}
-          </button>
-        ))}
-      </div>
+    <section className="space-y-5" aria-label="Măsurarea traficului">
       {query.isError ? (
-        <p role="alert">Statisticile nu au putut fi încărcate.</p>
-      ) : !query.data?.length ? (
-        <p className="text-slate-400">Nu există date importate pentru ultimele 30 de zile.</p>
+        <p role="alert">
+          Statisticile nu au putut fi încărcate.{" "}
+          <button className="underline" onClick={() => query.refetch()}>
+            Reîncearcă
+          </button>
+        </p>
+      ) : !query.data ? (
+        <p role="status" className="text-slate-400">
+          Se încarcă activitatea magazinului…
+        </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {query.data.map((row, i) => (
-            <article key={i} className="rounded-lg border border-slate-700 p-4">
-              <p className="text-xs text-slate-400">
-                {String(row.source)} · {String(row.metric)}
+        <>
+          <div className="rounded-xl border border-slate-700 bg-slate-950/30 p-4">
+            <h2 className="font-semibold text-white">Activitate în magazin · 30 de zile</h2>
+            <p className="mt-1 text-xs text-slate-400">
+              {query.data.startDay} – {query.data.endDay} (UTC). Evenimente înregistrate de magazin;
+              pot include administratori și teste. Numerele reprezintă acțiuni, nu vizitatori unici.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+              {(
+                [
+                  ["page_view", "Afișări de pagină"],
+                  ["product_view", "Vizualizări de produs"],
+                  ["add_to_cart", "Adăugări în coș"],
+                  ["checkout_start", "Începuturi de comandă"],
+                ] as const
+              ).map(([event, label]) => (
+                <article key={event} className="rounded-lg border border-slate-700 p-3">
+                  <p className="text-xs text-slate-300">{label}</p>
+                  <p className="mt-2 text-2xl tabular-nums text-white">
+                    {(
+                      query.data.events.find((row) => row.event === event)?.count ?? 0
+                    ).toLocaleString("ro-RO")}
+                  </p>
+                </article>
+              ))}
+            </div>
+            {query.data.pages.length > 0 && (
+              <details className="mt-4 text-sm text-slate-300">
+                <summary className="cursor-pointer">Pagini cu activitate înregistrată</summary>
+                <ul className="mt-3 space-y-2">
+                  {query.data.pages.map((row) => (
+                    <li key={row.path} className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 break-all">{row.path}</span>
+                      <span className="shrink-0 tabular-nums">
+                        {row.views.toLocaleString("ro-RO")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+          <div>
+            <h2 className="font-semibold text-white">Vizibilitate și trafic din Google</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Search Console măsoară clicuri și afișări în căutare. GA4 măsoară vizitele urmărite de
+              Google Analytics. Conectarea din browser și importul în dashboard sunt conexiuni
+              distincte.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {(["gsc", "ga4"] as const).map((source) => {
+                const property = source === "gsc" ? gscProperty : gaPropertyId;
+                const reason = !property
+                  ? "Salvează mai jos identificatorul proprietății."
+                  : !googleConfigured
+                    ? "Configurează accesul Google read-only în Conturi și acces."
+                    : "Credențială salvată; accesul și valabilitatea se verifică la import.";
+                return (
+                  <article key={source} className="rounded-lg border border-slate-700 p-4">
+                    <h3 className="text-sm font-semibold text-white">
+                      {source === "gsc" ? "Google Search Console" : "Google Analytics 4"}
+                    </h3>
+                    <p className="my-2 text-xs text-slate-400">{reason}</p>
+                    <button
+                      className={button}
+                      disabled={mutation.isPending || !property || !googleConfigured}
+                      onClick={() => mutation.mutate({ data: { source } })}
+                    >
+                      <RefreshCw size={16} /> Importă {source.toUpperCase()}
+                    </button>
+                    {source === "gsc" && (
+                      <a
+                        className="mt-3 block text-xs text-cyan-200 underline"
+                        href="https://search.google.com/search-console/performance/search-analytics?resource_id=sc-domain%3Acutiutamagica.eu"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Deschide raportul Google
+                      </a>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+            {!googleConfigured && (
+              <a
+                className="mt-3 inline-flex text-sm text-cyan-200 underline"
+                href="/admin/accounts"
+              >
+                Conturi și acces · conectează Google
+              </a>
+            )}
+            {mutation.isError && (
+              <p role="alert" className="mt-3 text-sm text-rose-200">
+                {mutation.error.message}
               </p>
-              <p className="my-2 text-2xl text-white">
-                {Number(row.value).toLocaleString("ro-RO")}
+            )}
+            {query.data.imported.length === 0 ? (
+              <p className="mt-4 text-sm text-slate-400">
+                Datele Google vor apărea după conectare și primul import reușit. Activitatea
+                magazinului este afișată mai sus.
               </p>
-              <p className="text-xs text-slate-400">
-                {String(row.first_day)} – {String(row.last_day)}
-                <br />
-                Actualizat: {String(row.updated_at)}
-              </p>
-            </article>
-          ))}
-        </div>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {query.data.imported.map((row) => (
+                  <article
+                    key={`${row.source}:${row.property_id}:${row.metric}`}
+                    className="rounded-lg border border-slate-700 p-4"
+                  >
+                    <p className="text-xs text-slate-300">
+                      {row.source.toUpperCase()} ·{" "}
+                      {(
+                        {
+                          clicks: "Clicuri",
+                          impressions: "Afișări în căutare",
+                          sessions: "Sesiuni",
+                          page_views: "Afișări de pagină",
+                        } as Record<string, string>
+                      )[row.metric] ?? row.metric}
+                    </p>
+                    <p className="my-2 text-2xl text-white">{row.value.toLocaleString("ro-RO")}</p>
+                    <p className="text-xs text-slate-400">
+                      {row.first_day} – {row.last_day}
+                      <br />
+                      Importat: {new Date(row.updated_at).toLocaleString("ro-RO")}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </section>
   );
