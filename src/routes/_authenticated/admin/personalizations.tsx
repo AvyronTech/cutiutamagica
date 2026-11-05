@@ -3,5 +3,5 @@ import PersonalizationProcurement from "@/admin/pages/PersonalizationProcurement
 
 export const Route = createFileRoute("/_authenticated/admin/personalizations")({
   component: PersonalizationProcurement,
-  head: () => ({ meta: [{ title: "Admin · Personalizări" }] }),
+  head: () => ({ meta: [{ title: "Admin · Cutiuțe Personalizate" }] }),
 });

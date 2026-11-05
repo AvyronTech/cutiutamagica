@@ -233,7 +233,7 @@ export default function Dropshipping() {
             <a className={button} href="/admin/ai">
               Studio AI
             </a>
-            <a className={button} href="/admin/suppliers">
+            <a className={button} href="/admin/inventory?tab=supply">
               Aprovizionare
             </a>
             <a className={button} href="/admin/platforms">
@@ -713,7 +713,7 @@ function Editor({
                 <ExternalLink size={15} />
                 Cercetează în browser
               </a>
-              <a href="/admin/suppliers" className={button}>
+              <a href="/admin/inventory?tab=supply" className={button}>
                 Configurare căutare
               </a>
             </div>

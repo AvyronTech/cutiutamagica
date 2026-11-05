@@ -39,10 +39,11 @@ export const getSocialDashboard = createServerFn({ method: "GET" })
          ) WHERE rank = 1`,
       ).all<Snapshot>(),
       env.DB.prepare(
-        `SELECT provider,label,account_type AS accountType,status,last_synced_at AS lastSyncedAt
+        `SELECT id,provider,label,account_type AS accountType,status,last_synced_at AS lastSyncedAt
          FROM social_accounts WHERE provider IN ('facebook','instagram','tiktok')
          ORDER BY provider,account_type`,
       ).all<{
+        id: string;
         provider: string;
         label: string;
         accountType: string;

@@ -28,6 +28,8 @@ PR #80 adaugă bugetul Brave comun și este publicat ca Worker `78d62115-6260-47
 
 ## Hartă tehnică
 
+- Administrarea folosește trei spații comune: identificare/etichete/QR (`/admin/products/identification`), conturi sociale/postări (`/admin/social`) și stoc/aprovizionare (`/admin/inventory`). Filele și contextul sunt în query string; rutele vechi redirecționează. Detalii în [handofful consolidării](handoff/2026-11-05-unified-admin-workspaces.md).
+
 - TanStack Start/React livrează SSR, frontend și API într-un Worker Cloudflare dedicat magazinului. D1 păstrează date relaționale, R2 media, KV numai cache/date efemere, iar Queue operații asincrone.
 - AVYRON OS este o integrare opțională prin API/webhook autentificat. Nu este baza de date, control plane sau condiție de funcționare a magazinului.
 - Rutele publice și client sunt în `src/routes/`; UI comun în `src/components/site/`; API, servicii și repository în `src/server/`; migrațiile append-only în `cloudflare/d1/migrations/`.

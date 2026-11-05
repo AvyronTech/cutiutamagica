@@ -57,7 +57,7 @@ export default function PersonalizationProcurement() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
           Atelier în pregătire
         </p>
-        <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Personalizează cutiuța</h1>
+        <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Cutiuțe Personalizate</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
           Viitoarea experiență pentru melodie, finisaj și imagine pe capac. Pagina publică este încă
           în pregătire; aici urmărești numai cererile deja existente și pașii interni aferenți.

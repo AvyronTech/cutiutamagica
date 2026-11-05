@@ -1,3 +1,4 @@
+import { useWorkspaceActive } from "@/admin/workspace-activity";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -19,10 +20,12 @@ export function ProductInventory({
   productId: string;
   onChanged: () => Promise<unknown>;
 }) {
+  const active = useWorkspaceActive();
   const url = `/api/v1/admin/products/${productId}/inventory`,
     [busy, setBusy] = useState(false);
   const query = useQuery({
     queryKey: ["admin", "product-inventory", productId],
+    enabled: active,
     queryFn: async () => {
       const r = await fetch(url);
       if (!r.ok) throw new Error("Stocul nu poate fi încărcat.");
@@ -73,7 +76,11 @@ export function ProductInventory({
         <p role="alert">Stocul nu poate fi încărcat.</p>
       ) : (
         query.data && (
-          <form key={query.dataUpdatedAt} onSubmit={save} className="mt-5 space-y-4">
+          <form
+            key={`${query.data.variant.id}:${query.data.variant.version}:${query.data.levels.map((level) => `${level.locationId}:${level.version}`).join(",")}`}
+            onSubmit={save}
+            className="mt-5 space-y-4"
+          >
             <label className="block text-sm">
               Disponibilitate din stoc
               <select

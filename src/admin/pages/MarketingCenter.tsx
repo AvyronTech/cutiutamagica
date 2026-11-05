@@ -1,16 +1,10 @@
-import { useMemo, useState, type FormEvent, type InputHTMLAttributes } from "react";
+import { matchesSocialDraftDestination } from "@/lib/social-destination";
+import { useWorkspaceActive } from "@/admin/workspace-activity";
+import { workspaceHref } from "@/lib/admin-workspaces";
+import { useEffect, useMemo, useState, type FormEvent, type InputHTMLAttributes } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  Bot,
-  Calculator,
-  Megaphone,
-  Plus,
-  Save,
-  Send,
-  UserMinus,
-  type LucideIcon,
-} from "lucide-react";
+import { Bot, Calculator, Megaphone, Plus, Save, Send, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   addMarketingCost,
@@ -31,9 +25,17 @@ const secondary =
 
 export default function MarketingCenter({
   initialTab = "strategy",
+  section,
+  embedded = false,
+  accountId,
 }: {
   initialTab?: "strategy" | "content" | "social";
+  section?: "strategy" | "content" | "social";
+  embedded?: boolean;
+  accountId?: string;
 }) {
+  const active = useWorkspaceActive();
+  const Heading = embedded ? "h2" : "h1";
   const client = useQueryClient();
   const load = useServerFn(getMarketingCenter);
   const addCampaign = useServerFn(createMarketingCampaign);
@@ -42,14 +44,26 @@ export default function MarketingCenter({
   const analyze = useServerFn(analyzeSocialRelationships);
   const decide = useServerFn(decideUnfollowProposal);
   const reviewDraft = useServerFn(reviewSocialDraft);
-  const [tab, setTab] = useState(initialTab);
+  const [localTab, setTab] = useState(initialTab);
+  const tab = section ?? localTab;
+  const [draftAccountId, setDraftAccountId] = useState(accountId ?? "");
+  const [draftPlatform, setDraftPlatform] = useState("instagram");
+  useEffect(() => {
+    if (accountId !== undefined) setDraftAccountId(accountId);
+  }, [accountId]);
   const [relationships, setRelationships] = useState("");
   const query = useQuery({
     queryKey: ["admin", "marketing"],
     queryFn: () => load(),
     staleTime: 15_000,
+    enabled: active,
   });
-  const invalidate = () => client.invalidateQueries({ queryKey: ["admin", "marketing"] });
+  const invalidate = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: ["admin", "marketing"] }),
+      client.invalidateQueries({ queryKey: ["admin", "social-dashboard"] }),
+      client.invalidateQueries({ queryKey: ["admin", "notifications"] }),
+    ]);
   const mutation = useMutation({
     mutationFn: async (operation: () => Promise<unknown>) => operation(),
     onSuccess: async () => {
@@ -71,7 +85,10 @@ export default function MarketingCenter({
   if (query.isError)
     return (
       <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-5 text-rose-100">
-        Marketing Hub necesită migrația D1 0015.
+        Datele de marketing nu au putut fi încărcate.{" "}
+        <button type="button" onClick={() => query.refetch()} className="underline">
+          Reîncearcă
+        </button>
       </div>
     );
   if (!query.data) return <p role="status">Se încarcă Marketing Hub...</p>;
@@ -131,13 +148,31 @@ export default function MarketingCenter({
   function draftSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    if (!draftAccountId) {
+      toast.error("Alege contul oficial pe care pregătești postarea.");
+      return;
+    }
+    const account = query.data?.accounts.find((item) => String(item.id) === draftAccountId);
+    if (
+      !account ||
+      !matchesSocialDraftDestination(
+        { provider: String(account.provider), accountType: String(account.accountType) },
+        String(account.provider),
+      )
+    ) {
+      toast.error("Contul nu mai este disponibil pentru postare. Alege un cont oficial din listă.");
+      return;
+    }
     mutation.mutate(() =>
       makeDraft({
         data: {
           accountId: String(form.get("accountId")),
           campaignId: String(form.get("campaignId")),
           productId: String(form.get("productId")),
-          platform: String(form.get("platform")) as "instagram",
+          platform: String(
+            query.data?.accounts.find((item) => String(item.id) === draftAccountId)?.provider ??
+              form.get("platform"),
+          ) as "instagram",
           postType: String(form.get("postType")) as "post",
           objective: String(form.get("objective")) as "conversion",
           tone: String(form.get("tone")) as "magic",
@@ -175,45 +210,56 @@ export default function MarketingCenter({
         <p className="text-xs font-semibold uppercase tracking-[.18em] text-fuchsia-300">
           Creștere controlată
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-white">Marketing Hub</h1>
+        <Heading className="mt-1 text-2xl font-semibold text-white">
+          {tab === "content"
+            ? "Postări și aprobări"
+            : tab === "social"
+              ? "Relații și propuneri"
+              : "Marketing și bugete"}
+        </Heading>
         <p className="mt-2 max-w-3xl text-sm text-slate-400">
           Strategii, bugete, conținut asistat și igiena conturilor sociale, cu aprobare umană
           înainte de orice acțiune externă.
         </p>
       </header>
-      <section className="grid gap-3 sm:grid-cols-3">
-        {(
-          [
-            ["Campanii", data.campaigns.length, Megaphone],
-            ["Cost total RON", totals.RON.toFixed(2), Calculator],
+      {!embedded && (
+        <section className="grid gap-3 sm:grid-cols-3">
+          {(
             [
-              "Propuneri unfollow",
-              data.proposals.filter((item) => item.decision === "proposed").length,
-              UserMinus,
-            ],
-          ] as Array<[string, string | number, LucideIcon]>
-        ).map(([label, value, Icon]) => (
-          <article key={label} className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
-            <Icon className="h-4 w-4 text-fuchsia-300" />
-            <p className="mt-3 text-2xl font-semibold text-white">{String(value)}</p>
-            <p className="text-xs text-slate-400">{label}</p>
-          </article>
-        ))}
-      </section>
-      <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-3">
-        {(
-          [
-            ["strategy", "Strategii și costuri", Megaphone],
-            ["content", "Conținut și postări", Send],
-            ["social", "Agent unfollow", Bot],
-          ] as const
-        ).map(([id, label, Icon]) => (
-          <button key={id} onClick={() => setTab(id)} className={tab === id ? button : secondary}>
-            <Icon size={15} />
-            {label}
-          </button>
-        ))}
-      </div>
+              ["Campanii", data.campaigns.length, Megaphone],
+              ["Cost total RON", totals.RON.toFixed(2), Calculator],
+              ["Cost total EUR", totals.EUR.toFixed(2), Calculator],
+            ] as Array<[string, string | number, LucideIcon]>
+          ).map(([label, value, Icon]) => (
+            <article key={label} className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+              <Icon className="h-4 w-4 text-fuchsia-300" />
+              <p className="mt-3 text-2xl font-semibold text-white">{String(value)}</p>
+              <p className="text-xs text-slate-400">{label}</p>
+            </article>
+          ))}
+        </section>
+      )}
+      {section === "strategy" && (
+        <a href={workspaceHref("social", { tab: "posts" })} className={secondary}>
+          Continuă cu postări și aprobări →
+        </a>
+      )}
+      {!section && (
+        <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-3">
+          {(
+            [
+              ["strategy", "Strategii și costuri", Megaphone],
+              ["content", "Conținut și postări", Send],
+              ["social", "Agent unfollow", Bot],
+            ] as const
+          ).map(([id, label, Icon]) => (
+            <button key={id} onClick={() => setTab(id)} className={tab === id ? button : secondary}>
+              <Icon size={15} />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {tab === "strategy" && (
         <div className="grid gap-5 xl:grid-cols-2">
@@ -364,13 +410,26 @@ export default function MarketingCenter({
             </label>
             <label className="text-sm text-slate-300">
               Cont
-              <select name="accountId" className={`${input} mt-1.5`}>
-                <option value="">Se alege la aprobare</option>
-                {data.accounts.map((item) => (
-                  <option key={String(item.id)} value={String(item.id)}>
-                    {String(item.provider)} · {String(item.label)}
-                  </option>
-                ))}
+              <select
+                name="accountId"
+                required
+                className={`${input} mt-1.5`}
+                value={draftAccountId}
+                onChange={(event) => setDraftAccountId(event.target.value)}
+              >
+                <option value="">Alege contul oficial</option>
+                {data.accounts
+                  .filter((item) =>
+                    matchesSocialDraftDestination(
+                      { provider: String(item.provider), accountType: String(item.accountType) },
+                      String(item.provider),
+                    ),
+                  )
+                  .map((item) => (
+                    <option key={String(item.id)} value={String(item.id)}>
+                      {String(item.provider)} · {String(item.label)}
+                    </option>
+                  ))}
               </select>
             </label>
             <label className="text-sm text-slate-300">
@@ -387,7 +446,16 @@ export default function MarketingCenter({
             <div className="grid grid-cols-2 gap-3">
               <label className="text-sm text-slate-300">
                 Platformă
-                <select name="platform" className={`${input} mt-1.5`}>
+                <select
+                  name="platform"
+                  className={`${input} mt-1.5`}
+                  value={String(
+                    data.accounts.find((item) => String(item.id) === draftAccountId)?.provider ??
+                      draftPlatform,
+                  )}
+                  onChange={(event) => setDraftPlatform(event.target.value)}
+                  disabled={Boolean(draftAccountId)}
+                >
                   <option>instagram</option>
                   <option>facebook</option>
                   <option>tiktok</option>

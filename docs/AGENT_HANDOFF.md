@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Spații administrative unificate — 5 noiembrie 2026
+
+- Identificare/etichete/coduri QR, Rețele sociale/postări și Stocuri/aprovizionare au fiecare un singur spațiu cu file. Contextele produs/cont/comandă și formularele se păstrează, interogările ascunse sunt oprite, iar adresele vechi redirecționează. Cutiuțe Personalizate este noua denumire; Promoții, Newsletter și E-mail și rapoarte sunt în Operațiuni. Fără migrare sau activare de furnizori. [Implementare, verificări și limite](handoff/2026-11-05-unified-admin-workspaces.md).
+
 ## Stocuri și navigare prioritară — 5 noiembrie 2026
 
 - Corecția miniaturilor din Stocuri folosește aceeași mapare media legacy și fotografiile reale din catalog. Principal: Prezentare generală → Facturare → Livrare → Financiar → Retururi, fără dublurile din Operațiuni. Fără migrare sau schimbări de cantități, conturi ori costuri. [Scop, continuitate și verificări](handoff/2026-11-05-inventory-navigation.md).

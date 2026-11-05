@@ -1,3 +1,4 @@
+import { matchesSocialDraftDestination } from "./social-destination";
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
@@ -170,6 +171,17 @@ export const createSocialDraft = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     sameOrigin();
     assertPermission(context.admin, "marketing.write");
+    {
+      const account = data.accountId
+        ? await env.DB.prepare(
+            "SELECT provider,account_type AS accountType FROM social_accounts WHERE id=?1",
+          )
+            .bind(data.accountId)
+            .first<{ provider: string; accountType: string }>()
+        : null;
+      if (!matchesSocialDraftDestination(account, data.platform))
+        throw new Error("Alege un cont oficial care corespunde platformei postării.");
+    }
     const catalog = await listPublicCatalog(env.DB);
     const product = catalog.find((item) => item.id === data.productId);
     const id = crypto.randomUUID();
@@ -264,7 +276,7 @@ export const reviewSocialDraft = createServerFn({ method: "POST" })
       decision,
       approvalCode: approval.approval_code,
       revisionRef: approval.revision_ref,
-      evidenceReference: "/admin/marketing",
+      evidenceReference: "/admin/social?tab=posts",
       idempotencyKey: `dashboard:${approval.id}:${decision}`,
       actorAdminUserId: context.admin.id,
       actorLabel: context.admin.email,
