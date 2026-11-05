@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useWorkspaceActive } from "@/admin/workspace-activity";
+import { workspaceHref } from "@/lib/admin-workspaces";
 import {
   Barcode,
   Boxes,
@@ -150,7 +152,17 @@ function codeImageSvg(): string {
   return new XMLSerializer().serializeToString(element);
 }
 
-export default function ProductIdentification() {
+export default function ProductIdentification({
+  embedded = false,
+  selectedProductId,
+  onProductChange,
+}: {
+  embedded?: boolean;
+  selectedProductId?: string | null;
+  onProductChange?: (id: string) => void;
+}) {
+  const activePanel = useWorkspaceActive();
+  const Heading = embedded ? "h2" : "h1";
   const [search, setSearch] = useState("");
   const [productId, setProductId] = useState<string | null>(null);
   const [variantId, setVariantId] = useState<string | null>(null);
@@ -181,17 +193,22 @@ export default function ProductIdentification() {
     logo: true,
   });
   useEffect(() => {
-    setProductId(new URLSearchParams(window.location.search).get("product"));
-  }, []);
+    setProductId(
+      selectedProductId !== undefined
+        ? selectedProductId
+        : new URLSearchParams(window.location.search).get("product"),
+    );
+  }, [selectedProductId]);
   const catalog = useQuery({
     queryKey: ["identification", "catalog"],
     queryFn: () => getJson<{ products: CatalogRow[] }>(endpoint),
     staleTime: 30_000,
+    enabled: activePanel,
   });
   const detail = useQuery({
     queryKey: ["identification", productId],
     queryFn: () => getJson<Detail>(`${endpoint}?product=${encodeURIComponent(productId!)}`),
-    enabled: !!productId,
+    enabled: activePanel && !!productId,
   });
   const filtered = useMemo(
     () =>
@@ -287,11 +304,12 @@ export default function ProductIdentification() {
     setVariantId(variant ?? null);
     setLotId("");
     setQrDestination("product");
-    window.history.replaceState(
-      null,
-      "",
-      `/admin/products/identification?product=${encodeURIComponent(id)}`,
-    );
+    if (onProductChange) onProductChange(id);
+    else {
+      const url = new URL(window.location.href);
+      url.searchParams.set("product", id);
+      window.history.replaceState(window.history.state, "", url);
+    }
   }
   async function exportData(kind: "csv" | "xlsx") {
     try {
@@ -458,13 +476,20 @@ export default function ProductIdentification() {
           <p className="text-xs font-semibold uppercase tracking-[.16em] text-cyan-300">
             Produse / administrare internă
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-white">Identificare & etichetare</h1>
+          <Heading className="mt-1 text-2xl font-bold text-white">
+            Produse, loturi și etichete
+          </Heading>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
             Un singur loc pentru SKU, GTIN verificat, loturi, coduri scanabile și etichete. Stocul
             rămâne în gestiunea existentă.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {productId && (
+            <a className={button} href={workspaceHref("inventory", { product: productId })}>
+              Stoc și aprovizionare →
+            </a>
+          )}
           <button className={button} onClick={() => exportData("csv")}>
             <Download size={16} /> CSV
           </button>

@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useWorkspaceActive } from "@/admin/workspace-activity";
+import { workspaceHref } from "@/lib/admin-workspaces";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -25,15 +27,31 @@ function stockTone(product: AdminProduct): string {
   return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
 }
 
-export default function Inventory() {
+export default function Inventory({
+  embedded = false,
+  selectedProductId,
+  onProductChange,
+  onSupply,
+}: {
+  embedded?: boolean;
+  selectedProductId?: string | null;
+  onProductChange?: (id: string | null) => void;
+  onSupply?: (id: string) => void;
+}) {
+  const active = useWorkspaceActive();
+  const Heading = embedded ? "h2" : "h1";
   const fetchProducts = useServerFn(getAdminInventoryProducts);
   const productsQuery = useQuery({
     queryKey: ["admin", "products"],
     queryFn: () => fetchProducts(),
     staleTime: 20_000,
+    enabled: active,
   });
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (selectedProductId !== undefined) setSelectedId(selectedProductId);
+  }, [selectedProductId]);
   const products = useMemo(
     () => productsQuery.data?.products ?? [],
     [productsQuery.data?.products],
@@ -59,14 +77,20 @@ export default function Inventory() {
     <div className="space-y-4 md:space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-300">
-            Exclusiv intern
-          </p>
-          <h1 className="mt-1 text-xl font-bold text-white md:text-2xl">Stocuri și depozite</h1>
-          <p className="mt-1 max-w-2xl text-xs text-slate-400 md:text-sm">
-            Cantitățile exacte sunt vizibile numai administratorilor. Magazinul public primește doar
-            starea de disponibilitate a produsului.
-          </p>
+          {!embedded && (
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-cyan-300">
+              Exclusiv intern
+            </p>
+          )}
+          <Heading className="mt-1 text-xl font-bold text-white md:text-2xl">
+            Stocuri și depozite
+          </Heading>
+          {!embedded && (
+            <p className="mt-1 max-w-2xl text-xs text-slate-400 md:text-sm">
+              Cantitățile exacte sunt vizibile numai administratorilor. Magazinul public primește
+              doar starea de disponibilitate a produsului.
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -175,7 +199,10 @@ export default function Inventory() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelectedId(product.id)}
+                  onClick={() => {
+                    setSelectedId(product.id);
+                    onProductChange?.(product.id);
+                  }}
                   className="rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-200 md:justify-self-end"
                 >
                   Setează stocul
@@ -202,12 +229,30 @@ export default function Inventory() {
             </div>
             <button
               type="button"
-              onClick={() => setSelectedId(null)}
+              onClick={() => {
+                setSelectedId(null);
+                onProductChange?.(null);
+              }}
               className="rounded-lg border border-slate-700 p-2 text-slate-400 hover:text-white"
               aria-label="Închide editorul de stoc"
             >
               <X className="h-4 w-4" />
             </button>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <button
+              type="button"
+              onClick={() => onSupply?.(selected.id)}
+              className="rounded-lg border border-cyan-300/30 px-3 py-2 text-cyan-200"
+            >
+              Caută furnizori pentru acest produs
+            </button>
+            <a
+              href={workspaceHref("identification", { product: selected.id })}
+              className="rounded-lg border border-slate-600 px-3 py-2 text-slate-200"
+            >
+              Recepții, loturi și etichete →
+            </a>
           </div>
           <ProductInventory
             productId={selected.id}

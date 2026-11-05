@@ -1,3 +1,4 @@
+import { useWorkspaceActive } from "@/admin/workspace-activity";
 import { useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,8 +46,14 @@ const labels: Record<CredentialProvider, string> = {
   avyron_crm: "CRM intern · secret HMAC",
 };
 function useSettings() {
+  const active = useWorkspaceActive();
   const load = useServerFn(getGrowthSettings);
-  return useQuery({ queryKey: ["admin", "growth"], queryFn: () => load(), staleTime: 30000 });
+  return useQuery({
+    queryKey: ["admin", "growth"],
+    queryFn: () => load(),
+    staleTime: 30000,
+    enabled: active,
+  });
 }
 function download(value: unknown, name: string) {
   const url = URL.createObjectURL(

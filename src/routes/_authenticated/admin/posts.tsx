@@ -1,6 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import MarketingCenter from "@/admin/pages/MarketingCenter";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { readWorkspaceSearch } from "@/lib/admin-workspaces";
 
 export const Route = createFileRoute("/_authenticated/admin/posts")({
-  component: () => <MarketingCenter initialTab="content" />,
+  validateSearch: (search) => readWorkspaceSearch("social", search),
+  beforeLoad: ({ search }) => {
+    throw redirect({ to: "/admin/social", search: { ...search, tab: "posts" }, replace: true });
+  },
 });

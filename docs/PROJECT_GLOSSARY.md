@@ -39,3 +39,10 @@ Folosește forma din coloana „În interfață” pentru texte adresate clientu
 - În copy de client explică acțiunea și următorul pas. Nu afișa jargon de furnizor dacă nu ajută la decizie.
 - Distinge `local`, `dry-run`, `PR`, `deployed` și `verificat live`. O stare intermediară nu devine finală prin formulare.
 - Nu inventa preț, stoc, timp de livrare, drepturi, certificare, recenzie, performanță SEO sau disponibilitatea unei metode de plată.
+
+## Spații administrative comune
+
+- **Identificare, etichetare și coduri QR**: SKU, GTIN, recepții, loturi, etichete și QR de produs/comandă, în două file ale aceleiași secțiuni.
+- **Rețele sociale și postări**: conturile oficiale, rezultate, ciorne, aprobări și propuneri de relații; aceeași identitate și același flux de aprobare.
+- **Stocuri și aprovizionare**: disponibilitate/depozite și cercetarea surselor pentru produsul selectat; recepția continuă în identificare.
+- **Cutiuțe Personalizate**: denumirea administrativă a cererilor, designului și producției de cutiuțe personalizate.

@@ -1,3 +1,4 @@
+import { useWorkspaceActive } from "@/admin/workspace-activity";
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -70,7 +71,9 @@ function Metric({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-export default function SocialNetworks() {
+export default function SocialNetworks({ embedded = false }: { embedded?: boolean }) {
+  const active = useWorkspaceActive();
+  const Heading = embedded ? "h2" : "h1";
   const client = useQueryClient();
   const load = useServerFn(getSocialDashboard);
   const save = useServerFn(saveSocialSnapshot);
@@ -81,6 +84,7 @@ export default function SocialNetworks() {
     queryKey: ["admin", "social-dashboard"],
     queryFn: () => load(),
     staleTime: 60_000,
+    enabled: active,
   });
   const mutation = useMutation({
     mutationFn: (input: SocialSnapshotInput) => save({ data: input }),
@@ -162,9 +166,9 @@ export default function SocialNetworks() {
             <p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-200/80">
               Prezență socială
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white md:text-3xl">
-              Rețele sociale
-            </h1>
+            <Heading className="mt-2 text-xl font-semibold tracking-tight text-white md:text-2xl">
+              Conturi și rezultate
+            </Heading>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               Conturile oficiale, rezultatele din Metricool și postările pregătite pentru aprobare,
               într-un singur loc.
@@ -195,8 +199,10 @@ export default function SocialNetworks() {
           role="alert"
           className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-100"
         >
-          Datele sociale nu pot fi încărcate. Verifică dacă migrația 0082 este aplicată și încearcă
-          din nou.
+          Datele sociale nu pot fi încărcate.{" "}
+          <button type="button" onClick={() => query.refetch()} className="underline">
+            Reîncearcă
+          </button>
         </div>
       ) : null}
       {!query.data && !query.isError ? (
@@ -280,6 +286,16 @@ export default function SocialNetworks() {
                         Niciun raport salvat. Deschide Metricool și adaugă cifrele verificate.
                       </p>
                     )}
+                    <Link
+                      to="/admin/social"
+                      search={{
+                        tab: "posts",
+                        account: accounts.length === 1 ? accounts[0].id : undefined,
+                      }}
+                      className="mt-4 inline-flex rounded-lg border border-amber-200/30 px-3 py-2 text-sm text-amber-100"
+                    >
+                      Pregătește o postare →
+                    </Link>
                     <p className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-400">
                       Publicare din magazin:{" "}
                       {accounts.some((account) => account.status === "active")
@@ -379,7 +395,8 @@ export default function SocialNetworks() {
               ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
-                  to="/admin/posts"
+                  to="/admin/social"
+                  search={{ tab: "posts" }}
                   className="rounded-lg border border-white/20 px-3 py-2 text-sm text-white hover:bg-white/10"
                 >
                   Vezi postările

@@ -1,3 +1,5 @@
+import { workspaceHref } from "@/lib/admin-workspaces";
+import { useWorkspaceActive } from "@/admin/workspace-activity";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -8,7 +10,14 @@ import {
   runSupplierResearch,
 } from "@/lib/growth.functions";
 
-export default function SupplierResearch({ productId }: { productId: string }) {
+export default function SupplierResearch({
+  productId,
+  onConfigure,
+}: {
+  productId: string;
+  onConfigure?: () => void;
+}) {
+  const active = useWorkspaceActive();
   const load = useServerFn(getSupplierResearch),
     run = useServerFn(runSupplierResearch),
     loadSettings = useServerFn(getGrowthSettings);
@@ -16,9 +25,11 @@ export default function SupplierResearch({ productId }: { productId: string }) {
     queryKey: ["admin", "growth"],
     queryFn: () => loadSettings(),
     staleTime: 30_000,
+    enabled: active,
   });
   const query = useQuery({
     queryKey: ["admin", "suppliers", productId],
+    enabled: active,
     queryFn: () => load({ data: { productId } }),
   });
   const mutation = useMutation({
@@ -69,9 +80,18 @@ export default function SupplierResearch({ productId }: { productId: string }) {
             : "Căutarea este dezactivată în Aprovizionare. Activează cercetarea și salvează setările înainte de a căuta."}
         </p>
       ) : null}
-      <a href="/admin/suppliers" className="text-sm text-cyan-300 underline">
-        Configurează Brave Search și bugetul de căutare
-      </a>
+      {onConfigure ? (
+        <button type="button" onClick={onConfigure} className="text-sm text-cyan-300 underline">
+          Configurează conexiunea și bugetul de căutare
+        </button>
+      ) : (
+        <a
+          href={workspaceHref("inventory", { tab: "supply", product: productId })}
+          className="text-sm text-cyan-300 underline"
+        >
+          Configurează Brave Search și bugetul de căutare
+        </a>
+      )}
       {query.isError ? (
         <p role="alert">Sursele nu au putut fi încărcate.</p>
       ) : query.isPending ? (

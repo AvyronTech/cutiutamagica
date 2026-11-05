@@ -37,7 +37,6 @@ import {
   FileText,
   RotateCcw,
   Store,
-  Send,
   Users,
   Mail,
   BellRing,
@@ -74,9 +73,13 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
       { path: "/admin/orders", label: "Comenzi", icon: ShoppingCart },
       { path: "/admin/products", label: "Produse", icon: ShoppingBag },
       { path: "/admin/dropshipping", label: "Dropshipping", icon: Boxes },
-      { path: "/admin/products/identification", label: "Identificare & etichetare", icon: QrCode },
+      {
+        path: "/admin/products/identification",
+        label: "Identificare, etichete și coduri QR",
+        icon: QrCode,
+      },
       { path: "/admin/chat", label: "Chat clienți", icon: MessageCircle },
-      { path: "/admin/personalizations", label: "Personalizări", icon: WandSparkles },
+      { path: "/admin/personalizations", label: "Cutiuțe Personalizate", icon: WandSparkles },
     ],
   },
   {
@@ -84,17 +87,18 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { path: "/admin/ai", label: "Agent Codex", icon: Bot },
       { path: "/admin/marketing", label: "Marketing", icon: Megaphone },
-      { path: "/admin/social", label: "Rețele sociale", icon: BarChart3 },
-      { path: "/admin/posts", label: "Postări", icon: Send },
+      { path: "/admin/social", label: "Rețele sociale și postări", icon: BarChart3 },
     ],
   },
   {
     label: "Operațiuni",
     items: [
       { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
-      { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
-      { path: "/admin/suppliers", label: "Aprovizionare", icon: Boxes },
+      { path: "/admin/inventory", label: "Stocuri și aprovizionare", icon: Warehouse },
       { path: "/admin/platforms", label: "Canale de vânzare", icon: Store },
+      { path: "/admin/promotions", label: "Promoții", icon: Target },
+      { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
+      { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
     ],
   },
   {
@@ -103,9 +107,6 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
       { path: "/admin/customers", label: "Clienți", icon: Users },
       { path: "/admin/rewards", label: "Magic Rewards", icon: Stars },
       { path: "/admin/referrals", label: "Recomandări", icon: UserRoundPlus },
-      { path: "/admin/promotions", label: "Promoții", icon: Target },
-      { path: "/admin/newsletter", label: "Newsletter", icon: Mail },
-      { path: "/admin/email", label: "E-mail și rapoarte", icon: Mail },
     ],
   },
   {
@@ -118,7 +119,6 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
       { path: "/admin/integrations", label: "Integrări", icon: Plug },
       { path: "/admin/accounts", label: "Conturi și dispozitive", icon: ShieldCheck },
       { path: "/admin/backups", label: "Backup", icon: DatabaseBackup },
-      { path: "/admin/qr-generator", label: "Coduri QR", icon: QrCode },
       { path: "/admin/settings", label: "Setări", icon: Settings },
     ],
   },
@@ -158,6 +158,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const previousUnread = useRef(0);
   const location = useRouterState({ select: (s) => s.location });
+  const activeNavItem = [...navItems]
+    .sort((a, b) => b.path.length - a.path.length)
+    .find(
+      (item) =>
+        location.pathname === item.path ||
+        (item.path !== "/admin" && location.pathname.startsWith(`${item.path}/`)),
+    );
 
   const notificationsQuery = useQuery({
     queryKey: ["admin", "notifications"],
@@ -287,7 +294,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
               }`
             : "w-64 flex-shrink-0"
-        } flex flex-col border-r border-white/10 bg-[radial-gradient(circle_at_0_0,rgba(163,123,255,.12),transparent_34%),#0b1424] shadow-[16px_0_44px_rgba(0,0,0,.12)]`}
+        } flex flex-col border-r border-white/10 bg-[#0b1424] bg-[radial-gradient(circle_at_0_0,rgba(163,123,255,.12),transparent_34%)] shadow-[16px_0_44px_rgba(0,0,0,.12)]`}
       >
         {/* Logo */}
         <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-4">
@@ -300,7 +307,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               />
             </div>
             <div className="overflow-hidden">
-              <h1 className="text-sm font-bold text-white whitespace-nowrap">Cutiuța Magică</h1>
+              <p className="text-sm font-bold text-white whitespace-nowrap">Cutiuța Magică</p>
               <p className="whitespace-nowrap text-[10px] font-medium tracking-[.14em] text-amber-200/80">
                 ATELIER · ADMIN
               </p>
@@ -345,9 +352,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {!collapsed && (
                   <div className="space-y-1">
                     {group.items.map((item) => {
-                      const isActive =
-                        location.pathname === item.path ||
-                        (item.path !== "/admin" && location.pathname.startsWith(`${item.path}/`));
+                      const isActive = activeNavItem?.path === item.path;
                       const Icon = item.icon;
                       return (
                         <Link
@@ -362,7 +367,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           <Icon
                             className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-amber-200" : "text-slate-400 group-hover:text-white"}`}
                           />
-                          <span className="whitespace-nowrap text-[13px] font-medium">
+                          <span className="min-w-0 text-[13px] font-medium leading-5">
                             {item.label}
                           </span>
                         </Link>
@@ -401,8 +406,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 Cutiuța Magică / Administrare
               </p>
               <p className="truncate text-sm font-medium text-white">
-                {navItems.find((item) => item.path === location.pathname)?.label ??
-                  "Spațiu de lucru"}
+                {activeNavItem?.label ?? "Spațiu de lucru"}
               </p>
             </div>
             <div className="relative hidden lg:block lg:ml-5">
