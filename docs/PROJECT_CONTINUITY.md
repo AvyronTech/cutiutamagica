@@ -12,6 +12,8 @@ Dropshipping, 5 noiembrie: modul privat nou în `codex/intelligent-dropshipping-
 
 PR #79 este integrat la `db5a43b`, publicat ca Worker `26fd120c-442e-4ff3-8745-c986552231a5`. Schema D1 este 89, `foreign_key_check` curat, fără date sintetice în producție. UI live este confirmată în Opera, iar auditul SEO public nu detectează probleme. Cheia Brave și activarea Workers AI Free rămân neconfigurate.
 
+PR #80 adaugă bugetul Brave comun și este publicat ca Worker `78d62115-6260-4796-a507-dee091c899c9`, fără migrare nouă. Revizia finală păstrează operația AI terminată (`completed`) și rezultatul ca ciornă (`reviewRequired=true`); aprobarea externă este separată. Confirmă versiunea curentă în Cloudflare la fiecare release, nu reutiliza un UUID istoric drept dovadă live.
+
 | Întrebare                             | Sursa de verificat                                                                                                                  |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Ce are voie să facă agentul?          | `AGENTS.md` și instrucțiunile utilizatorului din conversația curentă                                                                |

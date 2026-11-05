@@ -384,7 +384,7 @@ describe("dropshipping workspace", () => {
     await call(env, `/${id}/approve`, { expectedVersion: 1, channel: "emag" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
-  it("keeps inference optional, caches reviewed drafts and rejects malformed output without overwriting facts", async () => {
+  it("finishes inference with a reviewable draft, reuses it and rejects malformed output without overwriting facts", async () => {
     const env = environment();
     await create(env);
     env.DROPSHIPPING_AI_PLAN = "unverified";
@@ -395,6 +395,14 @@ describe("dropshipping workspace", () => {
     env.DROPSHIPPING_AI_PLAN = "free";
     const first = await call(env, `/${id}/generate`, { expectedVersion: 1, channel: "emag" });
     expect(first.status).toBe(200);
+    expect(first.data).toMatchObject({ state: "draft", reviewRequired: true });
+    expect(
+      sql.prepare("SELECT status FROM ai_runs WHERE id=?").get(String(first.data.runId))?.status,
+    ).toBe("completed");
+    expect(
+      sql.prepare("SELECT COUNT(*) n FROM approval_requests WHERE entity_type='dropshipping'").get()
+        ?.n,
+    ).toBe(0);
     expect(
       (await call(env, `/${id}/generate`, { expectedVersion: 1, channel: "emag" })).data.cached,
     ).toBe(true);
