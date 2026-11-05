@@ -1,5 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Carduri publice compacte — 5 noiembrie 2026
+
+- Etichetele Limited Edition păstrează identitatea ediției, fără numărul de exemplare în carduri, hero, fișa produsului, etichetele accesibile și proprietatea SEO. Datele interne de ediție și stoc nu sunt modificate.
+- Caruselul are carduri și introducere mai compacte, atât pentru recenzii reale, cât și pentru ideile editoriale afișate când lipsesc recenziile. Magic Drop folosește margini mobile simetrice de 18 px.
+- Verificare UI locală la 320/390 px și desktop 1440 px: fără overflow orizontal, buton Magic Drop încadrat, etichetă fără cantități și adăugare în coș funcțională. Recenziile DEMO au existat doar în baza locală izolată și au fost eliminate după verificare. Capturi: `/Users/niss/.codex/visualizations/2026/11/05/cutiuta-public-cards/`. Typecheck, 356 teste, lint, build și dry run trecute. Fără migrare sau configurare externă nouă.
+
 ## Dropshipping asistat — 5 noiembrie 2026
 
 - Releaseul include PR #79 și #80: modulul este în producție, schema D1 89, verificat în Opera. Bugetul și comutatorul Brave sunt comune cu Aprovizionare. Generarea AI se încheie cu o ciornă de verificat; publicarea are propria aprobare pe revizie, fără o coadă AI editorială paralelă. Workers AI rămâne oprit până la confirmarea planului Free, iar catalogul general al websiteului nu este încă extins. Detaliile și versiunile istorice sunt în [DROPSHIPPING.md](DROPSHIPPING.md).

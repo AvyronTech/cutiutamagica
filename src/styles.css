@@ -1207,20 +1207,22 @@
 
 /* Idei editoriale: se mișcă precum recenziile, dar nu se prezintă drept testimoniale. */
 .review-carousel {
-  padding: 42px 0 38px;
+  padding: 28px 0;
 }
 .review-carousel-heading {
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 .review-viewport--prompts {
   mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
 }
-.review-prompt {
+.review-slide.review-prompt {
   display: grid;
-  flex: 0 0 250px;
-  gap: 6px;
-  min-height: 148px;
-  padding: 18px;
+  grid-template-columns: auto minmax(0, 1fr);
+  flex: 0 0 270px;
+  gap: 4px 7px;
+  align-content: start;
+  min-height: 0;
+  padding: 14px 16px;
   border: 1px solid rgb(207 173 117 / 0.26);
   border-radius: 17px;
   color: #eee0cb;
@@ -1230,15 +1232,20 @@
   color: #e4bb73;
 }
 .review-prompt small {
+  align-self: center;
   color: #a99781;
   font-size: 7px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
 .review-prompt h3 {
-  font: 600 19px/1.05 var(--font-display);
+  grid-column: 1 / -1;
+  margin: 3px 0 0;
+  font: 600 19px/1.15 var(--font-display);
 }
 .review-prompt p {
+  grid-column: 1 / -1;
+  margin: 0;
   color: #c8b9a5;
   font-size: 10px;
   line-height: 1.55;
@@ -1409,7 +1416,7 @@
     flex-basis: min(220px, 70vw);
   }
   .christmas-drop {
-    padding: 31px 48px 37px 12px;
+    padding: 24px 18px 28px;
   }
   .christmas-drop-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -1423,15 +1430,14 @@
     display: none;
   }
   .review-carousel {
-    padding: 34px 0 30px;
+    padding: 24px 0;
   }
   .review-carousel-heading {
     gap: 14px;
   }
-  .review-prompt {
-    flex-basis: min(230px, 74vw);
-    min-height: 136px;
-    padding: 15px;
+  .review-slide.review-prompt {
+    flex-basis: min(250px, 78vw);
+    padding: 12px 14px;
   }
   .gift-calendar-benefits > span {
     max-width: none;
@@ -1453,7 +1459,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cookie-story,
-  .review-prompt {
+  .review-slide.review-prompt {
     animation: none !important;
     transition: none !important;
   }
@@ -2279,7 +2285,7 @@
 }
 @media (max-width: 760px) {
   .christmas-drop {
-    padding: 42px 48px 58px 12px;
+    padding: 24px 18px 28px;
   }
   .christmas-drop-shell {
     grid-template-columns: 1fr;
@@ -12768,7 +12774,10 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   font-family: var(--font-display);
   font-size: clamp(32px, 4vw, 45px);
   line-height: 1.06;
-  margin-top: 12px;
+  margin: 0;
+}
+.review-carousel-heading .scene-eyebrow {
+  margin: 0 0 6px;
 }
 .review-carousel-heading h2 em {
   color: #e2bb78;
@@ -12776,8 +12785,9 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
 }
 .review-carousel-heading > p {
   max-width: 320px;
+  margin: 0;
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.55;
   color: #c7bca9;
 }
 .review-carousel__intro {
@@ -12787,6 +12797,9 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   color: #c7bca9;
   font-size: 13px;
   line-height: 1.65;
+}
+.review-carousel__intro > p {
+  margin: 0;
 }
 .review-carousel__score {
   display: flex;
@@ -12822,9 +12835,11 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   height: 14px;
 }
 .review-carousel-heading a {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: #f1cb8e;
-  margin-top: 10px;
+  margin-top: 6px;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -12939,9 +12954,11 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   color: #eee2cf;
   border-color: #bea1713d;
   box-shadow: inset 0 1px #ffffff0a;
-  padding: 20px;
+  padding: 14px 16px;
 }
 .review-card-compact .review-product-name {
+  margin: 6px 0;
+  line-height: 1.4;
   color: #dcb979;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -12952,10 +12969,23 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   color: #baaa95;
 }
 .review-card-compact blockquote {
+  margin: 6px 0 10px;
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.review-card-compact blockquote > svg {
+  display: inline;
+  width: 14px;
+  height: 14px;
+  margin: 0 5px 0 0;
+  vertical-align: -2px;
+}
+.review-card-compact .review-card-photo {
+  max-height: 120px;
+  margin: 6px 0;
 }
 .review-card-compact .review-stars .filled {
   color: #ebbf77;
@@ -13255,6 +13285,9 @@ body:has(.personalization-page) :is(.magic-scroll-rail, .cart-recovery) {
   }
   .review-card {
     padding: 18px;
+  }
+  .review-card-compact {
+    padding: 12px 14px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -15949,7 +15982,9 @@ body:has(.checkout-page) .page-back-dock {
   line-height: 1.1;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
-  transition: border-color 180ms ease, background-color 180ms ease;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
 }
 .product-share__native {
   color: #18140f;
@@ -17069,10 +17104,10 @@ body.product-lightbox-open
   width: min(205px, 78%);
 }
 .review-carousel {
-  padding: 42px 0 38px;
+  padding: 28px 0;
 }
 .review-carousel-heading {
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 .magic-footer-invitation {
   display: grid;
@@ -17192,7 +17227,7 @@ body.product-lightbox-open
     flex-basis: min(220px, 70vw);
   }
   .christmas-drop {
-    padding: 31px 12px 37px 48px;
+    padding: 24px 18px 28px;
   }
   .christmas-drop-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -17206,7 +17241,7 @@ body.product-lightbox-open
     display: none;
   }
   .review-carousel {
-    padding: 34px 0 30px;
+    padding: 24px 0;
   }
   .review-carousel-heading {
     gap: 14px;

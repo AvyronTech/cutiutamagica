@@ -125,7 +125,7 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
                     {
                       "@type": "PropertyValue",
                       name: "Ediție",
-                      value: `Limited Edition — serie de ${loaderData.product.limitedEdition.totalUnits} bucăți`,
+                      value: "Ediție limitată",
                     },
                   ]
                 : []),
