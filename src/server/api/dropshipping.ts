@@ -431,7 +431,7 @@ export async function handleDropshipping(
       };
       const hash = await digestHex("SHA-256", JSON.stringify(context));
       const cached = await env.DB.prepare(
-        "SELECT output_json FROM ai_runs WHERE agent_id='agent_dropshipping' AND json_extract(input_json,'$.hash')=?1 AND status='awaiting_approval' ORDER BY created_at DESC LIMIT 1",
+        "SELECT output_json FROM ai_runs WHERE agent_id='agent_dropshipping' AND json_extract(input_json,'$.hash')=?1 AND status='completed' AND json_extract(output_json,'$.state')='draft' ORDER BY created_at DESC LIMIT 1",
       )
         .bind(hash)
         .first<{ output_json: string }>();
@@ -481,11 +481,17 @@ export async function handleDropshipping(
           .response.replace(/^```(?:json)?\s*|\s*```$/g, "");
         const copy = copyOutput.parse(JSON.parse(raw));
         await env.DB.prepare(
-          "UPDATE ai_runs SET status='awaiting_approval',output_json=?2,completed_at=?3 WHERE id=?1",
+          "UPDATE ai_runs SET status='completed',output_json=?2,completed_at=?3 WHERE id=?1",
         )
-          .bind(runId, JSON.stringify({ copy, model, runId }), now())
+          .bind(
+            runId,
+            JSON.stringify({ copy, model, runId, state: "draft", reviewRequired: true }),
+            now(),
+          )
           .run();
-        return response({ data: { copy, model, runId, cached: false } });
+        return response({
+          data: { copy, model, runId, state: "draft", reviewRequired: true, cached: false },
+        });
       } catch {
         await env.DB.prepare(
           "UPDATE ai_runs SET status='failed',error_message='Model indisponibil sau rezultat nevalid; fără fallback plătit.',completed_at=?2 WHERE id=?1",

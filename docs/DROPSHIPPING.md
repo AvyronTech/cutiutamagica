@@ -41,15 +41,15 @@ Aprobarea se leagă de oportunitate, revizie, canal, cont, imagine și snapshot 
 - Preview izolat: `CUTIUTA_DEV_STATE=/tmp/cutiuta-dropshipping-dev-state npm run dev -- --host 127.0.0.1 --port 8081`. Acest mod păstrează starea locală separată și dezactivează bindingurile remote. Nu modifica baza locală preexistentă pentru test.
 - Test local cu utilizator sintetic, oportunitate „DEMO LOCAL” și grafic sintetic: creare, calcule zecimale, patru imagini private, selecție/salvare, aprobare, claim, întrerupere simulată, reconciliere în `failed` și export JSON real descărcat. Nicio publicare ori cerere de furnizor externă.
 - Desktop 1440×900 și mobil 390×844, fără overflow orizontal; datele calendaristice sunt păstrate la salvare. Capturi locale în `/Users/niss/.codex/visualizations/2026/11/05/cutiuta-dropshipping/`.
-- `typecheck`, teste, lint, build și dry run sunt documentate în logul `/tmp/cutiuta-dropshipping-final-checks.log`; validarea skillului și aplicarea tuturor migrărilor într-o bază locală izolată au trecut. Releaseul în producție se consemnează după verificare, separat de preview.
-
-## Surse
+- `typecheck`, teste, lint, build și dry run sunt documentate în logul `/tmp/cutiuta-dropshipping-final-checks.log`; validarea skillului și aplicarea tuturor migrărilor într-o bază locală izolată au trecut. Releaseurile verificate sunt consemnate mai jos, separat de preview.
 
 ## Release verificat
 
 PR [#79](https://github.com/AvyronTech/cutiutamagica/pull/79), integrat la `db5a43be7946022e9fc6f9f2267e70dbd2519ff2`, a trecut CI cu **355 teste**, typecheck, lint și build de producție. Prima versiune publicată este Worker `26fd120c-442e-4ff3-8745-c986552231a5`. Migrarea 0089 este aplicată remote: schema 89, zero erori `foreign_key_check`, zero oportunități/execuții de test în producție. Pagina live s-a încărcat în profilul Opera oficial, cu resursele AI neactivate și cheia Brave lipsă. API-ul fără sesiune răspunde 401/private no-store; ruta admin rămâne noindex. Auditul SEO public a trecut cu 38 URL-uri și zero probleme.
 
-Ajustarea suplimentară a bugetului comun Brave este pe `codex/dropshipping-release-checks-20261105`: 34 teste focalizate, typecheck și lint trecute; starea ultimei versiuni publicate se confirmă după release. Probe: `/tmp/cutiuta-dropshipping-production-integrity.log`, `/tmp/cutiuta-dropshipping-seo-live.log` și capturile `production.png` / `production-resources.png` din folderul de vizualizări.
+Ajustarea suplimentară a bugetului comun Brave a trecut 34 teste focalizate, typecheck și lint. Probe: `/tmp/cutiuta-dropshipping-production-integrity.log`, `/tmp/cutiuta-dropshipping-seo-live.log` și capturile `production.png` / `production-resources.png` din folderul de vizualizări.
+
+PR [#80](https://github.com/AvyronTech/cutiutamagica/pull/80) este integrat la `d7bba1d` și publicat ca Worker `78d62115-6260-4796-a507-dee091c899c9`. Comutatorul și plafonul Brave sunt comune; nu s-a activat nicio cheie sau inferență. Revizia finală închide rularea de generare ca `completed`, cu rezultatul explicit `state=draft` și `reviewRequired=true`; aprobarea de publicare rămâne separată în `approval_requests`. Astfel nu există o a doua coadă editorială fără acțiune de închidere. Publicarea curentă se verifică în Cloudflare și prin health/schema 89, nu se deduce din preview sau din generarea unui fișier.
 
 ## Referințe oficiale
 
