@@ -60,7 +60,7 @@ describe("sitemap availability", () => {
 
   it("does not treat a corrupt cache value as a valid sitemap", async () => {
     const cache = memoryCache();
-    cache.values.set("seo:sitemap:documents:v3", '{"generatedAt":1000000,"productsXml":"broken"}');
+    cache.values.set("seo:sitemap:documents:v4", '{"generatedAt":1000000,"productsXml":"broken"}');
     const result = await loadSitemap(cache, async () => products, 1_000_001);
     expect(result.stale).toBe(false);
     expect(result.productsXml).toContain("<urlset ");

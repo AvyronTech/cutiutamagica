@@ -1,5 +1,10 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## SEO, GSC și trafic — 5 noiembrie 2026
+
+- Inspecția celor 38 de URL-uri confirmă **35 indexate**: toate cele 8 pagini esențiale, toate cele 7 produse și 20/23 pagini Cadouri. Zece cereri noi au fost acceptate; `pentru-sora` și `cadouri-mici` mai așteaptă procesarea, iar Halloween a lovit cota zilnică. Validările Merchant `audience` și retur au reușit; zero elemente invalide. Includerea în AI Google este activă. GSC nu indică probleme recente ale gazdei, dar păstrează un incident istoric de conectivitate.
+- Ramura `codex/seo-traffic-audit-20261105` pregătește date de livrare din D1 (gratuitate condiționată la 300 RON), raportare corectă a activității și a importurilor Google lipsă, dimensiuni de imagini lazy, metadatum mobil și notificări IndexNow explicite pentru pagini modificate. 344 teste și toate verificările obligatorii trec. Fără migrare D1. [Auditul și limitele](handoff/2026-11-05-seo-traffic.md) includ inventarul GSC, măsurătorile de trafic și probele de performanță; codul nou nu este încă presupus publicat.
+
 ## Release GSC și sitemapuri directe — 3 noiembrie 2026
 
 - PR [#75](https://github.com/AvyronTech/cutiutamagica/pull/75) a trecut CI și a fost integrat la `b5631f4ca43a505eab32b900f4407deceb5ce4fa`. Workerul de producție a fost publicat din acel commit ca versiunea `9be91ceb-574a-4bab-8a30-361c009d342f`, distribuită 100% potrivit `wrangler deployments list`.

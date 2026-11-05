@@ -32,6 +32,8 @@ import { ProductMobileBuyBar } from "@/components/site/ProductMobileBuyBar";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { seoHead } from "@/lib/seo-head";
 import { productIdFromPublicSlug, productPath } from "@/lib/product-url";
+import { getPublicShippingPolicy } from "@/lib/shipping-policy.functions";
+import { offerShippingDetails } from "@/lib/shipping-seo";
 
 const ProductLightbox = lazy(() =>
   import("@/components/site/ProductLightbox").then((module) => ({
@@ -47,7 +49,11 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
     const product = catalogProducts(pricing.catalog).find((p) => p.id === productId);
     if (!product) throw notFound();
     if (productPath(product.id) !== `/produs-cutiuta-muzicala-${params.slug}`) throw notFound();
-    return { product, reviews: await getPublicReviews({ data: { slug: product.id } }) };
+    const [reviews, shippingPolicy] = await Promise.all([
+      getPublicReviews({ data: { slug: product.id } }),
+      getPublicShippingPolicy(),
+    ]);
+    return { product, reviews, shippingPolicy };
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
@@ -161,6 +167,7 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
                   hasMerchantReturnPolicy: {
                     "@id": "https://cutiutamagica.eu/retur#policy",
                   },
+                  shippingDetails: offerShippingDetails(loaderData.shippingPolicy),
                 }
               : undefined,
           }),
@@ -193,7 +200,7 @@ export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
 });
 
 function ProductPage() {
-  const { product: loadedProduct, reviews } = Route.useLoaderData();
+  const { product: loadedProduct, reviews, shippingPolicy } = Route.useLoaderData();
   const { addToCart, products, itemsDetailed } = useShop();
   const product = products.find((p) => p.id === loadedProduct.id) ?? {
     ...loadedProduct,
@@ -377,6 +384,8 @@ function ProductPage() {
                 <ProductImage
                   src={image.src}
                   alt={image.label}
+                  width={120}
+                  height={120}
                   sizes="120px"
                   thumbnail
                   className="aspect-square w-full object-cover"
@@ -493,7 +502,7 @@ function ProductPage() {
             </div>
           )}
 
-          {available && <ProductDeliveryEstimate />}
+          {available && <ProductDeliveryEstimate policy={shippingPolicy} />}
 
           <ProductShare id={product.id} name={product.name} tagline={product.tagline} />
         </div>

@@ -17,10 +17,13 @@ import {
 import { safeJsonLd } from "@/lib/product-discovery";
 import { waLink } from "@/lib/whatsapp";
 import { seoHead } from "@/lib/seo-head";
+import { getPublicShippingPolicy } from "@/lib/shipping-policy.functions";
+import { freeShippingLabel, shippingServices } from "@/lib/shipping-seo";
 
 export const Route = createFileRoute("/livrare")({
   component: DeliveryPage,
-  head: () => {
+  loader: () => getPublicShippingPolicy(),
+  head: ({ loaderData }) => {
     const seo = seoHead({
       title: "Livrare cutiuțe muzicale | Cutiuța Magică",
       description:
@@ -46,6 +49,19 @@ export const Route = createFileRoute("/livrare")({
             isPartOf: { "@id": "https://cutiutamagica.eu/#website" },
           }),
         },
+        ...(shippingServices(loaderData ?? null).length
+          ? [
+              {
+                type: "application/ld+json",
+                children: safeJsonLd({
+                  "@context": "https://schema.org",
+                  "@type": "OnlineStore",
+                  "@id": "https://cutiutamagica.eu/#organization",
+                  hasShippingService: shippingServices(loaderData ?? null),
+                }),
+              },
+            ]
+          : []),
       ],
     };
   },
@@ -104,6 +120,8 @@ const deliveryOptions = [
 ] as const;
 
 function DeliveryPage() {
+  const policy = Route.useLoaderData();
+  const freeLabel = freeShippingLabel(policy);
   return (
     <main className="delivery-page">
       <header className="delivery-hero">
@@ -125,6 +143,12 @@ function DeliveryPage() {
           Alegi traseul potrivit și vezi în checkout costul final și estimarea de transport pentru
           adresa ta. Dacă alegi un model realizat la comandă, confirmăm și timpul de pregătire.
         </p>
+        {freeLabel && (
+          <p className="font-semibold text-foreground">
+            {freeLabel}. Pragul se aplică valorii produselor după reduceri; sub acest prag, costul
+            se confirmă în checkout.
+          </p>
+        )}
         <div className="delivery-promise" aria-label="Termen estimat de livrare">
           <Clock3 aria-hidden />
           <span>

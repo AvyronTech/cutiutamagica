@@ -56,6 +56,8 @@ export function ProductCard({
         <ProductImage
           src={product.image}
           alt=""
+          width={640}
+          height={640}
           sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 320px"
           className="product-card-scene__image"
         />
@@ -86,6 +88,8 @@ export function ProductCard({
             <ProductImage
               src={product.image}
               alt={product.name}
+              width={640}
+              height={640}
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 320px"
               className={`w-full h-full drop-shadow-[0_18px_28px_rgba(0,0,0,0.45)] ${
                 product.source ? "object-cover rounded-xl" : "object-contain"
