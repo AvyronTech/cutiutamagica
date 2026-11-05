@@ -60,7 +60,13 @@ type NavItem = { path: string; label: string; icon: typeof LayoutDashboard };
 const navGroups: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Principal",
-    items: [{ path: "/admin", label: "Prezentare generală", icon: LayoutDashboard }],
+    items: [
+      { path: "/admin", label: "Prezentare generală", icon: LayoutDashboard },
+      { path: "/admin/billing", label: "Facturare", icon: FileText },
+      { path: "/admin/shipping", label: "Livrare", icon: Truck },
+      { path: "/admin/financiar", label: "Financiar", icon: Wallet },
+      { path: "/admin/returns", label: "Retururi", icon: RotateCcw },
+    ],
   },
   {
     label: "Comerț",
@@ -88,10 +94,6 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
       { path: "/admin/reviews", label: "Recenzii", icon: MessageCircle },
       { path: "/admin/inventory", label: "Stocuri", icon: Warehouse },
       { path: "/admin/suppliers", label: "Aprovizionare", icon: Boxes },
-      { path: "/admin/billing", label: "Facturare", icon: FileText },
-      { path: "/admin/shipping", label: "Livrare", icon: Truck },
-      { path: "/admin/financiar", label: "Financiar", icon: Wallet },
-      { path: "/admin/returns", label: "Retururi", icon: RotateCcw },
       { path: "/admin/platforms", label: "Canale de vânzare", icon: Store },
     ],
   },

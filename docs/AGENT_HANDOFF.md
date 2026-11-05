@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Stocuri și navigare prioritară — 5 noiembrie 2026
+
+- Corecția miniaturilor din Stocuri folosește aceeași mapare media legacy și fotografiile reale din catalog. Principal: Prezentare generală → Facturare → Livrare → Financiar → Retururi, fără dublurile din Operațiuni. Fără migrare sau schimbări de cantități, conturi ori costuri. [Scop, continuitate și verificări](handoff/2026-11-05-inventory-navigation.md).
+
 ## Fișe de produs și prima livrare gratuită — 5 noiembrie 2026
 
 - Structură compactă comună, galerii 12/5 s, audiție sub comandă, panouri pliabile, recomandări automate fără săgeți și chat exclus de pe produs. Migrare append-only 0090 pentru transport gratuit la prima comandă înregistrată a clientului autentificat, verificată și revendicată atomic pe server. [Matricea verificărilor și regulile](handoff/2026-11-05-product-page-compact.md).
