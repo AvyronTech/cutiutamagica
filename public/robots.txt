@@ -1,9 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /auth
-Disallow: /comanda
-Disallow: /favorite
 Disallow: /api/
 
-Sitemap: https://cutiutamagica.eu/sitemap.xml
+Sitemap: https://cutiutamagica.eu/sitemap-core.xml
+Sitemap: https://cutiutamagica.eu/sitemap-products.xml
+Sitemap: https://cutiutamagica.eu/sitemap-guides.xml
+Sitemap: https://cutiutamagica.eu/sitemap.txt

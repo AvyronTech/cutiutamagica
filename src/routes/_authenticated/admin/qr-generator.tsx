@@ -1,7 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import QRGenerator from "@/admin/pages/QRGenerator";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { readWorkspaceSearch } from "@/lib/admin-workspaces";
 
 export const Route = createFileRoute("/_authenticated/admin/qr-generator")({
-  component: QRGenerator,
-  head: () => ({ meta: [{ title: "Admin · Generator QR" }] }),
+  validateSearch: (search) => readWorkspaceSearch("identification", search),
+  beforeLoad: ({ search }) => {
+    throw redirect({
+      to: "/admin/products/identification",
+      search: { ...search, tab: "orders" },
+      replace: true,
+    });
+  },
 });

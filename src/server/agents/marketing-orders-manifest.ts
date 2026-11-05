@@ -1,0 +1,60 @@
+import skill from "../../../skills/cutiuta-magica-marketing-comenzi/SKILL.md?raw";
+import brandProductTruth from "../../../skills/cutiuta-magica-marketing-comenzi/references/brand-product-truth.md?raw";
+import carouselSequencing from "../../../skills/cutiuta-magica-marketing-comenzi/references/carousel-sequencing.md?raw";
+import customerConversationsOrders from "../../../skills/cutiuta-magica-marketing-comenzi/references/customer-conversations-orders.md?raw";
+import contentConversionPlaybook from "../../../skills/cutiuta-magica-marketing-comenzi/references/content-conversion-playbook.md?raw";
+import dailySocialOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/daily-social-operations.md?raw";
+import storyLeadCapture from "../../../skills/cutiuta-magica-marketing-comenzi/references/story-lead-capture.md?raw";
+import platformSync from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-sync.md?raw";
+import supplierOutreach from "../../../skills/cutiuta-magica-marketing-comenzi/references/supplier-outreach.md?raw";
+import visualAudioProduction from "../../../skills/cutiuta-magica-marketing-comenzi/references/visual-audio-production.md?raw";
+import marketplaceOperations from "../../../skills/cutiuta-magica-marketing-comenzi/references/marketplace-operations.md?raw";
+import platformNativeProduction from "../../../skills/cutiuta-magica-marketing-comenzi/references/platform-native-production.md?raw";
+import approvalOrchestration from "../../../skills/cutiuta-magica-marketing-comenzi/references/approval-orchestration.md?raw";
+import storageRetention from "../../../skills/cutiuta-magica-marketing-comenzi/references/storage-retention.md?raw";
+
+export const MARKETING_ORDERS_AGENT_BUILD_VERSION = "2026.10.22.1";
+
+const documents = [
+  { path: "SKILL.md", content: skill },
+  { path: "references/approval-orchestration.md", content: approvalOrchestration },
+  { path: "references/brand-product-truth.md", content: brandProductTruth },
+  { path: "references/carousel-sequencing.md", content: carouselSequencing },
+  { path: "references/content-conversion-playbook.md", content: contentConversionPlaybook },
+  { path: "references/customer-conversations-orders.md", content: customerConversationsOrders },
+  { path: "references/daily-social-operations.md", content: dailySocialOperations },
+  { path: "references/marketplace-operations.md", content: marketplaceOperations },
+  { path: "references/platform-native-production.md", content: platformNativeProduction },
+  { path: "references/platform-sync.md", content: platformSync },
+  { path: "references/story-lead-capture.md", content: storyLeadCapture },
+  { path: "references/supplier-outreach.md", content: supplierOutreach },
+  { path: "references/visual-audio-production.md", content: visualAudioProduction },
+  { path: "references/storage-retention.md", content: storageRetention },
+] as const;
+
+function hex(buffer: ArrayBuffer): string {
+  return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function getMarketingOrdersAgentBuild() {
+  const canonical = documents
+    .map((document) => `${document.path}\n${document.content}`)
+    .join("\n\n");
+  const hash = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical)));
+  return {
+    agentCode: "marketing-orders",
+    version: MARKETING_ORDERS_AGENT_BUILD_VERSION,
+    hash,
+    byteSize: new TextEncoder().encode(canonical).byteLength,
+    includedPaths: documents.map((document) => document.path),
+    controlPlane: "cutiuta_magic_platform" as const,
+    externalEffects: "approval_required" as const,
+  };
+}
+
+export async function getMarketingOrdersSkillPackage() {
+  return {
+    ...(await getMarketingOrdersAgentBuild()),
+    documents: documents.map((document) => ({ ...document })),
+  };
+}

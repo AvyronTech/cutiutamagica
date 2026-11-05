@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-11-05T14:11:00.835Z",
+  "endpoint": "https://api.indexnow.org/indexnow",
+  "status": 202,
+  "urlCount": 8,
+  "state": "received_key_validation_pending",
+  "urls": [
+    "https://cutiutamagica.eu/livrare",
+    "https://cutiutamagica.eu/produs-cutiuta-muzicala-harry-potter-hedwig",
+    "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming",
+    "https://cutiutamagica.eu/produs-cutiuta-muzicala-pisicuta-si-luna",
+    "https://cutiutamagica.eu/produs-cutiuta-muzicala-halloween",
+    "https://cutiutamagica.eu/produs-cutiuta-muzicala-you-are-sunshine",
+    "https://cutiutamagica.eu/produs-cutiuta-muzicala-one-ring",
+    "https://cutiutamagica.eu/produs-cutiuta-muzicala-piratii-din-caraibe"
+  ]
+}

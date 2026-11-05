@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cutiuța Magică Dropshipping"
+  short_description: "Cercetare și listări asistate pe conturile oficiale"
+  default_prompt: "Folosește $cutiuta-magica-dropshipping pentru a pregăti și verifica oportunitățile din dashboard."

@@ -1,21 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Warehouse } from "lucide-react";
-import OperationsPage from "@/admin/pages/OperationsPage";
+import { InventoryWorkspace } from "@/admin/pages/UnifiedWorkspaces";
+import { readWorkspaceSearch } from "@/lib/admin-workspaces";
 
 export const Route = createFileRoute("/_authenticated/admin/inventory")({
-  component: () => (
-    <OperationsPage
-      area="inventory"
-      title="Stocuri și depozite"
-      description="Stoc canonic pe variante, locații proprii, furnizori, depozite terțe și fulfillment marketplace."
-      icon={Warehouse}
-      capabilities={[
-        "Rezervări tranzacționale pe comandă",
-        "Mișcări de stoc auditabile",
-        "Stoc de siguranță pe locație",
-        "Pregătit pentru reconciliere eMAG și depozite externe",
-      ]}
-      activationNote="Activează o locație numai după inventarul inițial. Stocul extern va fi sincronizat prin coadă, cu buffer separat pe canal."
-    />
-  ),
+  validateSearch: (search) => readWorkspaceSearch("inventory", search),
+  component: Page,
+  head: () => ({ meta: [{ title: "Admin · Stocuri și aprovizionare" }] }),
 });
+function Page() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  return (
+    <InventoryWorkspace
+      search={search}
+      onChange={(next) => {
+        void navigate({ search: next });
+      }}
+    />
+  );
+}

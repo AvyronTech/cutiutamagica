@@ -1,225 +1,396 @@
-import { Link } from "@tanstack/react-router";
-import { Heart, ShoppingBag } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { ShoppingBag, UserRound } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/store/shop";
-import { ScrollFuse } from "./ScrollFuse";
+import { reviewApi, type Reviewer } from "@/lib/reviews";
+
 import { BrandMark } from "./BrandMark";
+import { SoundToggle } from "./SoundToggle";
+import { MiniCart } from "./MiniCart";
+import { FloatingCartButton } from "./FloatingCartButton";
+import type { WidgetSide } from "@/lib/floating-widgets";
+import { isProductPath } from "@/lib/product-url";
 
 export function Header() {
-  const { totalQty, favorites } = useShop();
-  // 0 → 1 progres condensare, smoothed cu rAF pentru fluiditate maximă
-  const [p, setP] = useState(0);
-  const rafRef = useRef<number | null>(null);
-  const targetRef = useRef(0);
-  const currentRef = useRef(0);
+  const { totalQty } = useShop();
+  const [cartOpen, setCartOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [menuLanguage, setMenuLanguage] = useState<"ro" | "en">("ro");
+  const profileRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuRef = useRef<HTMLElement | null>(null);
+  const [profilePosition, setProfilePosition] = useState({ top: 0, right: 16 });
+  const account = useQuery({
+    queryKey: ["reviewer"],
+    queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
+    retry: false,
+    staleTime: 30_000,
+  });
+  const [cartSide, setCartSide] = useState<WidgetSide>("right");
+  const cartTrigger = useRef<HTMLButtonElement | null>(null);
+  const headerCartTrigger = useRef<HTMLButtonElement | null>(null);
+  const closeCart = useCallback(() => setCartOpen(false), []);
+  const openCart = (trigger: HTMLButtonElement, side: WidgetSide) => {
+    cartTrigger.current = trigger;
+    setCartSide(side);
+    window.dispatchEvent(new Event("cutiuta:cart-open"));
+    setCartOpen(true);
+  };
+  const restoreCartFocus = () => {
+    const trigger = cartTrigger.current?.isConnected
+      ? cartTrigger.current
+      : headerCartTrigger.current;
+    trigger?.focus({ preventScroll: true });
+  };
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  // Panoul nu are ce căuta deschis după o navigare.
+  useEffect(() => {
+    setCartOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    if (!profileOpen) return;
+    const outside = (event: PointerEvent) => {
+      if (
+        !profileRef.current?.contains(event.target as Node) &&
+        !profileMenuRef.current?.contains(event.target as Node)
+      )
+        setProfileOpen(false);
+    };
+    const close = () => setProfileOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        close();
+        profileRef.current
+          ?.querySelector<HTMLButtonElement>("button[data-profile-trigger]")
+          ?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", close, { passive: true });
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", close);
+    };
+  }, [profileOpen]);
+  const isProductPage = isProductPath(pathname);
+  const [compactOnScroll, setCompact] = useState(false);
+  const compact = isProductPage || compactOnScroll;
+  const [hidden, setHidden] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
+  const compactRef = useRef(false);
+  const hiddenRef = useRef(false);
 
   useEffect(() => {
-    const MAX = 160; // px de scroll până la condensare completă
-    const tick = () => {
-      const diff = targetRef.current - currentRef.current;
-      // easing exponențial — animație fluidă, fără jank
-      currentRef.current += diff * 0.18;
-      if (Math.abs(diff) < 0.001) {
-        currentRef.current = targetRef.current;
-        setP(currentRef.current);
-        rafRef.current = null;
-        return;
+    // Product pages keep a stable, compact header that scrolls away with the page.
+    if (isProductPage) {
+      compactRef.current = false;
+      hiddenRef.current = false;
+      setHidden(false);
+      return;
+    }
+    let frame = 0;
+    let lastY = Math.max(0, window.scrollY);
+    let heroEnd = 0;
+    let direction: "up" | "down" | null = null;
+    let directionalDistance = 0;
+    const hero = pathname === "/" ? document.getElementById("inceput") : null;
+    const measureHero = () => {
+      heroEnd = hero ? hero.offsetTop + hero.offsetHeight - 12 : 0;
+    };
+    measureHero();
+    const heroObserver =
+      hero && typeof ResizeObserver !== "undefined" ? new ResizeObserver(measureHero) : null;
+    if (hero && heroObserver) heroObserver.observe(hero);
+    window.addEventListener("resize", measureHero);
+
+    const setHeaderHidden = (next: boolean) => {
+      if (next && cartOpen) return;
+      if (next === hiddenRef.current) return;
+      hiddenRef.current = next;
+      setHidden(next);
+    };
+
+    const update = () => {
+      frame = 0;
+      const y = Math.max(0, window.scrollY);
+      const nextPastHero = Boolean(hero && y >= heroEnd);
+      setPastHero((current) => (current === nextPastHero ? current : nextPastHero));
+      // Hysteresis prevents the header from oscillating around one scroll threshold.
+      const next = compactRef.current ? y > 28 : y > 84;
+      if (next !== compactRef.current) {
+        compactRef.current = next;
+        setCompact(next);
       }
-      setP(currentRef.current);
-      rafRef.current = requestAnimationFrame(tick);
+
+      const delta = y - lastY;
+      const nextDirection = delta > 0 ? "down" : delta < 0 ? "up" : direction;
+      if (nextDirection !== direction) {
+        direction = nextDirection;
+        directionalDistance = 0;
+      }
+      directionalDistance += Math.abs(delta);
+
+      if (y < 104) {
+        setHeaderHidden(false);
+        directionalDistance = 0;
+      } else if (direction === "down" && directionalDistance > 56) {
+        setHeaderHidden(true);
+        directionalDistance = 0;
+      } else if (direction === "up" && directionalDistance > 28) {
+        setHeaderHidden(false);
+        directionalDistance = 0;
+      }
+
+      lastY = y;
     };
     const onScroll = () => {
-      targetRef.current = Math.min(1, Math.max(0, window.scrollY / MAX));
-      if (rafRef.current == null) rafRef.current = requestAnimationFrame(tick);
+      if (!frame) frame = requestAnimationFrame(update);
     };
-    onScroll();
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", measureHero);
+      heroObserver?.disconnect();
+      if (frame) cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [cartOpen, isProductPage, pathname]);
 
-  const scrolled = p > 0.35;
-  // valori interpolate fluid
-  const blur = 10 + p * 16; // 10 → 26
-  const sat = 130 + p * 50; // 130 → 180
-  const bgA = 0.45 + p * 0.3; // opacitate fundal cald
-  const bgB = 0.32 + p * 0.28;
-  const shadow = 0.12 + p * 0.45;
-  const borderA = 0.15 + p * 0.35;
-  const padY = 12 - p * 6; // 12 → 6 px
-  const logoSize = 56 - p * 16; // 56 → 40 px (mobile baseline)
-  const titleSize = 20 + (1 - p) * 4; // 20 → 24 (md va prelua)
+  useEffect(() => {
+    if (!cartOpen || !hiddenRef.current) return;
+    hiddenRef.current = false;
+    setHidden(false);
+  }, [cartOpen]);
 
   return (
-    <header className="sticky top-0 z-40 will-change-transform">
-      {/* Fitilul magic deasupra */}
-      <ScrollFuse />
-
-      {/* Fundal liquid glass cald — interpolare fluidă pe scroll */}
-      <div
-        className="relative border-b"
-        style={{
-          backdropFilter: `blur(${blur}px) saturate(${sat}%)`,
-          borderColor: `oklch(0.78 0.13 70 / ${borderA})`,
-          boxShadow: `0 ${10 + p * 18}px ${24 + p * 24}px -${22 - p * 4}px oklch(0.45 0.1 45 / ${shadow})`,
-          transition: "border-color 200ms ease-out",
-        }}
-      >
-        {/* Strat 1 — cremă caldă, opacitate care creste cu scrollul */}
+    <header
+      className="site-header sticky top-0 z-50 isolate"
+      data-product-page={isProductPage || undefined}
+      data-compact={compact || undefined}
+      data-hidden={!isProductPage && hidden ? true : undefined}
+    >
+      <div className="site-header__glass">
+        <div aria-hidden className="site-header__liquid" />
+        <div aria-hidden className="site-header__sheen" />
         <div
           aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{
-            background: `linear-gradient(180deg, oklch(0.96 0.03 75 / ${bgA}), oklch(0.9 0.045 65 / ${bgB}))`,
-          }}
-        />
-        {/* Strat 2 — aurore aurii laterale */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 pointer-events-none"
-          style={{
-            opacity: 0.55 + p * 0.4,
-            background:
-              "radial-gradient(60% 120% at 15% -10%, oklch(0.92 0.09 80 / 0.5), transparent 60%), radial-gradient(50% 120% at 85% 110%, oklch(0.78 0.1 50 / 0.32), transparent 60%)",
-          }}
-        />
-        {/* Strat 3 — specular sheen animat, liquid glass premium */}
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10 pointer-events-none overflow-hidden"
-          style={{ opacity: 0.35 + p * 0.5 }}
-        >
-          <div
-            className="absolute -inset-y-4 -left-1/3 w-2/3 animate-header-sheen"
-            style={{
-              background:
-                "linear-gradient(110deg, transparent 30%, oklch(0.99 0.04 95 / 0.55) 50%, transparent 70%)",
-              filter: "blur(8px)",
-            }}
-          />
-        </div>
-        {/* Highlight + lowlight 1px — buza de cristal */}
-        <div
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-px -z-10"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, oklch(0.99 0.04 95 / 0.85), transparent)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-px -z-10"
-          style={{
-            background: `linear-gradient(90deg, transparent, oklch(0.6 0.08 50 / ${0.3 + p * 0.4}), transparent)`,
-          }}
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/80"
         />
 
-        <div
-          className="max-w-7xl mx-auto flex items-center justify-between px-4"
-          style={{ paddingTop: `${padY}px`, paddingBottom: `${padY}px` }}
-        >
-          <Link to="/" className="flex items-center gap-3 group">
+        <div className="site-header__inner relative mx-auto max-w-7xl px-4">
+          <Link
+            to="/"
+            className="site-header__brand group flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]"
+          >
             <span
-              className="relative flex items-center justify-center transition-transform duration-500 ease-out group-hover:-rotate-3 group-hover:scale-105"
-              style={{ width: `${logoSize}px`, height: `${logoSize}px` }}
+              className={`site-header__emblem relative flex shrink-0 items-center justify-center transition-[width,height] duration-300 ${
+                compact ? "h-10 w-10" : "h-12 w-12 sm:h-14 sm:w-14"
+              }`}
             >
               <span
                 aria-hidden
-                className="absolute inset-0 rounded-full blur-md opacity-70 group-hover:opacity-100 transition-opacity"
-                style={{
-                  background:
-                    "radial-gradient(circle, oklch(0.86 0.16 85 / 0.55), transparent 65%)",
-                }}
+                className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(218,170,91,.52),transparent_68%)] blur-md"
               />
-              <BrandMark className="relative w-full h-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.45)]" />
+              <BrandMark
+                sizes="56px"
+                className="relative h-full w-full drop-shadow-[0_3px_8px_rgba(120,80,40,0.4)]"
+              />
             </span>
-            <div className="leading-tight">
-              <div
-                className="font-display tracking-tight text-[color:var(--wood-dark)]"
-                style={{ fontSize: `${titleSize}px` }}
+            <span className="site-header__wordmark min-w-0 leading-tight">
+              <span
+                className={`site-header__wordmark-title block whitespace-nowrap font-display tracking-normal transition-[font-size] duration-300 ${
+                  compact ? "text-xl" : "text-[1.35rem] sm:text-2xl"
+                }`}
               >
-                Cutiuța <span className="gold-text italic">Magică</span>
-              </div>
-              <div
-                className="uppercase tracking-[0.2em] text-[color:var(--wood-dark)]/65 overflow-hidden transition-all duration-500"
-                style={{
-                  maxHeight: scrolled ? 0 : 16,
-                  opacity: scrolled ? 0 : 1,
-                  fontSize: 10,
-                }}
+                <span className="site-header__wordmark-depth" aria-hidden>
+                  Cutiuța <span className="italic">Magică</span>
+                </span>
+                <span className="site-header__wordmark-face">
+                  Cutiuța <span className="site-header__wordmark-magic italic">Magică</span>
+                </span>
+                <span className="site-header__wordmark-reflection" aria-hidden>
+                  Cutiuța <span className="italic">Magică</span>
+                </span>
+              </span>
+              <span className="site-header__spark site-header__spark--one" aria-hidden />
+              <span className="site-header__spark site-header__spark--two" aria-hidden />
+              <span className="site-header__spark site-header__spark--three" aria-hidden />
+              <span
+                className={`block whitespace-nowrap uppercase text-[color:var(--wood-dark)]/60 transition-[max-height,opacity] duration-300 ${
+                  compact
+                    ? "max-h-0 overflow-hidden opacity-0"
+                    : "max-h-4 overflow-visible text-[7px] tracking-[0.1em] opacity-100 sm:text-[9px] sm:tracking-[0.18em]"
+                }`}
               >
-                lemn · manivelă · melodie
-              </div>
-            </div>
+                Lemn · Manivelă · Melodie
+              </span>
+            </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm text-[color:var(--wood-dark)]/90">
-            <Link
-              to="/"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
-              activeOptions={{ exact: true }}
-            >
+          <nav
+            className="site-header__nav hidden items-center text-sm text-[color:var(--wood-dark)]/85 min-[1080px]:flex"
+            aria-label="Navigare principală"
+          >
+            <Link to="/" className="site-header__nav-link" activeOptions={{ exact: true }}>
               Acasă
             </Link>
-            <Link
-              to="/produse"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
-            >
-              Produse
+            <Link to="/produse" className="site-header__nav-link">
+              Cutiuțe Muzicale
             </Link>
-            <Link
-              to="/poveste"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
-            >
-              Poveste
+            <Link to="/cadouri" className="site-header__nav-link">
+              Idei de Cadouri
             </Link>
-            <Link
-              to="/comanda"
-              className="hover:text-[color:var(--wood-dark)] [&.active]:font-medium"
-            >
-              Comandă
+            <Link to="/despre-cutiuta" className="site-header__nav-link">
+              Despre Cutiuță
+            </Link>
+            <Link to="/livrare" className="site-header__nav-link">
+              Livrare
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
-            <Link
-              to="/favorite"
-              aria-label="Favorite"
-              className={`group relative inline-flex items-center justify-center rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
-                scrolled ? "w-9 h-9" : "w-11 h-11"
-              }`}
-            >
-              <Heart
-                className={`text-[color:var(--wood-dark)] group-hover:text-[oklch(0.55_0.18_25)] group-hover:fill-[oklch(0.7_0.2_25)]/30 transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[22px] h-[22px]"}`}
-              />
-              {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-br from-[color:var(--gold)] to-[oklch(0.62_0.13_55)] text-[color:var(--wood-dark)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]">
-                  {favorites.length}
-                </span>
+          <div className="site-header__actions flex shrink-0 items-center gap-2">
+            {!isProductPath(pathname) && <SoundToggle compact={compact} />}
+            <div className="site-header__profile-wrap" ref={profileRef}>
+              {account.data ? (
+                <button
+                  type="button"
+                  data-profile-trigger
+                  aria-label="Meniul contului"
+                  title="Meniul contului"
+                  aria-expanded={profileOpen}
+                  aria-controls="customer-profile-menu"
+                  onClick={() => {
+                    setCartOpen(false);
+                    const bounds = profileRef.current?.getBoundingClientRect();
+                    if (bounds)
+                      setProfilePosition({
+                        top: bounds.bottom + 10,
+                        right: Math.max(16, window.innerWidth - bounds.right),
+                      });
+                    setProfileOpen((open) => !open);
+                  }}
+                  className={
+                    "site-header__account group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
+                    (compact ? "h-11 w-11" : "h-11 w-11 sm:h-12 sm:w-12")
+                  }
+                >
+                  <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
+                </button>
+              ) : (
+                <Link
+                  to="/cont"
+                  aria-label="Contul meu"
+                  title="Contul meu"
+                  className={
+                    "site-header__account group inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[color:var(--gold)]/45 bg-white/35 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.72)] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] " +
+                    (compact ? "h-11 w-11" : "h-11 w-11 sm:h-12 sm:w-12")
+                  }
+                >
+                  <UserRound className={compact ? "h-[18px] w-[18px]" : "h-5 w-5"} />
+                </Link>
               )}
-            </Link>
-            <Link
-              to="/comanda"
-              aria-label="Coș de cumpărături"
-              className={`group relative inline-flex items-center justify-center rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--cream)]/55 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_6px_18px_-8px_rgba(120,80,40,0.35)] hover:border-[color:var(--gold)] hover:bg-[color:var(--cream)]/85 hover:-translate-y-0.5 transition-all duration-500 ${
-                scrolled ? "w-9 h-9" : "w-11 h-11"
-              }`}
+              {account.data &&
+                typeof document !== "undefined" &&
+                createPortal(
+                  <nav
+                    ref={profileMenuRef}
+                    id="customer-profile-menu"
+                    aria-label="Contul meu"
+                    className="site-header__profile-menu"
+                    data-open={profileOpen || undefined}
+                    inert={!profileOpen}
+                    style={profilePosition}
+                  >
+                    <span className="site-header__profile-greeting">
+                      {menuLanguage === "ro" ? "Bun venit" : "Welcome"}, {account.data.displayName}
+                    </span>
+                    <Link to="/cont" hash="profil" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Profil" : "Profile"}
+                    </Link>
+                    <Link to="/cont" hash="comenzi" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Comenzi" : "Orders"}
+                    </Link>
+                    <Link to="/cont" hash="portofel" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Portofel" : "Wallet"}
+                    </Link>
+                    <Link to="/produse" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Produse" : "Products"}
+                    </Link>
+                    <Link to="/despre-cutiuta" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Despre" : "About"}
+                    </Link>
+                    <a href="mailto:contact@cutiutamagica.eu" onClick={() => setProfileOpen(false)}>
+                      {menuLanguage === "ro" ? "Contact" : "Contact"}
+                    </a>
+                    <button
+                      type="button"
+                      className="site-header__profile-language"
+                      aria-label={
+                        menuLanguage === "ro"
+                          ? "Switch menu to English"
+                          : "Schimbă meniul în română"
+                      }
+                      onClick={() => setMenuLanguage((current) => (current === "ro" ? "en" : "ro"))}
+                    >
+                      RO / EN <span aria-hidden>{menuLanguage.toUpperCase()}</span>
+                    </button>
+                  </nav>,
+                  document.body,
+                )}
+            </div>
+
+            <button
+              type="button"
+              aria-label={
+                totalQty > 0
+                  ? `Coș ${totalQty} ${totalQty === 1 ? "produs" : "produse"}`
+                  : "Coș de cumpărături"
+              }
+              ref={headerCartTrigger}
+              data-cart-target
+              aria-expanded={cartOpen}
+              aria-haspopup="dialog"
+              onClick={(event) => (cartOpen ? closeCart() : openCart(event.currentTarget, "right"))}
+              className={`site-header__cart group relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full border bg-white/45 font-semibold text-[color:var(--wood-dark)] shadow-[inset_0_1px_0_rgba(255,255,255,.75),0_8px_22px_-12px_rgba(88,48,20,.75)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--gold)] hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)] ${
+                cartOpen
+                  ? "border-[color:var(--gold)] bg-white/75"
+                  : "border-[color:var(--gold)]/55"
+              } ${compact ? "h-11 px-3" : "h-11 px-3.5 sm:h-12 sm:px-4"}`}
             >
               <ShoppingBag
-                className={`text-[color:var(--wood-dark)] transition-colors ${scrolled ? "w-[18px] h-[18px]" : "w-[22px] h-[22px]"}`}
+                className={`transition-transform group-hover:scale-105 ${compact ? "h-[18px] w-[18px]" : "h-5 w-5"}`}
               />
-              {totalQty > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[color:var(--wood-dark)] text-[color:var(--cream)] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center shadow-[0_2px_6px_-1px_rgba(120,80,40,0.5)] ring-2 ring-[color:var(--cream)]">
+              <span className="hidden text-sm sm:inline">Coș</span>{" "}
+              {totalQty > 0 ? (
+                <span
+                  aria-live="polite"
+                  className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--wood-dark)] px-1.5 text-[10px] font-bold text-[color:var(--cream)] shadow-sm"
+                >
                   {totalQty}
                 </span>
-              )}
-            </Link>
+              ) : null}
+            </button>
           </div>
         </div>
       </div>
+
+      <MiniCart
+        open={cartOpen}
+        onClose={closeCart}
+        side={cartSide}
+        onRestoreFocus={restoreCartFocus}
+      />
+      <FloatingCartButton
+        pathname={pathname}
+        open={cartOpen}
+        onOpen={openCart}
+        forceVisible={pathname === "/" && pastHero && hidden}
+      />
     </header>
   );
 }

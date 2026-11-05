@@ -1,4 +1,4 @@
-const STATIC_CACHE = "cutiuta-static-v1";
+const STATIC_CACHE = "cutiuta-admin-static-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => {
@@ -20,15 +20,16 @@ self.addEventListener("fetch", (event) => {
     url.origin !== self.location.origin ||
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/admin") ||
+    url.pathname === "/auth" ||
     url.pathname.startsWith("/_serverFn")
   )
     return;
 
   const isStatic =
     url.pathname.startsWith("/assets/") ||
-    url.pathname.startsWith("/media/") ||
     url.pathname === "/icon-192.png" ||
-    url.pathname === "/icon-512.png";
+    url.pathname === "/icon-512.png" ||
+    url.pathname === "/manifest.webmanifest";
   if (!isStatic) return;
 
   event.respondWith(

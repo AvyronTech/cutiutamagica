@@ -25,7 +25,12 @@ export default defineConfig({
     port: 8080,
   },
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({
+      viteEnvironment: { name: "ssr" },
+      ...(process.env.CUTIUTA_DEV_STATE
+        ? { persistState: { path: process.env.CUTIUTA_DEV_STATE }, remoteBindings: false }
+        : {}),
+    }),
     tsConfigPaths(),
     tailwindcss(),
     tanstackStart({

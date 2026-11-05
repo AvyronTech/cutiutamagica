@@ -5,10 +5,13 @@ import { AlertTriangle, CheckCircle2, FileText, Loader2, ReceiptText, Save } fro
 import { toast } from "sonner";
 import {
   getCommerceOperations,
-  issueFgoInvoice,
+  issueInvoice,
   saveInvoiceSeries,
   saveLegalEntity,
 } from "@/lib/admin.functions";
+import { OblioSetup } from "@/admin/pages/CheckoutConnections";
+import { ProviderSetupGuide } from "@/admin/pages/ProviderSetupGuide";
+import type { CheckoutSettings } from "@/lib/checkout-settings";
 
 const inputClass =
   "w-full rounded-lg border border-[#334155] bg-[#0b1526] px-3 py-2.5 text-sm text-slate-100 focus:border-cyan-400/60 focus:outline-none";
@@ -20,11 +23,19 @@ export default function Billing() {
   const load = useServerFn(getCommerceOperations);
   const saveEntity = useServerFn(saveLegalEntity);
   const saveSeries = useServerFn(saveInvoiceSeries);
-  const issueInvoice = useServerFn(issueFgoInvoice);
+  const issueInvoiceAction = useServerFn(issueInvoice);
   const query = useQuery({
     queryKey: ["admin", "commerce-operations"],
     queryFn: () => load(),
     staleTime: 15_000,
+  });
+  const checkoutQuery = useQuery({
+    queryKey: ["admin", "checkout-settings"],
+    queryFn: async () => {
+      const response = await fetch("/api/v1/admin/checkout-settings");
+      if (!response.ok) throw new Error("Configurarea Oblio nu poate fi citită.");
+      return ((await response.json()) as { data: { settings: CheckoutSettings } }).data;
+    },
   });
   const refresh = () => client.invalidateQueries({ queryKey: ["admin", "commerce-operations"] });
   const entityMutation = useMutation({
@@ -44,9 +55,9 @@ export default function Billing() {
     onError: showError,
   });
   const invoiceMutation = useMutation({
-    mutationFn: (orderId: string) => issueInvoice({ data: { orderId } }),
+    mutationFn: (orderId: string) => issueInvoiceAction({ data: { orderId } }),
     onSuccess: () => {
-      toast.success("Factura a fost emisă prin FGO");
+      toast.success("Factura a fost emisă prin Oblio");
       refresh();
     },
     onError: showError,
@@ -56,14 +67,16 @@ export default function Billing() {
     return <Loader2 className="h-6 w-6 animate-spin text-cyan-300" />;
   const data = query.data;
   const entity = data.legalEntity;
-  const fgo = data.providers.find(
-    (provider) => provider.provider === "fgo" && provider.environment === "production",
+  const oblio = data.providers.find(
+    (provider) => provider.provider === "oblio" && provider.environment === "production",
   );
   const activeSeries = data.invoiceSeries.find((series) => series.documentType === "invoice");
   const ready =
     entity.status === "verified" &&
     activeSeries?.status === "active" &&
-    Boolean(fgo?.secretConfigured);
+    Boolean(oblio?.secretConfigured) &&
+    checkoutQuery.data?.settings.invoiceProvider === "oblio" &&
+    Boolean(checkoutQuery.data?.settings.oblioEmail);
 
   function submitEntity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,12 +97,14 @@ export default function Billing() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-white">Facturare FGO</h1>
+        <h1 className="text-2xl font-semibold text-white">Facturare Oblio</h1>
         <p className="mt-1 text-sm text-slate-400">
           Emiterea reală este permisă numai după validarea firmei, activarea seriei și configurarea
-          secretului FGO.
+          secretului Oblio. Emiterea rămâne blocată cât timp integrarea nu este configurată.
         </p>
       </header>
+      <OblioSetup />
+      <ProviderSetupGuide provider="oblio" />
       <div
         className={`flex gap-3 rounded-lg border p-4 text-sm ${ready ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100" : "border-amber-400/30 bg-amber-400/10 text-amber-100"}`}
       >
@@ -100,8 +115,8 @@ export default function Billing() {
         )}
         <span>
           {ready
-            ? "Fluxul de emitere FGO este pregătit."
-            : `Blocaje: ${entity.status !== "verified" ? "profil juridic neverificat; " : ""}${activeSeries?.status !== "active" ? "serie inactivă; " : ""}${!fgo?.secretConfigured ? "secret FGO lipsă." : ""}`}
+            ? "Configurarea locală este completă. Firma, seria și cota se verifică în Oblio la emitere."
+            : `Blocaje: ${entity.status !== "verified" ? "profil juridic neverificat; " : ""}${activeSeries?.status !== "active" ? "serie inactivă; " : ""}${!oblio?.secretConfigured ? "secret Oblio lipsă; " : ""}${checkoutQuery.data?.settings.invoiceProvider !== "oblio" || !checkoutQuery.data?.settings.oblioEmail ? "cont Oblio neconfigurat." : ""}`}
         </span>
       </div>
 
@@ -196,8 +211,8 @@ export default function Billing() {
             ))}
           </div>
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            Numerotarea este rezervată tranzacțional în D1. Documentul extern și răspunsul FGO sunt
-            jurnalizate fără a stoca cheia API.
+            Seria CM pornește intern de la 1. Numărul real vine din Oblio; aplicația verifică
+            înainte de emitere că următorul număr coincide cu registrul local.
           </p>
         </section>
       </div>
@@ -228,7 +243,7 @@ export default function Billing() {
                   onClick={() => invoiceMutation.mutate(order.id)}
                   className="rounded-lg border border-cyan-400/30 px-3 py-2 text-xs text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Emite prin FGO
+                  Emite prin Oblio
                 </button>
               </div>
             ))
@@ -261,6 +276,17 @@ export default function Billing() {
                       ? ` · ${new Date(invoice.issuedAt).toLocaleString("ro-RO")}`
                       : ""}
                   </p>
+                  {invoice.provider === "oblio" && invoice.hasCapturedOnlinePayment && (
+                    <p
+                      className={`mt-1 text-xs ${invoice.status === "paid" ? "text-emerald-300" : invoice.collectionSyncStatus === "failed" ? "text-amber-300" : "text-slate-400"}`}
+                    >
+                      {invoice.status === "paid"
+                        ? "Încasare confirmată în Oblio"
+                        : invoice.collectionSyncStatus === "failed"
+                          ? `Încasare de verificat în Oblio${invoice.collectionErrorCode ? ` · ${invoice.collectionErrorCode}` : ""}`
+                          : "Sincronizarea încasării este în așteptare"}
+                    </p>
+                  )}
                 </div>
                 {invoice.documentId ? (
                   <a
@@ -324,7 +350,7 @@ function SeriesEditor({
         Salvează
       </button>
       <p className="col-span-3 text-[11px] text-slate-500">
-        Următorul număr intern: {series.nextNumber}
+        Următorul număr intern: {String(series.nextNumber).padStart(4, "0")}
       </p>
     </form>
   );
