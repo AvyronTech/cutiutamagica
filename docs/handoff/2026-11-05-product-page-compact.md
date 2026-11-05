@@ -30,3 +30,11 @@ Referințe de implementare: [Node crypto în Workers](https://developers.cloudfl
 ## Verificare publică PR #84
 
 Merge `5512cba`, Worker `a1fde78d-439b-4135-8b65-125e38a2cefe` la 100%, schema 90 și verificare FK fără erori. Auditul live: 38 URL-uri, 7 produse, 5 oferte Merchant, 35 imagini și zero probleme. Traseu rece de 25,5 secunde pe mobil: LCP 1.996 ms, CLS 0,08, fără date CrUX. Nu se solicită configurația chatului pe produs. Verificarea live a autentificării a necesitat fallbackul PBKDF2 portabil, deoarece limita nativă poate exista și în implementarea Node de producție.
+
+## Limită Free confirmată și acceptată de administrator
+
+PR #85 este integrat la `a8ed566` și publicat ca Worker `b1ea55f6-aa89-4108-8135-f50247681733`, 100%. Loginul cu parola solicitată, profilul, recompensele, facturarea și eligibilitatea transportului au răspuns 200 la verificarea reală; repetarea a expus întreruperi Cloudflare 503/1102. Tailul filtrat strict prin antetul cererilor proprii a confirmat `outcome=exceededCpu`, limită 10 ms, inclusiv la facturare. Derivarea portabilă poate folosi aproximativ 1.342 ms CPU; succesul ocazional nu este dovadă de stabilitate pe Free.
+
+Administratorul a ales explicit păstrarea Free și acceptarea limitării până la altă soluție. Nu se activează Workers Paid, nu se ridică costuri și nu se reduc iterațiile ori protecțiile parolelor. Contul este creat și credențialele verificate, dar accesul complet fiabil rămâne limitat de infrastructură. Mesajele HTML/text sunt transformate în feedback clar de reîncercare, fără retrimitere automată a operațiilor POST. [Limitele Cloudflare](https://developers.cloudflare.com/workers/platform/limits/) și [tarifele](https://developers.cloudflare.com/workers/platform/pricing/).
+
+Produsele fără fișier audio configurat afișează explicit indisponibilitatea audiției. Nu se inventează înregistrări sau probe de redare.
