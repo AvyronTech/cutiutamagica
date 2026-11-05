@@ -97,7 +97,20 @@ export async function reviewApi<T>(path: string, init?: RequestInit): Promise<T>
     ...init,
     headers: { "content-type": "application/json", ...init?.headers },
   });
-  const result = (await response.json()) as { data?: T; error?: { message?: string } };
-  if (!response.ok) throw new Error(result.error?.message || "Nu am putut salva. Reîncearcă.");
+  const unavailable = "Serviciul este temporar ocupat. Reîncearcă în câteva momente.";
+  let result: { data?: T; error?: { message?: string } };
+  try {
+    result = (await response.json()) as typeof result;
+  } catch {
+    // Infrastructure errors can be HTML/text rather than the API envelope.
+    // Keep raw parser errors and provider pages out of the customer interface.
+    throw new Error(unavailable);
+  }
+  if (!response.ok)
+    throw new Error(
+      result?.error?.message ||
+        (response.status >= 500 ? unavailable : "Nu am putut salva. Reîncearcă."),
+    );
+  if (!result || typeof result !== "object" || !("data" in result)) throw new Error(unavailable);
   return result.data as T;
 }
