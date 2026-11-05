@@ -3,6 +3,8 @@ import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { handleDropshipping } from "./api/dropshipping";
+import { researchProduct } from "./services/supplier-research";
+import { saveSetting } from "./services/growth-settings";
 import {
   contribution,
   emptyOpportunity,
@@ -417,6 +419,37 @@ describe("dropshipping workspace", () => {
       (await call(env, `/${id}/generate`, { expectedVersion: 1, channel: "emag" })).status,
     ).toBe(429);
     expect(env.AI.run).not.toHaveBeenCalled();
+  });
+  it("respects the shared supplier-research switch and budget in both workspaces", async () => {
+    const env = Object.assign(environment(), { BRAVE_SEARCH_API_KEY: "synthetic-search-key" });
+    await create(env);
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    expect((await call(env, `/${id}/research`, { expectedVersion: 1 })).status).toBe(409);
+    await saveSetting(
+      env.DB,
+      "supplier_research",
+      { enabled: true, maxDailyRuns: 1 },
+      "dropship-test-admin",
+    );
+    sql
+      .prepare(
+        "INSERT INTO products(id,slug,name,category) VALUES('budget-product','budget-product','Produs test','Test')",
+      )
+      .run();
+    sql
+      .prepare(
+        "INSERT INTO supplier_research_runs(id,product_id,query,status,created_at) VALUES('existing-search','budget-product','synthetic','failed',?)",
+      )
+      .run(new Date().toISOString());
+    expect((await call(env, `/${id}/research`, { expectedVersion: 1 })).status).toBe(429);
+    sql.prepare("DELETE FROM supplier_research_runs WHERE id='existing-search'").run();
+    sql
+      .prepare(
+        "INSERT INTO ai_runs(id,agent_id,trigger_type,status,input_json) VALUES('dropship-search','agent_dropshipping','manual','failed',?)",
+      )
+      .run(JSON.stringify({ kind: "supplier_search", opportunityId: id }));
+    await expect(researchProduct(env, "budget-product")).rejects.toThrow(/limita zilnică/);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
   it("marks abandoned execution uncertain and requires reconciliation before editing", async () => {
     const env = environment();

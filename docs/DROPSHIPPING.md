@@ -20,6 +20,8 @@ Workers AI: Llama 3.2 3B pentru prima ciornă, Llama 3.1 8B FP8 Fast pentru revi
 
 Cercetarea Brave folosește stocarea criptată/secretul existent. Cheia amânată de utilizator nu este inventată. Dacă lipsește, UI oferă cercetare asistată în browser și configurarea Aprovizionare. Rezultatele sunt surse observate pentru verificare, nu furnizori certificați. Ultimul rezultat reușit se păstrează în D1 și este disponibil la redeschiderea fișei.
 
+Comutatorul și plafonul Brave sunt comune cu Aprovizionare. Rezervarea atomică numără atât `supplier_research_runs`, cât și căutările Dropshipping din `ai_runs`; niciunul dintre cele două ecrane nu poate ocoli dezactivarea ori consuma un buget separat. Limita de opt lucrări a modulului rămâne un plafon suplimentar, nu înlocuitorul bugetului furnizorului.
+
 ## Imagini
 
 Dintr-o fotografie locală se compun patru variante PNG pe suport alb: website/eMAG/Okazii 1200×1200, Trendyol 1200×1800. Sunt preseturi de lucru, nu o certificare universală a standardelor marketplace. Categoria, regulile și contul trebuie reconfirmate în portal înainte de aprobare. Nu se redimensionează produsul prin generare AI, nu se taie fotografia și nu se inventează detalii. Fundalul fotografiei originale rămâne; suportul alb nu este eliminare de fundal.
@@ -42,5 +44,13 @@ Aprobarea se leagă de oportunitate, revizie, canal, cont, imagine și snapshot 
 - `typecheck`, teste, lint, build și dry run sunt documentate în logul `/tmp/cutiuta-dropshipping-final-checks.log`; validarea skillului și aplicarea tuturor migrărilor într-o bază locală izolată au trecut. Releaseul în producție se consemnează după verificare, separat de preview.
 
 ## Surse
+
+## Release verificat
+
+PR [#79](https://github.com/AvyronTech/cutiutamagica/pull/79), integrat la `db5a43be7946022e9fc6f9f2267e70dbd2519ff2`, a trecut CI cu **355 teste**, typecheck, lint și build de producție. Prima versiune publicată este Worker `26fd120c-442e-4ff3-8745-c986552231a5`. Migrarea 0089 este aplicată remote: schema 89, zero erori `foreign_key_check`, zero oportunități/execuții de test în producție. Pagina live s-a încărcat în profilul Opera oficial, cu resursele AI neactivate și cheia Brave lipsă. API-ul fără sesiune răspunde 401/private no-store; ruta admin rămâne noindex. Auditul SEO public a trecut cu 38 URL-uri și zero probleme.
+
+Ajustarea suplimentară a bugetului comun Brave este pe `codex/dropshipping-release-checks-20261105`: 34 teste focalizate, typecheck și lint trecute; starea ultimei versiuni publicate se confirmă după release. Probe: `/tmp/cutiuta-dropshipping-production-integrity.log`, `/tmp/cutiuta-dropshipping-seo-live.log` și capturile `production.png` / `production-resources.png` din folderul de vizualizări.
+
+## Referințe oficiale
 
 [Cloudflare Workers AI: planuri și alocare gratuită](https://developers.cloudflare.com/workers-ai/platform/pricing/), [Llama 3.2 3B](https://developers.cloudflare.com/workers-ai/models/llama-3.2-3b-instruct/), [eMAG: imagine principală](https://marketplace.emag.ro/infocenter/emag-academy/cum-se-adauga-un-produs/standardul-pentru-imaginea-principala-a-produselor/), [Trendyol](https://developers.trendyol.com/), [Okazii: import produse](https://ajutor.okazii.ro/magazine-okazii-ro/import-produse.html). Unele pagini marketplace nu au putut fi citite public în această sesiune; de aceea verificarea în categoria sellerului este un pas explicit înainte de execuție.

@@ -59,6 +59,7 @@ type Overview = {
   hasMore: boolean;
   ai: { available: boolean; used: number; limit: number; reason: string };
   braveConfigured: boolean;
+  researchEnabled: boolean;
 };
 async function api<T>(path = "", body?: unknown, method = "POST"): Promise<T> {
   const r = await fetch(
@@ -694,7 +695,7 @@ function Editor({
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 className={button}
-                disabled={busy || dirty || !overview.braveConfigured}
+                disabled={busy || dirty || !overview.braveConfigured || !overview.researchEnabled}
                 onClick={async () => {
                   const r = (await run("research")) as { sources: typeof sources } | null;
                   if (r) setSources(r.sources);
@@ -720,6 +721,12 @@ function Editor({
               <p className="mt-3 text-xs text-amber-200">
                 Cheia Brave lipsește. Continuă cercetarea în browser sau deschide configurarea
                 căutării.
+              </p>
+            )}
+            {overview.braveConfigured && !overview.researchEnabled && (
+              <p className="mt-3 text-xs text-amber-200">
+                Cercetarea este oprită în Aprovizionare. Folosește configurarea comună sau continuă
+                în browser.
               </p>
             )}
             <p className="mt-3 text-xs text-slate-400">
