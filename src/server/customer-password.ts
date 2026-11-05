@@ -1,4 +1,6 @@
 import { pbkdf2 } from "node:crypto";
+import { pbkdf2Async } from "@noble/hashes/pbkdf2.js";
+import { sha256 } from "@noble/hashes/sha2.js";
 
 const iterations = 210_000;
 
@@ -17,14 +19,19 @@ export function normalizeCustomerPhone(value: string): string | null {
 }
 
 async function derive(password: string, salt: string): Promise<string> {
-  // Workers' SubtleCrypto limits PBKDF2 iteration counts. The supported Node
-  // implementation preserves the existing 210,000-iteration hashes unchanged.
-  return new Promise((resolve, reject) => {
-    pbkdf2(password, salt, iterations, 32, "sha256", (error, result) => {
-      if (error) reject(error);
-      else resolve(result.toString("hex"));
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      pbkdf2(password, salt, iterations, 32, "sha256", (error, result) => {
+        if (error) reject(error);
+        else resolve(result.toString("hex"));
+      });
     });
-  });
+  } catch {
+    // Production Workers can also cap Node PBKDF2, unlike local workerd.
+    // The audited portable implementation preserves every existing hash and
+    // iteration, without downgrading password security or changing credentials.
+    return hex(await pbkdf2Async(sha256, password, salt, { c: iterations, dkLen: 32 }));
+  }
 }
 
 export async function hashCustomerPassword(

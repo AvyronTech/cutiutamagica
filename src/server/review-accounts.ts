@@ -665,9 +665,20 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
     }
     const status =
       error && typeof error === "object" && "statusCode" in error ? Number(error.statusCode) : 500;
-    if (status === 500 && path === "/api/v1/reviewer/password")
-      console.error("customer.password_save_failed", {
+    if (
+      status === 500 &&
+      (path === "/api/v1/reviewer/password" || path === "/api/v1/reviewer/login")
+    )
+      console.error("customer.password_request_failed", {
+        operation: path.endsWith("/login") ? "login" : "save",
         name: error instanceof Error ? error.name : "unknown",
+        category:
+          error instanceof Error &&
+          /D1_ERROR|SQLITE|no such column|no such table/.test(error.message)
+            ? "database"
+            : error instanceof Error && /pbkdf2|iteration/i.test(error.message)
+              ? "password_derivation"
+              : "other",
       });
     return reviewJson(
       {

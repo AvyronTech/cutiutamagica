@@ -14,7 +14,7 @@ O comandă cu plată în curs este deja înregistrată: reluarea aceleiași come
 
 ## Cont de test și compatibilitate
 
-Contul normal solicitat explicit de administrator a fost provisionat cu hash și sare, fără credențiale în clar în repository/D1/frontend și fără drepturi administrative. Nu se publică adresa/parola în documentație. Verificarea live a descoperit eroarea autentificării cu parolă. Derivarea folosește acum API-ul Node crypto suportat de Workers, păstrând formatul și cele 210.000 de iterații existente. Nu s-au redus regulile generale și nu s-au schimbat conturi administrative/MFA. Loginul live se verifică pe versiunea publicată, separat de testele locale.
+Contul normal solicitat explicit de administrator a fost provisionat cu hash și sare, fără credențiale în clar în repository/D1/frontend și fără drepturi administrative. Nu se publică adresa/parola în documentație. Verificarea live a descoperit eroarea autentificării cu parolă. Derivarea încearcă Node crypto și folosește implementarea portabilă PBKDF2 din @noble/hashes când runtime-ul de producție limitează și API-ul Node. Formatul și cele 210.000 de iterații existente sunt păstrate; nu se schimbă parolele sau hashurile existente. Regresia simulează explicit eroarea nativă de producție și verifică vectorul independent. Nu s-au redus regulile generale și nu s-au schimbat conturi administrative/MFA. Loginul live se verifică pe versiunea publicată, separat de testele locale.
 
 ## Verificări
 
@@ -26,3 +26,7 @@ Contul normal solicitat explicit de administrator a fost provisionat cu hash și
 - Capturi și matrice UI: `/Users/niss/.codex/visualizations/2026/11/05/cutiuta-product-compact/`. Verificările TypeScript/lint/build/dry run și CI se consemnează separat în logurile releaseului. Schema și versiunea servite se confirmă în Cloudflare/health.
 
 Referințe de implementare: [Node crypto în Workers](https://developers.cloudflare.com/workers/runtime-apis/nodejs/crypto/), [limita WebCrypto PBKDF2](https://github.com/cloudflare/workerd/issues/1346), [carusele și Web Vitals](https://web.dev/articles/carousel-best-practices).
+
+## Verificare publică PR #84
+
+Merge `5512cba`, Worker `a1fde78d-439b-4135-8b65-125e38a2cefe` la 100%, schema 90 și verificare FK fără erori. Auditul live: 38 URL-uri, 7 produse, 5 oferte Merchant, 35 imagini și zero probleme. Traseu rece de 25,5 secunde pe mobil: LCP 1.996 ms, CLS 0,08, fără date CrUX. Nu se solicită configurația chatului pe produs. Verificarea live a autentificării a necesitat fallbackul PBKDF2 portabil, deoarece limita nativă poate exista și în implementarea Node de producție.
