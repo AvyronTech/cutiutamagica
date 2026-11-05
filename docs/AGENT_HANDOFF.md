@@ -3,7 +3,7 @@
 ## Fișe de produs și prima livrare gratuită — 5 noiembrie 2026
 
 - Structură compactă comună, galerii 12/5 s, audiție sub comandă, panouri pliabile, recomandări automate fără săgeți și chat exclus de pe produs. Migrare append-only 0090 pentru transport gratuit la prima comandă înregistrată a clientului autentificat, verificată și revendicată atomic pe server. [Matricea verificărilor și regulile](handoff/2026-11-05-product-page-compact.md).
-- Contul normal de test solicitat ulterior de administrator este creat; datele lui rămân în conversație. Testul live a identificat incompatibilitatea PBKDF2/SubtleCrypto; implementarea Node păstrează hashurile la 210.000 de iterații. Proba de login din producție este separată de verificările locale și de deploy.
+- Contul normal de test solicitat ulterior de administrator este creat; datele lui rămân în conversație. Testul live a identificat incompatibilitatea PBKDF2/SubtleCrypto; implementarea nativă cu fallback portabil @noble/hashes păstrează hashurile la 210.000 de iterații, inclusiv când producția limitează și API-ul Node. Cele 368 de teste și dry-run-ul final trec. Proba de login din producție este separată de verificările locale și de deploy.
 
 ## Audit experiență client — 5 noiembrie 2026
 
