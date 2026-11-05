@@ -8,6 +8,8 @@ Verificare GSC și release 3 noiembrie: inspecția individuală confirmă **8/8 
 
 ## Surse de adevăr
 
+Dropshipping, 5 noiembrie: modul privat nou în `codex/intelligent-dropshipping-20261105`, cu migrarea 0089, skill Codex instalat local, variante pe canal și aprobări/reconciliere. Orice categorie poate fi cercetată; schema websiteului acceptă încă numai catalogul specializat. Workers AI rămâne oprit până la confirmarea unui plan fără depășire facturată. Vezi [DROPSHIPPING.md](DROPSHIPPING.md) pentru arhitectură, probe și starea releaseului.
+
 | Întrebare                             | Sursa de verificat                                                                                                                  |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Ce are voie să facă agentul?          | `AGENTS.md` și instrucțiunile utilizatorului din conversația curentă                                                                |

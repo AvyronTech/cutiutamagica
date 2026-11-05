@@ -41,6 +41,7 @@ import { Route as AuthenticatedAdminBackupsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin/billing'
 import { Route as AuthenticatedAdminChatRouteImport } from './routes/_authenticated/admin/chat'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
+import { Route as AuthenticatedAdminDropshippingRouteImport } from './routes/_authenticated/admin/dropshipping'
 import { Route as AuthenticatedAdminEmailRouteImport } from './routes/_authenticated/admin/email'
 import { Route as AuthenticatedAdminFinanciarRouteImport } from './routes/_authenticated/admin/financiar'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin/integrations'
@@ -235,6 +236,12 @@ const AuthenticatedAdminCustomersRoute =
   AuthenticatedAdminCustomersRouteImport.update({
     id: '/customers',
     path: '/customers',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminDropshippingRoute =
+  AuthenticatedAdminDropshippingRouteImport.update({
+    id: '/dropshipping',
+    path: '/dropshipping',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminEmailRoute = AuthenticatedAdminEmailRouteImport.update({
@@ -440,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/chat': typeof AuthenticatedAdminChatRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/admin/dropshipping': typeof AuthenticatedAdminDropshippingRoute
   '/admin/email': typeof AuthenticatedAdminEmailRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
@@ -501,6 +509,7 @@ export interface FileRoutesByTo {
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/chat': typeof AuthenticatedAdminChatRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/admin/dropshipping': typeof AuthenticatedAdminDropshippingRoute
   '/admin/email': typeof AuthenticatedAdminEmailRoute
   '/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
@@ -564,6 +573,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/_authenticated/admin/chat': typeof AuthenticatedAdminChatRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/_authenticated/admin/dropshipping': typeof AuthenticatedAdminDropshippingRoute
   '/_authenticated/admin/email': typeof AuthenticatedAdminEmailRoute
   '/_authenticated/admin/financiar': typeof AuthenticatedAdminFinanciarRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
@@ -628,6 +638,7 @@ export interface FileRouteTypes {
     | '/admin/billing'
     | '/admin/chat'
     | '/admin/customers'
+    | '/admin/dropshipping'
     | '/admin/email'
     | '/admin/financiar'
     | '/admin/integrations'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/admin/billing'
     | '/admin/chat'
     | '/admin/customers'
+    | '/admin/dropshipping'
     | '/admin/email'
     | '/admin/financiar'
     | '/admin/integrations'
@@ -751,6 +763,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/billing'
     | '/_authenticated/admin/chat'
     | '/_authenticated/admin/customers'
+    | '/_authenticated/admin/dropshipping'
     | '/_authenticated/admin/email'
     | '/_authenticated/admin/financiar'
     | '/_authenticated/admin/integrations'
@@ -1036,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCustomersRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/dropshipping': {
+      id: '/_authenticated/admin/dropshipping'
+      path: '/dropshipping'
+      fullPath: '/admin/dropshipping'
+      preLoaderRoute: typeof AuthenticatedAdminDropshippingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/email': {
       id: '/_authenticated/admin/email'
       path: '/email'
@@ -1268,6 +1288,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
   AuthenticatedAdminChatRoute: typeof AuthenticatedAdminChatRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
+  AuthenticatedAdminDropshippingRoute: typeof AuthenticatedAdminDropshippingRoute
   AuthenticatedAdminEmailRoute: typeof AuthenticatedAdminEmailRoute
   AuthenticatedAdminFinanciarRoute: typeof AuthenticatedAdminFinanciarRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
@@ -1305,6 +1326,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
     AuthenticatedAdminChatRoute: AuthenticatedAdminChatRoute,
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
+    AuthenticatedAdminDropshippingRoute: AuthenticatedAdminDropshippingRoute,
     AuthenticatedAdminEmailRoute: AuthenticatedAdminEmailRoute,
     AuthenticatedAdminFinanciarRoute: AuthenticatedAdminFinanciarRoute,
     AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,

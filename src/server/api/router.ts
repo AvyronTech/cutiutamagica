@@ -10,6 +10,7 @@ import { handlePayments } from "./payments";
 import { checkoutReadiness } from "../services/checkout-readiness";
 import { boundedJson } from "./bounded-json";
 import { handleSalesWorkbench } from "./sales-workbench";
+import { handleDropshipping } from "./dropshipping";
 import { handleStorefrontDesign } from "./storefront-design";
 import { handleAdminInventory } from "./admin-inventory";
 import { handleProductInterest } from "./product-interest";
@@ -231,6 +232,8 @@ export async function handleApiRequest(
   if (shippingLabelResponse) return shippingLabelResponse;
   const salesResponse = await handleSalesWorkbench(request, env);
   if (salesResponse) return salesResponse;
+  const dropshippingResponse = await handleDropshipping(request, env);
+  if (dropshippingResponse) return dropshippingResponse;
   const designResponse = await handleStorefrontDesign(request, env);
   if (designResponse) return designResponse;
   const inventoryResponse = await handleAdminInventory(request, env);

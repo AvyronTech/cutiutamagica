@@ -1,5 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Dropshipping asistat — 5 noiembrie 2026
+
+- Ramura `codex/intelligent-dropshipping-20261105`, bază `35babce`, adaugă `/admin/dropshipping` pentru oportunități din orice categorie, oferte și costuri RON verificate, conținut/imagine pe canal, aprobări cu revizie și execuție Opera asistată cu reconciliere. Migrare append-only 0089; fără modificări de conturi/MFA, comenzi ori mesaje externe.
+- Skill nou `cutiuta-magica-dropshipping`, canonic în repository și instalat local. Imaginile sunt compuse determinist și păstrate privat; presetul nu certifică acceptarea marketplace. Catalogul propriu rămâne specializat, iar produsele generale nu sunt introduse drept cutiuțe muzicale.
+- Integrarea Workers AI este pregătită, implicit oprită până la verificarea planului Free; planul nu a putut fi confirmat din sesiunea Cloudflare disponibilă. Brave și runnerul local rămân neconfigurate; fallbackul asistat Codex/Opera este explicit. [Documentația funcțională și limitele](DROPSHIPPING.md) include verificarea UI desktop/mobil și fluxul sintetic complet, fără publicare externă. Starea producției se verifică separat de preview.
+
 ## SEO, GSC și trafic — 5 noiembrie 2026
 
 - Inspecția celor 38 de URL-uri confirmă **35 indexate**: toate cele 8 pagini esențiale, toate cele 7 produse și 20/23 pagini Cadouri. Zece cereri noi au fost acceptate; `pentru-sora` și `cadouri-mici` mai așteaptă procesarea, iar Halloween a lovit cota zilnică. Validările Merchant `audience` și retur au reușit; zero elemente invalide. Includerea în AI Google este activă. GSC nu indică probleme recente ale gazdei, dar păstrează un incident istoric de conectivitate.
