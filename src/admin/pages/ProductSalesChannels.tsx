@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { refreshCatalogWorkflows } from "@/admin/catalog-sync";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { salesChannelDefinitions, type SalesChannelCode } from "@/lib/sales-channels";
@@ -26,6 +27,7 @@ type Data = {
 };
 const input = "mt-1 w-full rounded-lg border border-slate-600 bg-slate-950 p-3 text-white";
 export function ProductSalesChannels({ productId }: { productId: string }) {
+  const client = useQueryClient();
   const url = `/api/v1/admin/products/${productId}/sales-channels`,
     [busy, setBusy] = useState(false);
   const query = useQuery({
@@ -59,7 +61,7 @@ export function ProductSalesChannels({ productId }: { productId: string }) {
       });
       const result = (await r.json()) as { error?: { message: string } };
       if (!r.ok) throw new Error(result.error?.message);
-      await query.refetch();
+      await refreshCatalogWorkflows(client, productId);
       toast.success(
         action === "prepare"
           ? "Anunț pregătit. Publică din portal, apoi înregistrează linkul."

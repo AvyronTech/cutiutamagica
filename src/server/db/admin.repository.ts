@@ -386,7 +386,11 @@ export async function listAdminProducts(
     JOIN products p ON p.id = ap.id
     LEFT JOIN product_internal_codes pic ON pic.product_id = ap.id
     LEFT JOIN v_product_completeness pc ON pc.product_id = ap.id
-    LEFT JOIN product_variants pv ON pv.product_id = ap.id AND pv.status = 'active'
+    LEFT JOIN product_variants pv ON pv.id = (
+      SELECT primary_variant.id FROM product_variants primary_variant
+      WHERE primary_variant.product_id=ap.id AND primary_variant.status='active'
+      ORDER BY primary_variant.sort_order,primary_variant.created_at,primary_variant.id LIMIT 1
+    )
     LEFT JOIN variant_merchant_codes vmc ON vmc.variant_id=pv.id
     WHERE p.product_type = 'music_box'
     GROUP BY ap.id

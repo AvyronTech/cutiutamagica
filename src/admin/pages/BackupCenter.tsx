@@ -18,6 +18,14 @@ import {
   saveBackupPolicy,
 } from "@/lib/operations.functions";
 
+const backupStatus: Record<string, string> = {
+  completed: "Finalizată",
+  partial: "Parțială",
+  failed: "Eșuată",
+  running: "În desfășurare",
+  pending: "În așteptare",
+};
+
 const input =
   "w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300";
 const primary =
@@ -52,11 +60,19 @@ export default function BackupCenter() {
 
   if (query.isError)
     return (
-      <p role="alert" className="text-rose-200">
-        Backup Center necesită migrația D1 0015.
-      </p>
+      <section className="rounded-xl border border-rose-300/20 p-4" role="alert">
+        <h1 className="font-semibold text-white">Copii de siguranță</h1>
+        <p className="mt-2 text-sm text-rose-200">
+          {query.error instanceof Error
+            ? query.error.message
+            : "Datele nu pot fi încărcate momentan."}
+        </p>
+        <button className={`${secondary} mt-3`} onClick={() => void query.refetch()}>
+          Reîncearcă
+        </button>
+      </section>
     );
-  if (!query.data) return <p role="status">Se încarcă Backup Center...</p>;
+  if (!query.data) return <p role="status">Se încarcă copiile de siguranță…</p>;
 
   const { policy, runs } = query.data;
   const completeRuns = runs.filter((run) => run.status === "completed" || run.status === "partial");
@@ -84,7 +100,9 @@ export default function BackupCenter() {
     try {
       const result = await runNow();
       await refresh();
-      toast.success(`Backup ${result.status}: ${bytes(result.sizeBytes)}`);
+      toast.success(
+        `Copie ${backupStatus[result.status]?.toLocaleLowerCase("ro-RO") ?? "procesată"}: ${bytes(result.sizeBytes)}`,
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Backupul nu a putut fi creat");
     } finally {
@@ -103,15 +121,15 @@ export default function BackupCenter() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[.18em] text-cyan-300">
             Continuitate operațională
           </p>
-          <h1 className="mt-1 text-2xl font-semibold text-white">Backup Center</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-white">Copii de siguranță</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-            Snapshoturi comprimate ale datelor aplicației în R2 privat, cu retenție controlată și un
+            Copii comprimate ale datelor aplicației în R2 privat, cu retenție controlată și un
             backup de bază protejat.
           </p>
         </div>
@@ -123,7 +141,7 @@ export default function BackupCenter() {
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(
           [
-            [ShieldCheck, "D1 Time Travel", "Activ", "Restaurare nativă Cloudflare"],
+            [ShieldCheck, "D1 Time Travel", "Cloudflare", "Restaurare în consola furnizorului"],
             [
               Archive,
               "Snapshoturi R2",
@@ -253,7 +271,7 @@ export default function BackupCenter() {
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] ${run.status === "failed" ? "bg-rose-400/10 text-rose-200" : "bg-emerald-400/10 text-emerald-200"}`}
                       >
-                        {String(run.status)}
+                        {backupStatus[String(run.status)] ?? "De verificat"}
                       </span>
                       {Number(run.isBaseline) === 1 && (
                         <span className="rounded-full bg-cyan-300/10 px-2 py-0.5 text-[10px] text-cyan-200">

@@ -11,7 +11,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ShoppingBag, Music, Gift, Sparkles, Minus, Plus, Rotate3D, Hourglass } from "lucide-react";
 import { isAvailable, MAX_QTY } from "@/data/products";
-import { getStorePricing } from "@/lib/store-pricing.functions";
+import { loadStorefrontPricing } from "@/lib/storefront-pricing";
 import { catalogProducts } from "@/lib/catalog-products";
 import { useShop } from "@/store/shop";
 import { ProductImage } from "@/components/site/ProductImage";
@@ -44,8 +44,8 @@ const ProductLightbox = lazy(() =>
 
 export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
   component: ProductPage,
-  loader: async ({ params }) => {
-    const pricing = await getStorePricing();
+  loader: async ({ params, context }) => {
+    const pricing = await loadStorefrontPricing(context.queryClient);
     const productId = productIdFromPublicSlug(params.slug);
     const product = catalogProducts(pricing.catalog).find((p) => p.id === productId);
     if (!product) throw notFound();

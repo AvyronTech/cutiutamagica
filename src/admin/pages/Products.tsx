@@ -1,3 +1,4 @@
+import { refreshCatalogWorkflows } from "@/admin/catalog-sync";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -346,13 +347,13 @@ export default function Products() {
           expectedVersion: product.version,
         },
       }),
-    onSuccess: ({ product }) => {
+    onSuccess: async ({ product }) => {
       queryClient.setQueryData<{ products: AdminProduct[] }>(["admin", "products"], (current) => ({
         products: (current?.products ?? []).map((entry) =>
           entry.id === product.id ? product : entry,
         ),
       }));
-      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      await refreshCatalogWorkflows(queryClient, product.id);
       toast.success(product.status === "activ" ? "Produs activat" : "Produs dezactivat");
     },
     onError: (error) => {

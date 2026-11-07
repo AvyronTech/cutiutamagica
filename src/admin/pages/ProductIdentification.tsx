@@ -1,5 +1,6 @@
+import { refreshCatalogWorkflows } from "@/admin/catalog-sync";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceActive } from "@/admin/workspace-activity";
 import { workspaceHref } from "@/lib/admin-workspaces";
 import {
@@ -175,6 +176,7 @@ export default function ProductIdentification({
   selectedProductId?: string | null;
   onProductChange?: (id: string) => void;
 }) {
+  const client = useQueryClient();
   const activePanel = useWorkspaceActive();
   const Heading = embedded ? "h2" : "h1";
   const [search, setSearch] = useState("");
@@ -326,7 +328,7 @@ export default function ProductIdentification({
     setBusy(true);
     try {
       const result = await postJson<Record<string, unknown>>(body);
-      await Promise.all([catalog.refetch(), ...(productId ? [detail.refetch()] : [])]);
+      await refreshCatalogWorkflows(client, productId ?? undefined);
       toast.success(success);
       return result;
     } catch (error) {

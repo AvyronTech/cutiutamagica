@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+7–8 noiembrie, audit final: HTML public și catalog SSR mai ușoare, dispatcher separat, cache privat și sincronizare comună a produselor, plus etichete/contrast/titluri administrative. 413 teste, 76 verificări publice și 60 admin. GSC confirmă Halloween indexat; două ghiduri rămân în așteptare. Producția a răspuns cu 1102 pe unele cereri; codul este **local, nepublicat**, iar 0091 rămâne de aplicat înainte de deploy. [Auditul final](handoff/2026-11-07-final-store-dashboard-audit.md).
+
 7 noiembrie, identificare: registru D1 cu cod permanent pe produs și referință comercială proprie pe variantă, separat de SKU/GTIN/ID-uri de platformă. Migrare **0091 necesară înainte de cod**, deocamdată numai locală. Tabele, scanare/căutare, exporturi și dashboard compact; cele 30 de destinații sunt verificate la 1440/320 px. [Handoff coduri](handoff/2026-11-07-product-code-registry.md).
 
 7 noiembrie, cont client: organizare pe secțiuni, acces numai la date proprii, atelier nelansat blocat pe server, mai puține cereri și elemente decorative pe ruta Cont. **Pregătit local peste `e14759e`, fără release.** Cele 403 teste și matricea 320/390/1440 px trec; noul login de producție este în continuare afectat de 1102. [Handoff client](handoff/2026-11-07-customer-launch-ux.md).

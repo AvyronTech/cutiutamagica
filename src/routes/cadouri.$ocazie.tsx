@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { giftGuide, giftGuideIncludesProduct, giftGuides } from "@/data/gift-guides";
 import { isAvailable } from "@/data/products";
-import { getStorePricing } from "@/lib/store-pricing.functions";
+import { loadStorefrontPricing } from "@/lib/storefront-pricing";
 import { safeJsonLd } from "@/lib/product-discovery";
 import { useShop } from "@/store/shop";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -11,10 +11,10 @@ import { seoHead } from "@/lib/seo-head";
 import { productLink, productPath } from "@/lib/product-url";
 
 export const Route = createFileRoute("/cadouri/$ocazie")({
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const guide = giftGuide(params.ocazie);
     if (!guide) throw notFound();
-    const { catalog } = await getStorePricing();
+    const { catalog } = await loadStorefrontPricing(context.queryClient);
     return { guide, products: catalog.filter((p) => giftGuideIncludesProduct(guide, p.slug)) };
   },
   head: ({ loaderData }) => {

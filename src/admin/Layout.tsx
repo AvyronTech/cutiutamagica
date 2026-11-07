@@ -416,6 +416,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 type="search"
                 value={navSearch}
                 onChange={(event) => setNavSearch(event.target.value)}
+                aria-label="Caută o secțiune administrativă"
                 placeholder="Caută o secțiune…"
                 className="w-60 rounded-xl border border-white/10 bg-white/[.05] py-2.5 pl-9 pr-3 text-xs text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-amber-200/50"
               />
@@ -449,6 +450,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
+                aria-label={unreadCount ? `Notificări, ${unreadCount} necitite` : "Notificări"}
+                aria-expanded={showNotifications}
+                aria-controls="admin-notification-panel"
                 className="notification-trigger relative p-2 rounded-lg hover:bg-[#1E293B] transition-colors"
               >
                 <Bell className="w-5 h-5 text-slate-400" />
@@ -461,7 +465,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
               {/* Notification Panel - Fixed positioning for all pages */}
               {showNotifications && (
-                <div className="notification-panel fixed right-4 top-16 z-[100] flex max-h-[80vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#172237]/85 shadow-[0_24px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl md:top-16">
+                <div
+                  id="admin-notification-panel"
+                  role="region"
+                  aria-label="Notificări administrative"
+                  className="notification-panel fixed right-4 top-16 z-[100] flex max-h-[80vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#172237]/85 shadow-[0_24px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl md:top-16"
+                >
                   <div className="flex items-center justify-between p-4 border-b border-[#334155]">
                     <div className="flex items-center gap-2">
                       <Bell className="w-4 h-4 text-purple-400" />
@@ -541,6 +550,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                                     e.stopPropagation();
                                     dismissMutation.mutate(notif.id);
                                   }}
+                                  aria-label={`Ascunde notificarea ${notif.title}`}
                                   className="p-0.5 rounded hover:bg-[#334155] text-slate-500 hover:text-slate-300"
                                 >
                                   <X className="w-3 h-3" />
@@ -595,6 +605,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <button
                 onClick={handleLogout}
                 className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
+                aria-label="Deconectare"
                 title="Deconectare"
               >
                 <LogOut className="w-4 h-4" />

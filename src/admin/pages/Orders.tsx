@@ -196,9 +196,13 @@ function OrderDetailPanel({
 
   const copyAwb = async () => {
     if (!order.awb) return;
-    await navigator.clipboard.writeText(order.awb);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(order.awb);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Copierea nu este disponibilă. Poți selecta numărul AWB din detaliile comenzii.");
+    }
   };
 
   return (

@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { safeJsonLd } from "@/lib/product-discovery";
 import { BookOpen, Heart, Gift, Search, X, ArrowRight, Music2, Sparkles } from "lucide-react";
 import { isAvailable } from "@/data/products";
-import { getStorePricing } from "@/lib/store-pricing.functions";
+import { loadStorefrontPricing } from "@/lib/storefront-pricing";
 import {
   catalogCollections,
   filterCatalog,
@@ -23,7 +23,7 @@ const collectionIcons = { story: BookOpen, emotion: Heart, dedicated: Gift };
 export const Route = createFileRoute("/produse")({
   validateSearch: validateCatalogSearch,
   component: ProductsPage,
-  loader: () => getStorePricing(),
+  loader: ({ context }) => loadStorefrontPricing(context.queryClient),
   head: ({ loaderData }) => {
     const seo = seoHead({
       title: "Cutiuțe muzicale cu manivelă din lemn | Cutiuța Magică",

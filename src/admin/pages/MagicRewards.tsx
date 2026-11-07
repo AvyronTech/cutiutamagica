@@ -244,30 +244,39 @@ export default function MagicRewardsAdmin() {
           <h2 className="flex items-center gap-2 font-semibold text-white">
             <Star size={17} /> Ajustare auditată
           </h2>
-          <input
-            className={input}
-            name="email"
-            type="email"
-            required
-            placeholder="client@email.ro"
-          />
-          <input
-            className={input}
-            name="delta"
-            type="number"
-            min="-20"
-            max="20"
-            required
-            placeholder="+1 sau -1"
-          />
-          <textarea
-            className={`${input} min-h-24`}
-            name="note"
-            minLength={4}
-            maxLength={300}
-            required
-            placeholder="Motivul verificabil al ajustării"
-          />
+          <label className="block space-y-1.5 text-sm text-slate-300">
+            <span>E-mailul clientului</span>
+            <input
+              className={input}
+              name="email"
+              type="email"
+              required
+              placeholder="client@email.ro"
+            />
+          </label>
+          <label className="block space-y-1.5 text-sm text-slate-300">
+            <span>Ajustare Magic Stars</span>
+            <input
+              className={input}
+              name="delta"
+              type="number"
+              min="-20"
+              max="20"
+              required
+              placeholder="+1 sau -1"
+            />
+          </label>
+          <label className="block space-y-1.5 text-sm text-slate-300">
+            <span>Motivul ajustării</span>
+            <textarea
+              className={`${input} min-h-24`}
+              name="note"
+              minLength={4}
+              maxLength={300}
+              required
+              placeholder="Motivul verificabil al ajustării"
+            />
+          </label>
           <button
             className="rounded-lg bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950"
             disabled={adjustMutation.isPending}

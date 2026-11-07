@@ -23,7 +23,7 @@ import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
 import { CookieConsent } from "@/components/site/CookieConsent";
 import { MetricoolTracker } from "@/components/site/MetricoolTracker";
-import { getStorePricing } from "@/lib/store-pricing.functions";
+import { loadStorefrontPricing, needsStorefrontPricing } from "@/lib/storefront-pricing";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
 import { isProductPath, productIdFromPathname } from "@/lib/product-url";
@@ -102,13 +102,10 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  loader: async ({ location }) => ({
-    pricing:
-      location.pathname.startsWith("/admin") ||
-      location.pathname === "/auth" ||
-      location.pathname === "/cont"
-        ? null
-        : await getStorePricing(),
+  loader: async ({ location, context }) => ({
+    pricing: needsStorefrontPricing(location.pathname)
+      ? await loadStorefrontPricing(context.queryClient)
+      : null,
   }),
   head: () => ({
     meta: [

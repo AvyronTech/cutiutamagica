@@ -20990,3 +20990,17 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
     font-size: 14px;
   }
 }
+
+/* Readable secondary text on dark administrative surfaces. */
+.admin-workspace .text-slate-500 {
+  color: #9aa9be;
+}
+.admin-workspace
+  :is(.bg-white, .bg-slate-100, .bg-slate-200)
+  :is(.text-slate-400, .text-slate-500) {
+  color: #475569;
+}
+.admin-workspace .admin-page-content :is(input, textarea)::placeholder {
+  color: #8fa0b9;
+  opacity: 1;
+}

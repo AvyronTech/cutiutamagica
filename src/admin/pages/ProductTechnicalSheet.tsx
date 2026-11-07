@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { refreshCatalogWorkflows } from "@/admin/catalog-sync";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import {
   BarChart3,
@@ -63,15 +64,14 @@ const money = (bani: number) =>
 
 export function ProductTechnicalSheet({
   productId,
-  onSaved,
   onOpenGeneral,
   onOpenSuppliers,
 }: {
   productId: string;
-  onSaved: () => Promise<unknown>;
   onOpenGeneral: () => void;
   onOpenSuppliers: () => void;
 }) {
+  const client = useQueryClient();
   const [busy, setBusy] = useState(false);
   const query = useQuery({
     queryKey: ["admin", "product-technical-sheet", productId],
@@ -113,7 +113,7 @@ export function ProductTechnicalSheet({
       });
       const payload = (await response.json()) as { error?: { message?: string } };
       if (!response.ok) throw new Error(payload.error?.message || "Nu am putut salva fișa.");
-      await Promise.all([query.refetch(), onSaved()]);
+      await refreshCatalogWorkflows(client, productId);
       toast.success("Identificatorii produsului au fost salvați.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Fișa nu a putut fi salvată.");

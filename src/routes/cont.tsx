@@ -315,7 +315,7 @@ function CustomerAccount() {
             Mai simplu să dăruiești. <em>Mai ușor să-ți amintești.</em>
           </h1>
           <p>
-            Un cont gratuit îți păstrează cererile, preferințele și momentele importante aproape —
+            Un cont gratuit îți păstrează comenzile, preferințele și momentele importante aproape —
             într-un singur loc.
           </p>
           <div className="customer-account-benefits">

@@ -258,12 +258,7 @@ export default function Inventory({
               Recepții, loturi și etichete →
             </a>
           </div>
-          <ProductInventory
-            productId={selected.id}
-            onChanged={async () => {
-              await productsQuery.refetch();
-            }}
-          />
+          <ProductInventory productId={selected.id} />
         </section>
       )}
     </div>
