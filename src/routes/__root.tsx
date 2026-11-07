@@ -104,7 +104,9 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async ({ location }) => ({
     pricing:
-      location.pathname.startsWith("/admin") || location.pathname === "/auth"
+      location.pathname.startsWith("/admin") ||
+      location.pathname === "/auth" ||
+      location.pathname === "/cont"
         ? null
         : await getStorePricing(),
   }),
@@ -258,19 +260,20 @@ function RootComponent() {
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
   const showBack = isChrome && pathname !== "/" && pathname !== "/cont";
   const isProductPage = isProductPath(pathname);
+  const isAccountPage = pathname === "/cont";
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
         <ShopProvider pricing={pricing}>
           {isChrome && <GrowthPageView pathname={pathname} />}
-          {isChrome && <PageStoryLoader initialPath={pathname} />}
+          {isChrome && !isAccountPage && <PageStoryLoader initialPath={pathname} />}
           {isChrome && (
             <a href="#continut-principal" className="skip-to-content">
               Mergi la conținut
             </a>
           )}
           {isChrome && <Header />}
-          {isChrome && <CartRecoveryPrompt pathname={pathname} />}
+          {isChrome && !isAccountPage && <CartRecoveryPrompt pathname={pathname} />}
           {showBack && (
             <div className="page-back-dock">
               <PreviousPageLink
@@ -295,18 +298,22 @@ function RootComponent() {
               </PreviousPageLink>
             </div>
           )}
-          <main id="continut-principal" tabIndex={-1} className="min-h-[60vh]">
+          {isChrome ? (
+            <main id="continut-principal" tabIndex={-1} className="min-h-[60vh]">
+              <Outlet />
+            </main>
+          ) : (
             <Outlet />
-          </main>
+          )}
           {isChrome && <Footer />}
-          {isChrome && <ContextualMessages />}
-          {isChrome && <SideScrollMagic />}
-          {isChrome && !isProductPage && (
+          {isChrome && !isAccountPage && <ContextualMessages />}
+          {isChrome && !isAccountPage && <SideScrollMagic />}
+          {isChrome && !isProductPage && !isAccountPage && (
             <Suspense fallback={null}>
               <ChatWidget />
             </Suspense>
           )}
-          {isChrome && <MetricoolTracker pathname={pathname} />}
+          {isChrome && !isAccountPage && <MetricoolTracker pathname={pathname} />}
           {isChrome && <CookieConsent />}
           {isChrome ? (
             <>

@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+7 noiembrie, cont client: organizare pe secțiuni, acces numai la date proprii, atelier nelansat blocat pe server, mai puține cereri și elemente decorative pe ruta Cont. **Pregătit local peste `e14759e`, fără release.** Cele 403 teste și matricea 320/390/1440 px trec; noul login de producție este în continuare afectat de 1102. [Handoff client](handoff/2026-11-07-customer-launch-ux.md).
+
 7 noiembrie 2026: GSC confirmă individual toate cele șapte produse în index; trei ghiduri rămân în așteptare, iar cererea Halloween a fost acceptată. Sitemapurile au Succes și validările Merchant au reușit. Corecții de accesibilitate/conversie și audit extins sunt **locale, fără push/deploy până la o cerere nouă**. [Handoff și verificări actuale](handoff/2026-11-07-seo-compatibility.md).
 
 Revizia fișelor de produs din 5 noiembrie compactează UI și adaugă migrarea 0090 pentru prima livrare gratuită, verificată pe server. Contul de test cerut explicit este provisionat fără credențiale în documente; compatibilitatea parolelor este corectată prin Node crypto. [Audit și probe](handoff/2026-11-05-product-page-compact.md). Versiunea efectiv servită și schema aplicată se verifică separat după release.

@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellOff, Cake, CalendarDays, Gift, Sparkles, Star, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import type { CustomerAccountSection } from "@/lib/customer-account";
+import { isCurrentCustomer } from "@/lib/customer-session";
 import { reviewApi } from "@/lib/reviews";
 
 type Dashboard = {
@@ -56,7 +58,7 @@ const occasions: Record<string, string> = {
 
 const reasonLabels: Record<string, string> = {
   order_delivered: "Comandă livrată",
-  photo_review_approved: "Review cu fotografie aprobat",
+  photo_review_approved: "Recenzie cu fotografie aprobată",
   referral_completed: "Recomandare confirmată",
   gift_profile_completed: "Profil de cadouri completat",
   collection_completed: "Colecție completată",
@@ -79,7 +81,14 @@ const monthNames = [
   "Decembrie",
 ];
 
-export function CustomerMagicCenter({ accountId }: { accountId: string }) {
+export function CustomerMagicCenter({
+  accountId,
+  section = "beneficii",
+}: {
+  accountId: string;
+  section?: CustomerAccountSection;
+}) {
+  const active = section === "beneficii" || section === "calendar" || section === "profil";
   const client = useQueryClient();
   const [profileOpen, setProfileOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -87,10 +96,12 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
   const [calendarSaving, setCalendarSaving] = useState(false);
   const [birthdaySaving, setBirthdaySaving] = useState(false);
   const [calendarActionPending, setCalendarActionPending] = useState(false);
+  const [emailSaving, setEmailSaving] = useState(false);
   const query = useQuery({
     queryKey: ["customer", accountId, "magic-center"],
     queryFn: () => reviewApi<Dashboard>("/api/v1/customer/rewards"),
     staleTime: 20_000,
+    enabled: active,
   });
   const refresh = () =>
     client.invalidateQueries({ queryKey: ["customer", accountId, "magic-center"] });
@@ -101,17 +112,27 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
         body: "{}",
       }),
     onSuccess: async (result) => {
+      if (!isCurrentCustomer(client, accountId)) return;
       await refresh();
       toast.success(`Codul ${result.code} este pregătit în cont.`);
     },
     onError: (error) => toast.error(error.message),
   });
 
+  if (!active && !query.data) return null;
   if (query.isLoading)
-    return <section className="customer-magic-center">Se aprind stelele contului tău…</section>;
+    return (
+      <section className="customer-magic-center customer-account-status">
+        Se încarcă secțiunea…
+      </section>
+    );
   if (!query.data || query.isError)
     return (
-      <section className="customer-magic-center" role="alert">
+      <section
+        className="customer-magic-center customer-account-status"
+        role="alert"
+        hidden={!active}
+      >
         <p>Magic Stars și Calendarul cadourilor nu pot fi încărcate acum.</p>
         <button
           className="magic-button"
@@ -124,6 +145,12 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
     );
   const data = query.data;
   const remaining = Math.max(0, data.program.redemptionThreshold - data.account.availableStars);
+  const birthdayActivity = data.activities.find(
+    (activity) => activity.code === "birthday_bonus" && activity.enabled,
+  );
+  const usableRewards = data.rewards.filter(
+    (reward) => reward.status === "active" && Date.parse(reward.expires_at) > Date.now(),
+  );
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -203,8 +230,21 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
   }
 
   return (
-    <section id="beneficii" className="customer-magic-center" aria-labelledby="magic-center-title">
-      <div className="customer-magic-center__hero">
+    <section
+      id="beneficii"
+      className="customer-magic-center"
+      hidden={!active}
+      data-account-view={section}
+      aria-label={
+        section === "calendar"
+          ? "Calendarul cadourilor"
+          : section === "profil"
+            ? "Preferințe pentru cadouri"
+            : undefined
+      }
+      aria-labelledby={section === "beneficii" ? "magic-center-title" : undefined}
+    >
+      <div className="customer-magic-center__hero" hidden={section !== "beneficii"}>
         <div className="customer-magic-center__orb" aria-hidden>
           <Star />
         </div>
@@ -228,26 +268,88 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
         </button>
       </div>
 
+      {usableRewards.length > 0 && (
+        <div className="customer-reward-codes" hidden={section !== "beneficii"}>
+          {usableRewards.map((reward) => (
+            <article key={reward.id}>
+              <strong>
+                {(reward.value_bani / 100).toLocaleString("ro-RO")} lei pentru următoarea comandă
+              </strong>
+              <code>{reward.code}</code>
+              <small>
+                Valabil până la{" "}
+                {new Intl.DateTimeFormat("ro-RO", { dateStyle: "medium" }).format(
+                  new Date(reward.expires_at),
+                )}
+              </small>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(reward.code);
+                    toast.success("Codul a fost copiat.");
+                  } catch {
+                    toast.error("Copiază codul afișat pentru a-l folosi la comandă.");
+                  }
+                }}
+              >
+                Copiază codul
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <details className="customer-star-history" hidden={section !== "beneficii"}>
+        <summary>Ultimele activități Magic Stars</summary>
+        {data.ledger.slice(0, 5).map((item) => (
+          <div key={item.id}>
+            <span>
+              {item.source_type === "reward_activity"
+                ? (item.note ?? "Activitate Magic Rewards")
+                : (reasonLabels[item.reason] ?? item.note ?? "Magic Stars")}
+            </span>
+            <strong>
+              {item.delta > 0 ? "+" : ""}
+              {item.delta} ✦
+            </strong>
+          </div>
+        ))}
+        {!data.ledger.length && <p>Prima stea apare după un moment eligibil confirmat.</p>}
+      </details>
+
       <div className="customer-magic-center__grid">
-        <article id="calendar">
+        <article id="calendar" hidden={section !== "calendar"}>
           <div className="customer-magic-center__heading">
             <div>
               <p className="catalog-eyebrow">Calendarul cadourilor</p>
-              <h3>Momentele care merită păstrate</h3>
+              <h2>Momentele care merită păstrate</h2>
             </div>
-            <button type="button" onClick={() => setCalendarOpen((value) => !value)}>
-              <CalendarDays size={16} /> Adaugă
+            <button
+              type="button"
+              aria-expanded={calendarOpen}
+              aria-controls="customer-calendar-form"
+              onClick={() => setCalendarOpen((value) => !value)}
+            >
+              <CalendarDays size={16} /> {calendarOpen ? "Închide" : "Adaugă"}
             </button>
           </div>
           {calendarOpen && (
-            <form className="customer-magic-form" onSubmit={(event) => void addEvent(event)}>
-              <input
-                name="personName"
-                aria-label="Persoana căreia îi dăruiești"
-                required
-                maxLength={80}
-                placeholder="Maria"
-              />
+            <form
+              id="customer-calendar-form"
+              className="customer-magic-form"
+              onSubmit={(event) => void addEvent(event)}
+            >
+              <label className="customer-field">
+                Pentru cine
+                <input
+                  name="personName"
+                  aria-label="Persoana căreia îi dăruiești"
+                  required
+                  maxLength={80}
+                  placeholder="Maria"
+                />
+              </label>
               <select name="occasion" aria-label="Ocazia" defaultValue="birthday">
                 {Object.entries(occasions).map(([value, label]) => (
                   <option value={value} key={value}>
@@ -255,7 +357,11 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
                   </option>
                 ))}
               </select>
-              <input name="date" type="date" aria-label="Data momentului" required />
+              <label className="customer-field">
+                Data momentului
+                <input name="date" type="date" aria-label="Data momentului" required />
+              </label>
+              <small>Moment anual: păstrăm ziua și luna, fără an.</small>
               <label>
                 <input name="emailEnabled" type="checkbox" defaultChecked /> E-mail cu 7 și 3 zile
                 înainte
@@ -274,7 +380,9 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
                     <small>
                       {occasions[event.occasion]} · {String(event.eventDay).padStart(2, "0")}/
                       {String(event.eventMonth).padStart(2, "0")}
-                      {event.emailEnabled ? " · e-mail cu 7 și 3 zile înainte" : ""}
+                      {event.emailEnabled
+                        ? ` · memento cu ${event.reminderDays.join(" și ")} zile înainte`
+                        : " · mementouri oprite"}
                     </small>
                   </span>
                   <span className="customer-calendar-actions">
@@ -346,48 +454,67 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
           </div>
         </article>
 
-        <article>
+        <article hidden={section !== "profil"}>
           <div className="customer-magic-center__heading">
             <div>
               <p className="catalog-eyebrow">Profil de cadouri</p>
-              <h3>Recomandări mai potrivite</h3>
+              <h2>Preferințele tale</h2>
             </div>
-            <button type="button" onClick={() => setProfileOpen((value) => !value)}>
-              <Sparkles size={16} /> {data.profile?.completed ? "Actualizează" : "Completează"}
+            <button
+              type="button"
+              aria-expanded={profileOpen}
+              aria-controls="customer-gift-profile-form"
+              onClick={() => setProfileOpen((value) => !value)}
+            >
+              <Sparkles size={16} />{" "}
+              {profileOpen ? "Închide" : data.profile?.completed ? "Actualizează" : "Completează"}
             </button>
           </div>
           {profileOpen && (
-            <form className="customer-magic-form" onSubmit={(event) => void saveProfile(event)}>
-              <input
-                name="recipients"
-                aria-label="Pentru cine dăruiești"
-                placeholder="Pentru cine: iubită, mamă, colegă"
-                defaultValue={
-                  Array.isArray(data.profile?.preferences.recipients)
-                    ? data.profile?.preferences.recipients.join(", ")
-                    : ""
-                }
-              />
-              <input
-                name="occasions"
-                aria-label="Ocazii preferate"
-                placeholder="Ocazii: aniversare, Crăciun"
-                defaultValue={
-                  Array.isArray(data.profile?.preferences.occasions)
-                    ? data.profile.preferences.occasions.join(", ")
-                    : ""
-                }
-              />
-              <input
-                name="themes"
-                aria-label="Teme preferate"
-                placeholder="Teme preferate: fantasy, pisici"
-                defaultValue={
-                  Array.isArray(data.profile?.preferences.themes)
-                    ? data.profile.preferences.themes.join(", ")
-                    : ""
-                }
-              />
+            <form
+              id="customer-gift-profile-form"
+              className="customer-magic-form"
+              onSubmit={(event) => void saveProfile(event)}
+            >
+              <label className="customer-field">
+                Pentru cine dăruiești
+                <input
+                  name="recipients"
+                  aria-label="Pentru cine dăruiești"
+                  placeholder="Pentru cine: iubită, mamă, colegă"
+                  defaultValue={
+                    Array.isArray(data.profile?.preferences.recipients)
+                      ? data.profile?.preferences.recipients.join(", ")
+                      : ""
+                  }
+                />
+              </label>
+              <label className="customer-field">
+                Ocazii preferate
+                <input
+                  name="occasions"
+                  aria-label="Ocazii preferate"
+                  placeholder="Ocazii: aniversare, Crăciun"
+                  defaultValue={
+                    Array.isArray(data.profile?.preferences.occasions)
+                      ? data.profile.preferences.occasions.join(", ")
+                      : ""
+                  }
+                />
+              </label>
+              <label className="customer-field">
+                Teme preferate
+                <input
+                  name="themes"
+                  aria-label="Teme preferate"
+                  placeholder="Teme preferate: fantasy, pisici"
+                  defaultValue={
+                    Array.isArray(data.profile?.preferences.themes)
+                      ? data.profile.preferences.themes.join(", ")
+                      : ""
+                  }
+                />
+              </label>
               <small>Separă opțiunile prin virgulă.</small>
               <button className="magic-button" disabled={profileSaving}>
                 {profileSaving ? "Se salvează…" : "Salvează profilul"}
@@ -399,10 +526,22 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
               <Cake size={15} aria-hidden />
               <span>
                 <strong>Ziua ta magică</strong>
-                <small>+10 ✦ o dată pe an, fără să păstrăm anul nașterii</small>
+                <small>
+                  {birthdayActivity
+                    ? `+${birthdayActivity.stars} ✦ o dată pe an · zi și lună`
+                    : "Păstrăm numai ziua și luna"}
+                </small>
               </span>
             </span>
-            <select name="day" aria-label="Ziua nașterii" defaultValue={data.birthday?.day ?? 1}>
+            <select
+              name="day"
+              aria-label="Ziua nașterii"
+              defaultValue={data.birthday?.day ?? ""}
+              required
+            >
+              <option value="" disabled>
+                Zi
+              </option>
               {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
                 <option key={day} value={day}>
                   {day}
@@ -412,8 +551,12 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
             <select
               name="month"
               aria-label="Luna nașterii"
-              defaultValue={data.birthday?.month ?? 1}
+              defaultValue={data.birthday?.month ?? ""}
+              required
             >
+              <option value="" disabled>
+                Lună
+              </option>
               {monthNames.map((month, index) => (
                 <option key={month} value={index + 1}>
                   {month}
@@ -424,27 +567,14 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
               {birthdaySaving ? "Se salvează…" : "Salvează"}
             </button>
           </form>
-          <div className="customer-star-history">
-            {data.ledger.slice(0, 5).map((item) => (
-              <div key={item.id}>
-                <span>
-                  {item.source_type === "reward_activity"
-                    ? (item.note ?? "Activitate Magic Rewards")
-                    : (reasonLabels[item.reason] ?? item.note ?? "Magic Stars")}
-                </span>
-                <strong>
-                  {item.delta > 0 ? "+" : ""}
-                  {item.delta} ✦
-                </strong>
-              </div>
-            ))}
-            {!data.ledger.length && <p>Prima stea apare după un moment eligibil confirmat.</p>}
-          </div>
+
           <label className="mt-4 flex items-start gap-2 text-sm">
             <input
               type="checkbox"
               checked={data.rewardEmailEnabled}
+              disabled={emailSaving}
               onChange={async (event) => {
+                setEmailSaving(true);
                 const enabled = event.currentTarget.checked;
                 try {
                   await reviewApi("/api/v1/customer/rewards/email-preference", {
@@ -461,6 +591,8 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
                   toast.error(
                     error instanceof Error ? error.message : "Preferința nu a putut fi salvată.",
                   );
+                } finally {
+                  setEmailSaving(false);
                 }
               }}
             />
@@ -469,18 +601,9 @@ export function CustomerMagicCenter({ accountId }: { accountId: string }) {
               mesajele.
             </span>
           </label>
-          {data.rewards.some((reward) => reward.status === "active") && (
-            <div className="customer-reward-codes">
-              {data.rewards
-                .filter((reward) => reward.status === "active")
-                .map((reward) => (
-                  <code key={reward.id}>{reward.code}</code>
-                ))}
-            </div>
-          )}
         </article>
       </div>
-      <div className="customer-reward-activities">
+      <div className="customer-reward-activities" hidden={section !== "beneficii"}>
         <div>
           <p className="catalog-eyebrow">Activități disponibile</p>
           <h3>Fiecare gest are o valoare clară.</h3>

@@ -424,8 +424,9 @@ export async function magicRewardsDashboard(
         }>(),
       db
         .prepare(
-          `SELECT l.id,l.delta,l.reason,l.source_type,l.source_id,
-          COALESCE(activity.name,l.note) AS note,event.activity_code,l.created_at
+          `SELECT l.id,l.delta,l.reason,l.source_type,
+          CASE WHEN l.source_type='reward_activity' THEN activity.name ELSE NULL END AS note,
+          event.activity_code,l.created_at
          FROM magic_star_ledger l
          LEFT JOIN magic_reward_activity_events event
            ON l.source_type='reward_activity' AND event.id=l.source_id

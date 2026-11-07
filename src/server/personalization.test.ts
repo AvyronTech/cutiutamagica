@@ -1,5 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { handlePersonalization } from "./api/personalization";
+import { customerLaunch } from "@/lib/customer-launch";
+
+afterEach(() => {
+  customerLaunch.personalizationRequests = false;
+});
 
 function validForm(image: File): FormData {
   const form = new FormData();
@@ -27,6 +32,7 @@ function pngFile(): File {
 }
 
 function mockEnv() {
+  customerLaunch.personalizationRequests = true;
   const inserted: unknown[][] = [];
   const put = vi.fn().mockResolvedValue({ key: "stored" });
   const remove = vi.fn().mockResolvedValue(undefined);
@@ -63,6 +69,22 @@ function mockEnv() {
 }
 
 describe("personalization API", () => {
+  it("keeps unlaunched submissions closed before reading files or writing data", async () => {
+    const { env, inserted, put } = mockEnv();
+    customerLaunch.personalizationRequests = false;
+    const response = await handlePersonalization(
+      new Request("https://cutiutamagica.eu/api/v1/personalization/requests", {
+        method: "POST",
+        headers: { origin: "https://cutiutamagica.eu" },
+        body: validForm(pngFile()),
+      }),
+      env,
+    );
+    expect(response?.status).toBe(409);
+    expect(await response!.text()).toContain("în pregătire");
+    expect(put).not.toHaveBeenCalled();
+    expect(inserted).toHaveLength(0);
+  });
   it("stores a valid private image and server-calculated request", async () => {
     const { env, inserted, put } = mockEnv();
     const response = await handlePersonalization(

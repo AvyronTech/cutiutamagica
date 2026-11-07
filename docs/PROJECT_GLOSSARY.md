@@ -54,3 +54,9 @@ Folosește forma din coloana „În interfață” pentru texte adresate clientu
 - **Încasări nete**: sume plătite minus rambursări pentru comenzile plasate în perioadă; nu registru bancar după data plății.
 - **Acțiuni observate**: evenimente înregistrate, posibil repetate ori provenite din teste; nu vizitatori unici. Comenzile de pe site se calculează separat din datele comerciale.
 - **Date Google indisponibile**: nu există import pentru proprietatea și perioada selectate; nu echivalează cu zero trafic.
+
+## Contul clientului
+
+- **Comenzi** este prima secțiune din Cont; Magic Stars, Calendar, Portofel și Profil și acces au fiecare propriul conținut, păstrat la schimbarea secțiunii.
+- **Nume afișat** este numele din cont și interfață; editarea lui nu schimbă e-mailul verificat, rolul sau drepturile.
+- **Cererile mele** păstrează istoricul personalizărilor existente. Atelierul „în pregătire” nu acceptă cereri noi până la lansarea explicită a fluxului.

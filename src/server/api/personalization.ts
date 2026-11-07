@@ -16,6 +16,7 @@ import {
   reviewRate,
   sameOrigin,
 } from "@/server/review-accounts";
+import { customerLaunch } from "@/lib/customer-launch";
 
 const API_PATH = "/api/v1/personalization/requests";
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -230,7 +231,14 @@ export async function handlePersonalization(request: Request, env: Env): Promise
   if (path !== API_PATH) return null;
   try {
     if (request.method === "GET") return await listRequests(request, env);
-    if (request.method === "POST") return await createRequest(request, env);
+    if (request.method === "POST") {
+      if (!customerLaunch.personalizationRequests)
+        throw reviewFailure(
+          "Atelierul de personalizare este în pregătire. Nu primim încă cereri noi.",
+          409,
+        );
+      return await createRequest(request, env);
+    }
     throw reviewFailure("Metodă nepermisă.", 405);
   } catch (error) {
     const status =
