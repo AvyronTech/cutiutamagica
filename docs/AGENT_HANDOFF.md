@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Release consolidat — 8 noiembrie 2026, verificat live
+
+- PR #90 și #1 integrate; toate cele patru commituri locale și corecția de livrare omisă sunt incluse. Worker **8d51b7d8-d05a-4486-897f-aa691476c00e**, sursă **2ade5f0**, distribuit 100%; D1 **91**, 10/10 coduri produse și variante, FK curat, fără migrații rămase. **415 teste CI**, SEO live 38 URL-uri fără probleme, probele 1102 răspund corect, loginul normal și UI desktop/mobil verificate. [Release, reconciliere și limite](handoff/2026-11-08-production-consolidation.md).
+
 ## Audit final magazin, dashboard și SEO — 7–8 noiembrie 2026, local
 
 - Catalog SSR comun pe cerere, pagini informative mai ușoare, încărcare separată a API-ului și serviciilor, cache privat explicit pentru cont/checkout, sincronizare comună a fișelor/stocurilor și corecții de contrast/etichete/titluri. **413 teste, 76 probe publice și 60 administrative** trecute. GSC confirmă acum Halloween indexat; două ghiduri mai așteaptă. Live au fost reconfirmate răspunsuri **1102/503** pe șase probe auxiliare; efectul optimizărilor în producție nu este încă verificat. Fără push/deploy; migrarea 0091 anterioară rămâne necesară la release. [Audit, probe și limite](handoff/2026-11-07-final-store-dashboard-audit.md).
