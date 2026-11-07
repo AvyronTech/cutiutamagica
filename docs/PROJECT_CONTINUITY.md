@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+8 noiembrie 2026: release consolidat **publicat și verificat live**, sursă runtime **2ade5f0**, Worker **8d51b7d8-d05a-4486-897f-aa691476c00e** la 100%, schema **91**, fără migrații rămase. PR #90/#1 integrează întregul lot local și corecția de livrare recuperată. 415 teste CI și audit SEO 38 URL-uri fără probleme; cele șase probe 1102 și loginul normal răspund corect în această verificare. Documentația ulterioară are același cod de aplicație; intrările locale de mai jos sunt istorice. [Probe și limite](handoff/2026-11-08-production-consolidation.md).
+
 7–8 noiembrie, audit final: HTML public și catalog SSR mai ușoare, dispatcher separat, cache privat și sincronizare comună a produselor, plus etichete/contrast/titluri administrative. 413 teste, 76 verificări publice și 60 admin. GSC confirmă Halloween indexat; două ghiduri rămân în așteptare. Producția a răspuns cu 1102 pe unele cereri; codul este **local, nepublicat**, iar 0091 rămâne de aplicat înainte de deploy. [Auditul final](handoff/2026-11-07-final-store-dashboard-audit.md).
 
 7 noiembrie, identificare: registru D1 cu cod permanent pe produs și referință comercială proprie pe variantă, separat de SKU/GTIN/ID-uri de platformă. Migrare **0091 necesară înainte de cod**, deocamdată numai locală. Tabele, scanare/căutare, exporturi și dashboard compact; cele 30 de destinații sunt verificate la 1440/320 px. [Handoff coduri](handoff/2026-11-07-product-code-registry.md).

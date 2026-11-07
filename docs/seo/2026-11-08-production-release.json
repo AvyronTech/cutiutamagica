@@ -1,0 +1,170 @@
+{
+  "checkedAt": "2026-11-07T22:19:18.286Z",
+  "sourceCommit": "2ade5f0bef1318cbbd668b65661abc96b8fd486e",
+  "worker": "cutiuta-magica-store",
+  "version": "8d51b7d8-d05a-4486-897f-aa691476c00e",
+  "trafficPercent": 100,
+  "schemaVersion": 91,
+  "productsWithCode": 10,
+  "variantsWithCode": 10,
+  "foreignKeyViolations": 0,
+  "pendingMigrations": 0,
+  "ci": {
+    "tests": 415,
+    "files": 74,
+    "result": "passed",
+    "validatedHead": "9ead63d6402d13a929d7ab6450b8e00664dc9f63",
+    "workflowRun": 42419386376
+  },
+  "seoAudit": {
+    "origin": "https://cutiutamagica.eu",
+    "sitemapUrls": 38,
+    "products": 7,
+    "merchantProducts": 5,
+    "images": 35,
+    "orphanPages": 0,
+    "additionalInternalLinks": 5,
+    "excludedPages": 6,
+    "missingPages": 3,
+    "problems": []
+  },
+  "probes": [
+    {
+      "path": "/api/v1/health",
+      "status": 200,
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "location": null,
+      "ray": "a56fb7f73fd10563-OTP",
+      "cpu1102": false,
+      "health": {
+        "status": "ok",
+        "environment": "production",
+        "schemaVersion": "91",
+        "timestamp": "2026-11-07T22:19:17.086Z"
+      }
+    },
+    {
+      "path": "/cont",
+      "status": 200,
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow",
+      "location": null,
+      "ray": "a56fb7f819210563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/comanda",
+      "status": 200,
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow",
+      "location": null,
+      "ray": "a56fb7f8ba020563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/auth",
+      "status": 200,
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow",
+      "location": null,
+      "ray": "a56fb7f9fbb60563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/termeni-de-utilizare",
+      "status": 200,
+      "cache": null,
+      "robots": null,
+      "location": null,
+      "ray": "a56fb7fa5c400563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/politica-de-confidentialitate",
+      "status": 200,
+      "cache": null,
+      "robots": null,
+      "location": null,
+      "ray": "a56fb7fb1d2d0563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/personalizeaza",
+      "status": 200,
+      "cache": null,
+      "robots": "noindex, nofollow",
+      "location": null,
+      "ray": "a56fb7fbde450563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/cadouri/inexistent-20261107",
+      "status": 404,
+      "cache": null,
+      "robots": null,
+      "location": null,
+      "ray": "a56fb7fcafb90563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/produs-cutiuta-muzicala-inexistent-20261107",
+      "status": 404,
+      "cache": null,
+      "robots": null,
+      "location": null,
+      "ray": "a56fb7fdd9540563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/api/v1/admin/products",
+      "status": 404,
+      "cache": "no-store",
+      "robots": "noindex, nofollow",
+      "location": null,
+      "ray": "a56fb7feeae00563-OTP",
+      "cpu1102": false
+    },
+    {
+      "path": "/admin",
+      "status": 302,
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow",
+      "location": "https://cutiutamagica.eu/auth?redirect=%2Fadmin",
+      "ray": "a56fb7ff6b990563-OTP",
+      "cpu1102": false
+    }
+  ],
+  "privateApi": {
+    "path": "/api/v1/admin/product-identification",
+    "status": 401,
+    "cache": "no-store",
+    "robots": "noindex, nofollow"
+  },
+  "indexNow": {
+    "timestamp": "2026-11-07T22:22:18.928Z",
+    "endpoint": "https://api.indexnow.org/indexnow",
+    "status": 200,
+    "urlCount": 8,
+    "state": "received",
+    "urls": [
+      "https://cutiutamagica.eu/produse",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-pisicuta-si-luna",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-halloween",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-you-are-sunshine",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-one-ring",
+      "https://cutiutamagica.eu/produs-cutiuta-muzicala-piratii-din-caraibe"
+    ]
+  },
+  "gsc": "Last checked November 7: four sitemaps successful, Halloween indexed; cadouri-mici and pentru-sora pending. No new GSC indexing claim from deployment.",
+  "browserSmoke": {
+    "admin": "dashboard and live code registry, desktop and 320px",
+    "storefront": "catalog, product, checkout, desktop and 320px",
+    "customer": "normal password login, five account sections at 320px, no administrative links, logout confirmed",
+    "cart": "two existing items preserved; no added or removed products; no submitted order/payment"
+  },
+  "proofDirectory": "/Users/niss/.codex/visualizations/2026/11/08/cutiuta-production-release",
+  "limitation": "Single release smoke audit; not a guarantee against future CPU interruptions on Workers Free. Provider activations explicitly postponed by the administrator remain postponed."
+}
