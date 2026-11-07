@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-11-07",
+  "property": "sc-domain:cutiutamagica.eu",
+  "scope": "Seven public products and the three previously pending guides; not a new inspection of every sitemap URL",
+  "indexedProducts": 7,
+  "publicProducts": 7,
+  "pendingGuides": ["pentru-sora", "cadouri-mici", "halloween"],
+  "sitemaps": {
+    "core": "success",
+    "products": "success",
+    "guides": "success",
+    "text": "success"
+  },
+  "pageIndexingReportUpdated": "2026-10-23",
+  "merchantReportUpdated": "2026-11-06",
+  "merchantValidation": {
+    "hasMerchantReturnPolicy": "passed, 0 affected",
+    "shippingDetails": "passed, 0 affected",
+    "audience": "passed, 0 affected"
+  },
+  "merchantAggregateCounts": {
+    "valid": 0,
+    "invalid": 0,
+    "note": "Aggregate report counts differ from valid URL-level product inspections; do not use these as product indexation totals"
+  },
+  "https": {
+    "updated": "2026-11-07",
+    "nonHttps": 0,
+    "https": 28,
+    "issues": 0
+  },
+  "manualActions": "none_detected",
+  "securityIssues": "none_detected",
+  "coreWebVitals": "insufficient real-user data, both device types",
+  "pages": [
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming",
+      "checkedAt": "2026-11-07T19:16:45.093Z",
+      "indexed": true
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "indexed": true,
+      "checkedAt": "2026-11-07T19:17:20.236Z"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-pisicuta-si-luna",
+      "indexed": true,
+      "checkedAt": "2026-11-07T19:17:43.958Z"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-halloween",
+      "indexed": true,
+      "checkedAt": "2026-11-07T19:18:34.277Z"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-you-are-sunshine",
+      "indexed": true,
+      "checkedAt": "2026-11-07T19:19:35.753Z"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-one-ring",
+      "indexed": true,
+      "checkedAt": "2026-11-07T19:20:06.878Z"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-piratii-din-caraibe",
+      "indexed": true,
+      "checkedAt": "2026-11-07T19:20:41.358Z"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/cadouri-mici",
+      "indexed": false,
+      "reason": "unknown",
+      "checkedAt": "2026-11-07T19:21:02.897Z"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-sora",
+      "indexed": false,
+      "reason": "unknown",
+      "liveTest": "indexable",
+      "liveTestLocalTime": "2026-11-07 21:11 Europe/Bucharest"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/halloween",
+      "indexed": false,
+      "reason": "discovered_not_indexed",
+      "indexingRequest": "accepted",
+      "requestDate": "2026-11-07"
+    }
+  ]
+}

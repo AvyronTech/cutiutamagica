@@ -2,6 +2,27 @@
 @source "../src";
 @import "tw-animate-css";
 
+.skip-to-content {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10000;
+  padding: 12px 18px;
+  border: 2px solid #9b6723;
+  border-radius: 12px;
+  background: #fff8eb;
+  color: #261b10;
+  font:
+    600 14px/1.4 "Inter Variable",
+    sans-serif;
+  transform: translateY(calc(-100% - 16px));
+}
+.skip-to-content:focus {
+  transform: none;
+  outline: 2px solid #261b10;
+  outline-offset: 2px;
+}
+
 /* Self-hosted, WOFF2-only fonts. Show fallback text immediately while the final font loads. */
 @font-face {
   font-family: "Cormorant Garamond";

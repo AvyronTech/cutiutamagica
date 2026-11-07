@@ -264,6 +264,11 @@ function RootComponent() {
         <ShopProvider pricing={pricing}>
           {isChrome && <GrowthPageView pathname={pathname} />}
           {isChrome && <PageStoryLoader initialPath={pathname} />}
+          {isChrome && (
+            <a href="#continut-principal" className="skip-to-content">
+              Mergi la conținut
+            </a>
+          )}
           {isChrome && <Header />}
           {isChrome && <CartRecoveryPrompt pathname={pathname} />}
           {showBack && (
@@ -290,7 +295,7 @@ function RootComponent() {
               </PreviousPageLink>
             </div>
           )}
-          <main className="min-h-[60vh]">
+          <main id="continut-principal" tabIndex={-1} className="min-h-[60vh]">
             <Outlet />
           </main>
           {isChrome && <Footer />}

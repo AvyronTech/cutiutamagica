@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+7 noiembrie 2026: GSC confirmă individual toate cele șapte produse în index; trei ghiduri rămân în așteptare, iar cererea Halloween a fost acceptată. Sitemapurile au Succes și validările Merchant au reușit. Corecții de accesibilitate/conversie și audit extins sunt **locale, fără push/deploy până la o cerere nouă**. [Handoff și verificări actuale](handoff/2026-11-07-seo-compatibility.md).
+
 Revizia fișelor de produs din 5 noiembrie compactează UI și adaugă migrarea 0090 pentru prima livrare gratuită, verificată pe server. Contul de test cerut explicit este provisionat fără credențiale în documente; compatibilitatea parolelor este corectată prin Node crypto. [Audit și probe](handoff/2026-11-05-product-page-compact.md). Versiunea efectiv servită și schema aplicată se verifică separat după release.
 
 Acest fișier este punctul de intrare pentru Codex, Lovable, Claude și alți agenți. Regulile obligatorii sunt în [AGENTS.md](../AGENTS.md); aici sunt harta proiectului și rutina de predare. Informațiile datate sunt un instantaneu, nu dovada stării live.

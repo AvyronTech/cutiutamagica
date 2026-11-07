@@ -627,9 +627,9 @@ function ProductPage() {
           </div>
         )}
         <p className="product-about-card__documents">
-          <Link to="/termeni-de-utilizare">Termenii de utilizare</Link> sunt disponibili gratuit.
-          Documentele specifice produsului și informațiile despre eventualele licențe necesită
-          verificare înainte de publicare.
+          <Link to="/livrare">Livrare și costuri</Link>
+          {" · "}
+          <Link to="/retur">Retur și garanție</Link>
         </p>
         <ProductMakingNote />
       </article>

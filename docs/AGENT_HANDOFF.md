@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## GSC, SEO și compatibilitate — 7 noiembrie 2026, local
+
+- 7/7 produse reinspectate și indexate, patru sitemapuri Succes, validările Merchant pentru livrare/retur/audience reușite cu zero afectate. Trei ghiduri încă așteaptă Google; cererea Halloween a fost acceptată acum. Audit public extins fără probleme, acces din tastatură și linkuri utile în fișa de produs, 391 teste și toate verificările locale trecute. **Fără push sau deploy, la cererea administratorului.** [Scop, probe și limite](handoff/2026-11-07-seo-compatibility.md).
+
 ## Statistici și trafic — 5 noiembrie 2026
 
 - Secțiune comună cu Sinteză, Vânzări și produse, Trafic și conversii, Surse și conexiuni; perioade 7/30/90 zile în URL și compatibilitate cu vechiul Trafic. Financiar folosește aceeași agregare, separat pe monede. Date Google/activitate/comenzi distincte, fără profit sau conversii presupuse; rapoartele se invalidează după modificările operaționale. Fără migrare sau activare externă. [Definiții, probe și limite](handoff/2026-11-05-statistics-traffic.md).
