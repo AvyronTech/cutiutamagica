@@ -3,6 +3,8 @@ import { Mail } from "lucide-react";
 import OperationsPage from "@/admin/pages/OperationsPage";
 
 export const Route = createFileRoute("/_authenticated/admin/newsletter")({
+  head: () => ({ meta: [{ title: "Admin · Newsletter | Cutiuța Magică" }] }),
+
   component: () => (
     <OperationsPage
       area="newsletter"

@@ -16,7 +16,7 @@ Separarea frontendului intr-un proiect Pages distinct ramane posibila doar print
 | KV `cutiutamagica_kv`         | cache si limitare cu consistenta eventuala                   | nu este sursa de adevar    |
 | Queues                        | outbox, integrari si sincronizare asincrona                  | nu blocheaza checkoutul    |
 | Analytics Engine              | telemetrie agregata                                          | fara date personale brute  |
-| Cloudflare Access             | autentificarea personalului                                  | RBAC ramane in D1          |
+| Sesiuni admin D1              | autentificare e-mail si parola pentru patru conturi aprobate | RBAC ramane in D1          |
 
 ## Domenii interne
 
@@ -48,11 +48,12 @@ Schema si Product Studio suporta sloturile `01_hero`, `02_decor`, `03_closed`, `
 
 ## Autentificare
 
-- Local: identitate de dezvoltare permisa exclusiv pe `localhost`.
-- Productie: JWT Cloudflare Access verificat criptografic, apoi roluri si permisiuni D1.
-- Nu exista parole implicite in repository sau D1. Conturile aprobate sunt precreate dupa e-mail si sunt legate de subiectul Access la prima autentificare.
-- Conturile clientilor nu sunt inca activate; checkoutul este guest-first pana la alegerea furnizorului de identitate si e-mail tranzactional.
+- Productie si local: exclusiv e-mail si parola, validate server-side pentru cele patru conturi aprobate.
+- Parolele sunt stocate numai ca hash PBKDF2 cu salt unic; sesiunile folosesc tokenuri aleatoare, iar D1 pastreaza numai digestul lor.
+- Nu exista Cloudflare Access, autentificare prin cod, inregistrare, invitatie sau solicitare publica de acces pentru administratori.
+- Parola initiala trebuie schimbata la prima autentificare; incercarile esuate sunt limitate si auditate.
+- Conturile separate pentru recenzii si cereri de personalizare sunt optionale. Checkoutul ramane guest-first si nu conditioneaza comanda de existenta unui cont.
 
 ## Integrari
 
-Structura de date si adaptoarele sunt pregatite pentru plati, SmartShip, facturare, eMAG, OLX, Trendyol, Meta si canale sociale. O integrare este considerata activa numai dupa configurarea secretelor, validarea contractului API, test sandbox si reconciliere. Nicio stare din dashboard nu trebuie prezentata drept conectare reala fara aceste conditii.
+Structura de date si adaptoarele sunt pregatite pentru plati, SmartShip, Sameday/Easybox, facturare, Esteto, eMAG, OLX, Trendyol, Meta si canale sociale. E-mailurile tranzactionale folosesc Cloudflare Email Service numai cand bindingul si rutele domeniului sunt active. O integrare este considerata activa numai dupa configurarea secretelor, validarea contractului API, test sandbox si reconciliere. Nicio stare din dashboard nu trebuie prezentata drept conectare reala fara aceste conditii.

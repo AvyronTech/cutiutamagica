@@ -3,6 +3,7 @@ import { Store } from "lucide-react";
 import OperationsPage from "@/admin/pages/OperationsPage";
 
 export const Route = createFileRoute("/_authenticated/admin/platforms")({
+  head: () => ({ meta: [{ title: "Admin · Canale de vânzare | Cutiuța Magică" }] }),
   component: () => (
     <OperationsPage
       area="platforms"

@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-11-07",
+  "property": "sc-domain:cutiutamagica.eu",
+  "scope": "Four sitemaps, Product report and three previously pending guides. Product-level inspections from earlier on the same day remain separate evidence.",
+  "sitemaps": {
+    "core": "success, 8 URLs",
+    "products": "success, 7 URLs",
+    "guides": "success, 23 URLs",
+    "text": "success, 38 URLs"
+  },
+  "guides": [
+    {
+      "slug": "halloween",
+      "indexed": true,
+      "breadcrumb": "one valid item",
+      "https": true
+    },
+    {
+      "slug": "cadouri-mici",
+      "indexed": false,
+      "status": "discovered_not_indexed",
+      "reportedSources": ["sitemap-guides.xml", "sitemap.txt", "/cadouri"]
+    },
+    {
+      "slug": "pentru-sora",
+      "indexed": false,
+      "status": "unknown_to_google"
+    }
+  ],
+  "newIndexingRequests": 0,
+  "pendingGuides": ["cadouri-mici", "pentru-sora"],
+  "productReport": {
+    "updated": "2026-11-06",
+    "invalidItems": 0,
+    "reviewWarningsAffectedItems": 0
+  },
+  "liveAudit": {
+    "indexableUrls": 38,
+    "auxiliary503Responses": 6,
+    "cpu1102Confirmed": true
+  },
+  "deployment": "local changes only; no push or deploy",
+  "proofDirectory": "/Users/niss/.codex/visualizations/2026/11/07/cutiuta-final-audit"
+}

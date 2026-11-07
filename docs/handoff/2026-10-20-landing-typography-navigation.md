@@ -1,0 +1,12 @@
+# Handoff — tipografie și structură landing, 20 octombrie 2026
+
+- Ramură locală: `codex/landing-typography-nav`, pornită din `origin/codex/cutiuta-cloudflare-final` (`d2d5ab2`).
+- Scop: uniformizarea literelor și diacriticelor, tranziția barei de sus, poziția CTA-ului din hero, delimitarea modelelor disponibile și ordinea secțiunilor de pe landing.
+- Fișiere: `src/styles.css`, `src/components/site/Header.tsx`, `src/routes/index.tsx`, `src/lib/collections.ts`, `src/server/storefront-experience.test.ts` și acest handoff.
+- Font: Cormorant Garamond are acum subseturile latin și latin-ext pentru variantele folosite. Inter avea deja ambele subseturi. Fonturile rămân găzduite local și se încarcă numai pentru caracterele necesare.
+- Bară: limita hero se măsoară la redimensionare, nu la fiecare eveniment de scroll. Bara dispare la derulare în jos și reapare la derulare în sus; coșul flotant se afișează după hero numai când bara este ascunsă. Animația folosește transform și opacitate și respectă preferința de mișcare redusă.
+- Hero: „Găsește cutiuța ta” și cele trei expresii sunt sub rotatorul de produse. „Dincolo de capac” este după „Magia care urmează”.
+- Catalog: caruselele de colecție primesc numai produse cu disponibilitate `available`; One Ring și Furtuna rămân în colecția „În curând” cât timp catalogul le indică astfel. Nu s-au schimbat disponibilitatea, prețurile sau stocurile.
+- Migrații D1 noi: niciuna. Pentru proba locală s-au aplicat migrațiile existente și seedul exclusiv în D1 local al worktree-ului.
+- Verificări: `npm run typecheck`, `npm test` (56 fișiere, 298 teste), `npm run lint`, `npm run build`, `npm run cf:deploy:dry`, `git diff --check`. Prima rulare paralelă a suitei a avut o aserțiune de ordine în testul de chat; testul izolat și suita completă repetată au trecut. Capturi și verificări vizuale în browserul local la 1440 × 900 și 390 × 844 px pentru hero, ordinea secțiunilor, catalog, pagina de cont, poarta `/admin` și coșul gol. Nu s-a observat depășire orizontală pe hero; dashboardul autentificat și checkoutul cu produse nu au putut fi probate fără o sesiune și produse disponibile în seedul local.
+- Risc și revenire: cele trei carusele de colecție sunt goale dacă niciun produs nu este marcat disponibil, iar mesajul lor de fallback rămâne afișat. Se poate reveni prin revertul commitului de pe această ramură. Nu s-au făcut push, PR, deploy, migrare remote sau configurări live.

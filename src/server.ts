@@ -2,9 +2,8 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { handleApiRequest } from "./server/api/router";
-import { handlePublicMediaRequest } from "./server/media-public";
-import { consumeCommerceEvents, type CommerceQueueMessage } from "./server/queue/commerce-consumer";
+import { API_HOSTNAME, APP_HOSTNAME, resolveHostRoute } from "./server/host-routing";
+import type { CommerceQueueMessage } from "./server/queue/commerce-consumer";
 
 type ServerEntry = {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response> | Response;
@@ -28,7 +27,12 @@ function brandedErrorResponse(): Response {
   });
 }
 
-function withOperationalHeaders(request: Request, response: Response, requestId: string): Response {
+function withOperationalHeaders(
+  request: Request,
+  response: Response,
+  requestId: string,
+  env: Env,
+): Response {
   const headers = new Headers(response.headers);
   headers.set("x-content-type-options", "nosniff");
   headers.set("referrer-policy", "strict-origin-when-cross-origin");
@@ -37,8 +41,30 @@ function withOperationalHeaders(request: Request, response: Response, requestId:
   headers.set("x-request-id", requestId);
 
   const url = new URL(request.url);
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin")) {
+  if (
+    env.APP_ENV !== "production" ||
+    url.pathname === "/comanda" ||
+    url.pathname === "/cont" ||
+    url.pathname === "/personalizeaza" ||
+    url.hostname === API_HOSTNAME ||
+    url.hostname === APP_HOSTNAME ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/admin") ||
+    url.pathname === "/auth"
+  ) {
     headers.set("x-robots-tag", "noindex, nofollow");
+  }
+  if (
+    url.pathname.startsWith("/admin") ||
+    url.pathname === "/auth" ||
+    url.pathname === "/cont" ||
+    url.pathname === "/comanda"
+  ) {
+    headers.set("cache-control", "private, no-store");
+  }
+  if (url.hostname === API_HOSTNAME) {
+    headers.set("content-security-policy", "default-src 'none'; frame-ancestors 'none'");
+    headers.set("x-frame-options", "DENY");
   }
   if (url.protocol === "https:") {
     headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
@@ -94,6 +120,15 @@ function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boole
   );
 }
 
+function jsonResponse(payload: unknown, status = 200): Response {
+  return Response.json(payload, {
+    status,
+    headers: {
+      "cache-control": "no-store",
+    },
+  });
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
@@ -111,51 +146,136 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 }
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+  async fetch(originalRequest: Request, env: Env, ctx: ExecutionContext) {
     const startedAt = Date.now();
-    const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+    const requestId = originalRequest.headers.get("x-request-id") ?? crypto.randomUUID();
+    let request = originalRequest;
     try {
       const requestUrl = new URL(request.url);
-      if (requestUrl.hostname === "www.cutiutamagica.eu") {
-        requestUrl.hostname = "cutiutamagica.eu";
+      const hostRoute = resolveHostRoute(requestUrl, request.method);
+      if (hostRoute.type === "redirect") {
         const redirect = withOperationalHeaders(
           request,
-          Response.redirect(requestUrl.toString(), 308),
+          Response.redirect(hostRoute.location, 308),
           requestId,
+          env,
         );
         recordRequestMetric(env, request, redirect, startedAt);
         return redirect;
       }
-
-      const mediaResponse = await handlePublicMediaRequest(request, env);
-      if (mediaResponse) {
-        const response = withOperationalHeaders(request, mediaResponse, requestId);
+      if (hostRoute.type === "api-index") {
+        const response = withOperationalHeaders(
+          request,
+          jsonResponse({
+            service: "cutiuta-magica-api",
+            version: "v1",
+            environment: env.APP_ENV,
+            health: "https://api.cutiutamagica.eu/v1/health",
+          }),
+          requestId,
+          env,
+        );
         recordRequestMetric(env, request, response, startedAt);
         return response;
       }
-
-      const apiResponse = await handleApiRequest(request, env, ctx);
-      if (apiResponse) {
-        const response = withOperationalHeaders(request, apiResponse, requestId);
+      if (hostRoute.type === "api-not-found") {
+        const response = withOperationalHeaders(
+          request,
+          jsonResponse({ error: "not_found", requestId }, 404),
+          requestId,
+          env,
+        );
         recordRequestMetric(env, request, response, startedAt);
         return response;
+      }
+      if (hostRoute.type === "rewrite") {
+        request = new Request(hostRoute.url, request);
+      }
+
+      const pathname = new URL(request.url).pathname;
+      if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+        const { guardAdminPage } = await import("./server/admin-page-guard");
+        const adminRedirect = await guardAdminPage(request, env.DB);
+        if (adminRedirect) {
+          const response = withOperationalHeaders(request, adminRedirect, requestId, env);
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
+      }
+      if (pathname.startsWith("/media/")) {
+        const { handlePublicMediaRequest } = await import("./server/media-public");
+        const mediaResponse = await handlePublicMediaRequest(request, env);
+        if (mediaResponse) {
+          const response = withOperationalHeaders(request, mediaResponse, requestId, env);
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
+      }
+      if (pathname.startsWith("/api/v1/")) {
+        const { handleApiRequest } = await import("./server/api/router");
+        const apiResponse = await handleApiRequest(request, env, ctx);
+        if (apiResponse) {
+          const response = withOperationalHeaders(request, apiResponse, requestId, env);
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
       }
 
       const handler = await getServerEntry();
       const rendered = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(rendered);
-      const response = withOperationalHeaders(request, normalized, requestId);
+      const response = withOperationalHeaders(request, normalized, requestId, env);
       recordRequestMetric(env, request, response, startedAt);
       return response;
     } catch (error) {
       console.error("request.failed", { requestId, error });
-      const fallback = withOperationalHeaders(request, brandedErrorResponse(), requestId);
-      recordRequestMetric(env, request, fallback, startedAt);
+      const fallback = withOperationalHeaders(
+        originalRequest,
+        brandedErrorResponse(),
+        requestId,
+        env,
+      );
+      recordRequestMetric(env, originalRequest, fallback, startedAt);
       return fallback;
     }
   },
 
   async queue(batch: MessageBatch<CommerceQueueMessage>, env: Env) {
+    const { consumeCommerceEvents } = await import("./server/queue/commerce-consumer");
     await consumeCommerceEvents(batch, env);
+  },
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    const [
+      { processOwnerReports },
+      { purgeExpiredChatConversations },
+      { processScheduledBackup },
+      { processGiftCalendarReminders, processBirthdayRewards },
+      { processRewardEmailDigests },
+      { processMarketingAgentMonitoring },
+      { processStorageRetention },
+      { reconcilePaidInvoiceCollections },
+    ] = await Promise.all([
+      import("./server/services/owner-reports"),
+      import("./server/db/chat.repository"),
+      import("./server/services/backup-center"),
+      import("./server/services/magic-rewards"),
+      import("./server/services/reward-emails"),
+      import("./server/services/marketing-agent-monitor"),
+      import("./server/services/storage-retention"),
+      import("./server/services/oblio-payment-sync"),
+    ]);
+    ctx.waitUntil(
+      Promise.all([
+        processOwnerReports(env),
+        purgeExpiredChatConversations(env.DB),
+        processScheduledBackup(env),
+        processGiftCalendarReminders(env),
+        processBirthdayRewards(env.DB),
+        processRewardEmailDigests(env),
+        processMarketingAgentMonitoring(env.DB),
+        processStorageRetention(env),
+        reconcilePaidInvoiceCollections(env),
+      ]).then(() => undefined),
+    );
   },
 } satisfies ExportedHandler<Env, CommerceQueueMessage>;

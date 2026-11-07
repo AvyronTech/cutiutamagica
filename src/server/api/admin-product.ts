@@ -1,8 +1,19 @@
+import { productDiscoverySchema } from "@/lib/product-discovery";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 
 const updateProductSchema = z.object({
+  discovery: productDiscoverySchema.optional(),
   expectedVersion: z.number().int().positive(),
+  shortName: z.string().trim().max(90).optional(),
+  collection: z.enum(["story", "emotion", "dedicated"]).optional(),
+  landingOrder: z.number().int().min(0).max(10000).optional(),
+  storefrontState: z.enum(["available", "coming_soon", "out_of_stock"]).optional(),
+  featured: z.boolean().optional(),
+  preorderEnabled: z.boolean().optional(),
+  releaseNote: z.string().trim().max(240).optional(),
+  details: z.array(z.string().trim().max(500)).max(30).optional(),
+  status: z.enum(["draft", "active", "archived"]).optional(),
   name: z.string().trim().min(2).max(160),
   tagline: z.string().trim().max(240),
   shortDescription: z.string().trim().max(500),
@@ -17,28 +28,6 @@ const updateProductSchema = z.object({
   seoTitle: z.string().trim().max(70),
   seoDescription: z.string().trim().max(180),
   searchTerms: z.string().trim().max(1200),
-  variant: z
-    .object({
-      id: z.string().min(1).max(128),
-      expectedVersion: z.number().int().positive(),
-      eanGtin: z.union([z.literal(""), z.string().regex(/^\d{8,14}$/)]),
-      mpn: z.string().trim().max(120),
-      cost: z.number().min(0).max(1_000_000).nullable(),
-      identifierSource: z.enum(["gs1", "manufacturer", "supplier", "marketplace", "internal"]),
-    })
-    .superRefine((variant, context) => {
-      if (
-        variant.eanGtin &&
-        !["gs1", "manufacturer", "supplier"].includes(variant.identifierSource)
-      ) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["identifierSource"],
-          message: "Un GTIN/EAN public trebuie să provină de la GS1, producător sau furnizor.",
-        });
-      }
-    })
-    .optional(),
 });
 
 function json(data: unknown, init: ResponseInit = {}): Response {
@@ -69,7 +58,18 @@ export async function handleAdminProductApi(request: Request, env: Env): Promise
     const admin = await authenticateAdminRequest(request, env, "catalog.write");
     if (!sameOrigin(request))
       return json({ error: { code: "ORIGIN_NOT_ALLOWED" } }, { status: 403 });
-    const parsed = updateProductSchema.safeParse(await request.json().catch(() => null));
+    const body = await request.json().catch(() => null);
+    if (body && typeof body === "object" && "variant" in body)
+      return json(
+        {
+          error: {
+            code: "TECHNICAL_SHEET_REQUIRED",
+            message: "EAN-ul, sursa și costul se editează în fișa tehnică a produsului.",
+          },
+        },
+        { status: 400 },
+      );
+    const parsed = updateProductSchema.safeParse(body);
     if (!parsed.success) {
       return json(
         { error: { code: "INVALID_PRODUCT", issues: parsed.error.flatten() } },
@@ -80,17 +80,19 @@ export async function handleAdminProductApi(request: Request, env: Env): Promise
     const productUpdate = env.DB.prepare(
       `
       UPDATE products
-      SET name = ?1, tagline = ?2, short_description = ?3, description = ?4,
+      SET discovery_json=COALESCE(?26,discovery_json), short_name=COALESCE(?17,short_name), landing_collection=COALESCE(?18,landing_collection),
+          landing_order=COALESCE(?19,landing_order), storefront_state=COALESCE(?20,storefront_state),
+          is_featured=COALESCE(?21,is_featured), preorder_enabled=COALESCE(?22,preorder_enabled),
+          release_note=COALESCE(?23,release_note), details_json=COALESCE(?24,details_json),
+          status=COALESCE(?25,status), published_at=CASE WHEN ?25='active' THEN COALESCE(published_at,strftime('%Y-%m-%dT%H:%M:%fZ','now')) ELSE published_at END,
+          editorial_json=CASE WHEN ?4 IS NOT description OR ?5 IS NOT story THEN NULL ELSE editorial_json END,
+          name = ?1, tagline = ?2, short_description = ?3, description = ?4,
           story = ?5, category = ?6, material = ?7, dimensions_text = ?8,
           weight_g = ?9, rights_status = ?10, rights_notes = ?11,
           seo_title = ?12, seo_description = ?13, search_terms = ?14,
           version = version + 1,
           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE id = ?15 AND product_type = 'music_box' AND version = ?16
-        AND (?17 IS NULL OR EXISTS (
-          SELECT 1 FROM product_variants pv WHERE pv.id = ?17 AND pv.product_id = products.id
-          AND pv.version = ?18 AND pv.status != 'archived'
-        ))
     `,
     ).bind(
       data.name,
@@ -109,61 +111,31 @@ export async function handleAdminProductApi(request: Request, env: Env): Promise
       data.searchTerms || null,
       match[1],
       data.expectedVersion,
-      data.variant?.id ?? null,
-      data.variant?.expectedVersion ?? null,
+      data.shortName ?? null,
+      data.collection ?? null,
+      data.landingOrder ?? null,
+      data.storefrontState ?? null,
+      data.featured === undefined ? null : Number(data.featured),
+      data.preorderEnabled === undefined ? null : Number(data.preorderEnabled),
+      data.releaseNote ?? null,
+      data.details ? JSON.stringify(data.details) : null,
+      data.status ?? null,
+      data.discovery ? JSON.stringify(data.discovery) : null,
     );
     const writeStatements: D1PreparedStatement[] = [productUpdate];
-    if (data.variant) {
+    if (data.storefrontState)
       writeStatements.push(
         env.DB.prepare(
-          `UPDATE product_variants
-           SET ean_gtin = ?1, mpn = ?2, cost_bani = ?3, version = version + 1,
-               updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-           WHERE id = ?4 AND product_id = ?5 AND version = ?6
-             AND EXISTS (SELECT 1 FROM products WHERE id = ?5 AND version = ?7)`,
+          `UPDATE channel_listings SET status=?1, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE product_id=?2 AND channel_id='channel_website' AND changes()=1 AND EXISTS (SELECT 1 FROM products WHERE id=?2 AND version=?3)`,
         ).bind(
-          data.variant.eanGtin || null,
-          data.variant.mpn || null,
-          data.variant.cost == null ? null : Math.round(data.variant.cost * 100),
-          data.variant.id,
+          data.storefrontState === "available" ? "active" : "paused",
           match[1],
-          data.variant.expectedVersion,
           data.expectedVersion + 1,
         ),
       );
-    }
     const writeResults = await env.DB.batch(writeStatements);
-    if (
-      Number(writeResults[0].meta.changes) !== 1 ||
-      (data.variant && Number(writeResults[1]?.meta.changes) !== 1)
-    ) {
+    if (Number(writeResults[0].meta.changes) !== 1) {
       return json({ error: { code: "VERSION_CONFLICT" } }, { status: 409 });
-    }
-    if (data.variant) {
-      const identifierStatements: D1PreparedStatement[] = [
-        env.DB.prepare(
-          `DELETE FROM product_identifier_sources
-           WHERE variant_id = ?1 AND identifier_type IN ('GTIN', 'EAN')`,
-        ).bind(data.variant.id),
-      ];
-      if (data.variant.eanGtin) {
-        identifierStatements.push(
-          env.DB.prepare(
-            `INSERT INTO product_identifier_sources (
-               id, variant_id, identifier_type, identifier_value, source_type,
-               verification_status, verified_at
-             ) VALUES (?1, ?2, 'EAN', ?3, ?4, ?5, ?6)`,
-          ).bind(
-            crypto.randomUUID(),
-            data.variant.id,
-            data.variant.eanGtin,
-            data.variant.identifierSource,
-            data.variant.identifierSource === "internal" ? "rejected" : "pending",
-            null,
-          ),
-        );
-      }
-      await env.DB.batch(identifierStatements);
     }
     await env.DB.prepare(
       `

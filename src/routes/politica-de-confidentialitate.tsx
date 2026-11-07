@@ -1,0 +1,173 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { getPublicSeller, legalHead } from "@/lib/legal.functions";
+import { LegalPage, LegalSection, SellerIdentity } from "@/components/site/LegalPage";
+export const Route = createFileRoute("/politica-de-confidentialitate")({
+  loader: () => getPublicSeller(),
+  head: () =>
+    legalHead(
+      "Politica de confidențialitate",
+      "Cine administrează datele tale, scopurile prelucrării, serviciile folosite și drepturile tale în magazinul Cutiuța Magică.",
+      "/politica-de-confidentialitate",
+    ),
+  component: Privacy,
+});
+function Privacy() {
+  const seller = Route.useLoaderData();
+  return (
+    <LegalPage
+      title="Politica de confidențialitate"
+      intro="Datele tale ne ajută să pregătim și să livrăm comanda. Le folosim pentru scopuri explicate aici și îți oferim un punct de contact pentru întrebări."
+    >
+      <LegalSection title="Operatorul datelor">
+        <SellerIdentity seller={seller} />
+        <p>
+          Societatea administrează magazinul Cutiuța Magică și stabilește scopurile prelucrării.
+          Pentru solicitări privind datele personale, scrie la e-mailul de mai sus cu subiectul
+          „Date personale”.
+        </p>
+      </LegalSection>
+      <LegalSection title="Date și scopuri">
+        <p>
+          Pentru comenzi și retururi prelucrăm numele, e-mailul, telefonul, adresa, produsele alese,
+          datele de facturare și corespondența necesară executării contractului. Datele obligatorii
+          sunt marcate în formular; fără ele poate fi imposibil să livrăm sau să soluționăm
+          solicitarea.
+        </p>
+        <p>
+          Păstrăm documentele fiscale pentru obligațiile legale. Folosim în interes legitim jurnale
+          tehnice, identificatori de comandă și semnale de securitate pentru prevenirea abuzurilor
+          și diagnosticarea problemelor. Marketingul opțional se bazează pe consimțământ separat,
+          care poate fi retras fără afectarea comenzilor.
+        </p>
+      </LegalSection>
+      <LegalSection title="Chatul magazinului">
+        <p>
+          Mesajele trimise prin chat sunt păstrate pentru a răspunde solicitării și pot fi văzute de
+          administratorii autorizați. Când asistentul virtual este activ, Cloudflare Workers AI
+          analizează textul cu datele de contact mascate și poate răspunde automat. Răspunsurile
+          sunt marcate drept mesaje ale asistentului și pot fi preluate de echipă. Asistentul nu
+          plasează comenzi și nu cere date de card. Poți cere oricând continuarea conversației cu un
+          operator.
+        </p>
+      </LegalSection>
+      <LegalSection title="Contul de client și recenziile">
+        <p>
+          Poți trimite o recenzie fără cont, folosind un nume afișat și o adresă de e-mail. După
+          aprobare, afișăm numele ales, textul, evaluarea, cutiuța și sursa recenziei. E-mailul și
+          observațiile moderatorilor nu sunt publice. Nu include în text date pe care nu dorești să
+          le vadă ceilalți vizitatori.
+        </p>
+        <p>
+          Contul opțional folosește autentificare Google și păstrează identificatorul de cont,
+          numele și e-mailul confirmat de furnizor; nu primim și nu stocăm parola contului Google.
+          Sesiunea folosește un cookie securizat cu durată de până la șapte zile. Contul afișează
+          numai cererile asociate identității tale și nu oferă acces la datele altor persoane.
+          Pentru corectarea sau retragerea unei recenzii, folosește datele de contact ale
+          magazinului.
+        </p>
+        <p>
+          Dacă folosești Magic Rewards, păstrăm activitățile eligibile, stelele acordate,
+          beneficiile activate și identificatorii necesari prevenirii acordării repetate. Pentru
+          darul aniversar poți salva numai ziua și luna; nu solicităm anul nașterii. Aceste date
+          sunt folosite pentru funcționarea programului, afișarea istoricului și limitarea
+          abuzurilor și pot fi corectate ori șterse odată cu solicitarea privind contul, în limitele
+          obligațiilor legale și ale evidențelor necesare soluționării unui beneficiu deja folosit.
+        </p>
+      </LegalSection>
+      <LegalSection title="Cereri de personalizare și imagini">
+        <p>
+          Pentru o cerere de personalizare prelucrăm numele, e-mailul, telefonul, opțiunile alese,
+          mesajul pentru atelier și imaginea încărcată pentru capac. Aceste date sunt necesare
+          evaluării cererii, confirmării detaliilor și, dacă accepți oferta, realizării produsului.
+          Trimiterea formularului nu inițiază automat o comandă sau o plată.
+        </p>
+        <p>
+          Imaginea este stocată privat în infrastructura Cloudflare R2 și nu este publicată în
+          catalog. Accesul este limitat la personalul autorizat implicat în verificare și producție.
+          Te rugăm să încarci numai imagini pe care ai dreptul să le folosești și să eviți datele
+          sensibile care nu sunt necesare personalizării.
+        </p>
+      </LegalSection>
+      <LegalSection title="Serviciile care pot primi date">
+        <p>
+          Cloudflare asigură infrastructura, stocarea și protecția magazinului. În funcție de
+          opțiunea pe care o alegi, datele strict necesare pot fi transmise serviciului de curierat
+          și operatorului Easybox, furnizorului de autentificare, serviciului de e-mail
+          tranzacțional sau procesatorului de plăți disponibil la momentul comenzii. Contabilitatea
+          și autoritățile pot primi documentele impuse de lege. Fiecare furnizor primește numai
+          informațiile necesare rolului său.
+        </p>
+        <p>
+          Un serviciu opțional primește date numai când este activ și necesar pentru funcția aleasă
+          de tine. Transferurile în afara SEE necesită o bază legală adecvată, precum o decizie de
+          adecvare sau clauze contractuale standard și garanțiile aplicabile; detaliile pot fi
+          solicitate la contact.
+        </p>
+      </LegalSection>
+      <LegalSection title="Stocare în browser și statistici">
+        <p>
+          Coșul folosește stocarea locală a browserului pentru a păstra produsele alese între
+          vizite. Îl poți goli din magazin sau din setările browserului. Funcțiile de securitate și
+          autentificare pot utiliza identificatori strict necesari.
+        </p>
+        <p>
+          Statisticile tehnice strict necesare ne ajută să protejăm magazinul și să diagnosticăm
+          erori. Orice instrument opțional de analiză sau publicitate care folosește identificatori
+          în browser este activat numai după informare și, când legea o cere, după alegerea ta; poți
+          retrage ulterior consimțământul.
+        </p>
+        <p>
+          Pentru analiza opțională a traficului folosim Metricool. Scriptul său este încărcat numai
+          dacă accepți categoria „Experiență”; fără această alegere, magazinul funcționează normal,
+          iar trackerul nu este încărcat. Rapoartele sunt folosite agregat pentru a înțelege
+          paginile vizitate și eficiența campaniilor.
+        </p>
+      </LegalSection>
+      <LegalSection title="Păstrare și acces">
+        <p>
+          Comenzile și conversațiile se păstrează pe durata necesară livrării, garanțiilor,
+          soluționării solicitărilor și apărării drepturilor, ținând cont de termenele de
+          prescripție. Documentele contabile urmează termenele legale aplicabile categoriei lor.
+          Datele care nu mai sunt necesare trebuie șterse sau anonimizate; nu păstrăm toate datele
+          pe termen nelimitat.
+        </p>
+        <p>
+          Accesul la date este limitat la persoanele autorizate și protejat prin autentificare.
+          Rapoartele de activitate folosesc informații agregate și evită datele de identificare ale
+          clienților.
+        </p>
+      </LegalSection>
+      <LegalSection title="Drepturile tale">
+        <p>
+          Poți solicita acces, corectare, ștergere, restricționare sau portabilitate, în condițiile
+          legii, și te poți opune prelucrării bazate pe interes legitim. Retragerea consimțământului
+          operează pentru viitor. Răspundem de regulă în cel mult o lună; eventualele prelungiri
+          legale sunt explicate. Putem cere informații proporționale pentru verificarea identității.
+        </p>
+        <p>
+          Poți depune plângere la{" "}
+          <a href="https://www.dataprotection.ro" target="_blank" rel="noopener noreferrer">
+            ANSPDCP
+          </a>{" "}
+          sau apela la instanță. Ștergerea datelor nu poate elimina documente pe care legea ne
+          obligă să le păstrăm.
+        </p>
+      </LegalSection>
+      <LegalSection title="Automatizări și actualizări">
+        <p>
+          Unele operațiuni folosesc automatizări pentru organizarea comenzilor, trimiterea
+          reminderelor alese de tine și semnalarea erorilor ori a abuzurilor. O semnalare automată
+          poate duce la verificare umană; nu luăm exclusiv automat decizii care produc efecte
+          juridice semnificative asupra ta. Poți solicita clarificări și reevaluare la contact.
+        </p>
+        <p>
+          Această pagină se actualizează la schimbarea serviciilor sau practicilor. Referință:{" "}
+          <a href="https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=celex%3A32016R0679">
+            Regulamentul (UE) 2016/679
+          </a>
+          .
+        </p>
+      </LegalSection>
+    </LegalPage>
+  );
+}

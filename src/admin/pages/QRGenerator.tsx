@@ -4,13 +4,26 @@ import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
 import { Check, Copy, Download, MapPin, Package, Phone, Printer, QrCode, User } from "lucide-react";
 import { getAdminOrders } from "@/lib/admin.functions";
+import { useWorkspaceActive } from "@/admin/workspace-activity";
+import { toast } from "sonner";
 
-export default function QRGenerator() {
+export default function QRGenerator({
+  embedded = false,
+  requestedOrder,
+  onOrderChange,
+}: {
+  embedded?: boolean;
+  requestedOrder?: string;
+  onOrderChange?: (order: string | undefined) => void;
+}) {
+  const active = useWorkspaceActive();
+  const Heading = embedded ? "h2" : "h1";
   const fetchOrders = useServerFn(getAdminOrders);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin", "orders"],
     queryFn: () => fetchOrders(),
     staleTime: 30_000,
+    enabled: active,
   });
   const orders = useMemo(() => data?.orders ?? [], [data?.orders]);
   const [selectedOrderId, setSelectedOrderId] = useState("");
@@ -18,11 +31,11 @@ export default function QRGenerator() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (selectedOrderId || orders.length === 0) return;
-    const requestedOrder = new URLSearchParams(window.location.search).get("order");
-    const requested = orders.find((order) => order.orderNumber === requestedOrder);
-    setSelectedOrderId(requested?.id ?? orders[0].id);
-  }, [orders, selectedOrderId]);
+    if (orders.length === 0) return;
+    const requested = requestedOrder ?? new URLSearchParams(window.location.search).get("order");
+    const match = orders.find((order) => order.orderNumber === requested);
+    setSelectedOrderId(requested ? (match?.id ?? "") : "");
+  }, [orders, requestedOrder]);
 
   const selectedOrder = useMemo(
     () => orders.find((order) => order.id === selectedOrderId),
@@ -47,9 +60,13 @@ export default function QRGenerator() {
 
   const copy = async () => {
     if (!qrContent) return;
-    await navigator.clipboard.writeText(qrContent);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(qrContent);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Codul QR nu a putut fi copiat. Poți folosi descărcarea.");
+    }
   };
 
   const download = () => {
@@ -65,7 +82,11 @@ export default function QRGenerator() {
       canvas.width = 800;
       canvas.height = 800;
       const context = canvas.getContext("2d");
-      if (!context) return;
+      if (!context) {
+        URL.revokeObjectURL(imageUrl);
+        toast.error("Imaginea QR nu a putut fi pregătită.");
+        return;
+      }
       context.fillStyle = "#FFFFFF";
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -75,13 +96,19 @@ export default function QRGenerator() {
       link.click();
       URL.revokeObjectURL(imageUrl);
     };
+    image.onerror = () => {
+      URL.revokeObjectURL(imageUrl);
+      toast.error("Codul QR nu a putut fi exportat. Reîncearcă.");
+    };
     image.src = imageUrl;
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-white md:text-2xl">Generator QR operațional</h1>
+        <Heading className="text-xl font-bold text-white md:text-2xl">
+          Coduri QR pentru comenzi
+        </Heading>
         <p className="mt-1 text-xs text-slate-400 md:text-sm">
           Cod intern pentru identificarea comenzii, fără nume, telefon sau adresă în conținutul QR.
         </p>
@@ -102,11 +129,17 @@ export default function QRGenerator() {
             <select
               id="qr-order"
               value={selectedOrderId}
-              onChange={(event) => setSelectedOrderId(event.target.value)}
+              onChange={(event) => {
+                setSelectedOrderId(event.target.value);
+                const order = orders.find((item) => item.id === event.target.value);
+                onOrderChange?.(order?.orderNumber);
+              }}
               disabled={isLoading || orders.length === 0}
               className="w-full rounded-lg border border-[#334155] bg-[#0F172A] px-3 py-2.5 text-sm text-slate-200 disabled:opacity-50"
             >
-              {orders.length === 0 && <option value="">Nicio comandă disponibilă</option>}
+              <option value="">
+                {orders.length === 0 ? "Nicio comandă disponibilă" : "Selectează comanda"}
+              </option>
               {orders.map((order) => (
                 <option key={order.id} value={order.id}>
                   {order.orderNumber} - {order.customer} ({order.platform})
@@ -115,6 +148,15 @@ export default function QRGenerator() {
             </select>
           </section>
 
+          {!isLoading &&
+            !isError &&
+            requestedOrder &&
+            !orders.some((order) => order.orderNumber === requestedOrder) && (
+              <p role="alert" className="text-sm text-amber-200">
+                Comanda din legătură nu a fost găsită. Selectează comanda corectă înainte de
+                generare.
+              </p>
+            )}
           {selectedOrder && (
             <section className="glass-card rounded-xl p-4 md:p-5">
               <h2 className="mb-3 text-sm font-semibold text-white">Detalii verificate</h2>
