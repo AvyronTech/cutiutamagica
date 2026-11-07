@@ -1,8 +1,23 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import { clearCustomerSession } from "./customer-session";
+import { clearCustomerSession, updateCurrentCustomer } from "./customer-session";
 
 describe("customer logout", () => {
+  it("does not restore an old customer's profile from a late save response", async () => {
+    const client = new QueryClient();
+    const original = { id: "a", email: "a@example.test", displayName: "Ana" };
+    client.setQueryData(["reviewer"], original);
+    expect(updateCurrentCustomer(client, { ...original, displayName: "Ana nou" })).toBe(true);
+    await clearCustomerSession(client);
+    expect(updateCurrentCustomer(client, { ...original, displayName: "Late response" })).toBe(
+      false,
+    );
+    expect(client.getQueryData(["reviewer"])).toBeNull();
+    client.setQueryData(["reviewer"], { id: "b", displayName: "Bogdan" });
+    expect(updateCurrentCustomer(client, original)).toBe(false);
+    expect(client.getQueryData(["reviewer"])).toEqual({ id: "b", displayName: "Bogdan" });
+    client.clear();
+  });
   it("removes all private account pages while preserving public catalog and reviews", async () => {
     const client = new QueryClient();
     for (const key of [

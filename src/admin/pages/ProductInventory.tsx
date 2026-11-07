@@ -1,5 +1,6 @@
+import { refreshCatalogWorkflows } from "@/admin/catalog-sync";
 import { useWorkspaceActive } from "@/admin/workspace-activity";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 type Inventory = {
@@ -13,13 +14,8 @@ type Inventory = {
     safety: number;
   }[];
 };
-export function ProductInventory({
-  productId,
-  onChanged,
-}: {
-  productId: string;
-  onChanged: () => Promise<unknown>;
-}) {
+export function ProductInventory({ productId }: { productId: string }) {
+  const client = useQueryClient();
   const active = useWorkspaceActive();
   const url = `/api/v1/admin/products/${productId}/inventory`,
     [busy, setBusy] = useState(false);
@@ -55,8 +51,7 @@ export function ProductInventory({
       });
       const result = (await r.json()) as { error?: { message: string } };
       if (!r.ok) throw new Error(result.error?.message || "Nu am putut salva stocul.");
-      await query.refetch();
-      await onChanged();
+      await refreshCatalogWorkflows(client, productId);
       toast.success("Stocul a fost actualizat.");
     } catch (e) {
       toast.error((e as Error).message);

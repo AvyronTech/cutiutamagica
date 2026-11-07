@@ -92,6 +92,43 @@ beforeEach(() => {
 afterEach(() => sqlite.close());
 
 describe("product identification API", () => {
+  it("returns one consistent code registry in catalog, export and technical detail with permission checks", async () => {
+    const catalogResponse = (await handleProductIdentification(get(), env()))!;
+    expect(catalogResponse.headers.get("cache-control")).toBe("no-store");
+    const catalog = (await catalogResponse.json()) as {
+      data: {
+        products: Array<{
+          id: string;
+          variant_id: string;
+          sku: string;
+          internal_code: string;
+          merchant_reference: string;
+        }>;
+      };
+    };
+    const row = catalog.data.products[0];
+    expect(row.internal_code).toMatch(/^CM-P-\d{6,}$/);
+    expect(row.merchant_reference).toMatch(/^CM-R-\d{6,}$/);
+    const exported = (await (await handleProductIdentification(
+      get("?export=1"),
+      env(),
+    ))!.json()) as typeof catalog;
+    expect(exported.data.products).toEqual(catalog.data.products);
+    const detail = (await (await handleProductIdentification(
+      get(`?product=${row.id}`),
+      env(),
+    ))!.json()) as { data: { variants: typeof catalog.data.products; listings: unknown[] } };
+    expect(detail.data.variants.find((v) => v.sku === row.sku)).toMatchObject({
+      internal_code: row.internal_code,
+      merchant_reference: row.merchant_reference,
+    });
+    expect(Array.isArray(detail.data.listings)).toBe(true);
+    expect((await handleProductIdentification(get("", "catalog.read"), env()))!.status).toBe(403);
+    expect((await handleProductIdentification(get("?product=%27%20OR%201=1"), env()))!.status).toBe(
+      400,
+    );
+  });
+
   it("creates inactive variants with unique reserved SKUs and existing inventory infrastructure", async () => {
     const product = sqlite.prepare("SELECT id FROM products LIMIT 1").get() as { id: string };
     const input = {

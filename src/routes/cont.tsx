@@ -9,7 +9,6 @@ import {
   CreditCard,
   ChevronDown,
   LogOut,
-  ReceiptText,
   Repeat2,
   ShieldCheck,
   Sparkles,
@@ -24,10 +23,17 @@ import {
   type PersonalizationRequestSummary,
 } from "@/lib/personalization";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
-import { clearCustomerSession } from "@/lib/customer-session";
+import {
+  clearCustomerSession,
+  isCurrentCustomer,
+  updateCurrentCustomer,
+} from "@/lib/customer-session";
 import { CustomerMagicCenter } from "@/components/site/CustomerMagicCenter";
 import { seoHead } from "@/lib/seo-head";
 import { PreviousPageLink } from "@/components/site/PreviousPageLink";
+import { customerAccountSection, customerAccountSections } from "@/lib/customer-account";
+import { customerLaunch } from "@/lib/customer-launch";
+import { useShop } from "@/store/shop";
 
 export const Route = createFileRoute("/cont")({
   validateSearch: (
@@ -124,6 +130,8 @@ function CustomerAccount() {
   const { auth, card } = Route.useSearch();
   const locationHash = useRouterState({ select: (state) => state.location.hash });
   const queryClient = useQueryClient();
+  const section = customerAccountSection(locationHash);
+  const { totalQty } = useShop();
   const [orderPage, setOrderPage] = useState(0);
   const account = useQuery({
     queryKey: ["reviewer"],
@@ -140,19 +148,8 @@ function CustomerAccount() {
   const billing = useQuery({
     queryKey: ["customer-billing", account.data?.id, orderPage],
     queryFn: () => reviewApi<CustomerBilling>(`/api/v1/customer/billing?page=${orderPage}`),
-    enabled: !!account.data,
+    enabled: !!account.data && (section === "comenzi" || section === "portofel"),
     retry: false,
-  });
-  const providers = useQuery({
-    queryKey: ["reviewer-auth-providers"],
-    queryFn: () =>
-      reviewApi<{
-        google: { enabled: boolean };
-        apple: { enabled: boolean };
-        email: { enabled: boolean };
-      }>("/api/v1/reviewer/providers"),
-    retry: false,
-    staleTime: 60_000,
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -166,24 +163,33 @@ function CustomerAccount() {
   const [securityBusy, setSecurityBusy] = useState(false);
   const [securitySaved, setSecuritySaved] = useState(false);
   const [securityError, setSecurityError] = useState("");
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [profileFeedback, setProfileFeedback] = useState("");
+  const [profileError, setProfileError] = useState("");
 
   useEffect(() => {
-    const section = locationHash.replace(/^#/, "");
-    if (
-      !account.data ||
-      !["securitatea-contului", "profil", "comenzi", "portofel", "beneficii", "calendar"].includes(
-        section,
-      )
-    )
-      return;
-    if (section === "profil" || section === "securitatea-contului") setSecurityOpen(true);
-    const frame = requestAnimationFrame(() =>
-      document
-        .getElementById(section === "securitatea-contului" ? "profil" : section)
-        ?.scrollIntoView({ block: "start" }),
-    );
-    return () => cancelAnimationFrame(frame);
-  }, [account.data, locationHash]);
+    if (locationHash.replace(/^#/, "") === "securitatea-contului") setSecurityOpen(true);
+  }, [locationHash]);
+
+  async function saveDisplayName(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setProfileBusy(true);
+    setProfileFeedback("");
+    setProfileError("");
+    try {
+      const updated = await reviewApi<Reviewer>("/api/v1/reviewer/profile", {
+        method: "POST",
+        body: JSON.stringify({ displayName: form.get("displayName") }),
+      });
+      if (!updateCurrentCustomer(queryClient, updated)) return;
+      setProfileFeedback("Numele afișat a fost actualizat.");
+    } catch (caught) {
+      setProfileError(caught instanceof Error ? caught.message : "Profilul nu a putut fi salvat.");
+    } finally {
+      setProfileBusy(false);
+    }
+  }
 
   async function saveCustomerPassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -205,6 +211,7 @@ function CustomerAccount() {
   }
 
   async function addCard() {
+    const accountId = account.data?.id;
     if (!cardConsent) {
       setCardFeedback("Confirmă acordul pentru salvarea cardului, apoi continuă.");
       document.getElementById("wallet-card-consent")?.focus();
@@ -217,7 +224,8 @@ function CustomerAccount() {
         method: "POST",
         body: JSON.stringify({ consent: cardConsent }),
       });
-      window.location.assign(result.url);
+      if (accountId && isCurrentCustomer(queryClient, accountId))
+        window.location.assign(result.url);
     } catch (caught) {
       setCardFeedback(
         caught instanceof Error ? caught.message : "Salvarea cardului nu poate fi pornită.",
@@ -277,12 +285,9 @@ function CustomerAccount() {
   }
 
   if (!account.data) {
-    const googleReady = providers.data?.google.enabled === true;
-    const appleReady = providers.data?.apple.enabled === true;
-    const emailReady = providers.data?.email.enabled === true;
     const customerAuthMessage =
       auth === "neconfigurat"
-        ? "Conectarea nu este disponibilă momentan. Poți continua cumpărăturile fără cont."
+        ? "Această opțiune de conectare nu este disponibilă. Încearcă o altă metodă."
         : auth === "eroare"
           ? "Autentificarea externă nu a putut fi finalizată. Încearcă din nou."
           : "";
@@ -310,7 +315,7 @@ function CustomerAccount() {
             Mai simplu să dăruiești. <em>Mai ușor să-ți amintești.</em>
           </h1>
           <p>
-            Un cont gratuit îți păstrează cererile, preferințele și momentele importante aproape —
+            Un cont gratuit îți păstrează comenzile, preferințele și momentele importante aproape —
             într-un singur loc.
           </p>
           <div className="customer-account-benefits">
@@ -337,8 +342,8 @@ function CustomerAccount() {
                 <Camera />
               </span>
               <div>
-                <strong>Povești și personalizări</strong>
-                <small>Urmărești cererile și publici mai ușor o recenzie autentică.</small>
+                <strong>Recenzii și preferințe</strong>
+                <small>Publici recenzii și păstrezi preferințele pentru următorul cadou.</small>
               </div>
             </article>
           </div>
@@ -346,7 +351,7 @@ function CustomerAccount() {
             <Link className="magic-button magic-button--outline" to="/magic-rewards">
               Descoperă Magic Rewards <ArrowRight size={17} />
             </Link>
-            <Link to="/personalizeaza">Personalizează o cutiuță</Link>
+            <Link to="/produse">Descoperă cutiuțele</Link>
           </div>
         </section>
 
@@ -359,53 +364,27 @@ function CustomerAccount() {
               <UserRound />
             </div>
             <p className="customer-auth-kicker">Logare și înregistrare</p>
-            <h2 id="customer-auth-title">
-              {providers.isLoading
-                ? "Verificăm accesul securizat…"
-                : emailReady || googleReady || appleReady
-                  ? "Intră în contul tău"
-                  : "Conturile Magic se deschid în curând"}
-            </h2>
-            <p>
-              {emailReady || googleReady || appleReady
-                ? "La prima vizită, contul se creează automat. Dacă ai revenit, îți regăsești comenzile și momentele salvate."
-                : "Până atunci poți descoperi colecția și poți finaliza orice comandă rapid, fără cont."}
-            </p>
-            {providers.isLoading ? (
-              <span className="customer-google-button" aria-busy="true">
-                <span aria-hidden>✦</span>
-                Se verifică accesul…
-              </span>
-            ) : emailReady || googleReady || appleReady ? (
-              <Link className="customer-google-button" to="/auth">
-                <span aria-hidden>✦</span>
-                Intră în cont
-                <ArrowRight size={16} />
-              </Link>
-            ) : (
-              <Link className="customer-google-button" to="/produse">
-                <span aria-hidden>✦</span>
-                Descoperă cutiuțele
-                <ArrowRight size={16} />
-              </Link>
-            )}
+            <h2 id="customer-auth-title">Intră în contul tău</h2>
+            <p>Regăsește comenzile, momentele importante și beneficiile tale.</p>
+            <Link className="customer-google-button" to="/auth">
+              <span aria-hidden>✦</span> Intră în cont <ArrowRight size={16} />
+            </Link>
             {customerAuthMessage && (
               <p className="personalization-error" role="alert">
                 {customerAuthMessage}
               </p>
             )}
-            {(emailReady || googleReady || appleReady) && (
-              <>
-                <div className="customer-auth-assurance">
-                  <ShieldCheck aria-hidden />
-                  <span>Poți intra cu parolă, cod pe e-mail sau cu un cont extern configurat.</span>
-                </div>
-                <p className="customer-auth-legal">
-                  Continuând, accepți crearea contului și confirmi că ai citit{" "}
-                  <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link>.
-                </p>
-              </>
-            )}
+            <div className="customer-auth-assurance">
+              <ShieldCheck aria-hidden />
+              <span>
+                Folosește parola contului sau opțiunile disponibile pe pagina de conectare.
+              </span>
+            </div>
+            <p className="customer-auth-legal">
+              Consultă{" "}
+              <Link to="/politica-de-confidentialitate">Politica de confidențialitate</Link> pentru
+              detalii despre datele tale.
+            </p>
           </div>
         </section>
       </div>
@@ -413,20 +392,21 @@ function CustomerAccount() {
   }
 
   return (
-    <div className="customer-account-page customer-dashboard">
+    <div className="customer-account-page customer-dashboard" data-account-section={section}>
       <header className="customer-dashboard-header">
         <div>
           <p className="catalog-eyebrow">Contul meu</p>
           <h1>Bun venit, {account.data.displayName}.</h1>
           <p>{account.data.email}</p>
         </div>
-        <button
-          className="magic-button magic-button--outline"
-          onClick={() => void logout()}
-          disabled={busy}
-        >
-          <LogOut size={16} /> Deconectare
-        </button>
+        <div className="customer-dashboard-header__actions">
+          <Link to="/produse" className="magic-button magic-button--outline">
+            Vezi colecția <ArrowRight size={16} />
+          </Link>
+          <button className="customer-signout" onClick={() => void logout()} disabled={busy}>
+            <LogOut size={16} /> {busy ? "Se închide…" : "Deconectare"}
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -448,87 +428,154 @@ function CustomerAccount() {
       )}
 
       <nav className="customer-account-nav" aria-label="Secțiunile contului">
-        <a href="#beneficii">Magic Rewards</a>
-        <a href="#calendar">Calendar</a>
-        <a href="#comenzi">Comenzi</a>
-        <a href="#portofel">Portofel</a>
-        <a href="#profil">Profil și acces</a>
+        {customerAccountSections.map((item) => (
+          <Link
+            key={item.id}
+            to="/cont"
+            hash={item.id}
+            activeOptions={{ exact: true, includeHash: true, includeSearch: false }}
+            resetScroll={false}
+            hashScrollIntoView={false}
+            aria-current={section === item.id ? "location" : undefined}
+          >
+            {item.label}
+          </Link>
+        ))}
+        {requests.data?.length || requests.isError ? (
+          <Link
+            to="/cont"
+            hash="cereri"
+            activeOptions={{ exact: true, includeHash: true, includeSearch: false }}
+            resetScroll={false}
+            hashScrollIntoView={false}
+            aria-current={section === "cereri" ? "location" : undefined}
+          >
+            Cererile mele
+          </Link>
+        ) : null}
       </nav>
 
-      <details
-        id="profil"
-        className="customer-security customer-security--compact"
-        open={securityOpen}
-        onToggle={(event) => setSecurityOpen(event.currentTarget.open)}
+      <section
+        className="customer-profile-panel"
+        hidden={section !== "profil"}
+        aria-label="Profil și acces"
       >
-        <summary>
-          <span>
-            <h2 id="customer-security-title">Profil și acces</h2>
-            <small>E-mail, parolă și telefon pentru conectare</small>
-          </span>
-          <ChevronDown size={18} aria-hidden />
-        </summary>
-        <form onSubmit={(event) => void saveCustomerPassword(event)}>
-          <p>Setează o parolă pentru acces rapid. Telefonul este opțional.</p>
+        <form
+          className="customer-profile-identity"
+          onSubmit={(event) => void saveDisplayName(event)}
+        >
+          <h2>Datele contului</h2>
+          <label>
+            Nume afișat
+            <input
+              name="displayName"
+              defaultValue={account.data.displayName}
+              onChange={() => {
+                setProfileFeedback("");
+                setProfileError("");
+              }}
+              key={account.data.id}
+              autoComplete="nickname"
+              required
+              minLength={2}
+              maxLength={60}
+            />
+          </label>
           <label>
             E-mail pentru conectare
-            <input
-              type="email"
-              name="username"
-              value={account.data.email}
-              autoComplete="username"
-              readOnly
-            />
+            <input type="email" value={account.data.email} autoComplete="username" readOnly />
           </label>
-          <label>
-            Parolă nouă (minimum 12 caractere)
-            <span className="customer-security__password">
-              <input
-                type={showAccountPassword ? "text" : "password"}
-                value={accountPassword}
-                onChange={(event) => setAccountPassword(event.target.value)}
-                autoComplete="new-password"
-                minLength={12}
-                maxLength={128}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowAccountPassword(!showAccountPassword)}
-                aria-label={showAccountPassword ? "Ascunde parola" : "Arată parola"}
-              >
-                {showAccountPassword ? "Ascunde" : "Arată"}
-              </button>
-            </span>
-          </label>
-          <label>
-            Telefon pentru conectare (opțional)
-            <input
-              type="tel"
-              value={accountPhone}
-              onChange={(event) => setAccountPhone(event.target.value)}
-              autoComplete="tel"
-              placeholder="07… sau +40…"
-              maxLength={32}
-            />
-          </label>
-          <button type="submit" disabled={securityBusy || accountPassword.length < 12}>
-            {securityBusy ? "Se salvează…" : "Salvează parola"}
+          <button className="magic-button" disabled={profileBusy}>
+            {profileBusy ? "Se salvează…" : "Salvează numele"}
           </button>
-          {securityError && (
+          {profileFeedback && <p role="status">{profileFeedback}</p>}
+          {profileError && (
             <p className="personalization-error" role="alert">
-              {securityError}
+              {profileError}
             </p>
           )}
-          {securitySaved && (
-            <p role="status">Parola a fost salvată. O poți folosi la următoarea conectare.</p>
-          )}
         </form>
-      </details>
 
-      <CustomerMagicCenter accountId={account.data.id} />
+        <details
+          id="profil"
+          className="customer-security customer-security--compact"
+          open={securityOpen}
+          onToggle={(event) => setSecurityOpen(event.currentTarget.open)}
+        >
+          <summary>
+            <span>
+              <h2 id="customer-security-title">Parolă și telefon</h2>
+              <small>Schimbi datele de acces numai când ai nevoie</small>
+            </span>
+            <ChevronDown size={18} aria-hidden />
+          </summary>
+          <form onSubmit={(event) => void saveCustomerPassword(event)}>
+            <p>Setează o parolă pentru acces rapid. Telefonul este opțional.</p>
+            <label>
+              E-mail pentru conectare
+              <input
+                type="email"
+                name="username"
+                value={account.data.email}
+                autoComplete="username"
+                readOnly
+              />
+            </label>
+            <label>
+              Parolă nouă (minimum 12 caractere)
+              <span className="customer-security__password">
+                <input
+                  type={showAccountPassword ? "text" : "password"}
+                  value={accountPassword}
+                  onChange={(event) => setAccountPassword(event.target.value)}
+                  autoComplete="new-password"
+                  minLength={12}
+                  maxLength={128}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAccountPassword(!showAccountPassword)}
+                  aria-label={showAccountPassword ? "Ascunde parola" : "Arată parola"}
+                >
+                  {showAccountPassword ? "Ascunde" : "Arată"}
+                </button>
+              </span>
+            </label>
+            <label>
+              Telefon pentru conectare (opțional)
+              <input
+                type="tel"
+                value={accountPhone}
+                onChange={(event) => setAccountPhone(event.target.value)}
+                autoComplete="tel"
+                placeholder="07… sau +40…"
+                maxLength={32}
+              />
+            </label>
+            <button type="submit" disabled={securityBusy || accountPassword.length < 12}>
+              {securityBusy ? "Se salvează…" : "Salvează parola"}
+            </button>
+            {securityError && (
+              <p className="personalization-error" role="alert">
+                {securityError}
+              </p>
+            )}
+            {securitySaved && (
+              <p role="status">Parola a fost salvată. O poți folosi la următoarea conectare.</p>
+            )}
+          </form>
+        </details>
+      </section>
 
-      <section id="comenzi" className="customer-requests" aria-labelledby="customer-orders-title">
+      <CustomerMagicCenter key={account.data.id} accountId={account.data.id} section={section} />
+
+      <section
+        id="comenzi"
+        className="customer-requests"
+        hidden={section !== "comenzi"}
+        aria-labelledby="customer-orders-title"
+      >
         <div className="customer-requests-heading">
           <div>
             <p className="catalog-eyebrow">Activitatea ta</p>
@@ -551,8 +598,6 @@ function CustomerAccount() {
         ) : (
           <div className="customer-billing-grid grid gap-4">
             <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 lg:col-span-2">
-              <ReceiptText aria-hidden />
-              <h3 className="mt-3 font-semibold">Comenzile mele</h3>
               {billing.data?.orders.length ? (
                 <ul className="mt-3 grid gap-3 text-sm md:grid-cols-2">
                   {billing.data.orders.map((order) => (
@@ -576,8 +621,16 @@ function CustomerAccount() {
                       </strong>
                       <p className="mt-1 text-xs text-slate-600">
                         {orderLabels[order.orderStatus] ?? order.orderStatus} · plată{" "}
-                        {orderLabels[order.paymentStatus] ?? order.paymentStatus} · livrare{" "}
-                        {orderLabels[order.fulfillmentStatus] ?? order.fulfillmentStatus}
+                        {orderLabels[order.paymentStatus] ?? order.paymentStatus}
+                        {(order.orderStatus !== "cancelled" ||
+                          ["shipped", "delivered", "returned"].includes(
+                            order.fulfillmentStatus,
+                          )) && (
+                          <>
+                            {" · livrare "}
+                            {orderLabels[order.fulfillmentStatus] ?? order.fulfillmentStatus}
+                          </>
+                        )}
                       </p>
                       {order.items.length > 0 && (
                         <ul className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-600">
@@ -592,7 +645,12 @@ function CustomerAccount() {
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-slate-600">Nu există încă o comandă asociată.</p>
+                <div className="customer-orders-empty">
+                  <p>Aici urmărești comenzile tale, plata și livrarea.</p>
+                  <Link to="/produse" className="magic-button">
+                    Alege prima cutiuță <ArrowRight size={16} />
+                  </Link>
+                </div>
               )}
               {(orderPage > 0 || billing.data?.hasMoreOrders) && (
                 <div className="mt-4 flex items-center gap-3 text-sm">
@@ -620,14 +678,22 @@ function CustomerAccount() {
         )}
       </section>
 
-      <section id="portofel" className="customer-requests" aria-labelledby="customer-wallet-title">
+      <section
+        id="portofel"
+        className="customer-requests"
+        hidden={section !== "portofel"}
+        aria-labelledby="customer-wallet-title"
+      >
         <div className="customer-requests-heading">
           <div>
             <p className="catalog-eyebrow">Plăți rapide și sigure</p>
             <h2 id="customer-wallet-title">Portofel</h2>
           </div>
-          <Link className="magic-button magic-button--outline" to="/comanda">
-            Plătește coșul <ArrowRight size={16} />
+          <Link
+            className="magic-button magic-button--outline"
+            to={totalQty ? "/comanda" : "/produse"}
+          >
+            {totalQty ? "Continuă comanda" : "Vezi colecția"} <ArrowRight size={16} />
           </Link>
         </div>
         <p className="mb-4 inline-flex items-center gap-2 text-sm text-slate-500">
@@ -718,37 +784,55 @@ function CustomerAccount() {
                 </p>
               )}
             </article>
-            <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
-              <Repeat2 aria-hidden />
-              <h3 className="mt-3 font-semibold">Plăți recurente</h3>
-              {billing.data?.subscriptions.length ? (
-                <ul className="mt-3 space-y-3 text-sm">
-                  {billing.data.subscriptions.map((subscription) => (
-                    <li key={subscription.id}>
-                      <strong>{subscription.serviceName || subscription.label}</strong>
-                      <span className="block text-slate-600">{subscription.status}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm text-slate-600">
-                  Nu ai abonamente active. Activarea va cere consimțământ explicit.
-                </p>
-              )}
-            </article>
+            {!!billing.data?.subscriptions.length && (
+              <article className="rounded-2xl border border-slate-200/70 bg-white/70 p-5">
+                <Repeat2 aria-hidden />
+                <h3 className="mt-3 font-semibold">Plăți recurente</h3>
+                {billing.data?.subscriptions.length ? (
+                  <ul className="mt-3 space-y-3 text-sm">
+                    {billing.data.subscriptions.map((subscription) => (
+                      <li key={subscription.id}>
+                        <strong>{subscription.serviceName || subscription.label}</strong>
+                        <span className="block text-slate-600">
+                          {(
+                            {
+                              active: "Activ",
+                              trialing: "Perioadă de probă",
+                              past_due: "Plată în așteptare",
+                              unpaid: "Neachitat",
+                              paused: "În pauză",
+                              incomplete: "În curs de activare",
+                            } as Record<string, string>
+                          )[subscription.status] ?? "În actualizare"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-600">Nu ai abonamente active.</p>
+                )}
+              </article>
+            )}
           </div>
         )}
       </section>
 
-      <section className="customer-requests" aria-labelledby="customer-requests-title">
+      <section
+        id="cereri"
+        className="customer-requests"
+        hidden={section !== "cereri"}
+        aria-labelledby="customer-requests-title"
+      >
         <div className="customer-requests-heading">
           <div>
             <p className="catalog-eyebrow">Atelierul tău</p>
             <h2 id="customer-requests-title">Cereri de personalizare</h2>
           </div>
-          <Link className="magic-button" to="/personalizeaza">
-            Cerere nouă <ArrowRight size={16} />
-          </Link>
+          {customerLaunch.personalizationRequests && (
+            <Link className="magic-button" to="/personalizeaza">
+              Cerere nouă <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
         {requests.isLoading ? (
           <p>Se încarcă cererile…</p>
@@ -796,9 +880,12 @@ function CustomerAccount() {
         ) : (
           <div className="customer-requests-empty">
             <Sparkles aria-hidden />
-            <h3>Prima ta poveste poate începe aici.</h3>
-            <p>Alege culoarea, melodia și fotografia care va sta pe capac.</p>
-            <Link to="/personalizeaza">Personalizează acum</Link>
+            <h3>Nu ai cereri înregistrate.</h3>
+            <p>
+              Atelierul de personalizare este în pregătire. Între timp, descoperă colecția
+              disponibilă.
+            </p>
+            <Link to="/produse">Vezi cutiuțele</Link>
           </div>
         )}
       </section>

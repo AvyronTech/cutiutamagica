@@ -1,3 +1,4 @@
+import { refreshCatalogWorkflows } from "@/admin/catalog-sync";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -90,7 +91,8 @@ function ProductCard({
           </a>
           <p className="mt-1 font-mono text-[10px] text-slate-500">{product.sku}</p>
           <p className="mt-1 font-mono text-[10px] text-slate-400">
-            {product.eanGtin ? `EAN ${product.eanGtin}` : "EAN de completat în fișa tehnică"}
+            {product.internalCode}
+            {product.merchantReference ? ` · ${product.merchantReference}` : ""}
           </p>
           <p className="mt-1 text-lg font-bold text-white">
             {product.price.toLocaleString("ro-RO", { minimumFractionDigits: 2 })} lei
@@ -345,13 +347,13 @@ export default function Products() {
           expectedVersion: product.version,
         },
       }),
-    onSuccess: ({ product }) => {
+    onSuccess: async ({ product }) => {
       queryClient.setQueryData<{ products: AdminProduct[] }>(["admin", "products"], (current) => ({
         products: (current?.products ?? []).map((entry) =>
           entry.id === product.id ? product : entry,
         ),
       }));
-      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      await refreshCatalogWorkflows(queryClient, product.id);
       toast.success(product.status === "activ" ? "Produs activat" : "Produs dezactivat");
     },
     onError: (error) => {
@@ -396,9 +398,14 @@ export default function Products() {
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       !normalizedSearch ||
-      [product.name, product.description, product.sku, product.catalogCategory].some((value) =>
-        value.toLocaleLowerCase("ro-RO").includes(normalizedSearch),
-      );
+      [
+        product.name,
+        product.description,
+        product.sku,
+        product.internalCode ?? "",
+        product.merchantReference ?? "",
+        product.catalogCategory,
+      ].some((value) => value.toLocaleLowerCase("ro-RO").includes(normalizedSearch));
     const matchesCategory =
       selectedCategory === "toate" || product.catalogCategory === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -422,7 +429,7 @@ export default function Products() {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-white md:text-2xl">Catalog cutiuțe muzicale</h1>
@@ -500,7 +507,7 @@ export default function Products() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
-              placeholder="Caută după nume, SKU sau categorie..."
+              placeholder="Nume, SKU, cod sau categorie…"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full rounded-lg border border-[#334155] bg-[#0F172A] py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"

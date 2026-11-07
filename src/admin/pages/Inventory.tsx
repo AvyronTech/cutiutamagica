@@ -60,9 +60,13 @@ export default function Inventory({
   const filtered = products.filter(
     (product) =>
       !normalizedSearch ||
-      [product.name, product.sku, product.catalogCategory].some((value) =>
-        value.toLocaleLowerCase("ro-RO").includes(normalizedSearch),
-      ),
+      [
+        product.name,
+        product.sku,
+        product.internalCode ?? "",
+        product.merchantReference ?? "",
+        product.catalogCategory,
+      ].some((value) => value.toLocaleLowerCase("ro-RO").includes(normalizedSearch)),
   );
   const selected = products.find((product) => product.id === selectedId) ?? null;
   const tracked = products.filter((product) => product.inventoryTracked);
@@ -74,7 +78,7 @@ export default function Inventory({
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           {!embedded && (
@@ -134,7 +138,7 @@ export default function Inventory({
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Caută după nume, SKU sau categorie..."
+            placeholder="Nume, SKU, cod sau categorie…"
             className="w-full rounded-lg border border-slate-700 bg-slate-950/60 py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/40"
           />
         </label>
@@ -184,7 +188,7 @@ export default function Inventory({
                       {product.name}
                     </h2>
                     <p className="mt-1 truncate font-mono text-[10px] text-slate-500">
-                      {product.sku}
+                      {product.sku} · {product.internalCode}
                     </p>
                   </div>
                 </div>
@@ -254,12 +258,7 @@ export default function Inventory({
               Recepții, loturi și etichete →
             </a>
           </div>
-          <ProductInventory
-            productId={selected.id}
-            onChanged={async () => {
-              await productsQuery.refetch();
-            }}
-          />
+          <ProductInventory productId={selected.id} />
         </section>
       )}
     </div>

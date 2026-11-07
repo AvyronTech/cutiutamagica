@@ -137,7 +137,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-5 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <section className="relative overflow-hidden rounded-2xl border border-purple-400/20 bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,.18),transparent_35%),linear-gradient(135deg,#131d31,#0d1727)] p-5 md:p-7">
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>

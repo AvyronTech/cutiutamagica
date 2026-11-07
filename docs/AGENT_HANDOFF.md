@@ -1,5 +1,21 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Audit final magazin, dashboard și SEO — 7–8 noiembrie 2026, local
+
+- Catalog SSR comun pe cerere, pagini informative mai ușoare, încărcare separată a API-ului și serviciilor, cache privat explicit pentru cont/checkout, sincronizare comună a fișelor/stocurilor și corecții de contrast/etichete/titluri. **413 teste, 76 probe publice și 60 administrative** trecute. GSC confirmă acum Halloween indexat; două ghiduri mai așteaptă. Live au fost reconfirmate răspunsuri **1102/503** pe șase probe auxiliare; efectul optimizărilor în producție nu este încă verificat. Fără push/deploy; migrarea 0091 anterioară rămâne necesară la release. [Audit, probe și limite](handoff/2026-11-07-final-store-dashboard-audit.md).
+
+## Coduri produse și dashboard compact — 7 noiembrie 2026, local
+
+- Migrare append-only **0091**: cod intern permanent pe produs și referință comercială proprie pe variantă, generate atomic, fără schimbarea SKU/GTIN existente. Registru în tabele, exporturi, panouri Coduri/Etichete/Trasabilitate și căutare comună în Produse/Stocuri. Spații comune compacte; 30 destinații admin verificate desktop/mobil, 407 teste și verificările de build trecute. **Aplică 0091 înainte de cod la release. Fără push/deploy/migrare remote.** [Implementare, probe și limite](handoff/2026-11-07-product-code-registry.md).
+
+## Cont client, acces și lansare — 7 noiembrie 2026, local
+
+- Comenzi primele, secțiuni separate, formulare păstrate între ele, profil editabil limitat la numele propriu, beneficii/calendar/portofel organizate și contrast corect. Cererile vechi rămân disponibile, atelierul nelansat este închis și pe server; notele interne nu sunt trimise clientului. 403 teste, 18 verificări responsive și toate comenzile de validare trecute. Loginul live a fost blocat de 1102; verificarea autentificată completă este DEMO locală. **Fără push/deploy, plan plătit sau modificări ale conturilor administrative.** [Scop, probe și limite](handoff/2026-11-07-customer-launch-ux.md).
+
+## GSC, SEO și compatibilitate — 7 noiembrie 2026, local
+
+- 7/7 produse reinspectate și indexate, patru sitemapuri Succes, validările Merchant pentru livrare/retur/audience reușite cu zero afectate. Trei ghiduri încă așteaptă Google; cererea Halloween a fost acceptată acum. Audit public extins fără probleme, acces din tastatură și linkuri utile în fișa de produs, 391 teste și toate verificările locale trecute. **Fără push sau deploy, la cererea administratorului.** [Scop, probe și limite](handoff/2026-11-07-seo-compatibility.md).
+
 ## Statistici și trafic — 5 noiembrie 2026
 
 - Secțiune comună cu Sinteză, Vânzări și produse, Trafic și conversii, Surse și conexiuni; perioade 7/30/90 zile în URL și compatibilitate cu vechiul Trafic. Financiar folosește aceeași agregare, separat pe monede. Date Google/activitate/comenzi distincte, fără profit sau conversii presupuse; rapoartele se invalidează după modificările operaționale. Fără migrare sau activare externă. [Definiții, probe și limite](handoff/2026-11-05-statistics-traffic.md).

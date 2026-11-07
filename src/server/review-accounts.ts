@@ -635,6 +635,25 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
       return reviewJson({ data: await currentReviewer(request, env) });
     if (request.method !== "POST") throw reviewFailure("Metodă nepermisă.", 405);
     sameOrigin(request);
+    if (path === "/api/v1/reviewer/profile") {
+      const account = await currentReviewer(request, env);
+      if (!account) throw reviewFailure("Autentificare necesară.", 401);
+      const parsed = z
+        .object({ displayName: z.string().trim().min(2).max(60) })
+        .safeParse(await boundedJson(request, 2_000));
+      if (!parsed.success)
+        throw reviewFailure("Numele afișat trebuie să aibă între 2 și 60 de caractere.");
+      const data = parsed.data;
+      await reviewRate(env, [`customer-profile:${account.id}`], 10);
+      const saved = await env.DB.prepare(
+        "UPDATE review_accounts SET display_name=?2 WHERE id=?1 AND status='active'",
+      )
+        .bind(account.id, data.displayName)
+        .run();
+      if (saved.meta.changes !== 1)
+        throw reviewFailure("Sesiunea a expirat. Conectează-te din nou.", 401);
+      return reviewJson({ data: { ...account, displayName: data.displayName } });
+    }
     if (path === "/api/v1/reviewer/email/start") return await startCustomerEmailLogin(request, env);
     if (path === "/api/v1/reviewer/email/verify")
       return await verifyCustomerEmailLogin(request, env);

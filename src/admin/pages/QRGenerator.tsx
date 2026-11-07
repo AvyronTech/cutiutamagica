@@ -104,7 +104,7 @@ export default function QRGenerator({
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <div>
         <Heading className="text-xl font-bold text-white md:text-2xl">
           Coduri QR pentru comenzi

@@ -25,6 +25,8 @@ const updateSchema = z.object({
 type VariantRow = {
   id: string;
   sku: string;
+  internal_code: string;
+  merchant_reference: string;
   ean_gtin: string | null;
   mpn: string | null;
   cost_bani: number | null;
@@ -71,8 +73,11 @@ export async function handleProductTechnicalSheet(
       const [variant, source, levels, sales, invoices, documents, barcodeTestSamples] =
         await Promise.all([
           env.DB.prepare(
-            `SELECT pv.id,pv.sku,pv.ean_gtin,pv.mpn,pv.cost_bani,pv.version
+            `SELECT pv.id,pv.sku,pv.ean_gtin,pv.mpn,pv.cost_bani,pv.version,
+            pic.code AS internal_code,vmc.code AS merchant_reference
           FROM product_variants pv JOIN products p ON p.id=pv.product_id
+          JOIN product_internal_codes pic ON pic.product_id=p.id
+          JOIN variant_merchant_codes vmc ON vmc.variant_id=pv.id
           WHERE p.id=?1 AND p.product_type='music_box' AND pv.status!='archived'
           ORDER BY pv.sort_order LIMIT 1`,
           )

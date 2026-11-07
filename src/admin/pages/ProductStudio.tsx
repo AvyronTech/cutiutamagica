@@ -1,3 +1,4 @@
+import { refreshCatalogWorkflows } from "@/admin/catalog-sync";
 import { readProductDiscovery } from "@/lib/product-discovery";
 import { ProductSalesChannels } from "./ProductSalesChannels";
 import { ProductScenePanel } from "./ProductScenePanel";
@@ -6,7 +7,7 @@ import { ProductTechnicalSheet } from "./ProductTechnicalSheet";
 import { AudioClipUpload } from "./AudioClipUpload";
 import { ProductInterestPanel } from "./ProductInterestPanel";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -798,6 +799,8 @@ function SeoForm({ data, onChanged }: { data: StudioData; onChanged: () => Promi
 }
 
 export default function ProductStudio({ productId }: { productId: string }) {
+  const client = useQueryClient();
+  const refreshProduct = () => refreshCatalogWorkflows(client, productId);
   const [tab, setTab] = useState<TabId>("general");
   const [uploading, setUploading] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState("origin");
@@ -843,7 +846,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
       });
     },
     onSuccess: async () => {
-      await query.refetch();
+      await refreshProduct();
       toast.success("Fișier încărcat în R2 pentru verificare");
     },
     onError: (error) =>
@@ -968,7 +971,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
 
       {tab === "general" && (
         <>
-          <GeneralForm data={data} onChanged={() => query.refetch()} />
+          <GeneralForm data={data} onChanged={refreshProduct} />
           <ProductScenePanel productId={productId} />
           <ProductInterestPanel productId={productId} />
         </>
@@ -977,11 +980,10 @@ export default function ProductStudio({ productId }: { productId: string }) {
         <div className="space-y-5">
           <ProductTechnicalSheet
             productId={productId}
-            onSaved={() => query.refetch()}
             onOpenGeneral={() => setTab("general")}
             onOpenSuppliers={() => setTab("suppliers")}
           />
-          <ProductInventory productId={productId} onChanged={() => query.refetch()} />
+          <ProductInventory productId={productId} />
           <ProductSalesChannels productId={productId} />
         </div>
       )}
@@ -995,7 +997,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
         <SeoForm
           key={`${data.product.id}:${data.product.version}`}
           data={data}
-          onChanged={() => query.refetch()}
+          onChanged={refreshProduct}
         />
       )}
       {tab === "suppliers" && <SupplierResearch productId={data.product.id} />}
@@ -1040,7 +1042,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
                       asset={asset}
                       gallery
                       developmentPreview={data.developmentPreview}
-                      onChanged={() => query.refetch()}
+                      onChanged={refreshProduct}
                     />
                   )}
                   {!asset && (
@@ -1094,7 +1096,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
                   <AssetEditor
                     asset={asset}
                     developmentPreview={data.developmentPreview}
-                    onChanged={() => query.refetch()}
+                    onChanged={refreshProduct}
                   />
                 </div>
               ))}
@@ -1170,7 +1172,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
           kind="audio"
           data={data}
           assets={audioAssets}
-          onChanged={() => query.refetch()}
+          onChanged={refreshProduct}
           upload={
             <AudioClipUpload
               busy={uploading === "audio"}
@@ -1188,7 +1190,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
           kind="spin360"
           data={data}
           assets={spinAssets}
-          onChanged={() => query.refetch()}
+          onChanged={refreshProduct}
           upload={
             <UploadButton
               multiple
@@ -1207,7 +1209,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
           kind="animation"
           data={data}
           assets={[...videoAssets, ...imageAssets]}
-          onChanged={() => query.refetch()}
+          onChanged={refreshProduct}
           upload={
             <div className="flex flex-wrap gap-2">
               <UploadButton

@@ -2,21 +2,8 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { guardAdminPage } from "./server/admin-page-guard";
-import { handleApiRequest } from "./server/api/router";
 import { API_HOSTNAME, APP_HOSTNAME, resolveHostRoute } from "./server/host-routing";
-import { handlePublicMediaRequest } from "./server/media-public";
-import { consumeCommerceEvents, type CommerceQueueMessage } from "./server/queue/commerce-consumer";
-import { purgeExpiredChatConversations } from "./server/db/chat.repository";
-import { processScheduledBackup } from "./server/services/backup-center";
-import { processMarketingAgentMonitoring } from "./server/services/marketing-agent-monitor";
-import { processStorageRetention } from "./server/services/storage-retention";
-import {
-  processBirthdayRewards,
-  processGiftCalendarReminders,
-} from "./server/services/magic-rewards";
-import { processRewardEmailDigests } from "./server/services/reward-emails";
-import { reconcilePaidInvoiceCollections } from "./server/services/oblio-payment-sync";
+import type { CommerceQueueMessage } from "./server/queue/commerce-consumer";
 
 type ServerEntry = {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response> | Response;
@@ -57,6 +44,8 @@ function withOperationalHeaders(
   if (
     env.APP_ENV !== "production" ||
     url.pathname === "/comanda" ||
+    url.pathname === "/cont" ||
+    url.pathname === "/personalizeaza" ||
     url.hostname === API_HOSTNAME ||
     url.hostname === APP_HOSTNAME ||
     url.pathname.startsWith("/api/") ||
@@ -65,7 +54,12 @@ function withOperationalHeaders(
   ) {
     headers.set("x-robots-tag", "noindex, nofollow");
   }
-  if (url.pathname.startsWith("/admin") || url.pathname === "/auth") {
+  if (
+    url.pathname.startsWith("/admin") ||
+    url.pathname === "/auth" ||
+    url.pathname === "/cont" ||
+    url.pathname === "/comanda"
+  ) {
     headers.set("cache-control", "private, no-store");
   }
   if (url.hostname === API_HOSTNAME) {
@@ -198,25 +192,33 @@ export default {
         request = new Request(hostRoute.url, request);
       }
 
-      const adminRedirect = await guardAdminPage(request, env.DB);
-      if (adminRedirect) {
-        const response = withOperationalHeaders(request, adminRedirect, requestId, env);
-        recordRequestMetric(env, request, response, startedAt);
-        return response;
+      const pathname = new URL(request.url).pathname;
+      if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+        const { guardAdminPage } = await import("./server/admin-page-guard");
+        const adminRedirect = await guardAdminPage(request, env.DB);
+        if (adminRedirect) {
+          const response = withOperationalHeaders(request, adminRedirect, requestId, env);
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
       }
-
-      const mediaResponse = await handlePublicMediaRequest(request, env);
-      if (mediaResponse) {
-        const response = withOperationalHeaders(request, mediaResponse, requestId, env);
-        recordRequestMetric(env, request, response, startedAt);
-        return response;
+      if (pathname.startsWith("/media/")) {
+        const { handlePublicMediaRequest } = await import("./server/media-public");
+        const mediaResponse = await handlePublicMediaRequest(request, env);
+        if (mediaResponse) {
+          const response = withOperationalHeaders(request, mediaResponse, requestId, env);
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
       }
-
-      const apiResponse = await handleApiRequest(request, env, ctx);
-      if (apiResponse) {
-        const response = withOperationalHeaders(request, apiResponse, requestId, env);
-        recordRequestMetric(env, request, response, startedAt);
-        return response;
+      if (pathname.startsWith("/api/v1/")) {
+        const { handleApiRequest } = await import("./server/api/router");
+        const apiResponse = await handleApiRequest(request, env, ctx);
+        if (apiResponse) {
+          const response = withOperationalHeaders(request, apiResponse, requestId, env);
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
       }
 
       const handler = await getServerEntry();
@@ -239,10 +241,29 @@ export default {
   },
 
   async queue(batch: MessageBatch<CommerceQueueMessage>, env: Env) {
+    const { consumeCommerceEvents } = await import("./server/queue/commerce-consumer");
     await consumeCommerceEvents(batch, env);
   },
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    const { processOwnerReports } = await import("@/server/services/owner-reports");
+    const [
+      { processOwnerReports },
+      { purgeExpiredChatConversations },
+      { processScheduledBackup },
+      { processGiftCalendarReminders, processBirthdayRewards },
+      { processRewardEmailDigests },
+      { processMarketingAgentMonitoring },
+      { processStorageRetention },
+      { reconcilePaidInvoiceCollections },
+    ] = await Promise.all([
+      import("./server/services/owner-reports"),
+      import("./server/db/chat.repository"),
+      import("./server/services/backup-center"),
+      import("./server/services/magic-rewards"),
+      import("./server/services/reward-emails"),
+      import("./server/services/marketing-agent-monitor"),
+      import("./server/services/storage-retention"),
+      import("./server/services/oblio-payment-sync"),
+    ]);
     ctx.waitUntil(
       Promise.all([
         processOwnerReports(env),

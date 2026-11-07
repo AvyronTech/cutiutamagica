@@ -207,11 +207,14 @@ async function listProducts(db: D1Database, siteUrl: string) {
     await db
       .prepare(
         `SELECT p.id,p.slug,p.name,p.category,p.status,p.published_at,p.storefront_state,
+      pic.code AS internal_code,vmc.code AS merchant_reference,
       pv.id AS variant_id,pv.name AS variant_name,pv.sku,pv.ean_gtin,pv.status AS variant_status,
       pis.source_type,pis.verification_status,pis.gtin_type,
       COALESCE((SELECT SUM(il.on_hand_quantity-il.reserved_quantity) FROM inventory_levels il WHERE il.variant_id=pv.id),0) AS available_stock,
       (SELECT COUNT(*) FROM product_lots l WHERE l.variant_id=pv.id) AS lot_count
      FROM products p JOIN product_variants pv ON pv.product_id=p.id
+     JOIN product_internal_codes pic ON pic.product_id=p.id
+     JOIN variant_merchant_codes vmc ON vmc.variant_id=pv.id
      LEFT JOIN product_identifier_sources pis ON pis.id=(SELECT x.id FROM product_identifier_sources x
        WHERE x.variant_id=pv.id AND x.identifier_type IN ('GTIN','EAN') AND x.identifier_value=pv.ean_gtin
        ORDER BY x.created_at DESC LIMIT 1)
@@ -236,84 +239,105 @@ async function details(db: D1Database, productId: string, siteUrl: string, inclu
     .bind(productId)
     .first<ProductRow>();
   if (!product) return null;
-  const [variants, lots, history, documents, serials, personalizations, orderItems, locations] =
-    await Promise.all([
-      db
-        .prepare(
-          `SELECT pv.id,pv.product_id,pv.sku,pv.name,pv.status,pv.version,pv.ean_gtin,
+  const [
+    variants,
+    lots,
+    history,
+    documents,
+    serials,
+    personalizations,
+    orderItems,
+    locations,
+    listings,
+  ] = await Promise.all([
+    db
+      .prepare(
+        `SELECT pv.id,pv.product_id,pv.sku,pv.name,pv.status,pv.version,pv.ean_gtin,
+        pic.code AS internal_code,vmc.code AS merchant_reference,
         pis.source_type,pis.verification_status,pis.gtin_type,
         COALESCE((SELECT SUM(il.on_hand_quantity) FROM inventory_levels il WHERE il.variant_id=pv.id),0) AS on_hand,
         COALESCE((SELECT SUM(il.reserved_quantity) FROM inventory_levels il WHERE il.variant_id=pv.id),0) AS reserved
-       FROM product_variants pv LEFT JOIN product_identifier_sources pis ON pis.id=(SELECT x.id FROM product_identifier_sources x WHERE x.variant_id=pv.id AND x.identifier_type IN ('EAN','GTIN') AND x.identifier_value=pv.ean_gtin ORDER BY x.created_at DESC LIMIT 1)
+       FROM product_variants pv
+       JOIN product_internal_codes pic ON pic.product_id=pv.product_id
+       JOIN variant_merchant_codes vmc ON vmc.variant_id=pv.id
+       LEFT JOIN product_identifier_sources pis ON pis.id=(SELECT x.id FROM product_identifier_sources x WHERE x.variant_id=pv.id AND x.identifier_type IN ('EAN','GTIN') AND x.identifier_value=pv.ean_gtin ORDER BY x.created_at DESC LIMIT 1)
        WHERE pv.product_id=?1 ORDER BY pv.sort_order,pv.created_at`,
-        )
-        .bind(productId)
-        .all<VariantRow>(),
-      db
-        .prepare(
-          `SELECT l.id,l.lot_code,l.variant_id,l.location_id,sl.name AS location_name,l.source_kind,
+      )
+      .bind(productId)
+      .all<VariantRow>(),
+    db
+      .prepare(
+        `SELECT l.id,l.lot_code,l.variant_id,l.location_id,sl.name AS location_name,l.source_kind,
         l.supplier_reference,l.document_id,l.received_at,l.initial_quantity,l.notes,
         l.initial_quantity-COALESCE((SELECT SUM(a.quantity) FROM product_lot_allocations a WHERE a.lot_id=l.id AND a.status='allocated'),0) AS available_quantity
        FROM product_lots l JOIN stock_locations sl ON sl.id=l.location_id
        WHERE l.variant_id IN (SELECT id FROM product_variants WHERE product_id=?1)
        ORDER BY l.received_at DESC,l.created_at DESC`,
-        )
-        .bind(productId)
-        .all(),
-      db
-        .prepare(
-          `SELECT id,variant_id,action,old_value,new_value,metadata_json,created_at FROM product_identifier_history
+      )
+      .bind(productId)
+      .all(),
+    db
+      .prepare(
+        `SELECT id,variant_id,action,old_value,new_value,metadata_json,created_at FROM product_identifier_history
        WHERE variant_id IN (SELECT id FROM product_variants WHERE product_id=?1)
        ORDER BY created_at DESC LIMIT 100`,
-        )
-        .bind(productId)
-        .all(),
-      db
-        .prepare(
-          `SELECT pd.id,pd.document_type,pd.document_number,
+      )
+      .bind(productId)
+      .all(),
+    db
+      .prepare(
+        `SELECT pd.id,pd.document_type,pd.document_number,
        '/media/'||pm.id AS url
        FROM product_documents pd JOIN product_media pm ON pm.id=pd.media_id
        WHERE pd.product_id=?1 AND pd.review_status='verified' AND pm.status='active'
          AND pm.public_access=1 AND pm.marketing_approved=1 AND pm.rights_status='cleared'
          AND pm.r2_key IS NOT NULL AND pd.document_type IN ('instructions','safety','warranty')
        ORDER BY pd.created_at DESC`,
-        )
-        .bind(productId)
-        .all(),
-      db
-        .prepare(
-          "SELECT id,variant_id,lot_id,serial_code,order_item_id,created_at FROM product_serials WHERE variant_id IN (SELECT id FROM product_variants WHERE product_id=?1) ORDER BY created_at DESC LIMIT 100",
-        )
-        .bind(productId)
-        .all(),
-      includeOrders
-        ? db
-            .prepare(
-              `SELECT pi.code,pi.request_id,pi.order_item_id,pi.variant_id,
+      )
+      .bind(productId)
+      .all(),
+    db
+      .prepare(
+        "SELECT id,variant_id,lot_id,serial_code,order_item_id,created_at FROM product_serials WHERE variant_id IN (SELECT id FROM product_variants WHERE product_id=?1) ORDER BY created_at DESC LIMIT 100",
+      )
+      .bind(productId)
+      .all(),
+    includeOrders
+      ? db
+          .prepare(
+            `SELECT pi.code,pi.request_id,pi.order_item_id,pi.variant_id,
             COALESCE(pr.status,o.fulfillment_status) AS production_status,pi.created_at
            FROM personalization_identifiers pi
            LEFT JOIN personalization_requests pr ON pr.id=pi.request_id
            LEFT JOIN order_items oi ON oi.id=pi.order_item_id
            LEFT JOIN orders o ON o.id=oi.order_id
            WHERE pi.product_id=?1 ORDER BY pi.created_at DESC LIMIT 100`,
-            )
-            .bind(productId)
-            .all()
-        : Promise.resolve({ results: [] }),
-      includeOrders
-        ? db
-            .prepare(
-              `SELECT oi.id,oi.variant_id,oi.quantity,oi.product_name,o.order_number,o.fulfillment_status,
+          )
+          .bind(productId)
+          .all()
+      : Promise.resolve({ results: [] }),
+    includeOrders
+      ? db
+          .prepare(
+            `SELECT oi.id,oi.variant_id,oi.quantity,oi.product_name,o.order_number,o.fulfillment_status,
         oi.quantity-COALESCE((SELECT SUM(a.quantity) FROM product_lot_allocations a WHERE a.order_item_id=oi.id AND a.status='allocated'),0) AS unallocated
        FROM order_items oi JOIN orders o ON o.id=oi.order_id
        WHERE oi.product_id=?1 AND o.order_status!='cancelled' AND o.fulfillment_status IN ('packed','shipped','delivered')
        ORDER BY o.created_at DESC LIMIT 100`,
-            )
-            .bind(productId)
-            .all()
-        : Promise.resolve({ results: [] }),
-      db.prepare("SELECT id,name FROM stock_locations WHERE active=1 ORDER BY name").all(),
-    ]);
+          )
+          .bind(productId)
+          .all()
+      : Promise.resolve({ results: [] }),
+    db.prepare("SELECT id,name FROM stock_locations WHERE active=1 ORDER BY name").all(),
+    db
+      .prepare(
+        `SELECT cl.id,cl.variant_id,sc.name AS channel_name,cl.external_listing_id,cl.external_product_id,cl.external_offer_id,cl.status
+        FROM channel_listings cl JOIN sales_channels sc ON sc.id=cl.channel_id
+        WHERE cl.product_id=?1 ORDER BY sc.name,cl.created_at`,
+      )
+      .bind(productId)
+      .all(),
+  ]);
   const publicUrl =
     product.status === "active" ? safePublicDestination(siteUrl, productPath(product.slug)) : null;
   return {
@@ -329,6 +353,7 @@ async function details(db: D1Database, productId: string, siteUrl: string, inclu
     personalizations: personalizations.results,
     orderItems: orderItems.results,
     locations: locations.results,
+    listings: listings.results,
   };
 }
 

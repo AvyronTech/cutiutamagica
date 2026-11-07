@@ -7,6 +7,8 @@ export const IDENTIFICATION_COLUMNS = [
   "product_name",
   "variant_name",
   "sku",
+  "internal_code",
+  "merchant_reference",
   "gtin",
   "gtin_status",
   "gtin_source",

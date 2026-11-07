@@ -2,7 +2,7 @@ import type { CatalogProduct } from "@/server/db/catalog.repository";
 import { DISCOVERY_UPDATED, giftGuides } from "@/data/gift-guides";
 import { productPath } from "@/lib/product-url";
 const base = "https://cutiutamagica.eu";
-const PRODUCT_EXPERIENCE_UPDATED = "2026-11-05";
+const PRODUCT_EXPERIENCE_UPDATED = "2026-11-07";
 const CATALOG_UPDATED = "2026-11-02";
 export type SitemapProduct = Pick<CatalogProduct, "slug" | "updatedAt" | "imageUrl" | "gallery">;
 const xml = (value: string) =>

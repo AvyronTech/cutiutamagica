@@ -19,6 +19,7 @@ import {
 import { z } from "zod";
 import { loginAdminAccount } from "@/lib/admin-auth.functions";
 import { reviewApi, type Reviewer } from "@/lib/reviews";
+import { authDestination, isAdminDestination } from "@/lib/customer-account";
 
 const authSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -40,10 +41,6 @@ export const Route = createFileRoute("/auth")({
   }),
 });
 
-function safeRedirect(value?: string): string {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/admin";
-}
-
 function readableError(error: unknown): string {
   if (error instanceof Error && error.message && error.message !== "Failed to fetch")
     return error.message;
@@ -55,8 +52,9 @@ const fieldClass =
 
 function AuthPage() {
   const search = useSearch({ from: "/auth" });
-  const customerMode = search.role === "client" || (!search.redirect && search.role !== "admin");
-  if (customerMode) return <CustomerAuth />;
+  const customerMode =
+    search.role === "client" || (search.role !== "admin" && !isAdminDestination(search.redirect));
+  if (customerMode) return <CustomerAuth redirect={search.redirect} />;
   return <AdminAuth redirect={search.redirect} />;
 }
 
@@ -86,7 +84,7 @@ function AdminAuth({ redirect }: { redirect?: string }) {
       await login({
         data: { email: String(form.get("email")), password: String(form.get("password")) },
       });
-      window.location.assign(safeRedirect(redirect));
+      window.location.assign(authDestination(redirect, "admin"));
     } catch (cause) {
       setError(readableError(cause));
       setBusy(false);
@@ -168,7 +166,7 @@ function AdminAuth({ redirect }: { redirect?: string }) {
               Folosește adresa de e-mail și parola contului administrativ.
             </p>
 
-            <form onSubmit={submitLogin} className="mt-6 space-y-4">
+            <form method="post" onSubmit={submitLogin} className="mt-6 space-y-4">
               <label className="block text-xs font-medium text-[#f7ead3]/80">
                 Adresă de e-mail
                 <input
@@ -222,7 +220,7 @@ function AdminAuth({ redirect }: { redirect?: string }) {
   );
 }
 
-function CustomerAuth() {
+function CustomerAuth({ redirect }: { redirect?: string }) {
   const providers = useQuery({
     queryKey: ["reviewer-auth-providers"],
     queryFn: () =>
@@ -253,7 +251,7 @@ function CustomerAuth() {
         method: "POST",
         body: JSON.stringify({ identifier, password, remember }),
       });
-      window.location.assign("/cont");
+      window.location.assign(authDestination(redirect, "client"));
     } catch (cause) {
       setError(readableError(cause));
       setBusy(false);
@@ -286,7 +284,9 @@ function CustomerAuth() {
         method: "POST",
         body: JSON.stringify({ email, challengeId, code, remember }),
       });
-      window.location.assign(mode === "forgot" ? "/cont#securitatea-contului" : "/cont");
+      window.location.assign(
+        mode === "forgot" ? "/cont#securitatea-contului" : authDestination(redirect, "client"),
+      );
     } catch (cause) {
       setError(readableError(cause));
       setBusy(false);
@@ -366,6 +366,7 @@ function CustomerAuth() {
             )}
           {mode === "password" ? (
             <form
+              method="post"
               onSubmit={(event) => void loginWithPassword(event)}
               className="customer-login__form"
             >
@@ -423,7 +424,11 @@ function CustomerAuth() {
               </button>
             </form>
           ) : challengeId ? (
-            <form onSubmit={(event) => void verifyCode(event)} className="customer-login__form">
+            <form
+              method="post"
+              onSubmit={(event) => void verifyCode(event)}
+              className="customer-login__form"
+            >
               <label htmlFor="customer-login-code">Codul de acces</label>
               <input
                 id="customer-login-code"
@@ -461,7 +466,11 @@ function CustomerAuth() {
               </button>
             </form>
           ) : (
-            <form onSubmit={(event) => void requestCode(event)} className="customer-login__form">
+            <form
+              method="post"
+              onSubmit={(event) => void requestCode(event)}
+              className="customer-login__form"
+            >
               <label htmlFor="customer-login-email">Adresa ta de e-mail</label>
               <input
                 id="customer-login-email"

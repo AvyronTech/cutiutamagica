@@ -385,12 +385,14 @@ export function Header() {
         side={cartSide}
         onRestoreFocus={restoreCartFocus}
       />
-      <FloatingCartButton
-        pathname={pathname}
-        open={cartOpen}
-        onOpen={openCart}
-        forceVisible={pathname === "/" && pastHero && hidden}
-      />
+      {pathname !== "/cont" && (
+        <FloatingCartButton
+          pathname={pathname}
+          open={cartOpen}
+          onOpen={openCart}
+          forceVisible={pathname === "/" && pastHero && hidden}
+        />
+      )}
     </header>
   );
 }

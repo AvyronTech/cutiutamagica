@@ -196,9 +196,13 @@ function OrderDetailPanel({
 
   const copyAwb = async () => {
     if (!order.awb) return;
-    await navigator.clipboard.writeText(order.awb);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(order.awb);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Copierea nu este disponibilă. Poți selecta numărul AWB din detaliile comenzii.");
+    }
   };
 
   return (
@@ -738,7 +742,7 @@ export default function Orders() {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-white md:text-2xl">Comenzi</h1>

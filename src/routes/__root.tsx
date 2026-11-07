@@ -23,7 +23,7 @@ import { PageStoryLoader } from "@/components/site/PageStoryLoader";
 import { CartRecoveryPrompt } from "@/components/site/CartRecoveryPrompt";
 import { CookieConsent } from "@/components/site/CookieConsent";
 import { MetricoolTracker } from "@/components/site/MetricoolTracker";
-import { getStorePricing } from "@/lib/store-pricing.functions";
+import { loadStorefrontPricing, needsStorefrontPricing } from "@/lib/storefront-pricing";
 import { trackGrowthEvent } from "@/lib/growth-events";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
 import { isProductPath, productIdFromPathname } from "@/lib/product-url";
@@ -102,11 +102,10 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  loader: async ({ location }) => ({
-    pricing:
-      location.pathname.startsWith("/admin") || location.pathname === "/auth"
-        ? null
-        : await getStorePricing(),
+  loader: async ({ location, context }) => ({
+    pricing: needsStorefrontPricing(location.pathname)
+      ? await loadStorefrontPricing(context.queryClient)
+      : null,
   }),
   head: () => ({
     meta: [
@@ -258,14 +257,20 @@ function RootComponent() {
   const isChrome = !pathname.startsWith("/admin") && pathname !== "/auth";
   const showBack = isChrome && pathname !== "/" && pathname !== "/cont";
   const isProductPage = isProductPath(pathname);
+  const isAccountPage = pathname === "/cont";
   return (
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
         <ShopProvider pricing={pricing}>
           {isChrome && <GrowthPageView pathname={pathname} />}
-          {isChrome && <PageStoryLoader initialPath={pathname} />}
+          {isChrome && !isAccountPage && <PageStoryLoader initialPath={pathname} />}
+          {isChrome && (
+            <a href="#continut-principal" className="skip-to-content">
+              Mergi la conținut
+            </a>
+          )}
           {isChrome && <Header />}
-          {isChrome && <CartRecoveryPrompt pathname={pathname} />}
+          {isChrome && !isAccountPage && <CartRecoveryPrompt pathname={pathname} />}
           {showBack && (
             <div className="page-back-dock">
               <PreviousPageLink
@@ -290,18 +295,22 @@ function RootComponent() {
               </PreviousPageLink>
             </div>
           )}
-          <main className="min-h-[60vh]">
+          {isChrome ? (
+            <main id="continut-principal" tabIndex={-1} className="min-h-[60vh]">
+              <Outlet />
+            </main>
+          ) : (
             <Outlet />
-          </main>
+          )}
           {isChrome && <Footer />}
-          {isChrome && <ContextualMessages />}
-          {isChrome && <SideScrollMagic />}
-          {isChrome && !isProductPage && (
+          {isChrome && !isAccountPage && <ContextualMessages />}
+          {isChrome && !isAccountPage && <SideScrollMagic />}
+          {isChrome && !isProductPage && !isAccountPage && (
             <Suspense fallback={null}>
               <ChatWidget />
             </Suspense>
           )}
-          {isChrome && <MetricoolTracker pathname={pathname} />}
+          {isChrome && !isAccountPage && <MetricoolTracker pathname={pathname} />}
           {isChrome && <CookieConsent />}
           {isChrome ? (
             <>
