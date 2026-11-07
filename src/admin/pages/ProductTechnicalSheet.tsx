@@ -17,6 +17,8 @@ type Sheet = {
   variant: {
     id: string;
     sku: string;
+    internal_code: string;
+    merchant_reference: string;
     ean_gtin: string | null;
     mpn: string | null;
     cost_bani: number | null;
@@ -138,9 +140,11 @@ export function ProductTechnicalSheet({
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className={card}>
           <Barcode className="mb-3 h-5 w-5 text-cyan-200" aria-hidden />
-          <p className="text-xs uppercase tracking-widest text-slate-400">SKU intern</p>
+          <p className="text-xs uppercase tracking-widest text-slate-400">SKU variantă</p>
           <p className="mt-1 break-all font-mono text-lg text-white">{variant.sku}</p>
-          <p className="mt-1 text-xs text-slate-400">Eticheta Code 128 folosește acest cod.</p>
+          <p className="mt-1 font-mono text-xs text-slate-300">
+            {variant.internal_code} · {variant.merchant_reference}
+          </p>
         </div>
         <div className={card}>
           <Boxes className="mb-3 h-5 w-5 text-amber-200" aria-hidden />

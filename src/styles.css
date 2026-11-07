@@ -20915,3 +20915,78 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
   color: #d3c5ad;
   font-size: 12px;
 }
+
+/* Compact product identity register; scrolling stays inside the table on mobile. */
+.identification-workspace .code-table-scroll {
+  max-width: 100%;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 10px;
+  scrollbar-width: thin;
+}
+.code-registry-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+  font-size: 12px;
+}
+.code-registry-table th,
+.code-registry-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
+  color: #d4dce8;
+  vertical-align: middle;
+}
+.code-registry-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #101d30;
+  color: #bfcddd;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.code-registry-table tbody th {
+  min-width: 175px;
+  max-width: 240px;
+  color: #f4f7fb;
+}
+.code-registry-table tbody tr:hover,
+.code-registry-table tr[data-selected] {
+  background: rgb(103 232 249 / 6%);
+}
+.code-registry-table tr[data-selected] > :first-child {
+  box-shadow: inset 3px 0 #67e8f9;
+}
+.code-copy {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  color: #c5f2fa;
+  text-align: left;
+}
+.code-copy code {
+  font-size: 12px;
+  white-space: nowrap;
+  user-select: all;
+}
+.code-copy svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+.code-copy:hover {
+  color: #fff;
+}
+.identification-detail > [hidden] {
+  display: none !important;
+}
+@media (min-width: 768px) {
+  .admin-page-content :is(input, select, textarea) {
+    font-size: 14px;
+  }
+}

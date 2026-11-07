@@ -298,7 +298,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         } flex flex-col border-r border-white/10 bg-[#0b1424] bg-[radial-gradient(circle_at_0_0,rgba(163,123,255,.12),transparent_34%)] shadow-[16px_0_44px_rgba(0,0,0,.12)]`}
       >
         {/* Logo */}
-        <div className="flex h-[76px] items-center justify-between border-b border-white/10 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-2xl border border-amber-200/30 bg-amber-100/10 p-1 shadow-[0_8px_28px_rgba(233,190,104,.12)]">
               <img
@@ -326,7 +326,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav aria-label="Navigare administrare" className="flex-1 overflow-y-auto px-3 py-5">
+        <nav aria-label="Navigare administrare" className="flex-1 overflow-y-auto px-3 py-3">
           {navGroups.map((group) => {
             const hasActiveItem = group.items.some(
               (item) =>
@@ -335,7 +335,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             );
             const collapsed = collapsedGroups[group.label] && !hasActiveItem;
             return (
-              <section key={group.label} className="mb-3">
+              <section key={group.label} className="mb-2">
                 <button
                   type="button"
                   onClick={() =>
@@ -381,7 +381,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="border-t border-white/10 px-5 py-4">
+        <div className="border-t border-white/10 px-4 py-3">
           <p className="text-xs font-medium text-slate-200">Cutiuța Magică</p>
           <p className="mt-1 text-[11px] text-slate-400">Comerț · conținut · relații clienți</p>
         </div>
@@ -390,7 +390,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="relative z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#0c1627]/90 px-4 backdrop-blur-xl md:h-[76px] md:px-7">
+        <header className="relative z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#0c1627]/90 px-4 backdrop-blur-xl md:h-16 md:px-5">
           <div className="flex items-center gap-3">
             {/* Hamburger button - mobile */}
             {isMobile && (
@@ -461,7 +461,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
               {/* Notification Panel - Fixed positioning for all pages */}
               {showNotifications && (
-                <div className="notification-panel fixed right-4 top-16 z-[100] flex max-h-[80vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#172237]/85 shadow-[0_24px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl md:top-[76px]">
+                <div className="notification-panel fixed right-4 top-16 z-[100] flex max-h-[80vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#172237]/85 shadow-[0_24px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl md:top-16">
                   <div className="flex items-center justify-between p-4 border-b border-[#334155]">
                     <div className="flex items-center gap-2">
                       <Bell className="w-4 h-4 text-purple-400" />
@@ -604,7 +604,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_92%_0%,rgba(116,93,162,.13),transparent_28%),linear-gradient(180deg,#0c1728,#0a1322)] p-4 pb-12 md:p-7">
+        <main className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_92%_0%,rgba(116,93,162,.13),transparent_28%),linear-gradient(180deg,#0c1728,#0a1322)] admin-page-content p-3 pb-8 md:p-5">
           <div className="mx-auto w-full max-w-[1560px]">{children}</div>
         </main>
       </div>

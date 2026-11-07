@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useWorkspaceActive } from "@/admin/workspace-activity";
 import { workspaceHref } from "@/lib/admin-workspaces";
 import {
-  Barcode,
   Boxes,
   Download,
   FileSpreadsheet,
@@ -11,7 +10,8 @@ import {
   Printer,
   QrCode,
   Search,
-  ShieldCheck,
+  Copy,
+  ListFilter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
@@ -38,10 +38,13 @@ type CatalogRow = {
   name: string;
   category: string;
   status: string;
+  variant_status: string;
   public_url: string | null;
   variant_id: string;
   variant_name: string;
   sku: string;
+  internal_code: string;
+  merchant_reference: string;
   ean_gtin: string | null;
   verification_status: string | null;
   source_type: string | null;
@@ -52,6 +55,8 @@ type CatalogRow = {
 type Variant = {
   id: string;
   sku: string;
+  internal_code: string;
+  merchant_reference: string;
   name: string;
   status: string;
   version: number;
@@ -96,6 +101,15 @@ type Detail = {
     url: string;
   }>;
   locations: Array<{ id: string; name: string }>;
+  listings: Array<{
+    id: string;
+    variant_id: string | null;
+    channel_name: string;
+    external_listing_id: string | null;
+    external_product_id: string | null;
+    external_offer_id: string | null;
+    status: string;
+  }>;
 };
 type ImportRow = {
   variantId: string;
@@ -164,11 +178,14 @@ export default function ProductIdentification({
   const activePanel = useWorkspaceActive();
   const Heading = embedded ? "h2" : "h1";
   const [search, setSearch] = useState("");
+  const [scope, setScope] = useState("all");
+  const [detailView, setDetailView] = useState<"codes" | "labels" | "trace">("codes");
   const [productId, setProductId] = useState<string | null>(null);
   const [variantId, setVariantId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [barcodeMarkup, setBarcodeMarkup] = useState("");
   const [labelMarkup, setLabelMarkup] = useState("");
+  const [labelError, setLabelError] = useState("");
   const [format, setFormat] = useState<LabelFormat>("50x50");
   const [customWidth, setCustomWidth] = useState(50);
   const [customHeight, setCustomHeight] = useState(40);
@@ -214,12 +231,24 @@ export default function ProductIdentification({
     () =>
       (catalog.data?.products ?? []).filter(
         (row) =>
-          !search.trim() ||
-          [row.name, row.variant_name, row.sku, row.ean_gtin ?? "", row.category].some((value) =>
-            value.toLocaleLowerCase("ro-RO").includes(search.trim().toLocaleLowerCase("ro-RO")),
-          ),
+          (scope === "all" ||
+            (scope === "active"
+              ? row.status === "active" && row.variant_status === "active"
+              : !row.public_url)) &&
+          (!search.trim() ||
+            [
+              row.name,
+              row.variant_name,
+              row.internal_code,
+              row.merchant_reference,
+              row.sku,
+              row.ean_gtin ?? "",
+              row.category,
+            ].some((value) =>
+              value.toLocaleLowerCase("ro-RO").includes(search.trim().toLocaleLowerCase("ro-RO")),
+            )),
       ),
-    [catalog.data, search],
+    [catalog.data, search, scope],
   );
   const variant =
     detail.data?.variants.find((row) => row.id === variantId) ?? detail.data?.variants[0];
@@ -253,7 +282,7 @@ export default function ProductIdentification({
   const barcodeValue = variant?.sku;
   useEffect(() => {
     let active = true;
-    if (!barcodeValue) {
+    if (!barcodeValue || !activePanel || detailView !== "codes") {
       setBarcodeMarkup("");
       return;
     }
@@ -267,29 +296,37 @@ export default function ProductIdentification({
     return () => {
       active = false;
     };
-  }, [barcodeValue]);
+  }, [barcodeValue, activePanel, detailView]);
   useEffect(() => {
     let active = true;
-    if (!labelInput) {
+    if (!labelInput || !activePanel || detailView !== "labels") {
       setLabelMarkup("");
       return;
     }
+    setLabelError("");
     renderLabelSvg(labelInput, labelOptions)
       .then((svg) => {
         if (active) setLabelMarkup(svg);
       })
-      .catch(() => {
-        if (active) setLabelMarkup("");
+      .catch((error) => {
+        if (active) {
+          setLabelMarkup("");
+          setLabelError(
+            error instanceof Error
+              ? error.message
+              : "La acest format, eticheta nu poate fi generată.",
+          );
+        }
       });
     return () => {
       active = false;
     };
-  }, [labelInput, labelOptions]);
+  }, [labelInput, labelOptions, activePanel, detailView]);
   async function mutate(body: unknown, success: string) {
     setBusy(true);
     try {
       const result = await postJson<Record<string, unknown>>(body);
-      await Promise.all([catalog.refetch(), detail.refetch()]);
+      await Promise.all([catalog.refetch(), ...(productId ? [detail.refetch()] : [])]);
       toast.success(success);
       return result;
     } catch (error) {
@@ -336,6 +373,8 @@ export default function ProductIdentification({
             p.name,
             p.variant_name,
             p.sku,
+            p.internal_code,
+            p.merchant_reference,
             p.ean_gtin ?? "",
             p.verification_status ?? "",
             p.source_type ?? "",
@@ -353,36 +392,6 @@ export default function ProductIdentification({
       if (kind === "csv")
         saveText(rowsToCsv(rows), "cutiuta-identificare.csv", "text/csv;charset=utf-8");
       else downloadBlob(rowsToXlsx(rows), "cutiuta-identificare.xlsx");
-      const lotRows = [
-        [
-          "lot_code",
-          "variant_id",
-          "location_id",
-          "source_kind",
-          "supplier_reference",
-          "initial_quantity",
-          "available_quantity",
-        ],
-        ...data.lots.map((l) => [
-          l.lot_code,
-          l.variant_id,
-          l.location_id,
-          l.source_kind,
-          l.supplier_reference ?? "",
-          String(l.initial_quantity),
-          String(l.available_quantity),
-        ]),
-      ];
-      saveText(rowsToCsv(lotRows), "cutiuta-loturi.csv", "text/csv;charset=utf-8");
-      if (data.personalizations.length)
-        saveText(
-          rowsToCsv([
-            ["code", "variant_id", "production_status"],
-            ...data.personalizations.map((p) => [p.code, p.variant_id ?? "", p.production_status]),
-          ]),
-          "cutiuta-personalizari-interne.csv",
-          "text/csv;charset=utf-8",
-        );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Exportul a eșuat.");
     }
@@ -425,6 +434,13 @@ export default function ProductIdentification({
       toast.error(error instanceof Error ? error.message : "Fișier invalid.");
     }
   }
+  async function downloadCode(value: string) {
+    try {
+      saveText(await barcodeSvg(value, "CODE128", true), `${value}-code128.svg`, "image/svg+xml");
+    } catch {
+      toast.error("Codul de bare nu a putut fi generat.");
+    }
+  }
   async function downloadLabel(kind: "svg" | "png" | "pdf") {
     if (!labelInput || !labelMarkup) return;
     try {
@@ -446,7 +462,11 @@ export default function ProductIdentification({
   }
   async function downloadA4() {
     try {
-      const items = filtered.slice(0, 30).map((row) => ({
+      if (filtered.length > 30)
+        throw new Error(
+          "Filtrează registrul la cel mult 30 de variante pentru o coală de etichete.",
+        );
+      const items = filtered.map((row) => ({
         name: row.name,
         sku: row.sku,
         gtin: row.verification_status === "verified" ? row.ean_gtin : null,
@@ -462,58 +482,53 @@ export default function ProductIdentification({
       toast.error(error instanceof Error ? error.message : "PDF-ul A4 nu a putut fi generat.");
     }
   }
+  async function copyCode(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success("Cod copiat.");
+    } catch {
+      toast.error("Copiere indisponibilă. Poți selecta codul sau descărca registrul.");
+    }
+  }
   const stats = {
+    products: new Set(catalog.data?.products.map((row) => row.id)).size,
     variants: catalog.data?.products.length ?? 0,
-    withoutGtin: catalog.data?.products.filter((row) => !row.ean_gtin).length ?? 0,
-    pending:
-      catalog.data?.products.filter((row) => row.ean_gtin && row.verification_status !== "verified")
-        .length ?? 0,
+    references: catalog.data?.products.filter((row) => row.merchant_reference).length ?? 0,
   };
   return (
-    <div className="space-y-5 pb-12">
-      <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div className="identification-workspace min-w-0 space-y-3">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[.16em] text-cyan-300">
-            Produse / administrare internă
-          </p>
-          <Heading className="mt-1 text-2xl font-bold text-white">
-            Produse, loturi și etichete
-          </Heading>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-            Un singur loc pentru SKU, GTIN verificat, loturi, coduri scanabile și etichete. Stocul
-            rămâne în gestiunea existentă.
+          <Heading className="text-base font-semibold text-white">Registrul codurilor</Heading>
+          <p className="mt-1 text-xs text-slate-300">
+            {stats.products} produse · {stats.variants} SKU-uri · {stats.references} referințe
+            comerciale
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {productId && (
-            <a className={button} href={workspaceHref("inventory", { product: productId })}>
-              Stoc și aprovizionare →
-            </a>
-          )}
-          <button className={button} onClick={() => exportData("csv")}>
-            <Download size={16} /> CSV
+          <button
+            className={button}
+            disabled={busy || !catalog.data}
+            onClick={() => exportData("csv")}
+          >
+            <Download size={15} /> CSV
           </button>
-          <button className={button} onClick={() => exportData("xlsx")}>
-            <FileSpreadsheet size={16} /> Excel
+          <button
+            className={button}
+            disabled={busy || !catalog.data}
+            onClick={() => exportData("xlsx")}
+          >
+            <FileSpreadsheet size={15} /> Excel
           </button>
-          <button className={button} onClick={() => setShowImport((value) => !value)}>
-            Import cu previzualizare
+          <button
+            className={button}
+            aria-expanded={showImport}
+            onClick={() => setShowImport((value) => !value)}
+          >
+            Import
           </button>
         </div>
       </header>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          { name: "Variante în catalog", value: stats.variants, icon: Boxes },
-          { name: "Fără GTIN", value: stats.withoutGtin, icon: Barcode },
-          { name: "GTIN în verificare", value: stats.pending, icon: ShieldCheck },
-        ].map(({ name, value, icon: Icon }) => (
-          <div key={name} className={card}>
-            <Icon className="mb-2 h-5 w-5 text-cyan-200" />
-            <strong className="text-2xl text-white">{value}</strong>
-            <p className="text-xs text-slate-400">{name}</p>
-          </div>
-        ))}
-      </div>
       {showImport && (
         <section className={card} aria-label="Import identificatori">
           <h2 className="font-semibold text-white">Import controlat</h2>
@@ -594,15 +609,11 @@ export default function ProductIdentification({
           )}
         </section>
       )}
-      <div className="grid gap-5 xl:grid-cols-[minmax(300px,.8fr)_minmax(0,1.5fr)]">
-        <section className={`${card} min-w-0`} aria-label="Catalog produse și coduri">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-white">Catalog</h2>
-            <span className="text-xs text-slate-400">{filtered.length} variante</span>
-          </div>
-          <label className="relative mt-3 block">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <span className="sr-only">Caută sau scanează codul</span>
+      <section className={`${card} min-w-0`} aria-label="Registru de produse și coduri">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden />
+            <span className="sr-only">Caută sau scanează un cod</span>
             <input
               className={`${inputClass} pl-10`}
               value={search}
@@ -611,711 +622,1036 @@ export default function ProductIdentification({
                 if (event.key === "Enter" && filtered[0])
                   selectProduct(filtered[0].id, filtered[0].variant_id);
               }}
-              placeholder="Caută sau scanează SKU / GTIN"
+              placeholder="Nume, cod intern, SKU, referință sau GTIN"
             />
           </label>
-          <p className="mt-1 text-xs text-slate-400">
-            Scanerele USB/Bluetooth introduc codul ca tastatură. Apasă Enter pentru prima potrivire.
-          </p>
-          {catalog.isError && (
-            <p className="mt-3 text-sm text-rose-300" role="alert">
-              Catalogul nu a putut fi încărcat.
-            </p>
-          )}
-          <div className="mt-3 max-h-[570px] space-y-2 overflow-y-auto pr-1">
-            {filtered.map((row) => (
-              <button
-                key={row.variant_id}
-                type="button"
-                onClick={() => selectProduct(row.id, row.variant_id)}
-                className={`w-full rounded-xl border p-3 text-left transition ${variant?.id === row.variant_id ? "border-cyan-300/50 bg-cyan-300/10" : "border-white/10 bg-white/[.025] hover:border-white/25"}`}
-              >
-                <span className="block text-sm font-medium text-white">{row.name}</span>
-                <span className="mt-1 block text-xs text-slate-300">
-                  {row.variant_name} · <code>{row.sku}</code>
-                </span>
-                <span className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                  <span className="rounded-md bg-white/5 px-2 py-1 text-slate-300">
-                    Stoc {row.available_stock}
-                  </span>
-                  <span className="rounded-md bg-white/5 px-2 py-1 text-slate-300">
-                    {row.lot_count} loturi
-                  </span>
-                  <span
-                    className={`rounded-md px-2 py-1 ${row.verification_status === "verified" ? "bg-emerald-500/15 text-emerald-200" : row.ean_gtin ? "bg-amber-500/15 text-amber-200" : "bg-slate-500/15 text-slate-300"}`}
+          <label className="flex items-center gap-2 text-xs text-slate-300">
+            <ListFilter size={16} aria-hidden />
+            <span className="sr-only">Filtrează produsele</span>
+            <select
+              className={inputClass}
+              value={scope}
+              onChange={(event) => setScope(event.target.value)}
+            >
+              <option value="all">Toate variantele</option>
+              <option value="active">Active</option>
+              <option value="unpublished">Nepublicate</option>
+            </select>
+          </label>
+        </div>
+        <p className="my-2 text-xs text-slate-400">
+          {filtered.length} rezultate · Scanează un cod și apasă Enter. Pe mobil, derulează tabelul
+          lateral.
+        </p>
+        {catalog.isError ? (
+          <div role="alert" className="flex items-center gap-3 py-3 text-sm text-rose-200">
+            Registrul nu poate fi încărcat.
+            <button className={button} onClick={() => void catalog.refetch()}>
+              Reîncearcă
+            </button>
+          </div>
+        ) : (
+          <div
+            className="code-table-scroll"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabelul codurilor disponibile"
+          >
+            <table className="code-registry-table">
+              <caption className="sr-only">
+                Codurile permanente ale produselor și variantelor. GTIN este opțional și necesită o
+                sursă verificată.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Produs / variantă</th>
+                  <th scope="col">Cod intern</th>
+                  <th scope="col">SKU</th>
+                  <th scope="col">Referință externă</th>
+                  <th scope="col">GTIN / EAN</th>
+                  <th scope="col">Stoc</th>
+                  <th scope="col">Acțiuni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((row) => (
+                  <tr
+                    key={row.variant_id}
+                    data-selected={variant?.id === row.variant_id || undefined}
                   >
-                    {row.verification_status === "verified"
-                      ? "GTIN verificat"
-                      : row.ean_gtin
-                        ? "GTIN de verificat"
-                        : "Fără GTIN"}
-                  </span>
-                </span>
-              </button>
-            ))}
+                    <th scope="row">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          selectProduct(row.id, row.variant_id);
+                          setDetailView("codes");
+                        }}
+                        className="text-left hover:text-cyan-200"
+                      >
+                        <span className="block font-medium">{row.name}</span>
+                        <span className="mt-0.5 block text-xs font-normal text-slate-400">
+                          {row.variant_name}
+                          {row.variant_status !== "active" ? " · inactivă" : ""}
+                        </span>
+                      </button>
+                    </th>
+                    {[row.internal_code, row.sku, row.merchant_reference].map((code, index) => (
+                      <td key={index}>
+                        <button
+                          type="button"
+                          className="code-copy"
+                          onClick={() => void copyCode(code)}
+                          aria-label={`Copiază ${["codul intern", "SKU-ul", "referința externă"][index]} ${code}`}
+                        >
+                          <code>{code}</code>
+                          <Copy size={12} aria-hidden />
+                        </button>
+                      </td>
+                    ))}
+                    <td>
+                      {row.ean_gtin ? (
+                        <>
+                          <code>{row.ean_gtin}</code>
+                          <span
+                            className={`block text-xs ${row.verification_status === "verified" ? "text-emerald-200" : "text-amber-200"}`}
+                          >
+                            {row.verification_status === "verified" ? "Verificat" : "De verificat"}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-400">Neatribuit · opțional</span>
+                      )}
+                    </td>
+                    <td className="tabular-nums">{row.available_stock}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className={button}
+                        onClick={() => {
+                          selectProduct(row.id, row.variant_id);
+                          setDetailView("labels");
+                        }}
+                      >
+                        Etichetă
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             {catalog.isLoading && (
-              <p className="py-6 text-center text-sm text-slate-400">Se încarcă produsele…</p>
+              <p role="status" className="p-4 text-sm text-slate-300">
+                Se încarcă registrul…
+              </p>
             )}
             {!catalog.isLoading && !filtered.length && (
-              <p className="py-6 text-center text-sm text-slate-400">Niciun cod găsit.</p>
+              <p className="p-4 text-sm text-slate-300">
+                Niciun rezultat. Schimbă filtrul sau termenul de căutare.
+              </p>
             )}
           </div>
-        </section>
-        <div className="min-w-0 space-y-4">
-          {detail.isLoading && <div className={card}>Se încarcă fișa produsului…</div>}
-          {detail.isError && (
-            <div className={card} role="alert">
-              Fișa nu a putut fi încărcată.
+        )}
+        <details className="mt-2 text-xs text-slate-300">
+          <summary className="cursor-pointer py-1">Cum folosești codurile</summary>
+          <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div>
+              <dt className="font-semibold text-white">Cod intern · CM-P</dt>
+              <dd>Identifică permanent produsul, indiferent de titlu sau temă.</dd>
             </div>
-          )}
-          {detail.data && variant && (
-            <>
-              <section className={card}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-cyan-300">
-                      Identificare produs
-                    </p>
-                    <h2 className="mt-1 text-xl font-semibold text-white">
-                      {detail.data.product.name}
-                    </h2>
-                  </div>
-                  <a className={button} href={`/admin/products/${detail.data.product.id}`}>
-                    Deschide fișa tehnică
-                  </a>
-                </div>
-                {detail.data.variants.length > 1 && (
-                  <label className="mt-4 block text-sm text-slate-300">
-                    Variantă comercială
-                    <select
-                      className={`${inputClass} mt-1`}
-                      value={variant.id}
-                      onChange={(event) => {
-                        setVariantId(event.target.value);
-                        setLotId("");
-                      }}
-                    >
-                      {detail.data.variants.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name} · {item.sku}
-                          {item.status !== "active" ? " · inactivă" : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <details className="mt-4 rounded-xl border border-white/10 p-3">
-                  <summary className="cursor-pointer text-sm text-slate-200">
-                    Adaugă variantă comercială
-                  </summary>
-                  <p className="mt-2 text-xs text-slate-400">
-                    Primește automat un SKU nou. Varianta rămâne inactivă până la configurarea
-                    completă în catalog.
-                  </p>
-                  <form
-                    className="mt-3 grid gap-2 sm:grid-cols-[1fr_9rem_auto]"
-                    onSubmit={async (event) => {
-                      event.preventDefault();
-                      const formElement = event.currentTarget;
-                      const form = new FormData(formElement);
-                      const result = await mutate(
-                        {
-                          action: "variant.create",
-                          productId: detail.data.product.id,
-                          name: String(form.get("name") || "").trim(),
-                          priceBani: Math.round(Number(form.get("price")) * 100),
-                        },
-                        "Varianta a fost creată cu un SKU unic.",
-                      );
-                      if (result?.id) {
-                        setVariantId(String(result.id));
-                        formElement.reset();
-                      }
-                    }}
+            <div>
+              <dt className="font-semibold text-white">SKU</dt>
+              <dd>Identifică varianta din stoc. Codurile existente se păstrează.</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-white">Referință externă · CM-R</dt>
+              <dd>
+                Referința comercială a magazinului, pregătită pentru fișierele de export. Nu
+                înlocuiește ID-ul atribuit de platformă sau GTIN.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-white">Lot / serial / QR</dt>
+              <dd>
+                Lotul urmărește recepția, serialul o unitate, iar QR-ul deschide pagina ori
+                documentul public.
+              </dd>
+            </div>
+          </dl>
+        </details>
+      </section>
+      <div className="identification-detail min-w-0 space-y-3">
+        {detail.isLoading && <div className={card}>Se încarcă fișa produsului…</div>}
+        {detail.isError && (
+          <div className={card} role="alert">
+            Fișa nu a putut fi încărcată.
+          </div>
+        )}
+        {detail.data && variant && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#101d30] px-3 py-2">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-white">{detail.data.product.name}</h2>
+                <p className="text-xs text-slate-400">
+                  {variant.name} · {variant.sku}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1" aria-label="Instrumente pentru produs">
+                {(
+                  [
+                    ["codes", "Coduri"],
+                    ["labels", "Etichete"],
+                    ["trace", "Trasabilitate"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={detailView === key}
+                    onClick={() => setDetailView(key)}
+                    className={`min-h-10 rounded-lg border px-3 text-sm ${detailView === key ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100" : "border-transparent text-slate-300 hover:bg-white/5"}`}
                   >
-                    <input
-                      name="name"
-                      className={inputClass}
-                      aria-label="Numele variantei"
-                      placeholder="Numele variantei"
-                      minLength={2}
-                      maxLength={120}
-                      required
-                    />
-                    <input
-                      name="price"
-                      className={inputClass}
-                      aria-label="Preț în lei"
-                      type="number"
-                      min="0.01"
-                      max="100000"
-                      step="0.01"
-                      placeholder="Preț în lei"
-                      required
-                    />
-                    <button className={button} disabled={busy}>
-                      Creează
-                    </button>
-                  </form>
-                </details>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-black/20 p-3">
-                    <span className="text-xs text-slate-400">SKU stabil</span>
-                    <p className="mt-1 break-all font-mono text-base text-white">{variant.sku}</p>
-                    <button
-                      className="mt-2 text-xs text-cyan-200"
-                      onClick={() => {
-                        void navigator.clipboard.writeText(variant.sku);
-                        toast.success("SKU copiat.");
-                      }}
-                    >
-                      Copiază
-                    </button>
-                  </div>
-                  <div className="rounded-xl bg-black/20 p-3">
-                    <span className="text-xs text-slate-400">GTIN / EAN</span>
-                    <p className="mt-1 font-mono text-base text-white">
-                      {variant.ean_gtin || "Neatribuit"}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {variant.ean_gtin
-                        ? variant.verification_status === "verified"
-                          ? "Verificat pentru canalele comerciale"
-                          : "Valid matematic; atribuirea oficială rămâne de verificat"
-                        : "Se poate lăsa necompletat"}
-                    </p>
-                  </div>
-                </div>
-                {!detail.data.product.published_at && (
-                  <details className="mt-4 rounded-xl border border-white/10 p-3">
-                    <summary className="cursor-pointer text-sm text-slate-200">
-                      Corectează manual SKU înainte de publicare
-                    </summary>
-                    <form
-                      className="mt-3 flex gap-2"
-                      onSubmit={async (event) => {
-                        event.preventDefault();
-                        const form = new FormData(event.currentTarget);
-                        await mutate(
-                          {
-                            action: "sku.change",
-                            variantId: variant.id,
-                            expectedVersion: variant.version,
-                            sku: String(form.get("sku") || "")
-                              .trim()
-                              .toUpperCase(),
-                          },
-                          "SKU actualizat.",
-                        );
-                      }}
-                    >
-                      <input
-                        name="sku"
-                        className={inputClass}
-                        defaultValue={variant.sku}
-                        aria-label="SKU nou"
-                      />
-                      <button className={button} disabled={busy}>
-                        Salvează
-                      </button>
-                    </form>
-                  </details>
-                )}
-              </section>
-              <section className={card}>
-                <div className="flex items-center gap-2">
-                  <QrCode className="h-5 w-5 text-cyan-200" />
-                  <h2 className="font-semibold text-white">Coduri scanabile</h2>
-                </div>
-                <label className="mt-3 block text-xs text-slate-300">
-                  Destinația publică a codului QR
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <section className={card} hidden={detailView !== "codes"}>
+              <div className="flex flex-wrap gap-2">
+                <a className={button} href={`/admin/products/${detail.data.product.id}`}>
+                  Fișa produsului →
+                </a>
+                <a
+                  className={button}
+                  href={workspaceHref("inventory", { product: detail.data.product.id })}
+                >
+                  Stoc și aprovizionare →
+                </a>
+              </div>
+              {detail.data.variants.length > 1 && (
+                <label className="mt-4 block text-sm text-slate-300">
+                  Variantă comercială
                   <select
                     className={`${inputClass} mt-1`}
-                    value={qrDestination}
-                    onChange={(event) => setQrDestination(event.target.value)}
+                    value={variant.id}
+                    onChange={(event) => {
+                      setVariantId(event.target.value);
+                      setLotId("");
+                    }}
                   >
-                    <option value="product">Pagina produsului</option>
-                    {detail.data.documents.map((document) => (
-                      <option key={document.id} value={document.id}>
-                        {document.document_type === "instructions"
-                          ? "Instrucțiuni"
-                          : document.document_type === "safety"
-                            ? "Siguranță"
-                            : "Garanție"}
-                        {document.document_number ? ` · ${document.document_number}` : ""}
+                    {detail.data.variants.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} · {item.sku}
+                        {item.status !== "active" ? " · inactivă" : ""}
                       </option>
                     ))}
                   </select>
                 </label>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-white p-3 text-center text-slate-900">
-                    <div id="product-identification-qr" className="mx-auto w-fit">
-                      {qrUrl ? (
-                        <QRCodeSVG value={qrUrl} size={150} level="M" marginSize={2} />
-                      ) : (
-                        <div className="grid h-[150px] place-items-center text-xs text-slate-500">
-                          Destinația publică nu este disponibilă
-                        </div>
-                      )}
-                    </div>
-                    <p className="mt-2 text-xs">
-                      {qrDestination === "product"
-                        ? "Pagina produsului"
-                        : "Document public verificat"}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-white p-3 text-center text-slate-900">
-                    {barcodeMarkup ? (
-                      <div
-                        aria-label={`Code 128 ${variant.sku}`}
-                        className="mx-auto max-w-[230px] [&_svg]:h-[150px] [&_svg]:w-full"
-                        dangerouslySetInnerHTML={{ __html: barcodeMarkup }}
-                      />
-                    ) : (
-                      <div className="grid h-[150px] place-items-center text-xs">
-                        Cod indisponibil
-                      </div>
-                    )}
-                    <p className="mt-2 text-xs">Code 128 · {variant.sku}</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    className={button}
-                    disabled={!qrUrl}
-                    onClick={() => {
-                      if (qrUrl) window.open(qrUrl, "_blank", "noopener,noreferrer");
-                    }}
-                  >
-                    Testează destinația QR
-                  </button>
-                  <button
-                    className={button}
-                    disabled={!qrUrl}
-                    onClick={() =>
-                      saveText(codeImageSvg(), `${variant.sku}-qr.svg`, "image/svg+xml")
-                    }
-                  >
-                    QR SVG
-                  </button>
-                  <button
-                    className={button}
-                    disabled={!qrUrl}
-                    onClick={async () => {
-                      try {
-                        downloadBlob(
-                          await svgToPng(codeImageSvg(), 40, 40),
-                          `${variant.sku}-qr.png`,
-                        );
-                      } catch {
-                        toast.error("QR PNG nu a putut fi generat.");
-                      }
-                    }}
-                  >
-                    QR PNG
-                  </button>
-                  <button
-                    className={button}
-                    disabled={!barcodeMarkup}
-                    onClick={() =>
-                      saveText(barcodeMarkup, `${variant.sku}-code128.svg`, "image/svg+xml")
-                    }
-                  >
-                    Code 128 SVG
-                  </button>
-                </div>
-                <p className="mt-3 text-xs text-slate-400">
-                  QR-ul indică numai o destinație publică. Numele, imaginile și documentele private
-                  ale clienților nu intră în cod.
+              )}
+              <details className="mt-4 rounded-xl border border-white/10 p-3">
+                <summary className="cursor-pointer text-sm text-slate-200">
+                  Adaugă variantă comercială
+                </summary>
+                <p className="mt-2 text-xs text-slate-400">
+                  Primește automat un SKU nou. Varianta rămâne inactivă până la configurarea
+                  completă în catalog.
                 </p>
-              </section>
-              <section className={card}>
-                <div className="flex items-center gap-2">
-                  <Boxes className="h-5 w-5 text-cyan-200" />
-                  <h2 className="font-semibold text-white">Loturi și trasabilitate</h2>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {detail.data.lots
-                    .filter((lot) => lot.variant_id === variant.id)
-                    .map((lot) => (
-                      <div
-                        key={lot.id}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[.025] p-3 text-sm text-slate-200"
+                <form
+                  className="mt-3 grid gap-2 sm:grid-cols-[1fr_9rem_auto]"
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    const formElement = event.currentTarget;
+                    const form = new FormData(formElement);
+                    const result = await mutate(
+                      {
+                        action: "variant.create",
+                        productId: detail.data.product.id,
+                        name: String(form.get("name") || "").trim(),
+                        priceBani: Math.round(Number(form.get("price")) * 100),
+                      },
+                      "Varianta a fost creată cu un SKU unic.",
+                    );
+                    if (result?.id) {
+                      setVariantId(String(result.id));
+                      formElement.reset();
+                    }
+                  }}
+                >
+                  <input
+                    name="name"
+                    className={inputClass}
+                    aria-label="Numele variantei"
+                    placeholder="Numele variantei"
+                    minLength={2}
+                    maxLength={120}
+                    required
+                  />
+                  <input
+                    name="price"
+                    className={inputClass}
+                    aria-label="Preț în lei"
+                    type="number"
+                    min="0.01"
+                    max="100000"
+                    step="0.01"
+                    placeholder="Preț în lei"
+                    required
+                  />
+                  <button className={button} disabled={busy}>
+                    Creează
+                  </button>
+                </form>
+              </details>
+              <dl className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  ["Cod intern produs", variant.internal_code],
+                  ["SKU variantă", variant.sku],
+                  ["Referință externă", variant.merchant_reference],
+                  ["GTIN / EAN", variant.ean_gtin],
+                ].map(([label, code]) => (
+                  <div key={label} className="min-w-0 rounded-lg bg-black/20 p-3">
+                    <dt className="text-xs text-slate-400">{label}</dt>
+                    <dd className="mt-1">
+                      {code ? (
+                        <button
+                          className="code-copy"
+                          onClick={() => void copyCode(code)}
+                          aria-label={`Copiază ${label}: ${code}`}
+                        >
+                          <code>{code}</code>
+                          <Copy size={12} />
+                        </button>
+                      ) : (
+                        <span className="text-sm text-slate-300">Neatribuit · opțional</span>
+                      )}
+                    </dd>
+                    {code && label !== "GTIN / EAN" && (
+                      <button
+                        className="mt-1 inline-flex min-h-8 items-center gap-1 text-xs text-slate-300 hover:text-white"
+                        onClick={() => void downloadCode(code)}
                       >
-                        <span>
-                          <code>{lot.lot_code}</code> · {lot.location_name}
-                          <span className="block text-xs text-slate-400">
-                            {lot.source_kind === "in_house" ? "Producție proprie" : "Furnizor"} ·{" "}
-                            {lot.received_at}
-                          </span>
-                        </span>
-                        <strong>
-                          {lot.available_quantity}/{lot.initial_quantity}
-                        </strong>
-                      </div>
-                    ))}
-                  {!detail.data.lots.some((lot) => lot.variant_id === variant.id) && (
-                    <p className="text-sm text-slate-400">
-                      Niciun lot asociat. Stocul existent rămâne disponibil în gestiune.
-                    </p>
-                  )}
-                </div>
-                <details className="mt-3 rounded-xl border border-white/10 p-3">
+                        <Download size={12} aria-hidden />
+                        Bare SVG
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </dl>
+              {!detail.data.product.published_at && (
+                <details className="mt-4 rounded-xl border border-white/10 p-3">
                   <summary className="cursor-pointer text-sm text-slate-200">
-                    Recepționează un lot în stocul existent
+                    Corectează manual SKU înainte de publicare
                   </summary>
                   <form
-                    className="mt-3 grid gap-2 sm:grid-cols-2"
-                    onSubmit={async (event: FormEvent<HTMLFormElement>) => {
+                    className="mt-3 flex gap-2"
+                    onSubmit={async (event) => {
                       event.preventDefault();
                       const form = new FormData(event.currentTarget);
-                      const result = await mutate(
+                      await mutate(
                         {
-                          action: "lot.create",
+                          action: "sku.change",
                           variantId: variant.id,
-                          locationId: String(form.get("locationId")),
-                          sourceKind: String(form.get("sourceKind")),
-                          supplierReference: String(form.get("supplierReference") || ""),
-                          receivedAt: String(form.get("receivedAt")),
-                          quantity: Number(form.get("quantity")),
+                          expectedVersion: variant.version,
+                          sku: String(form.get("sku") || "")
+                            .trim()
+                            .toUpperCase(),
                         },
-                        "Lot recepționat și stoc actualizat.",
+                        "SKU actualizat.",
                       );
-                      if (result) event.currentTarget.reset();
                     }}
                   >
-                    <label className="text-xs text-slate-300">
-                      Locație
-                      <select name="locationId" required className={`${inputClass} mt-1`}>
-                        {detail.data.locations.map((location) => (
-                          <option key={location.id} value={location.id}>
-                            {location.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="text-xs text-slate-300">
-                      Sursă
-                      <select name="sourceKind" className={`${inputClass} mt-1`}>
-                        <option value="supplier">Furnizor</option>
-                        <option value="in_house">Producție proprie</option>
-                      </select>
-                    </label>
-                    <label className="text-xs text-slate-300">
-                      Data recepției
-                      <input
-                        name="receivedAt"
-                        type="date"
-                        required
-                        defaultValue={new Date().toISOString().slice(0, 10)}
-                        className={`${inputClass} mt-1`}
-                      />
-                    </label>
-                    <label className="text-xs text-slate-300">
-                      Cantitate
-                      <input
-                        name="quantity"
-                        type="number"
-                        min="1"
-                        max="1000000"
-                        required
-                        className={`${inputClass} mt-1`}
-                      />
-                    </label>
-                    <label className="text-xs text-slate-300 sm:col-span-2">
-                      Referința furnizorului / producției
-                      <input name="supplierReference" className={`${inputClass} mt-1`} />
-                    </label>
+                    <input
+                      name="sku"
+                      className={inputClass}
+                      defaultValue={variant.sku}
+                      aria-label="SKU nou"
+                    />
                     <button className={button} disabled={busy}>
-                      Înregistrează recepția
+                      Salvează
                     </button>
                   </form>
                 </details>
-                {detail.data.orderItems.some(
-                  (item) => item.variant_id === variant.id && item.unallocated > 0,
+              )}
+            </section>
+            <section className={card} hidden={detailView !== "codes"}>
+              <h3 className="text-sm font-semibold text-white">Identificatori pe canale</h3>
+              <p className="mt-1 text-xs text-slate-400">
+                ID-uri deja înregistrate în magazin. Referința CM-R poate fi folosită la pregătirea
+                exportului; publicarea se aprobă separat în Canale de vânzare.
+              </p>
+              <div
+                className="code-table-scroll mt-3"
+                tabIndex={0}
+                role="region"
+                aria-label="Identificatori pe canale"
+              >
+                <table className="code-registry-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Canal</th>
+                      <th scope="col">ID listare</th>
+                      <th scope="col">ID produs</th>
+                      <th scope="col">ID ofertă</th>
+                      <th scope="col">Stare înregistrată</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.data.listings
+                      .filter((item) => !item.variant_id || item.variant_id === variant.id)
+                      .map((item) => (
+                        <tr key={item.id}>
+                          <th scope="row">{item.channel_name}</th>
+                          <td>
+                            <code>{item.external_listing_id || "—"}</code>
+                          </td>
+                          <td>
+                            <code>{item.external_product_id || "—"}</code>
+                          </td>
+                          <td>
+                            <code>{item.external_offer_id || "—"}</code>
+                          </td>
+                          <td>
+                            {(
+                              {
+                                draft: "Ciornă",
+                                pending: "În așteptare",
+                                active: "Activă",
+                                paused: "În pauză",
+                                rejected: "Respinsă",
+                                archived: "Arhivată",
+                                error: "Necesită verificare",
+                              } as Record<string, string>
+                            )[item.status] ?? "De verificat"}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                {!detail.data.listings.some(
+                  (item) => !item.variant_id || item.variant_id === variant.id,
                 ) && (
-                  <details className="mt-3 rounded-xl border border-white/10 p-3">
-                    <summary className="cursor-pointer text-sm text-slate-200">
-                      Asociază un lot cu o comandă pregătită sau expediată
-                    </summary>
-                    <form
-                      className="mt-3 grid gap-2 sm:grid-cols-2"
-                      onSubmit={async (event) => {
-                        event.preventDefault();
-                        const form = new FormData(event.currentTarget);
-                        await mutate(
-                          {
-                            action: "lot.allocate",
-                            lotId: String(form.get("lotId")),
-                            orderItemId: String(form.get("orderItemId")),
-                            quantity: Number(form.get("quantity")),
-                          },
-                          "Lot asociat comenzii.",
-                        );
-                      }}
-                    >
-                      <select name="lotId" required className={inputClass}>
-                        {detail.data.lots
-                          .filter(
-                            (lot) => lot.variant_id === variant.id && lot.available_quantity > 0,
-                          )
-                          .map((lot) => (
-                            <option key={lot.id} value={lot.id}>
-                              {lot.lot_code} · {lot.available_quantity} libere
-                            </option>
-                          ))}
-                      </select>
-                      <select name="orderItemId" required className={inputClass}>
-                        {detail.data.orderItems
-                          .filter((item) => item.variant_id === variant.id && item.unallocated > 0)
-                          .map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.order_number} · {item.unallocated} neatribuite
-                            </option>
-                          ))}
-                      </select>
-                      <input
-                        name="quantity"
-                        type="number"
-                        min="1"
-                        required
-                        placeholder="Cantitate"
-                        className={inputClass}
-                      />
-                      <button className={button} disabled={busy}>
-                        Asociază lotul
-                      </button>
-                    </form>
-                  </details>
+                  <p className="p-3 text-xs text-slate-300">
+                    Nu există identificatori atribuiți de platforme pentru această variantă.
+                  </p>
                 )}
-              </section>
-              <section className={card}>
-                <h2 className="font-semibold text-white">Personalizări și serializare opțională</h2>
-                <p className="mt-1 text-sm text-slate-300">
-                  Codul personalizării este intern și legat de cererea sau comanda existentă.
-                  Serialul se creează numai la cerere.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    className={button}
-                    disabled={busy}
-                    onClick={() =>
-                      void mutate(
-                        {
-                          action: "serial.create",
-                          variantId: variant.id,
-                          lotId: selectedLot?.id ?? null,
-                        },
-                        "Număr serial creat.",
-                      )
-                    }
-                  >
-                    Creează un serial
-                  </button>
-                  <a href="/admin/personalizations" className={button}>
-                    Deschide personalizările
-                  </a>
-                </div>
-                {detail.data.serials
-                  .filter((item) => item.variant_id === variant.id)
-                  .slice(0, 5)
-                  .map((item) => (
-                    <p key={item.id} className="mt-2 break-all font-mono text-xs text-slate-300">
-                      {item.serial_code}
-                    </p>
+              </div>
+              <a
+                className={`${button} mt-2`}
+                href={`/admin/products/${detail.data.product.id}#technical`}
+              >
+                Canale de vânzare →
+              </a>
+            </section>
+            <section className={card} hidden={detailView !== "codes"}>
+              <div className="flex items-center gap-2">
+                <QrCode className="h-5 w-5 text-cyan-200" />
+                <h2 className="font-semibold text-white">Coduri scanabile</h2>
+              </div>
+              <label className="mt-3 block text-xs text-slate-300">
+                Destinația publică a codului QR
+                <select
+                  className={`${inputClass} mt-1`}
+                  value={qrDestination}
+                  onChange={(event) => setQrDestination(event.target.value)}
+                >
+                  <option value="product">Pagina produsului</option>
+                  {detail.data.documents.map((document) => (
+                    <option key={document.id} value={document.id}>
+                      {document.document_type === "instructions"
+                        ? "Instrucțiuni"
+                        : document.document_type === "safety"
+                          ? "Siguranță"
+                          : "Garanție"}
+                      {document.document_number ? ` · ${document.document_number}` : ""}
+                    </option>
                   ))}
-                {detail.data.personalizations
-                  .filter((item) => item.variant_id === variant.id)
-                  .slice(0, 5)
-                  .map((item) => (
-                    <p key={item.code} className="mt-2 font-mono text-xs text-slate-300">
-                      {item.code} · {item.production_status}
-                    </p>
-                  ))}
-              </section>
-              <section className={card}>
-                <div className="flex items-center gap-2">
-                  <Printer className="h-5 w-5 text-cyan-200" />
-                  <h2 className="font-semibold text-white">Generează etichetă</h2>
-                </div>
-                <p className="mt-1 text-sm text-slate-300">
-                  Previzualizează la dimensiune reală, apoi exportă individual sau toate variantele
-                  vizibile pe A4.
-                </p>
-                <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                  <div className="space-y-3">
-                    <label className="block text-xs text-slate-300">
-                      Format
-                      <select
-                        className={`${inputClass} mt-1`}
-                        value={format}
-                        onChange={(event) => setFormat(event.target.value as LabelFormat)}
-                      >
-                        <option value="40x40">40 × 40 mm</option>
-                        <option value="50x50">50 × 50 mm</option>
-                        <option value="50x30">50 × 30 mm</option>
-                        <option value="custom">Personalizat</option>
-                      </select>
-                    </label>
-                    {format === "custom" && (
-                      <div className="flex gap-2">
-                        <label className="text-xs text-slate-300">
-                          Lățime mm
-                          <input
-                            type="number"
-                            min="35"
-                            max="150"
-                            value={customWidth}
-                            onChange={(event) => setCustomWidth(Number(event.target.value))}
-                            className={`${inputClass} mt-1`}
-                          />
-                        </label>
-                        <label className="text-xs text-slate-300">
-                          Înălțime mm
-                          <input
-                            type="number"
-                            min="25"
-                            max="150"
-                            value={customHeight}
-                            onChange={(event) => setCustomHeight(Number(event.target.value))}
-                            className={`${inputClass} mt-1`}
-                          />
-                        </label>
+                </select>
+              </label>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-white p-3 text-center text-slate-900">
+                  <div id="product-identification-qr" className="mx-auto w-fit">
+                    {qrUrl ? (
+                      <QRCodeSVG value={qrUrl} size={150} level="M" marginSize={2} />
+                    ) : (
+                      <div className="grid h-[150px] place-items-center text-xs text-slate-500">
+                        Destinația publică nu este disponibilă
                       </div>
                     )}
-                    <label className="block text-xs text-slate-300">
-                      Lot pe etichetă
-                      <select
-                        className={`${inputClass} mt-1`}
-                        value={lotId}
-                        onChange={(event) => setLotId(event.target.value)}
-                      >
-                        <option value="">Fără lot</option>
-                        {detail.data.lots
-                          .filter((lot) => lot.variant_id === variant.id)
-                          .map((lot) => (
-                            <option key={lot.id} value={lot.id}>
-                              {lot.lot_code}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(
-                        [
-                          "name",
-                          "sku",
-                          "gtin",
-                          "qr",
-                          "code128",
-                          "eanGraphic",
-                          "lot",
-                          "variant",
-                          "logo",
-                        ] as const
-                      ).map((key) => (
-                        <label key={key} className="flex items-center gap-2 text-xs text-slate-200">
-                          <input
-                            type="checkbox"
-                            checked={options[key]}
-                            onChange={(event) =>
-                              setOptions((current) => ({ ...current, [key]: event.target.checked }))
-                            }
-                            disabled={
-                              ((key === "gtin" || key === "eanGraphic") && !verifiedGtin) ||
-                              (key === "qr" && !qrUrl)
-                            }
-                          />
-                          {
-                            {
-                              name: "Nume",
-                              sku: "SKU",
-                              gtin: "GTIN verificat",
-                              qr: "QR",
-                              code128: "Code 128",
-                              eanGraphic: "Bare GTIN",
-                              lot: "Lot",
-                              variant: "Variantă",
-                              logo: "Logo",
-                            }[key]
-                          }
-                        </label>
-                      ))}
+                  </div>
+                  <p className="mt-2 text-xs">
+                    {qrDestination === "product"
+                      ? "Pagina produsului"
+                      : "Document public verificat"}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white p-3 text-center text-slate-900">
+                  {barcodeMarkup ? (
+                    <div
+                      aria-label={`Code 128 ${variant.sku}`}
+                      className="mx-auto max-w-[230px] [&_svg]:h-[150px] [&_svg]:w-full"
+                      dangerouslySetInnerHTML={{ __html: barcodeMarkup }}
+                    />
+                  ) : (
+                    <div className="grid h-[150px] place-items-center text-xs">
+                      Cod indisponibil
                     </div>
-                  </div>
-                  <div className="flex min-h-[200px] items-center justify-center overflow-auto rounded-xl bg-slate-200 p-4">
-                    {labelMarkup ? (
-                      <div
-                        className="max-w-full shadow-lg"
-                        style={{ width: `${size.widthMm * 3.2}px` }}
-                        dangerouslySetInnerHTML={{ __html: labelMarkup }}
-                      />
-                    ) : (
-                      <span className="text-sm text-slate-600">Previzualizarea se generează…</span>
-                    )}
-                  </div>
+                  )}
+                  <p className="mt-2 text-xs">Code 128 · {variant.sku}</p>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    className={button}
-                    disabled={!labelMarkup}
-                    onClick={() => void downloadLabel("pdf")}
-                  >
-                    PDF
-                  </button>
-                  <button
-                    className={button}
-                    disabled={!labelMarkup}
-                    onClick={() => void downloadLabel("png")}
-                  >
-                    PNG 300 dpi
-                  </button>
-                  <button
-                    className={button}
-                    disabled={!labelMarkup}
-                    onClick={() => void downloadLabel("svg")}
-                  >
-                    SVG
-                  </button>
-                  <button className={button} onClick={() => void downloadA4()}>
-                    A4 · toate cele {filtered.length} variante vizibile
-                  </button>
-                </div>
-                <p className="mt-3 text-xs text-slate-400">
-                  Eticheta internă nu înlocuiește informațiile legale obligatorii ale produsului.
-                </p>
-              </section>
-              <details className={card}>
-                <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-white">
-                  <PackageSearch className="h-4 w-4 text-cyan-200" /> Istoricul codurilor
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  className={button}
+                  disabled={!qrUrl}
+                  onClick={() => {
+                    if (qrUrl) window.open(qrUrl, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  Testează destinația QR
+                </button>
+                <button
+                  className={button}
+                  disabled={!qrUrl}
+                  onClick={() => saveText(codeImageSvg(), `${variant.sku}-qr.svg`, "image/svg+xml")}
+                >
+                  QR SVG
+                </button>
+                <button
+                  className={button}
+                  disabled={!qrUrl}
+                  onClick={async () => {
+                    try {
+                      downloadBlob(await svgToPng(codeImageSvg(), 40, 40), `${variant.sku}-qr.png`);
+                    } catch {
+                      toast.error("QR PNG nu a putut fi generat.");
+                    }
+                  }}
+                >
+                  QR PNG
+                </button>
+                <button
+                  className={button}
+                  disabled={!barcodeMarkup}
+                  onClick={() =>
+                    saveText(barcodeMarkup, `${variant.sku}-code128.svg`, "image/svg+xml")
+                  }
+                >
+                  Code 128 SVG
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-slate-400">
+                QR-ul indică numai o destinație publică. Numele, imaginile și documentele private
+                ale clienților nu intră în cod.
+              </p>
+            </section>
+            <section className={card} hidden={detailView !== "trace"}>
+              <div className="flex items-center gap-2">
+                <Boxes className="h-5 w-5 text-cyan-200" />
+                <h2 className="font-semibold text-white">Loturi și trasabilitate</h2>
+              </div>
+              <div
+                className="code-table-scroll mt-3"
+                tabIndex={0}
+                role="region"
+                aria-label="Loturi ale variantei"
+              >
+                <table className="code-registry-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Cod lot</th>
+                      <th scope="col">Locație</th>
+                      <th scope="col">Sursă / recepție</th>
+                      <th scope="col">Disponibil / inițial</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.data.lots
+                      .filter((lot) => lot.variant_id === variant.id)
+                      .map((lot) => (
+                        <tr key={lot.id}>
+                          <th scope="row">
+                            <button
+                              className="code-copy"
+                              onClick={() => void copyCode(lot.lot_code)}
+                            >
+                              <code>{lot.lot_code}</code>
+                              <Copy size={12} />
+                            </button>
+                          </th>
+                          <td>{lot.location_name}</td>
+                          <td>
+                            {lot.source_kind === "in_house" ? "Producție proprie" : "Furnizor"}
+                            <span className="block text-xs text-slate-400">{lot.received_at}</span>
+                          </td>
+                          <td>
+                            {lot.available_quantity} / {lot.initial_quantity}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                {!detail.data.lots.some((lot) => lot.variant_id === variant.id) && (
+                  <p className="p-3 text-xs text-slate-300">
+                    Niciun lot asociat. Înregistrează un lot numai pentru o recepție reală; stocul
+                    existent se păstrează.
+                  </p>
+                )}
+              </div>
+              <details className="mt-3 rounded-xl border border-white/10 p-3">
+                <summary className="cursor-pointer text-sm text-slate-200">
+                  Recepționează un lot în stocul existent
                 </summary>
-                <div className="mt-3 space-y-2">
-                  {detail.data.history
-                    .filter((entry) => entry.variant_id === variant.id)
-                    .map((entry) => (
-                      <p
-                        key={entry.id}
-                        className="rounded-lg bg-black/20 p-2 text-xs text-slate-300"
-                      >
-                        {entry.created_at.slice(0, 16)} · {entry.action} · {entry.old_value || "—"}{" "}
-                        → {entry.new_value || "—"}
-                      </p>
+                <form
+                  className="mt-3 grid gap-2 sm:grid-cols-2"
+                  onSubmit={async (event: FormEvent<HTMLFormElement>) => {
+                    event.preventDefault();
+                    const formElement = event.currentTarget;
+                    const form = new FormData(formElement);
+                    const result = await mutate(
+                      {
+                        action: "lot.create",
+                        variantId: variant.id,
+                        locationId: String(form.get("locationId")),
+                        sourceKind: String(form.get("sourceKind")),
+                        supplierReference: String(form.get("supplierReference") || ""),
+                        receivedAt: String(form.get("receivedAt")),
+                        quantity: Number(form.get("quantity")),
+                      },
+                      "Lot recepționat și stoc actualizat.",
+                    );
+                    if (result) formElement.reset();
+                  }}
+                >
+                  <label className="text-xs text-slate-300">
+                    Locație
+                    <select name="locationId" required className={`${inputClass} mt-1`}>
+                      {detail.data.locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-xs text-slate-300">
+                    Sursă
+                    <select name="sourceKind" className={`${inputClass} mt-1`}>
+                      <option value="supplier">Furnizor</option>
+                      <option value="in_house">Producție proprie</option>
+                    </select>
+                  </label>
+                  <label className="text-xs text-slate-300">
+                    Data recepției
+                    <input
+                      name="receivedAt"
+                      type="date"
+                      required
+                      defaultValue={new Date().toISOString().slice(0, 10)}
+                      className={`${inputClass} mt-1`}
+                    />
+                  </label>
+                  <label className="text-xs text-slate-300">
+                    Cantitate
+                    <input
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      max="1000000"
+                      required
+                      className={`${inputClass} mt-1`}
+                    />
+                  </label>
+                  <label className="text-xs text-slate-300 sm:col-span-2">
+                    Referința furnizorului / producției
+                    <input name="supplierReference" className={`${inputClass} mt-1`} />
+                  </label>
+                  <button className={button} disabled={busy}>
+                    Înregistrează recepția
+                  </button>
+                </form>
+              </details>
+              {detail.data.orderItems.some(
+                (item) => item.variant_id === variant.id && item.unallocated > 0,
+              ) && (
+                <details className="mt-3 rounded-xl border border-white/10 p-3">
+                  <summary className="cursor-pointer text-sm text-slate-200">
+                    Asociază un lot cu o comandă pregătită sau expediată
+                  </summary>
+                  <form
+                    className="mt-3 grid gap-2 sm:grid-cols-2"
+                    onSubmit={async (event) => {
+                      event.preventDefault();
+                      const form = new FormData(event.currentTarget);
+                      await mutate(
+                        {
+                          action: "lot.allocate",
+                          lotId: String(form.get("lotId")),
+                          orderItemId: String(form.get("orderItemId")),
+                          quantity: Number(form.get("quantity")),
+                        },
+                        "Lot asociat comenzii.",
+                      );
+                    }}
+                  >
+                    <select name="lotId" required className={inputClass}>
+                      {detail.data.lots
+                        .filter(
+                          (lot) => lot.variant_id === variant.id && lot.available_quantity > 0,
+                        )
+                        .map((lot) => (
+                          <option key={lot.id} value={lot.id}>
+                            {lot.lot_code} · {lot.available_quantity} libere
+                          </option>
+                        ))}
+                    </select>
+                    <select name="orderItemId" required className={inputClass}>
+                      {detail.data.orderItems
+                        .filter((item) => item.variant_id === variant.id && item.unallocated > 0)
+                        .map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.order_number} · {item.unallocated} neatribuite
+                          </option>
+                        ))}
+                    </select>
+                    <input
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      required
+                      placeholder="Cantitate"
+                      className={inputClass}
+                    />
+                    <button className={button} disabled={busy}>
+                      Asociază lotul
+                    </button>
+                  </form>
+                </details>
+              )}
+            </section>
+            <section className={card} hidden={detailView !== "trace"}>
+              <h2 className="font-semibold text-white">Personalizări și serializare opțională</h2>
+              <p className="mt-1 text-sm text-slate-300">
+                Codul personalizării este intern și legat de cererea sau comanda existentă. Serialul
+                se creează numai la cerere.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  className={button}
+                  disabled={busy}
+                  onClick={() =>
+                    void mutate(
+                      {
+                        action: "serial.create",
+                        variantId: variant.id,
+                        lotId: selectedLot?.id ?? null,
+                      },
+                      "Număr serial creat.",
+                    )
+                  }
+                >
+                  Creează un serial
+                </button>
+                <a href="/admin/personalizations" className={button}>
+                  Deschide personalizările
+                </a>
+              </div>
+              <button
+                className={`${button} mt-2`}
+                disabled={
+                  !detail.data.serials.some((item) => item.variant_id === variant.id) &&
+                  !detail.data.personalizations.some((item) => item.variant_id === variant.id)
+                }
+                onClick={() =>
+                  saveText(
+                    rowsToCsv([
+                      ["type", "code", "variant_id"],
+                      ...detail.data.serials
+                        .filter((item) => item.variant_id === variant.id)
+                        .map((item) => ["serial", item.serial_code, variant.id]),
+                      ...detail.data.personalizations
+                        .filter((item) => item.variant_id === variant.id)
+                        .map((item) => ["personalization", item.code, variant.id]),
+                    ]),
+                    `${variant.sku}-coduri-unitare.csv`,
+                    "text/csv;charset=utf-8",
+                  )
+                }
+              >
+                CSV · coduri afișate
+              </button>
+              <div
+                className="code-table-scroll mt-3"
+                role="region"
+                tabIndex={0}
+                aria-label="Seriale și personalizări"
+              >
+                <table className="code-registry-table">
+                  <caption className="sr-only">
+                    Coduri unitare pentru varianta selectată, cele mai recente 100 de înregistrări
+                    per produs
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Tip</th>
+                      <th scope="col">Cod</th>
+                      <th scope="col">Stare</th>
+                      <th scope="col">Export</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.data.serials
+                      .filter((item) => item.variant_id === variant.id)
+                      .map((item) => (
+                        <tr key={item.id}>
+                          <th scope="row">Serial</th>
+                          <td>
+                            <button
+                              className="code-copy"
+                              onClick={() => void copyCode(item.serial_code)}
+                            >
+                              <code>{item.serial_code}</code>
+                              <Copy size={12} />
+                            </button>
+                          </td>
+                          <td>Înregistrat</td>
+                          <td>
+                            <button
+                              className={button}
+                              onClick={() => void downloadCode(item.serial_code)}
+                            >
+                              Bare SVG
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    {detail.data.personalizations
+                      .filter((item) => item.variant_id === variant.id)
+                      .map((item) => (
+                        <tr key={item.code}>
+                          <th scope="row">Personalizare</th>
+                          <td>
+                            <code>{item.code}</code>
+                          </td>
+                          <td>
+                            {(
+                              {
+                                approved: "Aprobată",
+                                in_production: "În producție",
+                                shipped: "Expediată",
+                                cancelled: "Anulată",
+                              } as Record<string, string>
+                            )[item.production_status] ?? "În pregătire"}
+                          </td>
+                          <td>
+                            <button className={button} onClick={() => void downloadCode(item.code)}>
+                              Bare SVG
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Cele mai recente 100 de seriale și 100 de personalizări per produs. Creează seriale
+                numai pentru unitățile pe care le urmărești individual.
+              </p>
+            </section>
+            <section className={card} hidden={detailView !== "labels"}>
+              <div className="flex items-center gap-2">
+                <Printer className="h-5 w-5 text-cyan-200" />
+                <h2 className="font-semibold text-white">Generează etichetă</h2>
+              </div>
+              <p className="mt-1 text-sm text-slate-300">
+                Previzualizează la dimensiune reală, apoi exportă individual sau toate variantele
+                vizibile pe A4.
+              </p>
+              <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <div className="space-y-3">
+                  <label className="block text-xs text-slate-300">
+                    Format
+                    <select
+                      className={`${inputClass} mt-1`}
+                      value={format}
+                      onChange={(event) => setFormat(event.target.value as LabelFormat)}
+                    >
+                      <option value="40x40">40 × 40 mm</option>
+                      <option value="50x50">50 × 50 mm</option>
+                      <option value="50x30">50 × 30 mm</option>
+                      <option value="custom">Personalizat</option>
+                    </select>
+                  </label>
+                  {format === "custom" && (
+                    <div className="flex gap-2">
+                      <label className="text-xs text-slate-300">
+                        Lățime mm
+                        <input
+                          type="number"
+                          min="35"
+                          max="150"
+                          value={customWidth}
+                          onChange={(event) => setCustomWidth(Number(event.target.value))}
+                          className={`${inputClass} mt-1`}
+                        />
+                      </label>
+                      <label className="text-xs text-slate-300">
+                        Înălțime mm
+                        <input
+                          type="number"
+                          min="25"
+                          max="150"
+                          value={customHeight}
+                          onChange={(event) => setCustomHeight(Number(event.target.value))}
+                          className={`${inputClass} mt-1`}
+                        />
+                      </label>
+                    </div>
+                  )}
+                  <label className="block text-xs text-slate-300">
+                    Lot pe etichetă
+                    <select
+                      className={`${inputClass} mt-1`}
+                      value={lotId}
+                      onChange={(event) => setLotId(event.target.value)}
+                    >
+                      <option value="">Fără lot</option>
+                      {detail.data.lots
+                        .filter((lot) => lot.variant_id === variant.id)
+                        .map((lot) => (
+                          <option key={lot.id} value={lot.id}>
+                            {lot.lot_code}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        "name",
+                        "sku",
+                        "gtin",
+                        "qr",
+                        "code128",
+                        "eanGraphic",
+                        "lot",
+                        "variant",
+                        "logo",
+                      ] as const
+                    ).map((key) => (
+                      <label key={key} className="flex items-center gap-2 text-xs text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={options[key]}
+                          onChange={(event) =>
+                            setOptions((current) => ({ ...current, [key]: event.target.checked }))
+                          }
+                          disabled={
+                            ((key === "gtin" || key === "eanGraphic") && !verifiedGtin) ||
+                            (key === "qr" && !qrUrl)
+                          }
+                        />
+                        {
+                          {
+                            name: "Nume",
+                            sku: "SKU",
+                            gtin: "GTIN verificat",
+                            qr: "QR",
+                            code128: "Code 128",
+                            eanGraphic: "Bare GTIN",
+                            lot: "Lot",
+                            variant: "Variantă",
+                            logo: "Logo",
+                          }[key]
+                        }
+                      </label>
                     ))}
-                  {!detail.data.history.length && (
-                    <p className="text-xs text-slate-400">
-                      Codurile existente au fost păstrate; modificările noi apar aici.
-                    </p>
+                  </div>
+                </div>
+                <div className="flex min-h-[200px] items-center justify-center overflow-auto rounded-xl bg-slate-200 p-4">
+                  {labelMarkup ? (
+                    <div
+                      className="max-w-full shadow-lg"
+                      style={{ width: `${size.widthMm * 3.2}px` }}
+                      dangerouslySetInnerHTML={{ __html: labelMarkup }}
+                    />
+                  ) : (
+                    <span role={labelError ? "alert" : "status"} className="text-sm text-slate-700">
+                      {labelError || "Previzualizarea se generează…"}
+                    </span>
                   )}
                 </div>
-              </details>
-            </>
-          )}
-          {!productId && (
-            <div className={`${card} py-16 text-center text-sm text-slate-300`}>
-              Selectează un produs sau scanează codul pentru fișa lui.
-            </div>
-          )}
-        </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  className={button}
+                  disabled={!labelMarkup}
+                  onClick={() => void downloadLabel("pdf")}
+                >
+                  PDF
+                </button>
+                <button
+                  className={button}
+                  disabled={!labelMarkup}
+                  onClick={() => void downloadLabel("png")}
+                >
+                  PNG 300 dpi
+                </button>
+                <button
+                  className={button}
+                  disabled={!labelMarkup}
+                  onClick={() => void downloadLabel("svg")}
+                >
+                  SVG
+                </button>
+                <button
+                  className={button}
+                  disabled={!filtered.length || filtered.length > 30}
+                  onClick={() => void downloadA4()}
+                >
+                  A4 · {filtered.length} variante filtrate
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-slate-400">
+                A4: maximum 30 de variante per export; folosește căutarea pentru selecție. Eticheta
+                internă nu înlocuiește informațiile legale obligatorii ale produsului.
+              </p>
+            </section>
+            <details className={card} hidden={detailView !== "codes"}>
+              <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-white">
+                <PackageSearch className="h-4 w-4 text-cyan-200" /> Istoricul codurilor
+              </summary>
+              <div className="mt-3 space-y-2">
+                {detail.data.history
+                  .filter((entry) => entry.variant_id === variant.id)
+                  .map((entry) => (
+                    <p key={entry.id} className="rounded-lg bg-black/20 p-2 text-xs text-slate-300">
+                      {entry.created_at.slice(0, 16)} ·{" "}
+                      {(
+                        {
+                          sku_assigned: "SKU atribuit",
+                          sku_changed: "SKU modificat",
+                          gtin_assigned: "GTIN atribuit",
+                          gtin_changed: "GTIN modificat",
+                          gtin_cleared: "GTIN retras",
+                          gtin_verified: "GTIN verificat",
+                          gtin_rejected: "GTIN respins",
+                        } as Record<string, string>
+                      )[entry.action] ?? "Actualizare identificator"}{" "}
+                      · {entry.old_value || "—"} → {entry.new_value || "—"}
+                    </p>
+                  ))}
+                {!detail.data.history.length && (
+                  <p className="text-xs text-slate-400">
+                    Codurile existente au fost păstrate; modificările noi apar aici.
+                  </p>
+                )}
+              </div>
+            </details>
+          </>
+        )}
+        {!productId && (
+          <div className={`${card} py-5 text-center text-sm text-slate-300`}>
+            Selectează un produs sau scanează codul pentru fișa lui.
+          </div>
+        )}
       </div>
     </div>
   );

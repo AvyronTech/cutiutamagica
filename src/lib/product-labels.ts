@@ -61,6 +61,7 @@ function nestedSvg(markup: string, x: number, y: number, width: number, height: 
 export async function barcodeSvg(
   value: string,
   format: "CODE128" | "EAN8" | "EAN13" | "UPC" | "ITF14" = "CODE128",
+  displayValue = false,
 ): Promise<string> {
   const { default: JsBarcode } = await import("jsbarcode");
   const node = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -69,7 +70,7 @@ export async function barcodeSvg(
     width: 2,
     height: 72,
     margin: 10,
-    displayValue: false,
+    displayValue,
     background: "#ffffff",
     lineColor: "#111111",
   });

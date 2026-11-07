@@ -80,7 +80,7 @@ export default function AccountVault() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[.18em] text-cyan-300">
           Acces controlat
@@ -119,7 +119,7 @@ export default function AccountVault() {
       <div className="grid gap-5 xl:grid-cols-[400px_1fr]">
         <form
           onSubmit={submit}
-          className="space-y-4 rounded-lg border border-slate-700 bg-slate-900/40 p-5"
+          className="space-y-4 rounded-lg border border-slate-700 bg-slate-900/40 p-4"
         >
           <h2 className="flex items-center gap-2 font-semibold text-white">
             <Link2 size={17} /> Adaugă referință de conectare
@@ -192,7 +192,7 @@ export default function AccountVault() {
           </button>
         </form>
 
-        <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+        <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-4">
           <h2 className="font-semibold text-white">Inventar conexiuni</h2>
           <div className="mt-4 space-y-2">
             {query.data.connections.length === 0 ? (
@@ -227,14 +227,18 @@ export default function AccountVault() {
         </section>
       </div>
 
-      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-4">
         <h2 className="flex items-center gap-2 font-semibold text-white">
           <ShieldCheck size={17} /> Autentificare clienți cu Google
         </h2>
         <p className="mt-2 text-xs leading-5 text-slate-500">
           Introdu Client ID și Client secret din proiectul Google OAuth. Valorile sunt criptate, nu
           se afișează după salvare și activează automat butonul „Continuă cu Google”. URI-ul de
-          redirect este https://cutiutamagica.eu/api/v1/reviewer/oauth/google/callback.
+          redirect este{" "}
+          <code className="break-all">
+            https://cutiutamagica.eu/api/v1/reviewer/oauth/google/callback
+          </code>
+          .
         </p>
         <div className="mt-4">
           <CredentialPanel
@@ -243,7 +247,7 @@ export default function AccountVault() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-4">
         <h2 className="flex items-center gap-2 font-semibold text-white">
           <Link2 size={17} /> Google Search și Merchant Center
         </h2>
@@ -274,7 +278,7 @@ export default function AccountVault() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-4">
         <h2 className="flex items-center gap-2 font-semibold text-white">
           <KeyRound size={17} /> Servicii operaționale
         </h2>
@@ -297,7 +301,7 @@ export default function AccountVault() {
 
       <CredentialPanel providers={["meta"]} />
 
-      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+      <section className="rounded-lg border border-slate-700 bg-slate-900/40 p-4">
         <h2 className="flex items-center gap-2 font-semibold text-white">
           <Laptop size={17} /> Dispozitive administrative
         </h2>

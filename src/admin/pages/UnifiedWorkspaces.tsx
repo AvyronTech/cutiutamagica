@@ -25,14 +25,14 @@ export function IdentificationWorkspace({ search, onChange }: Props<"identificat
   return (
     <Workspace
       title="Identificare, etichetare și coduri QR"
-      description="Identifici produsul, verifici lotul și pregătești eticheta sau codul QR al comenzii din același spațiu."
+      description="Coduri permanente, SKU-uri, etichete și trasabilitate într-un singur registru."
       active={active}
       onSelect={(tab) => onChange({ ...search, tab: tab as typeof active })}
       tabs={[
         {
           id: "products",
-          label: "Produse și etichete",
-          description: "SKU · GTIN · loturi · QR produs",
+          label: "Registru și etichete",
+          description: "Cod intern · SKU · referință externă",
           icon: Barcode,
           content: (
             <Identification

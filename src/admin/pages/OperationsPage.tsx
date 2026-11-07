@@ -68,7 +68,7 @@ export default function OperationsPage({
   const systems = query.data?.systems.filter((system) => system.area === area) ?? [];
 
   return (
-    <div className="space-y-5 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <header className="flex flex-col gap-4 rounded-[1.35rem] border border-white/10 bg-[radial-gradient(circle_at_95%_5%,rgba(208,170,112,.15),transparent_35%),linear-gradient(135deg,#17233a,#111c2e)] p-5 shadow-[0_20px_60px_rgba(0,0,0,.15)] sm:flex-row sm:items-center sm:justify-between md:p-7">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-200/25 bg-amber-200/10">

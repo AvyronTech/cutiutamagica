@@ -29,13 +29,10 @@ export function Workspace({
     [active],
   );
   return (
-    <div className="min-w-0 space-y-4 md:space-y-5">
-      <header className="rounded-2xl border border-amber-200/15 bg-[linear-gradient(120deg,#142238,#101827)] p-4 md:p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[.17em] text-amber-200">
-          Atelier · spațiu de lucru
-        </p>
-        <h1 className="mt-2 text-xl font-semibold text-white md:text-2xl">{title}</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{description}</p>
+    <div className="min-w-0 space-y-3 md:space-y-4">
+      <header className="rounded-2xl border border-amber-200/15 bg-[linear-gradient(120deg,#142238,#101827)] p-3 md:p-4">
+        <h1 className="text-xl font-semibold text-white md:text-2xl">{title}</h1>
+        <p className="mt-1 max-w-3xl text-sm leading-5 text-slate-300">{description}</p>
       </header>
       {toolbar}
       <div
@@ -71,7 +68,7 @@ export function Workspace({
                 onSelect(tabs[next].id);
                 buttons.current[tabs[next].id]?.focus();
               }}
-              className={`flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 ${active === tab.id ? "border-amber-200/40 bg-amber-200/10 text-white" : "border-slate-700 bg-slate-950/40 text-slate-300 hover:border-slate-500"}`}
+              className={`flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 ${active === tab.id ? "border-amber-200/40 bg-amber-200/10 text-white" : "border-slate-700 bg-slate-950/40 text-slate-300 hover:border-slate-500"}`}
             >
               <Icon className="h-4 w-4 flex-none text-amber-200" aria-hidden />
               <span>

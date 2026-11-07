@@ -60,6 +60,8 @@ export interface AdminProduct {
   imageUrl: string;
   url: string;
   sku: string;
+  internalCode?: string;
+  merchantReference?: string;
   eanGtin: string | null;
   mechanismType: string;
   rightsStatus: string;

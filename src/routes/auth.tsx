@@ -166,7 +166,7 @@ function AdminAuth({ redirect }: { redirect?: string }) {
               Folosește adresa de e-mail și parola contului administrativ.
             </p>
 
-            <form onSubmit={submitLogin} className="mt-6 space-y-4">
+            <form method="post" onSubmit={submitLogin} className="mt-6 space-y-4">
               <label className="block text-xs font-medium text-[#f7ead3]/80">
                 Adresă de e-mail
                 <input
@@ -366,6 +366,7 @@ function CustomerAuth({ redirect }: { redirect?: string }) {
             )}
           {mode === "password" ? (
             <form
+              method="post"
               onSubmit={(event) => void loginWithPassword(event)}
               className="customer-login__form"
             >
@@ -423,7 +424,11 @@ function CustomerAuth({ redirect }: { redirect?: string }) {
               </button>
             </form>
           ) : challengeId ? (
-            <form onSubmit={(event) => void verifyCode(event)} className="customer-login__form">
+            <form
+              method="post"
+              onSubmit={(event) => void verifyCode(event)}
+              className="customer-login__form"
+            >
               <label htmlFor="customer-login-code">Codul de acces</label>
               <input
                 id="customer-login-code"
@@ -461,7 +466,11 @@ function CustomerAuth({ redirect }: { redirect?: string }) {
               </button>
             </form>
           ) : (
-            <form onSubmit={(event) => void requestCode(event)} className="customer-login__form">
+            <form
+              method="post"
+              onSubmit={(event) => void requestCode(event)}
+              className="customer-login__form"
+            >
               <label htmlFor="customer-login-email">Adresa ta de e-mail</label>
               <input
                 id="customer-login-email"

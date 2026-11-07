@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Coduri produse și dashboard compact — 7 noiembrie 2026, local
+
+- Migrare append-only **0091**: cod intern permanent pe produs și referință comercială proprie pe variantă, generate atomic, fără schimbarea SKU/GTIN existente. Registru în tabele, exporturi, panouri Coduri/Etichete/Trasabilitate și căutare comună în Produse/Stocuri. Spații comune compacte; 30 destinații admin verificate desktop/mobil, 407 teste și verificările de build trecute. **Aplică 0091 înainte de cod la release. Fără push/deploy/migrare remote.** [Implementare, probe și limite](handoff/2026-11-07-product-code-registry.md).
+
 ## Cont client, acces și lansare — 7 noiembrie 2026, local
 
 - Comenzi primele, secțiuni separate, formulare păstrate între ele, profil editabil limitat la numele propriu, beneficii/calendar/portofel organizate și contrast corect. Cererile vechi rămân disponibile, atelierul nelansat este închis și pe server; notele interne nu sunt trimise clientului. 403 teste, 18 verificări responsive și toate comenzile de validare trecute. Loginul live a fost blocat de 1102; verificarea autentificată completă este DEMO locală. **Fără push/deploy, plan plătit sau modificări ale conturilor administrative.** [Scop, probe și limite](handoff/2026-11-07-customer-launch-ux.md).

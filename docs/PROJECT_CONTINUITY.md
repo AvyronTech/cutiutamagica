@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+7 noiembrie, identificare: registru D1 cu cod permanent pe produs și referință comercială proprie pe variantă, separat de SKU/GTIN/ID-uri de platformă. Migrare **0091 necesară înainte de cod**, deocamdată numai locală. Tabele, scanare/căutare, exporturi și dashboard compact; cele 30 de destinații sunt verificate la 1440/320 px. [Handoff coduri](handoff/2026-11-07-product-code-registry.md).
+
 7 noiembrie, cont client: organizare pe secțiuni, acces numai la date proprii, atelier nelansat blocat pe server, mai puține cereri și elemente decorative pe ruta Cont. **Pregătit local peste `e14759e`, fără release.** Cele 403 teste și matricea 320/390/1440 px trec; noul login de producție este în continuare afectat de 1102. [Handoff client](handoff/2026-11-07-customer-launch-ux.md).
 
 7 noiembrie 2026: GSC confirmă individual toate cele șapte produse în index; trei ghiduri rămân în așteptare, iar cererea Halloween a fost acceptată. Sitemapurile au Succes și validările Merchant au reușit. Corecții de accesibilitate/conversie și audit extins sunt **locale, fără push/deploy până la o cerere nouă**. [Handoff și verificări actuale](handoff/2026-11-07-seo-compatibility.md).

@@ -359,6 +359,8 @@ export async function listAdminProducts(
       p.version,
       COALESCE(pc.missing_fields_count, 0) AS missing_fields_count,
       pv.sku,
+      pic.code AS internal_code,
+      vmc.code AS merchant_reference,
       pv.ean_gtin,
       COALESCE((
         SELECT COALESCE(pm.source_url, '/media/' || pm.id)
@@ -382,8 +384,10 @@ export async function listAdminProducts(
       ) AS average_rating
     FROM v_admin_product_catalog ap
     JOIN products p ON p.id = ap.id
+    LEFT JOIN product_internal_codes pic ON pic.product_id = ap.id
     LEFT JOIN v_product_completeness pc ON pc.product_id = ap.id
     LEFT JOIN product_variants pv ON pv.product_id = ap.id AND pv.status = 'active'
+    LEFT JOIN variant_merchant_codes vmc ON vmc.variant_id=pv.id
     WHERE p.product_type = 'music_box'
     GROUP BY ap.id
     ORDER BY p.updated_at DESC, p.name ASC
@@ -411,6 +415,8 @@ export async function listAdminProducts(
     imageUrl: stringValue(row.image_url),
     url: `${normalizedSiteUrl}${productPath(stringValue(row.slug))}`,
     sku: stringValue(row.sku),
+    internalCode: stringValue(row.internal_code),
+    merchantReference: stringValue(row.merchant_reference),
     eanGtin: row.ean_gtin == null ? null : stringValue(row.ean_gtin),
     mechanismType: stringValue(row.mechanism_type),
     rightsStatus: stringValue(row.rights_status),

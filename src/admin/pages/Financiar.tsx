@@ -96,7 +96,7 @@ export default function Financiar({
   ];
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-4">
       <div>
         <h1 className="text-xl font-bold text-white md:text-2xl">Financiar</h1>
         <p className="mt-1 text-xs text-slate-400 md:text-sm">
