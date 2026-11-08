@@ -26,4 +26,13 @@ Persistă riscurile documentate în audit: validare juridică/WCAG cu tehnologii
 
 Celelalte worktree-uri au fost inventariate. Ciornele marketing/furnizori și experimentele cu migrații vechi rămân intacte; nu sunt un lot de aplicație gata de lansare. PR #93 este preluat semantic în PR #94, nu se integrează de două ori.
 
-Versiunea finală Worker, CI și probele publice sunt consemnate după finalizarea deployului.
+## Rezultatul publicării
+
+- Runtime publicat integral: sursă `d7134c93415f9b020db7c178a4d2cd73a9b9e66a`, Worker `82c4007f-5926-4dd0-9f43-33800f4289e2`, 100% trafic, creat 2026-11-08T23:36:31.167Z (9 noiembrie în România). Deploy confirmat pentru cele 4 domenii, queue producer/consumer și un singur cron `0 * * * *`; cod 10072 rezolvat. PR #96 include corecția.
+- Local: typecheck, lint, security:check, 496 teste în 88 fișiere, build producție, verificarea bindingurilor și cf:deploy:dry — PASS. CI PR #96: [Quality gates](https://github.com/AvyronTech/cutiutamagica/actions/runs/42535678437), SUCCESS. PR #95 consolidează publicarea în main.
+- Probe live: health 200/schema 94, API admin anonim 401, preflight străin 403, health pe hostname Worker istoric 421, callbackuri Stripe fără semnătură 401 atât pe domeniul public, cât și pe hostul istoric; răspunsurile sensibile `no-store`. Dovezi: `docs/audits/ecommerce-20261109/evidence/release-live-probes.json`.
+- D1: `PRAGMA foreign_key_check` fără rezultate și `No migrations to apply`. Numărul înregistrărilor din istoricul migrărilor nu este versiunea schemei; există prefixe istorice duplicate. Health confirmă schema 94.
+- SEO live după deploy: 38 URL-uri canonice, 7 produse, 5 produse disponibile în feed, 38 imagini, 8 icoane, 0 pagini orfane și 0 probleme detectate. Cele 6 rute noindex și 3 probe 404 sunt intenționate. Dovadă: `docs/seo/2026-11-09-release-live.json`.
+- UI live: catalog, produs și checkout desktop/mobil; la 390 px fără overflow și fără imagini defecte. Checkout afișează card/ramburs și cere adresa/oferta reală înainte de total. Nicio comandă trimisă. Formularul honeypot este ascuns accesibilității și în afara ordinii Tab. Sesiunea owner a supraviețuit actualizării; conectarea cu parola existentă a contului de test client a reușit, fără resetare sau MFA. Nu s-a modificat coșul existent.
+
+Documentele și dovezile adăugate după acest runtime nu schimbă codul aplicației. Istoricul versiunilor Cloudflare și PR-urile păstrează separat revizia documentației și sursa runtime verificată.
