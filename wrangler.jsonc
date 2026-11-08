@@ -56,7 +56,7 @@
     "consumers": [
       {
         "queue": "cutiuta-magica-commerce-local",
-        "max_batch_size": 10,
+        "max_batch_size": 1,
         "max_batch_timeout": 5,
         "max_retries": 5,
         "retry_delay": 30,
@@ -74,7 +74,7 @@
     "production": {
       "name": "cutiuta-magica-store",
       "account_id": "51abbee1bab5f1fc9bfbfd9dcea5f3dc",
-      "triggers": { "crons": ["0 * * * *", "15 * * * *", "30 * * * *"] },
+      "triggers": { "crons": ["0 * * * *"] },
       // Compatibility only: the application permits signed payment POST callbacks; all other paths are denied.
       "workers_dev": true,
       "preview_urls": false,
@@ -147,7 +147,7 @@
         "consumers": [
           {
             "queue": "cutiutamagica-commerce",
-            "max_batch_size": 10,
+            "max_batch_size": 1,
             "max_batch_timeout": 5,
             "max_retries": 5,
             "retry_delay": 30,
