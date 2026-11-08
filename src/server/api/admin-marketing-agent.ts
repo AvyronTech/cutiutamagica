@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import { readAdminSessionToken } from "@/lib/admin-password-auth-service";
@@ -1172,7 +1173,7 @@ export async function handleAdminMarketingAgentApi(
     );
   } catch (error) {
     const status = statusCode(error);
-    console.error("admin.marketing_agent.failed", error);
+    console.error("admin.marketing_agent.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

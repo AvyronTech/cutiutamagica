@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { AdminLink } from "@/admin/access";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -177,16 +177,16 @@ export default function Dashboard() {
               <h2 className="text-base font-semibold text-white">Necesită atenție</h2>
               <p className="mt-1 text-xs text-slate-500">Priorități calculate din datele reale.</p>
             </div>
-            <Link
+            <AdminLink
               to="/admin/notifications"
               className="text-xs font-medium text-purple-300 hover:text-purple-200"
             >
               Toate alertele
-            </Link>
+            </AdminLink>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {attention.map(({ label, value, hint, path, icon: Icon, tone }) => (
-              <Link
+              <AdminLink
                 key={label}
                 to={path}
                 className={`group rounded-xl border p-4 transition hover:-translate-y-0.5 ${tone}`}
@@ -200,7 +200,7 @@ export default function Dashboard() {
                 <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold">
                   Deschide <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
                 </span>
-              </Link>
+              </AdminLink>
             ))}
           </div>
         </section>
@@ -215,7 +215,7 @@ export default function Dashboard() {
               { label: "Vezi situația financiară", path: "/admin/financiar", icon: TrendingUp },
               { label: "Rapoarte și statistici", path: "/admin/statistics", icon: TrendingUp },
             ].map(({ label, path, icon: Icon }) => (
-              <Link
+              <AdminLink
                 key={label}
                 to={path}
                 className="group flex items-center justify-between rounded-lg border border-[#2b3950] bg-[#0d1727] px-3 py-2.5 text-xs font-medium text-slate-300 transition hover:border-purple-400/40 hover:text-white"
@@ -224,7 +224,7 @@ export default function Dashboard() {
                   <Icon className="h-4 w-4 text-purple-300" /> {label}
                 </span>
                 <ArrowRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-purple-300" />
-              </Link>
+              </AdminLink>
             ))}
           </div>
         </section>
@@ -238,14 +238,14 @@ export default function Dashboard() {
           <div>
             <h2 className="text-base font-semibold text-white">Fluxul magazinului</h2>
             <p className="mt-1 text-xs text-slate-300">
-              De la comandă la livrare și confirmarea pe e-mail.
+              Operațiunile pe care le poți urmări în rolul tău.
             </p>
           </div>
           <span className="text-[11px] text-slate-400">Indicatori din sistemul intern</span>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2">
           {workflow.map(({ label, detail, path, value, icon: Icon }) => (
-            <Link
+            <AdminLink
               key={label}
               to={path}
               className="group flex min-w-0 items-start justify-between gap-2 rounded-xl border border-white/10 bg-[#0e1a2b] p-3 transition hover:border-amber-200/30 hover:bg-[#152238] focus-visible:outline-2 focus-visible:outline-amber-200"
@@ -258,7 +258,7 @@ export default function Dashboard() {
               <span className="rounded-lg border border-white/10 bg-white/[.06] px-2 py-1 text-sm font-semibold tabular-nums text-white">
                 {value ?? "—"}
               </span>
-            </Link>
+            </AdminLink>
           ))}
         </div>
       </section>
@@ -277,12 +277,12 @@ export default function Dashboard() {
               Statusuri salvate din SmartShip pentru expedierile magazinului.
             </p>
           </div>
-          <Link
+          <AdminLink
             to="/admin/shipping"
             className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-cyan-300/30 px-3 text-xs font-semibold text-cyan-200"
           >
             Tracking și cont SmartShip <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          </AdminLink>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
@@ -357,16 +357,16 @@ export default function Dashboard() {
               <h2 className="text-base font-semibold text-white">Comenzi recente</h2>
               <p className="mt-1 text-xs text-slate-500">Ultimele intrări din toate canalele.</p>
             </div>
-            <Link
+            <AdminLink
               to="/admin/orders"
               className="text-xs font-medium text-purple-300 hover:text-purple-200"
             >
               Vezi toate
-            </Link>
+            </AdminLink>
           </div>
           <div className="space-y-1.5">
             {(data?.recentOrders ?? []).slice(0, 6).map((order) => (
-              <Link
+              <AdminLink
                 key={order.id}
                 to="/admin/orders"
                 className="flex items-center justify-between gap-3 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-[#334155] hover:bg-[#0f1929]"
@@ -390,7 +390,7 @@ export default function Dashboard() {
                   </p>
                   <p className="text-[10px] text-slate-500">{order.status}</p>
                 </div>
-              </Link>
+              </AdminLink>
             ))}
             {!isLoading && !(data?.recentOrders.length ?? 0) && (
               <div className="py-10 text-center text-sm text-slate-500">
@@ -406,12 +406,12 @@ export default function Dashboard() {
               <h2 className="text-base font-semibold text-white">Canale de vânzare</h2>
               <p className="mt-1 text-xs text-slate-500">Comenzi și stare de conectare.</p>
             </div>
-            <Link
+            <AdminLink
               to="/admin/platforms"
               className="text-xs font-medium text-purple-300 hover:text-purple-200"
             >
               Administrează
-            </Link>
+            </AdminLink>
           </div>
           <div className="space-y-3">
             {channels.slice(0, 7).map((channel) => {

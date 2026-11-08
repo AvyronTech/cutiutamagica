@@ -18819,6 +18819,18 @@ body.product-lightbox-open
   color: #d9c9b7;
   font-size: 12px;
 }
+.customer-signout--light {
+  color: #49321c;
+  border: 1px solid #977655;
+  border-radius: 10px;
+  background: #fffaf0;
+}
+.customer-signout--light:hover {
+  background: #f0e1cb;
+}
+.customer-signout.customer-signout--light:focus-visible {
+  outline-color: #6b4929;
+}
 .customer-signout:focus-visible {
   outline: 2px solid #e8c88d;
   outline-offset: 3px;

@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Securitate și acces — 8 noiembrie 2026, staging local
+
+- Audit în 15 activități, sesiuni/cookie-uri, RBAC server, protecție API, identități AI și backup v2 privat, cu modul și teste reutilizabile. **MFA/passkeys numai în pregătire; Access/WAF neactivate; nicio schimbare a conturilor sau producției.** Migrări append-only 0092 și 0093 numai local. [Audit, verificări și pașii externi](handoff/2026-11-08-security-hardening.md).
+
 ## Indexare Google completă — 8 noiembrie 2026, confirmată
 
 - **38/38 URL-uri canonice inspectate individual și indexate**, inclusiv toate cele 7 produse și cele două ghiduri rămase, „Cadouri mici” și „Pentru soră”. Ambele au trecut testul live, solicitările au fost acceptate, apoi inspecția indexului a confirmat indexarea efectivă. Audit SEO live fără probleme; patru sitemapuri Succes, zero probleme critice Product/Merchant/breadcrumbs/HTTPS, fără acțiuni manuale sau probleme de securitate. **Numai documentație, fără schimbare de runtime.** [Probe, inventar și raportul agregat vechi](handoff/2026-11-08-complete-google-indexation.md).

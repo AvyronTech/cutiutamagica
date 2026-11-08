@@ -81,10 +81,12 @@ function AdminAuth({ redirect }: { redirect?: string }) {
     setBusy(true);
     setError(null);
     try {
-      await login({
+      const result = await login({
         data: { email: String(form.get("email")), password: String(form.get("password")) },
       });
-      window.location.assign(authDestination(redirect, "admin"));
+      window.location.assign(
+        authDestination(!redirect || redirect === "/admin" ? result.homePath : redirect, "admin"),
+      );
     } catch (cause) {
       setError(readableError(cause));
       setBusy(false);

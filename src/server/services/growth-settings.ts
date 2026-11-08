@@ -79,7 +79,11 @@ function bytes(value: string) {
 function base64(value: Uint8Array) {
   return btoa(String.fromCharCode(...value));
 }
-async function encryptionKey(env: CommerceEnv) {
+type EncryptionEnv = Pick<
+  CommerceEnv,
+  "INTEGRATION_ENCRYPTION_KEY" | "INTEGRATION_ENCRYPTION_PREVIOUS_KEY"
+>;
+async function encryptionKey(env: EncryptionEnv) {
   if (!env.INTEGRATION_ENCRYPTION_KEY)
     throw new Error(
       "Configurează INTEGRATION_ENCRYPTION_KEY (32 octeți în Base64) în Cloudflare pentru stocarea securizată a cheilor.",
@@ -98,12 +102,7 @@ export async function credential(
     .bind(provider)
     .first<{ ciphertext: string; iv: string }>();
   if (!row) return env[secretNames[provider]] || null;
-  const value = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: bytes(row.iv), additionalData: new TextEncoder().encode(provider) },
-    await encryptionKey(env),
-    bytes(row.ciphertext),
-  );
-  return new TextDecoder().decode(value);
+  return decryptSecretValue(env, row, provider);
 }
 export async function storeCredential(
   env: CommerceEnv,
@@ -111,19 +110,14 @@ export async function storeCredential(
   value: string,
   actor: string,
 ) {
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv, additionalData: new TextEncoder().encode(provider) },
-    await encryptionKey(env),
-    new TextEncoder().encode(value),
-  );
+  const sealed = await encryptSecretValue(env, value, provider);
   const now = new Date().toISOString();
   const providerName = providerCode(provider);
   await env.DB.batch([
     env.DB.prepare(
       `INSERT INTO integration_credentials(provider,ciphertext,iv,updated_by,updated_at) VALUES(?1,?2,?3,?4,?5)
       ON CONFLICT(provider) DO UPDATE SET ciphertext=excluded.ciphertext,iv=excluded.iv,updated_by=excluded.updated_by,updated_at=excluded.updated_at,checked_at=NULL,check_status='unverified'`,
-    ).bind(provider, base64(new Uint8Array(encrypted)), base64(iv), actor, now),
+    ).bind(provider, sealed.ciphertext, sealed.iv, actor, now),
     activity(env.DB, actor, "credential.replaced", provider, now),
     env.DB.prepare(
       `UPDATE provider_configurations
@@ -161,4 +155,41 @@ export async function credentialStatuses(env: CommerceEnv) {
       status: row?.check_status ?? "unverified",
     };
   });
+}
+
+/** Context-bound encrypted secrets, reused by independently scoped service identities. */
+export async function encryptSecretValue(env: EncryptionEnv, value: string, context: string) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: new TextEncoder().encode(context) },
+    await encryptionKey(env),
+    new TextEncoder().encode(value),
+  );
+  return { ciphertext: base64(new Uint8Array(ciphertext)), iv: base64(iv) };
+}
+export async function decryptSecretValue(
+  env: EncryptionEnv,
+  row: { ciphertext: string; iv: string },
+  context: string,
+) {
+  try {
+    const value = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: bytes(row.iv), additionalData: new TextEncoder().encode(context) },
+      await encryptionKey(env),
+      bytes(row.ciphertext),
+    );
+    return new TextDecoder().decode(value);
+  } catch (error) {
+    if (!env.INTEGRATION_ENCRYPTION_PREVIOUS_KEY) throw error;
+    const previous = {
+      ...env,
+      INTEGRATION_ENCRYPTION_KEY: env.INTEGRATION_ENCRYPTION_PREVIOUS_KEY,
+    };
+    const value = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: bytes(row.iv), additionalData: new TextEncoder().encode(context) },
+      await encryptionKey(previous),
+      bytes(row.ciphertext),
+    );
+    return new TextDecoder().decode(value);
+  }
 }

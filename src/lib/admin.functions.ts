@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
@@ -374,7 +375,7 @@ export const saveAvyronCrmAccount = createServerFn({ method: "POST" })
 export const getAdminSettings = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
-    assertPermission(context.admin, "dashboard.read");
+    assertPermission(context.admin, "team.write");
     return getAdminSettingsData(env.DB);
   });
 
@@ -388,7 +389,7 @@ export const getAdminBusinessHub = createServerFn({ method: "GET" })
 export const getCommerceOperations = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
-    assertPermission(context.admin, "dashboard.read");
+    assertPermission(context.admin, "operations.read");
     const data = await getAdminCommerceOperations(env.DB);
     const runtime = env as CommerceEnv;
     const configured = await credentialStatuses(runtime);
@@ -779,11 +780,14 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
           entityId: data.orderId,
         });
       } catch (error) {
-        console.error("order.shipped_email_queue_failed", { orderId: data.orderId, error });
+        console.error("order.shipped_email_queue_failed", {
+          orderId: data.orderId,
+          error: safeErrorMetadata(error),
+        });
         await sendOrderShippedNotification(env as CommerceEnv, data.orderId).catch((sendError) =>
           console.error("order.shipped_email_fallback_failed", {
             orderId: data.orderId,
-            error: sendError,
+            error: safeErrorMetadata(sendError),
           }),
         );
       }
@@ -797,7 +801,10 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
             orderId: data.orderId,
             ...referral.invitation,
           }).catch((error) =>
-            console.error("referral.invitation_email_failed", { orderId: data.orderId, error }),
+            console.error("referral.invitation_email_failed", {
+              orderId: data.orderId,
+              error: safeErrorMetadata(error),
+            }),
           );
         }
         if (referral.advocateReward) {
@@ -805,7 +812,10 @@ export const updateAdminOrderStatus = createServerFn({ method: "POST" })
             orderId: data.orderId,
             ...referral.advocateReward,
           }).catch((error) =>
-            console.error("referral.reward_email_failed", { orderId: data.orderId, error }),
+            console.error("referral.reward_email_failed", {
+              orderId: data.orderId,
+              error: safeErrorMetadata(error),
+            }),
           );
         }
       }

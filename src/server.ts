@@ -1,9 +1,17 @@
 import "./lib/error-capture";
 
-import { consumeLastCapturedError } from "./lib/error-capture";
+import { safeErrorMetadata } from "./server/security/logging";
+import { consumeLastCapturedError, withRequestErrorCapture } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { API_HOSTNAME, APP_HOSTNAME, resolveHostRoute } from "./server/host-routing";
 import type { CommerceQueueMessage } from "./server/queue/commerce-consumer";
+import { guardSecurityEdge, addSecurityHeaders } from "./server/security/edge";
+import {
+  SecurityError,
+  securityResponse,
+  routeMetric,
+  securityPolicy,
+} from "./server/security/policy";
 
 type ServerEntry = {
   fetch: (request: Request, env: Env, ctx: ExecutionContext) => Promise<Response> | Response;
@@ -47,6 +55,7 @@ function withOperationalHeaders(
     url.pathname === "/cont" ||
     url.pathname === "/personalizeaza" ||
     url.hostname === API_HOSTNAME ||
+    url.hostname === (env as Env & { ADMIN_HOSTNAME?: string }).ADMIN_HOSTNAME ||
     url.hostname === APP_HOSTNAME ||
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/admin") ||
@@ -69,6 +78,7 @@ function withOperationalHeaders(
   if (url.protocol === "https:") {
     headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
   }
+  addSecurityHeaders(headers, response, request);
 
   return new Response(response.body, {
     status: response.status,
@@ -87,11 +97,11 @@ function recordRequestMetric(
     const url = new URL(request.url);
     env.ANALYTICS.writeDataPoint({
       indexes: [url.pathname.startsWith("/api/") ? "api" : "web"],
-      blobs: [env.APP_ENV, request.method, url.pathname, String(response.status)],
+      blobs: [env.APP_ENV, request.method, routeMetric(url.pathname), String(response.status)],
       doubles: [Date.now() - startedAt],
     });
   } catch (error) {
-    console.warn("analytics.write_failed", error);
+    console.warn("analytics.write_failed", safeErrorMetadata(error));
   }
 }
 
@@ -141,114 +151,138 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  console.error("ssr.failed", safeErrorMetadata(consumeLastCapturedError()));
   return brandedErrorResponse();
 }
 
 export default {
   async fetch(originalRequest: Request, env: Env, ctx: ExecutionContext) {
-    const startedAt = Date.now();
-    const requestId = originalRequest.headers.get("x-request-id") ?? crypto.randomUUID();
-    let request = originalRequest;
-    try {
-      const requestUrl = new URL(request.url);
-      const hostRoute = resolveHostRoute(requestUrl, request.method);
-      if (hostRoute.type === "redirect") {
-        const redirect = withOperationalHeaders(
-          request,
-          Response.redirect(hostRoute.location, 308),
-          requestId,
-          env,
+    return withRequestErrorCapture(async () => {
+      const startedAt = Date.now();
+      const requestId = crypto.randomUUID();
+      const requestHeaders = new Headers(originalRequest.headers);
+      requestHeaders.set("x-request-id", requestId);
+      let request = new Request(originalRequest, { headers: requestHeaders });
+      try {
+        const requestUrl = new URL(request.url);
+        const hostRoute = resolveHostRoute(
+          requestUrl,
+          request.method,
+          securityPolicy(env).adminHost,
         );
-        recordRequestMetric(env, request, redirect, startedAt);
-        return redirect;
-      }
-      if (hostRoute.type === "api-index") {
-        const response = withOperationalHeaders(
-          request,
-          jsonResponse({
-            service: "cutiuta-magica-api",
-            version: "v1",
-            environment: env.APP_ENV,
-            health: "https://api.cutiutamagica.eu/v1/health",
-          }),
-          requestId,
-          env,
-        );
+        if (hostRoute.type === "redirect") {
+          const redirect = withOperationalHeaders(
+            request,
+            Response.redirect(hostRoute.location, 308),
+            requestId,
+            env,
+          );
+          recordRequestMetric(env, request, redirect, startedAt);
+          return redirect;
+        }
+        if (hostRoute.type === "api-index") {
+          const response = withOperationalHeaders(
+            request,
+            jsonResponse({
+              service: "cutiuta-magica-api",
+              version: "v1",
+              environment: env.APP_ENV,
+              health: "https://api.cutiutamagica.eu/v1/health",
+            }),
+            requestId,
+            env,
+          );
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
+        if (hostRoute.type === "api-not-found") {
+          const response = withOperationalHeaders(
+            request,
+            jsonResponse({ error: "not_found", requestId }, 404),
+            requestId,
+            env,
+          );
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
+        if (hostRoute.type === "rewrite") {
+          request = new Request(hostRoute.url, request);
+        }
+
+        const pathname = new URL(request.url).pathname;
+        const securityBlock = await guardSecurityEdge(request, env);
+        if (securityBlock) return withOperationalHeaders(request, securityBlock, requestId, env);
+        if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+          const { guardAdminPage } = await import("./server/admin-page-guard");
+          const adminRedirect = await guardAdminPage(request, env.DB, env);
+          if (adminRedirect) {
+            const response = withOperationalHeaders(request, adminRedirect, requestId, env);
+            recordRequestMetric(env, request, response, startedAt);
+            return response;
+          }
+        }
+        if (pathname.startsWith("/media/")) {
+          const { handlePublicMediaRequest } = await import("./server/media-public");
+          const mediaResponse = await handlePublicMediaRequest(request, env);
+          if (mediaResponse) {
+            const response = withOperationalHeaders(request, mediaResponse, requestId, env);
+            recordRequestMetric(env, request, response, startedAt);
+            return response;
+          }
+        }
+        if (pathname.startsWith("/api/v1/")) {
+          const { handleApiRequest } = await import("./server/api/router");
+          const apiResponse = await handleApiRequest(request, env, ctx);
+          if (apiResponse) {
+            const response = withOperationalHeaders(request, apiResponse, requestId, env);
+            recordRequestMetric(env, request, response, startedAt);
+            return response;
+          }
+        }
+
+        const handler = await getServerEntry();
+        const rendered = await handler.fetch(request, env, ctx);
+        const normalized = await normalizeCatastrophicSsrResponse(rendered);
+        const response = withOperationalHeaders(request, normalized, requestId, env);
         recordRequestMetric(env, request, response, startedAt);
         return response;
-      }
-      if (hostRoute.type === "api-not-found") {
-        const response = withOperationalHeaders(
-          request,
-          jsonResponse({ error: "not_found", requestId }, 404),
+      } catch (error) {
+        if (error instanceof SecurityError) {
+          const response = withOperationalHeaders(request, securityResponse(error), requestId, env);
+          recordRequestMetric(env, request, response, startedAt);
+          return response;
+        }
+        console.error("request.failed", { requestId, ...safeErrorMetadata(error) });
+        const fallback = withOperationalHeaders(
+          originalRequest,
+          brandedErrorResponse(),
           requestId,
           env,
         );
-        recordRequestMetric(env, request, response, startedAt);
-        return response;
+        recordRequestMetric(env, originalRequest, fallback, startedAt);
+        return fallback;
       }
-      if (hostRoute.type === "rewrite") {
-        request = new Request(hostRoute.url, request);
-      }
-
-      const pathname = new URL(request.url).pathname;
-      if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-        const { guardAdminPage } = await import("./server/admin-page-guard");
-        const adminRedirect = await guardAdminPage(request, env.DB);
-        if (adminRedirect) {
-          const response = withOperationalHeaders(request, adminRedirect, requestId, env);
-          recordRequestMetric(env, request, response, startedAt);
-          return response;
-        }
-      }
-      if (pathname.startsWith("/media/")) {
-        const { handlePublicMediaRequest } = await import("./server/media-public");
-        const mediaResponse = await handlePublicMediaRequest(request, env);
-        if (mediaResponse) {
-          const response = withOperationalHeaders(request, mediaResponse, requestId, env);
-          recordRequestMetric(env, request, response, startedAt);
-          return response;
-        }
-      }
-      if (pathname.startsWith("/api/v1/")) {
-        const { handleApiRequest } = await import("./server/api/router");
-        const apiResponse = await handleApiRequest(request, env, ctx);
-        if (apiResponse) {
-          const response = withOperationalHeaders(request, apiResponse, requestId, env);
-          recordRequestMetric(env, request, response, startedAt);
-          return response;
-        }
-      }
-
-      const handler = await getServerEntry();
-      const rendered = await handler.fetch(request, env, ctx);
-      const normalized = await normalizeCatastrophicSsrResponse(rendered);
-      const response = withOperationalHeaders(request, normalized, requestId, env);
-      recordRequestMetric(env, request, response, startedAt);
-      return response;
-    } catch (error) {
-      console.error("request.failed", { requestId, error });
-      const fallback = withOperationalHeaders(
-        originalRequest,
-        brandedErrorResponse(),
-        requestId,
-        env,
-      );
-      recordRequestMetric(env, originalRequest, fallback, startedAt);
-      return fallback;
-    }
+    });
   },
 
   async queue(batch: MessageBatch<CommerceQueueMessage>, env: Env) {
     const { consumeCommerceEvents } = await import("./server/queue/commerce-consumer");
     await consumeCommerceEvents(batch, env);
   },
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    if (controller.cron === "15 * * * *") {
+      const { processScheduledBackup } = await import("./server/services/backup-center");
+      ctx.waitUntil(processScheduledBackup(env));
+      return;
+    }
+    if (controller.cron === "30 * * * *") {
+      const { maintainSecurityLog } = await import("./server/security/events");
+      ctx.waitUntil(maintainSecurityLog(env.DB));
+      return;
+    }
     const [
       { processOwnerReports },
       { purgeExpiredChatConversations },
-      { processScheduledBackup },
       { processGiftCalendarReminders, processBirthdayRewards },
       { processRewardEmailDigests },
       { processMarketingAgentMonitoring },
@@ -257,7 +291,6 @@ export default {
     ] = await Promise.all([
       import("./server/services/owner-reports"),
       import("./server/db/chat.repository"),
-      import("./server/services/backup-center"),
       import("./server/services/magic-rewards"),
       import("./server/services/reward-emails"),
       import("./server/services/marketing-agent-monitor"),
@@ -265,17 +298,31 @@ export default {
       import("./server/services/oblio-payment-sync"),
     ]);
     ctx.waitUntil(
-      Promise.all([
+      Promise.allSettled([
         processOwnerReports(env),
         purgeExpiredChatConversations(env.DB),
-        processScheduledBackup(env),
         processGiftCalendarReminders(env),
         processBirthdayRewards(env.DB),
         processRewardEmailDigests(env),
         processMarketingAgentMonitoring(env.DB),
         processStorageRetention(env),
         reconcilePaidInvoiceCollections(env),
-      ]).then(() => undefined),
+      ]).then((results) => {
+        const tasks = [
+          "owner_reports",
+          "chat_retention",
+          "gift_calendar",
+          "birthday_rewards",
+          "reward_emails",
+          "marketing_monitor",
+          "storage_retention",
+          "invoice_reconciliation",
+        ];
+        const failed = results.flatMap((result, index) =>
+          result.status === "rejected" ? [tasks[index]] : [],
+        );
+        if (failed.length) console.error("maintenance.partial_failure", { tasks: failed });
+      }),
     );
   },
 } satisfies ExportedHandler<Env, CommerceQueueMessage>;

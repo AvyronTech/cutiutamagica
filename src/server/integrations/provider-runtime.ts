@@ -17,6 +17,7 @@ export type CommerceEnv = Env & {
   OLX_ACCESS_TOKEN?: string;
   OKAZII_API_KEY?: string;
   INTEGRATION_ENCRYPTION_KEY?: string;
+  INTEGRATION_ENCRYPTION_PREVIOUS_KEY?: string;
   BRAVE_SEARCH_API_KEY?: string;
   GOOGLE_ACCESS_TOKEN?: string;
   META_ACCESS_TOKEN?: string;
