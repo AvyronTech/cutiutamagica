@@ -1,5 +1,11 @@
 # Continuitatea proiectului Cutiuța Magică
 
+9 noiembrie 2026: auditul e-commerce reunește local securitatea și storefrontul pe `codex/ecommerce-security-audit-20261109`; schema94,489teste,19probeHTTP,SEO38 și build/dry-run PASS. Access absent pentru magazin și alias workers.dev încă public în producția91. **Fără push/deploy/MFA sau schimbări comerciale live.** [Raport și limite](audits/CUTIUTA_MAGICA_SECURITY_AUDIT.md).
+
+9 noiembrie 2026: audit public local în `codex/storefront-audit-20261108`, separat de PR #93. SEO live 38 URL-uri; 429 teste, 45 verificări responsive; consimțământ/tracking/formulare și landmark-uri corectate. Fără push/deploy sau modificări de conturi. [Raport și configurări/verificări rămase](audits/storefront-20261108/report.md).
+
+8 noiembrie 2026, securitate: lot pregătit pe `codex/security-hardening-20261108`, schema 93 numai local. Cookie-uri/sesiuni, RBAC, JWT Access pregătit, identități runner și backup privat v2. **Fără activare MFA, Access/WAF, schimbare de conturi ori deploy în acest lot.** [Audit și limite](handoff/2026-11-08-security-hardening.md). Starea producției din intrările următoare rămâne separată.
+
 8 noiembrie 2026, verificare finală GSC: **38/38 URL-uri canonice indexate**, fiecare inspectat individual; cele două ghiduri anterior în așteptare sunt acum confirmate în index. SEO live și rapoartele critice verificate fără probleme. Raportul agregat Pagini, încă din 23 octombrie, nu reflectă inventarul actual; exemplele sale sunt faviconul și varianta de căutare a catalogului. Livrare numai de documentație, runtime neschimbat. [Inventar și capturi](handoff/2026-11-08-complete-google-indexation.md).
 
 8 noiembrie 2026: release consolidat **publicat și verificat live**, sursă runtime **2ade5f0**, Worker **8d51b7d8-d05a-4486-897f-aa691476c00e** la 100%, schema **91**, fără migrații rămase. PR #90/#1 integrează întregul lot local și corecția de livrare recuperată. 415 teste CI și audit SEO 38 URL-uri fără probleme; cele șase probe 1102 și loginul normal răspund corect în această verificare. Documentația ulterioară are același cod de aplicație; intrările locale de mai jos sunt istorice. [Probe și limite](handoff/2026-11-08-production-consolidation.md).

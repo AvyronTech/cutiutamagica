@@ -123,7 +123,7 @@ function DeliveryPage() {
   const policy = Route.useLoaderData();
   const freeLabel = freeShippingLabel(policy);
   return (
-    <main className="delivery-page">
+    <div className="delivery-page">
       <header className="delivery-hero">
         <div className="delivery-hero__glow" aria-hidden />
         <div className="delivery-route" aria-hidden>
@@ -322,6 +322,6 @@ function DeliveryPage() {
           <CheckCircle2 aria-hidden /> informații clare
         </span>
       </section>
-    </main>
+    </div>
   );
 }

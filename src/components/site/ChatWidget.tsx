@@ -1,3 +1,4 @@
+import { storefrontRequest } from "@/lib/storefront-request";
 import {
   CHAT_POSITION_KEY,
   CHAT_SIDE_KEY,
@@ -111,7 +112,7 @@ export function ChatWidget() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/v1/chat/config")
+    storefrontRequest("/api/v1/chat/config")
       .then((response) => responseData<PublicChatConfig>(response))
       .then((data) => {
         if (!active) return;
@@ -148,7 +149,7 @@ export function ChatWidget() {
     let active = true;
     const load = async () => {
       try {
-        const response = await fetch(
+        const response = await storefrontRequest(
           `/api/v1/chat/conversations/${session.conversationId}/messages`,
           { headers: { authorization: `Bearer ${session.accessToken}` } },
         );
@@ -263,7 +264,7 @@ export function ChatWidget() {
   const activeConfig = config;
 
   async function createSession(): Promise<ChatSession> {
-    const response = await fetch("/api/v1/chat/conversations", {
+    const response = await storefrontRequest("/api/v1/chat/conversations", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -310,7 +311,7 @@ export function ChatWidget() {
       setMessages((current) => [...current, optimistic]);
       setMessage("");
       const postMessage = (currentSession: ChatSession) =>
-        fetch(`/api/v1/chat/conversations/${currentSession.conversationId}/messages`, {
+        storefrontRequest(`/api/v1/chat/conversations/${currentSession.conversationId}/messages`, {
           method: "POST",
           headers: {
             "content-type": "application/json",

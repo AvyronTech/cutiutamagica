@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import { gtinType } from "@/lib/product-identification";
@@ -412,7 +413,7 @@ export async function handleProductTechnicalSheet(
         ? Number((error as { statusCode: unknown }).statusCode) || 500
         : 500;
     const message = error instanceof Error ? error.message : "Fișa nu a putut fi salvată.";
-    if (status === 500) console.error("admin.technical_sheet.failed", error);
+    if (status === 500) console.error("admin.technical_sheet.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

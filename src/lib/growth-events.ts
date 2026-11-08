@@ -1,3 +1,5 @@
+import { analyticsAllowed } from "./cookie-consent";
+
 export const GROWTH_EVENT_NAMES = [
   "page_view",
   "product_view",
@@ -43,7 +45,7 @@ function sessionId(): string {
 }
 
 export function trackGrowthEvent(name: GrowthEventName, options: GrowthEventOptions = {}): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !analyticsAllowed()) return;
   if (options.once) {
     try {
       const key = `${ONCE_PREFIX}${options.once}`;

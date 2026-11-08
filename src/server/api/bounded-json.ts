@@ -44,3 +44,31 @@ export async function boundedBytes(
   }
   return bytes;
 }
+
+/** Limit actual multipart bytes before the runtime allocates every field/file. */
+export async function boundedFormData(request: Request, limit: number): Promise<FormData> {
+  if (!request.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data;"))
+    throw fail("Formular multipart necesar.", 415);
+  const bytes = await boundedBytes(request, limit);
+  try {
+    return await new Response(bytes, {
+      headers: { "content-type": request.headers.get("content-type")! },
+    }).formData();
+  } catch {
+    throw fail("Formular invalid.", 400);
+  }
+}
+
+/** Abort an R2 upload as soon as actual bytes exceed the declared size or type limit. */
+export function boundedUploadStream(body: ReadableStream<Uint8Array>, limit: number) {
+  let count = 0;
+  return body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        count += chunk.byteLength;
+        if (count > limit) throw fail("Fișier prea mare.", 413);
+        controller.enqueue(chunk);
+      },
+    }),
+  );
+}

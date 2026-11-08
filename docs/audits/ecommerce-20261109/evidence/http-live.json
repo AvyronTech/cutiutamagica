@@ -1,0 +1,119 @@
+{
+  "at": "2026-11-08T22:38:44.975656+00:00",
+  "probes": [
+    {
+      "url": "https://cutiutamagica.eu/api/v1/health",
+      "status": 200,
+      "finalUrl": "https://cutiutamagica.eu/api/v1/health",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "SAMEORIGIN",
+        "x-robots-tag": "noindex, nofollow"
+      },
+      "health": {
+        "status": "ok",
+        "environment": "production",
+        "schemaVersion": "91",
+        "timestamp": "2026-11-08T22:38:43.938Z"
+      }
+    },
+    {
+      "url": "https://cutiutamagica.eu/admin",
+      "status": 200,
+      "finalUrl": "https://cutiutamagica.eu/auth?redirect=%2Fadmin",
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "private, no-store",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "SAMEORIGIN",
+        "x-robots-tag": "noindex, nofollow"
+      },
+      "health": null
+    },
+    {
+      "url": "https://app.cutiutamagica.eu/admin",
+      "status": 200,
+      "finalUrl": "https://app.cutiutamagica.eu/auth?redirect=%2Fadmin",
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "private, no-store",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "SAMEORIGIN",
+        "x-robots-tag": "noindex, nofollow"
+      },
+      "health": null
+    },
+    {
+      "url": "https://api.cutiutamagica.eu/api/v1/admin/products",
+      "status": 404,
+      "finalUrl": "https://api.cutiutamagica.eu/api/v1/admin/products",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "x-robots-tag": "noindex, nofollow"
+      },
+      "health": null
+    },
+    {
+      "url": "https://cutiuta-magica-store.avyrontech.workers.dev/api/v1/health",
+      "status": 200,
+      "finalUrl": "https://cutiuta-magica-store.avyrontech.workers.dev/api/v1/health",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "SAMEORIGIN",
+        "x-robots-tag": "noindex, nofollow"
+      },
+      "health": {
+        "status": "ok",
+        "environment": "production",
+        "schemaVersion": "91",
+        "timestamp": "2026-11-08T22:38:44.804Z"
+      }
+    },
+    {
+      "url": "https://cutiutamagica.eu/.env",
+      "status": 404,
+      "finalUrl": "https://cutiutamagica.eu/.env",
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "SAMEORIGIN"
+      },
+      "health": null
+    },
+    {
+      "url": "https://cutiutamagica.eu/api/v1/admin/security/sessions",
+      "status": 404,
+      "finalUrl": "https://cutiutamagica.eu/api/v1/admin/security/sessions",
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "SAMEORIGIN",
+        "x-robots-tag": "noindex, nofollow"
+      },
+      "health": null
+    }
+  ]
+}

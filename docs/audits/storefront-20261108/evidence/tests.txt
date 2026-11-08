@@ -1,0 +1,7 @@
+RUN  v4.1.12 /Users/niss/.codex/worktrees/storefront-audit-20261108
+
+
+ Test Files  77 passed (77)
+      Tests  429 passed (429)
+   Start at  00:09:44
+   Duration  206.02s (transform 2.91s, setup 0ms, import 13.38s, tests 359.98s, environment 14ms)

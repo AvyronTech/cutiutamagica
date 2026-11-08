@@ -1,3 +1,5 @@
+import { AdminAccessContext } from "./access-context";
+import { canOpenAdminPath } from "@/lib/admin-access-policy";
 import { subscribeReportSync } from "./report-sync";
 import { useState, useEffect, useRef } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
@@ -120,6 +122,7 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
       { path: "/admin/accounts", label: "Conturi și dispozitive", icon: ShieldCheck },
       { path: "/admin/backups", label: "Backup", icon: DatabaseBackup },
       { path: "/admin/settings", label: "Setări", icon: Settings },
+      { path: "/admin/security", label: "Securitate și acces", icon: ShieldCheck },
     ],
   },
 ];
@@ -139,7 +142,21 @@ function NotificationIcon({ type }: { type: string }) {
   }
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({
+  children,
+  permissions,
+}: {
+  children: React.ReactNode;
+  permissions: string[];
+}) {
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canOpenAdminPath(item.path, permissions)),
+    }))
+    .filter((group) => group.items.length);
+
+  const visibleItems = visibleGroups.flatMap((group) => group.items);
   const queryClient = useQueryClient();
   useEffect(() => subscribeReportSync(queryClient), [queryClient]);
   const fetchNotifications = useServerFn(getAdminNotifications);
@@ -278,347 +295,351 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   return (
-    <div className="admin-workspace relative flex h-dvh overflow-hidden bg-[#080f1e] text-slate-100">
-      {/* Mobile Overlay */}
-      {isMobile && sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <AdminAccessContext.Provider value={permissions}>
+      <div className="admin-workspace relative flex h-dvh overflow-hidden bg-[#080f1e] text-slate-100">
+        {/* Mobile Overlay */}
+        {isMobile && sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-      {/* Sidebar */}
-      <aside
-        className={`${
-          isMobile
-            ? `fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out ${
-                sidebarOpen ? "translate-x-0" : "-translate-x-full"
-              }`
-            : "w-64 flex-shrink-0"
-        } flex flex-col border-r border-white/10 bg-[#0b1424] bg-[radial-gradient(circle_at_0_0,rgba(163,123,255,.12),transparent_34%)] shadow-[16px_0_44px_rgba(0,0,0,.12)]`}
-      >
-        {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
-          <div className="flex items-center gap-3">
-            <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-2xl border border-amber-200/30 bg-amber-100/10 p-1 shadow-[0_8px_28px_rgba(233,190,104,.12)]">
-              <img
-                src="/brand/music-box-universal.webp"
-                alt="Cutiuța Magică"
-                className="h-full w-full object-contain"
-              />
+        {/* Sidebar */}
+        <aside
+          className={`${
+            isMobile
+              ? `fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out ${
+                  sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                }`
+              : "w-64 flex-shrink-0"
+          } flex flex-col border-r border-white/10 bg-[#0b1424] bg-[radial-gradient(circle_at_0_0,rgba(163,123,255,.12),transparent_34%)] shadow-[16px_0_44px_rgba(0,0,0,.12)]`}
+        >
+          {/* Logo */}
+          <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-2xl border border-amber-200/30 bg-amber-100/10 p-1 shadow-[0_8px_28px_rgba(233,190,104,.12)]">
+                <img
+                  src="/brand/music-box-universal.webp"
+                  alt="Cutiuța Magică"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-sm font-bold text-white whitespace-nowrap">Cutiuța Magică</p>
+                <p className="whitespace-nowrap text-[10px] font-medium tracking-[.14em] text-amber-200/80">
+                  ATELIER · ADMIN
+                </p>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold text-white whitespace-nowrap">Cutiuța Magică</p>
-              <p className="whitespace-nowrap text-[10px] font-medium tracking-[.14em] text-amber-200/80">
-                ATELIER · ADMIN
-              </p>
-            </div>
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Închide meniul"
+                className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
-          {isMobile && (
-            <button
-              onClick={() => setSidebarOpen(false)}
-              aria-label="Închide meniul"
-              className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
 
-        {/* Navigation */}
-        <nav aria-label="Navigare administrare" className="flex-1 overflow-y-auto px-3 py-3">
-          {navGroups.map((group) => {
-            const hasActiveItem = group.items.some(
-              (item) =>
-                location.pathname === item.path ||
-                (item.path !== "/admin" && location.pathname.startsWith(`${item.path}/`)),
-            );
-            const collapsed = collapsedGroups[group.label] && !hasActiveItem;
-            return (
-              <section key={group.label} className="mb-2">
+          {/* Navigation */}
+          <nav aria-label="Navigare administrare" className="flex-1 overflow-y-auto px-3 py-3">
+            {visibleGroups.map((group) => {
+              const hasActiveItem = group.items.some(
+                (item) =>
+                  location.pathname === item.path ||
+                  (item.path !== "/admin" && location.pathname.startsWith(`${item.path}/`)),
+              );
+              const collapsed = collapsedGroups[group.label] && !hasActiveItem;
+              return (
+                <section key={group.label} className="mb-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCollapsedGroups((current) => ({
+                        ...current,
+                        [group.label]: !current[group.label],
+                      }))
+                    }
+                    className="mb-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 transition hover:bg-white/5 hover:text-white"
+                    aria-expanded={!collapsed}
+                  >
+                    {group.label}
+                    <ChevronDown
+                      className={`h-3 w-3 transition ${collapsed ? "-rotate-90" : ""}`}
+                    />
+                  </button>
+                  {!collapsed && (
+                    <div className="space-y-1">
+                      {group.items.map((item) => {
+                        const isActive = activeNavItem?.path === item.path;
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.path}
+                            to={item.path}
+                            className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 ${
+                              isActive
+                                ? "border-amber-200/25 bg-[linear-gradient(105deg,rgba(241,194,119,.17),rgba(164,125,233,.1))] text-white shadow-[inset_3px_0_0_#f4ce9f]"
+                                : "border-transparent text-slate-300 hover:border-white/10 hover:bg-white/[.07] hover:text-white"
+                            }`}
+                          >
+                            <Icon
+                              className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-amber-200" : "text-slate-400 group-hover:text-white"}`}
+                            />
+                            <span className="min-w-0 text-[13px] font-medium leading-5">
+                              {item.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </nav>
+
+          <div className="border-t border-white/10 px-4 py-3">
+            <p className="text-xs font-medium text-slate-200">Cutiuța Magică</p>
+            <p className="mt-1 text-[11px] text-slate-400">Comerț · conținut · relații clienți</p>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <header className="relative z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#0c1627]/90 px-4 backdrop-blur-xl md:h-16 md:px-5">
+            <div className="flex items-center gap-3">
+              {/* Hamburger button - mobile */}
+              {isMobile && (
                 <button
-                  type="button"
-                  onClick={() =>
-                    setCollapsedGroups((current) => ({
-                      ...current,
-                      [group.label]: !current[group.label],
-                    }))
-                  }
-                  className="mb-1.5 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 transition hover:bg-white/5 hover:text-white"
-                  aria-expanded={!collapsed}
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Deschide meniul"
+                  className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400 -ml-1"
                 >
-                  {group.label}
-                  <ChevronDown className={`h-3 w-3 transition ${collapsed ? "-rotate-90" : ""}`} />
+                  <Menu className="w-5 h-5" />
                 </button>
-                {!collapsed && (
-                  <div className="space-y-1">
-                    {group.items.map((item) => {
-                      const isActive = activeNavItem?.path === item.path;
-                      const Icon = item.icon;
-                      return (
+              )}
+              <div className="hidden min-w-0 md:block">
+                <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-amber-200/70">
+                  Cutiuța Magică / Administrare
+                </p>
+                <p className="truncate text-sm font-medium text-white">
+                  {activeNavItem?.label ?? "Spațiu de lucru"}
+                </p>
+              </div>
+              <div className="relative hidden lg:block lg:ml-5">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="search"
+                  value={navSearch}
+                  onChange={(event) => setNavSearch(event.target.value)}
+                  aria-label="Caută o secțiune administrativă"
+                  placeholder="Caută o secțiune…"
+                  className="w-60 rounded-xl border border-white/10 bg-white/[.05] py-2.5 pl-9 pr-3 text-xs text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-amber-200/50"
+                />
+                {navSearch.trim() && (
+                  <div className="absolute left-0 top-11 z-50 w-72 overflow-hidden rounded-xl border border-[#334155] bg-[#101a2b] p-1.5 shadow-2xl">
+                    {visibleItems
+                      .filter((item) =>
+                        item.label
+                          .toLocaleLowerCase("ro-RO")
+                          .includes(navSearch.toLocaleLowerCase("ro-RO")),
+                      )
+                      .slice(0, 7)
+                      .map((item) => (
                         <Link
                           key={item.path}
                           to={item.path}
-                          className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 ${
-                            isActive
-                              ? "border-amber-200/25 bg-[linear-gradient(105deg,rgba(241,194,119,.17),rgba(164,125,233,.1))] text-white shadow-[inset_3px_0_0_#f4ce9f]"
-                              : "border-transparent text-slate-300 hover:border-white/10 hover:bg-white/[.07] hover:text-white"
-                          }`}
+                          onClick={() => setNavSearch("")}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-[#1E293B] hover:text-white"
                         >
-                          <Icon
-                            className={`h-4 w-4 flex-shrink-0 ${isActive ? "text-amber-200" : "text-slate-400 group-hover:text-white"}`}
-                          />
-                          <span className="min-w-0 text-[13px] font-medium leading-5">
-                            {item.label}
-                          </span>
+                          <item.icon className="h-4 w-4 text-purple-400" />
+                          {item.label}
                         </Link>
-                      );
-                    })}
+                      ))}
                   </div>
                 )}
-              </section>
-            );
-          })}
-        </nav>
-
-        <div className="border-t border-white/10 px-4 py-3">
-          <p className="text-xs font-medium text-slate-200">Cutiuța Magică</p>
-          <p className="mt-1 text-[11px] text-slate-400">Comerț · conținut · relații clienți</p>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="relative z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-white/10 bg-[#0c1627]/90 px-4 backdrop-blur-xl md:h-16 md:px-5">
-          <div className="flex items-center gap-3">
-            {/* Hamburger button - mobile */}
-            {isMobile && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Deschide meniul"
-                className="p-2 rounded-lg hover:bg-[#1E293B] text-slate-400 -ml-1"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-            )}
-            <div className="hidden min-w-0 md:block">
-              <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-amber-200/70">
-                Cutiuța Magică / Administrare
-              </p>
-              <p className="truncate text-sm font-medium text-white">
-                {activeNavItem?.label ?? "Spațiu de lucru"}
-              </p>
+              </div>
             </div>
-            <div className="relative hidden lg:block lg:ml-5">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                type="search"
-                value={navSearch}
-                onChange={(event) => setNavSearch(event.target.value)}
-                aria-label="Caută o secțiune administrativă"
-                placeholder="Caută o secțiune…"
-                className="w-60 rounded-xl border border-white/10 bg-white/[.05] py-2.5 pl-9 pr-3 text-xs text-slate-100 outline-none transition placeholder:text-slate-400 focus:border-amber-200/50"
-              />
-              {navSearch.trim() && (
-                <div className="absolute left-0 top-11 z-50 w-72 overflow-hidden rounded-xl border border-[#334155] bg-[#101a2b] p-1.5 shadow-2xl">
-                  {navItems
-                    .filter((item) =>
-                      item.label
-                        .toLocaleLowerCase("ro-RO")
-                        .includes(navSearch.toLocaleLowerCase("ro-RO")),
-                    )
-                    .slice(0, 7)
-                    .map((item) => (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setNavSearch("")}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-300 hover:bg-[#1E293B] hover:text-white"
-                      >
-                        <item.icon className="h-4 w-4 text-purple-400" />
-                        {item.label}
-                      </Link>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 md:gap-4">
-            <PwaInstallButton />
-            {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                aria-label={unreadCount ? `Notificări, ${unreadCount} necitite` : "Notificări"}
-                aria-expanded={showNotifications}
-                aria-controls="admin-notification-panel"
-                className="notification-trigger relative p-2 rounded-lg hover:bg-[#1E293B] transition-colors"
-              >
-                <Bell className="w-5 h-5 text-slate-400" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-white">{unreadCount}</span>
-                  </span>
-                )}
-              </button>
-
-              {/* Notification Panel - Fixed positioning for all pages */}
-              {showNotifications && (
-                <div
-                  id="admin-notification-panel"
-                  role="region"
-                  aria-label="Notificări administrative"
-                  className="notification-panel fixed right-4 top-16 z-[100] flex max-h-[80vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#172237]/85 shadow-[0_24px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl md:top-16"
+            <div className="flex items-center gap-2 md:gap-4">
+              <PwaInstallButton />
+              {/* Notifications */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  aria-label={unreadCount ? `Notificări, ${unreadCount} necitite` : "Notificări"}
+                  aria-expanded={showNotifications}
+                  aria-controls="admin-notification-panel"
+                  className="notification-trigger relative p-2 rounded-lg hover:bg-[#1E293B] transition-colors"
                 >
-                  <div className="flex items-center justify-between p-4 border-b border-[#334155]">
-                    <div className="flex items-center gap-2">
-                      <Bell className="w-4 h-4 text-purple-400" />
-                      <h3 className="text-sm font-semibold text-white">Notificări</h3>
-                      {unreadCount > 0 && (
-                        <span className="px-1.5 py-0.5 bg-red-500/20 text-red-300 text-[10px] rounded-full font-medium">
-                          {unreadCount} noi
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = !soundEnabled;
-                          setSoundEnabled(next);
-                          localStorage.setItem("cutiuta:notification-sound", next ? "on" : "off");
-                        }}
-                        className="rounded-md p-1.5 text-slate-400 transition hover:bg-[#334155] hover:text-white"
-                        aria-label={soundEnabled ? "Oprește sunetele" : "Pornește sunetele"}
-                        title={soundEnabled ? "Oprește sunetele" : "Pornește sunetele"}
-                      >
-                        {soundEnabled ? (
-                          <Volume2 className="h-4 w-4" />
-                        ) : (
-                          <VolumeX className="h-4 w-4" />
+                  <Bell className="w-5 h-5 text-slate-400" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-white">{unreadCount}</span>
+                    </span>
+                  )}
+                </button>
+
+                {/* Notification Panel - Fixed positioning for all pages */}
+                {showNotifications && (
+                  <div
+                    id="admin-notification-panel"
+                    role="region"
+                    aria-label="Notificări administrative"
+                    className="notification-panel fixed right-4 top-16 z-[100] flex max-h-[80vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#172237]/85 shadow-[0_24px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl md:top-16"
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-[#334155]">
+                      <div className="flex items-center gap-2">
+                        <Bell className="w-4 h-4 text-purple-400" />
+                        <h3 className="text-sm font-semibold text-white">Notificări</h3>
+                        {unreadCount > 0 && (
+                          <span className="px-1.5 py-0.5 bg-red-500/20 text-red-300 text-[10px] rounded-full font-medium">
+                            {unreadCount} noi
+                          </span>
                         )}
-                      </button>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={() => readAllMutation.mutate()}
-                          className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                        >
-                          Marchează citite
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="overflow-y-auto max-h-[60vh] divide-y divide-[#334155]/50">
-                    {notifications.length === 0 ? (
-                      <div className="p-6 text-center">
-                        <Bell className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                        <p className="text-sm text-slate-400">Nicio notificare</p>
                       </div>
-                    ) : (
-                      notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          onClick={() => !notif.read && readMutation.mutate(notif.id)}
-                          className={`p-3 hover:bg-[#0F172A]/50 transition-colors cursor-pointer ${
-                            !notif.read ? "bg-purple-500/5 border-l-2 border-l-purple-500" : ""
-                          }`}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !soundEnabled;
+                            setSoundEnabled(next);
+                            localStorage.setItem("cutiuta:notification-sound", next ? "on" : "off");
+                          }}
+                          className="rounded-md p-1.5 text-slate-400 transition hover:bg-[#334155] hover:text-white"
+                          aria-label={soundEnabled ? "Oprește sunetele" : "Pornește sunetele"}
+                          title={soundEnabled ? "Oprește sunetele" : "Pornește sunetele"}
                         >
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5">
-                              <NotificationIcon
-                                type={
-                                  notif.severity === "success"
-                                    ? "success"
-                                    : notif.severity === "warning" ||
-                                        notif.severity === "error" ||
-                                        notif.severity === "critical"
-                                      ? "alert"
-                                      : notif.type
-                                }
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p
-                                  className={`text-xs font-medium ${!notif.read ? "text-white" : "text-slate-300"}`}
-                                >
-                                  {notif.title}
-                                </p>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    dismissMutation.mutate(notif.id);
-                                  }}
-                                  aria-label={`Ascunde notificarea ${notif.title}`}
-                                  className="p-0.5 rounded hover:bg-[#334155] text-slate-500 hover:text-slate-300"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
+                          {soundEnabled ? (
+                            <Volume2 className="h-4 w-4" />
+                          ) : (
+                            <VolumeX className="h-4 w-4" />
+                          )}
+                        </button>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={() => readAllMutation.mutate()}
+                            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                          >
+                            Marchează citite
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="overflow-y-auto max-h-[60vh] divide-y divide-[#334155]/50">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center">
+                          <Bell className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                          <p className="text-sm text-slate-400">Nicio notificare</p>
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div
+                            key={notif.id}
+                            onClick={() => !notif.read && readMutation.mutate(notif.id)}
+                            className={`p-3 hover:bg-[#0F172A]/50 transition-colors cursor-pointer ${
+                              !notif.read ? "bg-purple-500/5 border-l-2 border-l-purple-500" : ""
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5">
+                                <NotificationIcon
+                                  type={
+                                    notif.severity === "success"
+                                      ? "success"
+                                      : notif.severity === "warning" ||
+                                          notif.severity === "error" ||
+                                          notif.severity === "critical"
+                                        ? "alert"
+                                        : notif.type
+                                  }
+                                />
                               </div>
-                              <p className="text-[11px] text-slate-400 mt-0.5">{notif.message}</p>
-                              {adminNotificationLink(notif.actionUrl) && (
-                                <a
-                                  href={adminNotificationLink(notif.actionUrl)!}
-                                  className="mt-2 inline-block text-xs font-medium text-amber-200 underline-offset-2 hover:underline"
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  Deschide →
-                                </a>
-                              )}
-                              <p className="text-[10px] text-slate-500 mt-1">
-                                {new Date(notif.createdAt).toLocaleString("ro-RO")}
-                              </p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <p
+                                    className={`text-xs font-medium ${!notif.read ? "text-white" : "text-slate-300"}`}
+                                  >
+                                    {notif.title}
+                                  </p>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      dismissMutation.mutate(notif.id);
+                                    }}
+                                    aria-label={`Ascunde notificarea ${notif.title}`}
+                                    className="p-0.5 rounded hover:bg-[#334155] text-slate-500 hover:text-slate-300"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-0.5">{notif.message}</p>
+                                {adminNotificationLink(notif.actionUrl) && (
+                                  <a
+                                    href={adminNotificationLink(notif.actionUrl)!}
+                                    className="mt-2 inline-block text-xs font-medium text-amber-200 underline-offset-2 hover:underline"
+                                    onClick={(event) => event.stopPropagation()}
+                                  >
+                                    Deschide →
+                                  </a>
+                                )}
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                  {new Date(notif.createdAt).toLocaleString("ro-RO")}
+                                </p>
+                              </div>
                             </div>
                           </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="p-3 border-t border-[#334155] bg-[#0F172A]/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-3.5 h-3.5 text-slate-500" />
+                          <span className="text-[10px] text-slate-500">Alerte operaționale D1</span>
                         </div>
-                      ))
-                    )}
-                  </div>
-                  <div className="p-3 border-t border-[#334155] bg-[#0F172A]/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-3.5 h-3.5 text-slate-500" />
-                        <span className="text-[10px] text-slate-500">Alerte operaționale D1</span>
+                        <Link
+                          to="/admin/settings"
+                          onClick={() => setShowNotifications(false)}
+                          className="text-[10px] text-purple-400 hover:text-purple-300"
+                        >
+                          Configurează →
+                        </Link>
                       </div>
-                      <Link
-                        to="/admin/settings"
-                        onClick={() => setShowNotifications(false)}
-                        className="text-[10px] text-purple-400 hover:text-purple-300"
-                      >
-                        Configurează →
-                      </Link>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 md:gap-3">
-              <div
-                className="grid h-8 w-8 place-items-center rounded-xl border border-amber-200/20 bg-amber-200/10 text-xs font-semibold text-amber-100"
-                aria-hidden="true"
-              >
-                CM
+                )}
               </div>
-              <span className="text-sm font-medium text-slate-200 hidden sm:inline">Admin</span>
-              <button
-                onClick={handleLogout}
-                className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
-                aria-label="Deconectare"
-                title="Deconectare"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_92%_0%,rgba(116,93,162,.13),transparent_28%),linear-gradient(180deg,#0c1728,#0a1322)] admin-page-content p-3 pb-8 md:p-5">
-          <div className="mx-auto w-full max-w-[1560px]">{children}</div>
-        </main>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div
+                  className="grid h-8 w-8 place-items-center rounded-xl border border-amber-200/20 bg-amber-200/10 text-xs font-semibold text-amber-100"
+                  aria-hidden="true"
+                >
+                  CM
+                </div>
+                <span className="text-sm font-medium text-slate-200 hidden sm:inline">Admin</span>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
+                  aria-label="Deconectare"
+                  title="Deconectare"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Page Content */}
+          <main className="flex-1 overflow-y-auto bg-[radial-gradient(circle_at_92%_0%,rgba(116,93,162,.13),transparent_28%),linear-gradient(180deg,#0c1728,#0a1322)] admin-page-content p-3 pb-8 md:p-5">
+            <div className="mx-auto w-full max-w-[1560px]">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </AdminAccessContext.Provider>
   );
 }

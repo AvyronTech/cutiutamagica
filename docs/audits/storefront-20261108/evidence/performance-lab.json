@@ -1,0 +1,15 @@
+{
+  "page": "https://cutiutamagica.eu/produse",
+  "browser": "Opera via CUA/CDP",
+  "cache": "uncontrolled, existing session",
+  "viewportWidth": 1281,
+  "ttfbMs": 292,
+  "fcpMs": 2516,
+  "lcpMs": 2516,
+  "observedLayoutShift": 0.0002259214714422963,
+  "domContentLoadedMs": 745.2,
+  "loadMs": 2841.5,
+  "inp": null,
+  "fieldData": false,
+  "lighthouse": null
+}

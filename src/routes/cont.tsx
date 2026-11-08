@@ -247,10 +247,12 @@ function CustomerAccount() {
     }
   }
 
-  async function logout() {
+  async function logout(allDevices = false) {
     setBusy(true);
     try {
-      await reviewApi("/api/v1/reviewer/logout", { method: "POST" });
+      await reviewApi(allDevices ? "/api/v1/reviewer/logout-all" : "/api/v1/reviewer/logout", {
+        method: "POST",
+      });
       await clearCustomerSession(queryClient);
       setAccountPassword("");
       setAccountPhone("");
@@ -460,6 +462,18 @@ function CustomerAccount() {
         hidden={section !== "profil"}
         aria-label="Profil și acces"
       >
+        <div className="customer-profile-identity">
+          <h2>Dispozitive conectate</h2>
+          <p>Închide toate sesiunile contului, inclusiv pe acest dispozitiv.</p>
+          <button
+            type="button"
+            className="customer-signout customer-signout--light"
+            disabled={busy}
+            onClick={() => void logout(true)}
+          >
+            Deconectare de pe toate dispozitivele
+          </button>
+        </div>
         <form
           className="customer-profile-identity"
           onSubmit={(event) => void saveDisplayName(event)}

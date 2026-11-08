@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { localMediaPreview } from "../media-policy";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
@@ -471,7 +472,7 @@ export async function handleAdminProductExperienceApi(
           : status === 403
             ? "FORBIDDEN"
             : "EXPERIENCE_UPDATE_FAILED";
-    console.error("admin.product_experience.failed", error);
+    console.error("admin.product_experience.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

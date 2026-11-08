@@ -604,7 +604,9 @@ export default function MarketingOrdersAgentControl() {
 
         <div className="space-y-3 rounded-lg border border-[#28364d] bg-[#111c2e] p-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-white">Schimb controlat cu AVYRON OS</h3>
+            <h3 className="text-sm font-semibold text-white">
+              Raportare statistică spre AVYRON OS
+            </h3>
             <span className="text-[10px] text-slate-500">
               {statusLabels[data.avyronTarget?.status ?? "disabled"]}
             </span>
@@ -613,17 +615,10 @@ export default function MarketingOrdersAgentControl() {
             checked={form.avyron.enabled}
             onChange={(enabled) => setForm({ ...form, avyron: { ...form.avyron, enabled } })}
             label="Permite canalul AVYRON"
-            description="Canal asincron HMAC; nu acordă control operațional."
+            description="Numai statistici agregate, fără date personale, după aprobare."
           />
           <div className="grid gap-2 sm:grid-cols-2">
-            {(
-              [
-                ["shareAggregatedStats", "Statistici agregate"],
-                ["shareSkillPackage", "Pachet skill"],
-                ["acceptDataProposals", "Propuneri de date"],
-                ["acceptSkillProposals", "Propuneri de skill"],
-              ] as const
-            ).map(([key, label]) => (
+            {([["shareAggregatedStats", "Statistici agregate"]] as const).map(([key, label]) => (
               <label key={key} className="flex items-center gap-2 text-xs text-slate-300">
                 <input
                   type="checkbox"
@@ -865,14 +860,6 @@ export default function MarketingOrdersAgentControl() {
           className="rounded-lg border border-[#3b4d69] px-4 py-2 text-xs font-medium text-slate-200 hover:border-cyan-400/50 disabled:opacity-40"
         >
           Propune export statistici
-        </button>
-        <button
-          type="button"
-          disabled={!data.settings.avyron.shareSkillPackage || propose.isPending}
-          onClick={() => propose.mutate("skill_package")}
-          className="rounded-lg border border-[#3b4d69] px-4 py-2 text-xs font-medium text-slate-200 hover:border-cyan-400/50 disabled:opacity-40"
-        >
-          Propune export skill
         </button>
         <button
           type="button"

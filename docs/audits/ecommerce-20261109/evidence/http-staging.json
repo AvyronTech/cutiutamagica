@@ -1,0 +1,119 @@
+{
+  "environment": "disposable-local",
+  "results": [
+    {
+      "label": "Public health",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Anonymous internal API denied",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "label": "Owner sessions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Staff own sessions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Consultant own sessions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Service cannot log in interactively",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "label": "Staff cannot manage identities",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "label": "Staff cannot read financial configuration through server functions",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "label": "Customer cookie grants no admin rights",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "label": "Cross-origin mutation denied",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "label": "Foreign CORS preflight denied",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "label": "Extra privilege fields rejected",
+      "status": 400,
+      "expected": 400,
+      "ok": true
+    },
+    {
+      "label": "Non-owned session cannot be revoked",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "label": "Private application backup completes",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Own session rotates",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Rotated old token denied",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "label": "Customer all-device logout",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Own customer sessions revoked",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "label": "Other customer remains signed in",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    }
+  ]
+}

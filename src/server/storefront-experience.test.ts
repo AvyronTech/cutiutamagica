@@ -438,7 +438,7 @@ describe("storefront and dashboard share one catalog", () => {
         patch(path, { ...body, expectedVersion: Number(row.version) + 1, syncToAvyron: true }),
         env,
       ))!.status,
-    ).toBe(409);
+    ).toBe(400);
     sqlite.prepare("UPDATE product_media SET public_access=0 WHERE id=?").run(row.id);
     expect(
       (await listPublicCatalog(env.DB, true))

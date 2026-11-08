@@ -1,4 +1,5 @@
-import { useId, useState } from "react";
+import { reviewApi } from "@/lib/reviews";
+import { useId, useRef, useState } from "react";
 import { Bell, Check, Loader2 } from "lucide-react";
 import type { Product } from "@/data/products";
 import {
@@ -15,14 +16,17 @@ export function ProductInterest({ product }: { product: Product }) {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState("");
   const id = useId();
+  const sending = useRef(false);
   const preorder = product.preorderEnabled;
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sending.current) return;
+    sending.current = true;
     setState("sending");
     setError("");
     const form = new FormData(event.currentTarget);
     try {
-      const response = await fetch("/api/v1/product-interest", {
+      await reviewApi("/api/v1/product-interest", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -32,11 +36,6 @@ export function ProductInterest({ product }: { product: Product }) {
           kind: preorder ? "preorder" : "notify",
         }),
       });
-      const payload = (await response.json()) as { error?: { message?: string } };
-      if (!response.ok)
-        throw new Error(
-          payload.error?.message || "Nu am putut înregistra solicitarea. Încearcă din nou.",
-        );
       trackGrowthEvent("waitlist_joined", {
         productSlug: product.id,
         quantity: 1,
@@ -46,6 +45,8 @@ export function ProductInterest({ product }: { product: Product }) {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Încearcă din nou.");
       setState("idle");
+    } finally {
+      sending.current = false;
     }
   }
   return (
@@ -74,7 +75,7 @@ export function ProductInterest({ product }: { product: Product }) {
             </p>
           </div>
         ) : (
-          <form onSubmit={submit} className="space-y-4">
+          <form onSubmit={submit} className="space-y-4" aria-busy={state === "sending"}>
             <p className="text-sm">
               {preorder
                 ? "Înregistrăm o cerere fără plată. Disponibilitatea, prețul și livrarea vor fi confirmate înaintea unei comenzi."
@@ -85,6 +86,8 @@ export function ProductInterest({ product }: { product: Product }) {
             </label>
             <input
               id={id}
+              aria-invalid={!!error}
+              aria-describedby={error ? `${id}-error` : undefined}
               name="email"
               required
               type="email"
@@ -101,13 +104,13 @@ export function ProductInterest({ product }: { product: Product }) {
               </a>
             </p>
             {error && (
-              <p role="alert" className="text-sm text-red-300">
+              <p id={`${id}-error`} role="alert" className="text-sm text-red-300">
                 {error}
               </p>
             )}
             <button className="magic-button" disabled={state === "sending"}>
               {state === "sending" ? (
-                <Loader2 className="animate-spin" size={16} />
+                <Loader2 className="animate-spin" size={16} aria-hidden />
               ) : (
                 <Bell size={16} />
               )}{" "}

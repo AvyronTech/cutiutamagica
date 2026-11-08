@@ -111,6 +111,34 @@ async function main() {
     }
   }
 
+  const iconPaths = [
+    "/favicon.ico",
+    "/favicon.svg",
+    "/favicon-16.png",
+    "/favicon-32.png",
+    "/apple-touch-icon.png",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/icon-512-maskable.png",
+  ];
+  await mapLimited(iconPaths, async (path) => {
+    const { response } = await request(new URL(path, site), { method: "HEAD" });
+    if (response.status !== 200 || !response.headers.get("content-type")?.startsWith("image/"))
+      problems.push(`${path}: icon indisponibil sau tip invalid.`);
+  });
+  const manifest = await request(new URL("/manifest.webmanifest", site));
+  try {
+    const data = JSON.parse(manifest.body);
+    if (
+      manifest.response.status !== 200 ||
+      data.lang !== "ro" ||
+      !data.icons?.some((i) => i.sizes === "192x192") ||
+      !data.icons?.some((i) => i.sizes === "512x512")
+    )
+      problems.push("Manifest PWA incomplet.");
+  } catch {
+    problems.push("Manifest PWA invalid.");
+  }
   const titles = new Map();
   const descriptions = new Map();
   const productUrls = uniqueUrls.filter((url) =>
@@ -145,6 +173,28 @@ async function main() {
       problems.push(`${url}: noindex sau robots meta absent.`);
     }
     if (!image) problems.push(`${url}: imagine socială absentă.`);
+    for (const [field, name] of [
+      ["property", "og:title"],
+      ["property", "og:description"],
+      ["property", "og:url"],
+      ["property", "og:type"],
+      ["property", "og:image:alt"],
+      ["name", "twitter:card"],
+      ["name", "twitter:title"],
+      ["name", "twitter:description"],
+      ["name", "twitter:image"],
+      ["name", "twitter:image:alt"],
+    ]) {
+      if (!attribute(meta(body, field, name) || "", "content"))
+        problems.push(`${url}: ${name} absent.`);
+    }
+    if (attribute(meta(body, "property", "og:url") || "", "content") !== canonical)
+      problems.push(`${url}: og:url diferit de canonical.`);
+    if (attribute(meta(body, "name", "twitter:image") || "", "content") !== image)
+      problems.push(`${url}: imagine Twitter diferită de OG.`);
+    for (const [img] of body.matchAll(/<img\b[^>]*>/gi)) {
+      if (!/\balt\s*=/.test(img)) problems.push(`${url}: imagine fără atribut alt.`);
+    }
     if (product && (!productData || productData.offers?.["@type"] !== "Offer")) {
       problems.push(`${url}: date structurate Product/Offer absente.`);
     }
@@ -155,20 +205,21 @@ async function main() {
       problems.push(`${url}: preț sau URL Offer invalid.`);
     if (title) titles.set(title, (titles.get(title) || 0) + 1);
     if (description) descriptions.set(description, (descriptions.get(description) || 0) + 1);
-    return { url, body, productData };
+    return { url, body, productData, socialImage: image };
   });
   if ([...titles.values()].some((count) => count > 1)) problems.push("Titluri SEO duplicate.");
   if ([...descriptions.values()].some((count) => count > 1))
     problems.push("Descrieri SEO duplicate.");
 
   const images = [
-    ...new Set(
-      sitemapPaths.flatMap((path) =>
+    ...new Set([
+      ...pages.map((p) => p.socialImage).filter(Boolean),
+      ...sitemapPaths.flatMap((path) =>
         [...resources.get(path).matchAll(/<image:loc>([^<]+)<\/image:loc>/g)].map((match) =>
           match[1].replaceAll("&amp;", "&"),
         ),
       ),
-    ),
+    ]),
   ];
   await mapLimited(images, async (url) => {
     const { response } = await request(url, { method: "HEAD" });
@@ -258,6 +309,8 @@ async function main() {
         products: productUrls.length,
         merchantProducts: feedLinks.length,
         images: images.length,
+        icons: iconPaths.length,
+        socialMetadataPages: pages.length,
         orphanPages: orphanPages.length,
         additionalInternalLinks: additionalLinks.length,
         excludedPages: excludedPaths.length,

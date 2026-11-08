@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { emitOblioInvoice } from "@/server/integrations/oblio";
 import { checkoutSettingsSchema } from "@/lib/checkout-settings";
 import { syncPaidInvoiceCollection } from "@/server/services/oblio-payment-sync";
@@ -314,7 +315,7 @@ export async function issueInvoiceForOrder(
           )
           .run();
       } catch (error) {
-        console.error("invoice.pdf_archive_failed", { invoiceId, error });
+        console.error("invoice.pdf_archive_failed", { invoiceId, error: safeErrorMetadata(error) });
       }
     }
     await logProviderOperation(env.DB, {

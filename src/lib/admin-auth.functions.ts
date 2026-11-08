@@ -1,3 +1,7 @@
+import { safeErrorMetadata } from "@/server/security/logging";
+import { adminLandingPath } from "@/lib/admin-access-policy";
+import { assertAdminEdgeIdentity } from "@/server/security/access";
+import { SecurityError } from "@/server/security/policy";
 import { env } from "cloudflare:workers";
 import { createServerFn } from "@tanstack/react-start";
 import { deleteCookie, getRequest, setCookie } from "@tanstack/react-start/server";
@@ -6,6 +10,7 @@ import { requireAdminAuth } from "@/lib/admin-auth";
 import {
   AdminAuthError,
   ADMIN_SESSION_COOKIE,
+  ADMIN_HOST_SESSION_COOKIE,
   ADMIN_SESSION_SECONDS,
   changeAdminPassword,
   loginAdminWithPassword,
@@ -34,6 +39,10 @@ function requireSameOrigin(request: Request): void {
   }
 }
 
+function adminCookieName() {
+  return env.APP_ENV === "production" ? ADMIN_HOST_SESSION_COOKIE : ADMIN_SESSION_COOKIE;
+}
+
 function cookieOptions() {
   return {
     httpOnly: true,
@@ -49,18 +58,27 @@ export const loginAdminAccount = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const request = getRequest();
     requireSameOrigin(request);
+    await assertAdminEdgeIdentity(request, env, data.email);
     let result: Awaited<ReturnType<typeof loginAdminWithPassword>>;
     try {
       result = await loginAdminWithPassword(env.DB, request, data.email, data.password);
     } catch (error) {
       if (error instanceof AdminAuthError) throw error;
-      console.error("admin.login_failed", error);
+      if (error instanceof SecurityError)
+        throw new AdminAuthError(
+          "Prea multe încercări. Revino în câteva minute.",
+          error.statusCode,
+        );
+      console.error("admin.login_failed", safeErrorMetadata(error));
       throw new AdminAuthError("Autentificarea nu a reușit. Încearcă din nou.", 500);
     }
-    setCookie(ADMIN_SESSION_COOKIE, result.token, cookieOptions());
+    setCookie(adminCookieName(), result.token, cookieOptions());
+    if (env.APP_ENV === "production")
+      deleteCookie(ADMIN_SESSION_COOKIE, { path: "/", secure: true, sameSite: "strict" });
     return {
       ok: true,
       email: result.admin.email,
+      homePath: adminLandingPath(result.admin.permissions),
       mustChangePassword: result.admin.mustChangePassword,
     };
   });
@@ -72,7 +90,9 @@ export const changeAdminAccountPassword = createServerFn({ method: "POST" })
     const request = getRequest();
     requireSameOrigin(request);
     const result = await changeAdminPassword(env.DB, request, context.admin, data.password);
-    setCookie(ADMIN_SESSION_COOKIE, result.token, cookieOptions());
+    setCookie(adminCookieName(), result.token, cookieOptions());
+    if (env.APP_ENV === "production")
+      deleteCookie(ADMIN_SESSION_COOKIE, { path: "/", secure: true, sameSite: "strict" });
     return { ok: true };
   });
 
@@ -83,6 +103,11 @@ export const logoutAdminAccount = createServerFn({ method: "POST" })
     requireSameOrigin(request);
     await revokeAdminSession(env.DB, request, context.admin);
     deleteCookie(ADMIN_SESSION_COOKIE, {
+      path: "/",
+      secure: env.APP_ENV === "production",
+      sameSite: "strict",
+    });
+    deleteCookie(adminCookieName(), {
       path: "/",
       sameSite: "strict",
       secure: env.APP_ENV === "production",

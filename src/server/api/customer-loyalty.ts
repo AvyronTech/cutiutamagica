@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { firstOrderShippingEligible } from "../services/first-order-shipping";
 import { z } from "zod";
 import { boundedJson } from "./bounded-json";
@@ -162,7 +163,7 @@ export async function handleCustomerLoyalty(request: Request, env: Env): Promise
   } catch (error) {
     const status =
       error instanceof z.ZodError ? 400 : error instanceof CustomerRewardError ? error.status : 500;
-    if (status === 500) console.error("customer.loyalty_failed", error);
+    if (status === 500) console.error("customer.loyalty_failed", safeErrorMetadata(error));
     return reviewJson(
       {
         error: {

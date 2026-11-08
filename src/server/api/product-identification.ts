@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import {
@@ -1090,7 +1091,8 @@ export async function handleProductIdentification(
       error && typeof error === "object" && "statusCode" in error
         ? Number(error.statusCode) || 500
         : 500;
-    if (status >= 500) console.error("admin.product_identification.failed", error);
+    if (status >= 500)
+      console.error("admin.product_identification.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

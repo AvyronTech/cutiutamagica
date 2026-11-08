@@ -69,7 +69,7 @@ export const Route = createFileRoute("/ghid-cadouri-personalizate")({
 
 function GuidePage() {
   return (
-    <main className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24">
       <article className="mx-auto max-w-3xl px-4 pt-20 md:pt-24">
         <p className="text-xs uppercase tracking-[0.3em] text-primary/80">Ghid Cutiuța Magică</p>
         <h1 className="mt-3 font-display text-4xl leading-tight text-foreground md:text-5xl">
@@ -173,6 +173,6 @@ function GuidePage() {
           </Link>
         </div>
       </article>
-    </main>
+    </div>
   );
 }

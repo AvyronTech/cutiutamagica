@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { boundedJson } from "./bounded-json";
 import { credential } from "../services/growth-settings";
@@ -418,7 +419,9 @@ async function webhook(
   const eventId =
     provider === "stripe" ? String(event.id ?? "") : `${String(event.order_id ?? "")}/${type}`;
   let paidOrderId: string | null = null;
-  if (!eventId || !type || eventId.length > 200)
+  if (provider === "stripe" && event.livemode !== (paymentEnvironment(env) === "production"))
+    return json({ error: { code: "ENVIRONMENT_MISMATCH" } }, 400);
+  if (!eventId || !/^[a-zA-Z0-9_./-]{1,200}$/.test(eventId) || !/^[a-zA-Z0-9_.]{1,160}$/.test(type))
     return json({ error: { code: "INVALID_EVENT" } }, 400);
   const old = await env.DB.prepare(
     "SELECT status FROM webhook_events WHERE provider=?1 AND external_event_id=?2",
@@ -438,6 +441,25 @@ async function webhook(
       JSON.stringify({ eventId, type }),
     )
     .run();
+  // Refunds/disputes require verified reconciliation; never infer financial changes from a redirect
+  // or silently acknowledge them without an actionable internal alert.
+  if (
+    /^(?:charge\.refunded|charge\.refund\.updated|refund\.(?:created|updated|failed)|charge\.dispute\.[a-z_]+|ORDER_(?:PARTIALLY_)?REFUNDED)$/.test(
+      type,
+    )
+  ) {
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO admin_notifications(
+      id,notification_type,severity,title,message,entity_type,entity_id,deduplication_key,action_url)
+      VALUES(?1,'payment','warning','Verificare rambursare sau dispută',?2,'webhook',?3,?1,'/admin/financiar')`,
+    )
+      .bind(
+        `payment-review/${provider}/${eventId}`,
+        `Eveniment ${provider}: ${type}. Verifică procesatorul și corelează comanda, rambursarea și documentele înainte de actualizarea contabilă. Referință: ${eventId}.`,
+        eventId,
+      )
+      .run();
+  }
   if (
     provider === "stripe" &&
     [
@@ -535,20 +557,29 @@ async function webhook(
         await env.COMMERCE_EVENTS.send({ version: 1, outboxId: outbox.id });
         await markOrderNotificationQueued(env.DB, outbox.id);
       } catch (error) {
-        console.error("payment.admin_notification_queue_failed", { orderId, error });
+        console.error("payment.admin_notification_queue_failed", {
+          orderId,
+          error: safeErrorMetadata(error),
+        });
       }
     }
     try {
       await env.COMMERCE_EVENTS.send({ version: 2, type: "order.email", orderId });
     } catch (error) {
-      console.error("payment.order_email_queue_failed", { orderId, error });
+      console.error("payment.order_email_queue_failed", {
+        orderId,
+        error: safeErrorMetadata(error),
+      });
       const fallback = Promise.all([
         sendOrderConfirmation(env, orderId),
         sendOrderOwnerNotification(env, orderId),
       ])
         .then(() => undefined)
         .catch((sendError: unknown) => {
-          console.error("payment.order_email_fallback_failed", { orderId, error: sendError });
+          console.error("payment.order_email_fallback_failed", {
+            orderId,
+            error: safeErrorMetadata(sendError),
+          });
         });
       if (ctx) ctx.waitUntil(fallback);
       else await fallback;

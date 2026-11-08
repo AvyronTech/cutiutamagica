@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { renderProductSitemap, renderTextSitemap, type SitemapProduct } from "@/lib/seo-sitemap";
 
 const CACHE_KEY = "seo:sitemap:documents:v4";
@@ -40,7 +41,7 @@ export async function loadSitemap(
   try {
     cached = parseCachedSitemap(await cache.get(CACHE_KEY));
   } catch (error) {
-    console.warn("sitemap.cache_read_failed", error);
+    console.warn("sitemap.cache_read_failed", safeErrorMetadata(error));
   }
 
   if (cached && now >= cached.generatedAt && now - cached.generatedAt < FRESH_FOR_MS) {
@@ -57,12 +58,12 @@ export async function loadSitemap(
       });
     } catch (error) {
       // A KV write failure must not make a valid sitemap unavailable.
-      console.warn("sitemap.cache_write_failed", error);
+      console.warn("sitemap.cache_write_failed", safeErrorMetadata(error));
     }
     return { productsXml, text, stale: false };
   } catch (error) {
     if (cached) {
-      console.warn("sitemap.catalog_read_failed_using_cache", error);
+      console.warn("sitemap.catalog_read_failed_using_cache", safeErrorMetadata(error));
       return { productsXml: cached.productsXml, text: cached.text, stale: true };
     }
     throw error;

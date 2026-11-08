@@ -1,3 +1,4 @@
+import { boundedFormData } from "./bounded-json";
 import { z } from "zod";
 import { awardMagicStarsForApprovedReview } from "@/server/services/magic-rewards";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
@@ -119,7 +120,7 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
     if (photoMatch && request.method === "POST") {
       sameOrigin(request);
       const account = await currentReviewer(request, env);
-      if (!account) throw reviewFailure("Conectează-te cu Google pentru a adăuga fotografia.", 401);
+      if (!account) throw reviewFailure("Intră în cont pentru a adăuga fotografia.", 401);
       const review = await env.DB.prepare(
         `SELECT id FROM product_reviews
          WHERE id=?1 AND account_id=?2 AND status='pending' AND photo_r2_key IS NULL`,
@@ -131,7 +132,7 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
       const contentLength = Number(request.headers.get("content-length") ?? 0);
       if (contentLength > 5_500_000)
         throw reviewFailure("Fotografia poate avea maximum 5 MB.", 413);
-      const form = await request.formData();
+      const form = await boundedFormData(request, 5_500_000);
       const file = form.get("photo");
       if (!(file instanceof File) || file.size < 100 || file.size > 5_000_000)
         throw reviewFailure("Alege o fotografie JPG, PNG sau WebP de maximum 5 MB.");
@@ -144,7 +145,7 @@ export async function handleReviews(request: Request, env: Env): Promise<Respons
         customMetadata: { reviewId: review.id, accountId: account.id },
       });
       const result = await env.DB.prepare(
-        "UPDATE product_reviews SET photo_r2_key=?1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?2 AND account_id=?3 AND photo_r2_key IS NULL",
+        "UPDATE product_reviews SET photo_r2_key=?1,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?2 AND account_id=?3 AND status='pending' AND photo_r2_key IS NULL",
       )
         .bind(key, review.id, account.id)
         .run();

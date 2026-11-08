@@ -1,0 +1,23 @@
+[
+  {
+    "path": "/retur",
+    "status": 200,
+    "mainCount": 1,
+    "h1Count": 1,
+    "stagingNoindex": "noindex, nofollow"
+  },
+  {
+    "path": "/livrare",
+    "status": 200,
+    "mainCount": 1,
+    "h1Count": 1,
+    "stagingNoindex": "noindex, nofollow"
+  },
+  {
+    "path": "/ghid-cadouri-personalizate",
+    "status": 200,
+    "mainCount": 1,
+    "h1Count": 1,
+    "stagingNoindex": "noindex, nofollow"
+  }
+]

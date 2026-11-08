@@ -1,4 +1,6 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { handleReviews } from "./reviews";
+import { handleSecurityCenter } from "./security-center";
 import { handlePersonalization } from "./personalization";
 import { currentReviewer, handleReviewAccount } from "../review-accounts";
 import { handleCustomerBilling } from "./customer-billing";
@@ -74,7 +76,10 @@ function recordOrderMetric(
       doubles: [result.total, input.items.reduce((sum, item) => sum + item.quantity, 0)],
     });
   } catch (error) {
-    console.warn("order.analytics_write_failed", { orderId: result.orderId, error });
+    console.warn("order.analytics_write_failed", {
+      orderId: result.orderId,
+      error: safeErrorMetadata(error),
+    });
   }
 }
 
@@ -150,7 +155,7 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
         console.warn("order.notification_queue_failed", {
           orderId: result.orderId,
           outboxId: result.outboxId,
-          error,
+          error: safeErrorMetadata(error),
         });
       }
     }
@@ -172,7 +177,10 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
           orderId: result.orderId,
         });
       } catch (error) {
-        console.warn("order.email_queue_failed", { orderId: result.orderId, error });
+        console.warn("order.email_queue_failed", {
+          orderId: result.orderId,
+          error: safeErrorMetadata(error),
+        });
         ctx.waitUntil(
           Promise.all([
             sendOrderConfirmation(commerceEnv, result.orderId),
@@ -182,7 +190,7 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
             .catch((sendError) => {
               console.error("order.email_fallback_failed", {
                 orderId: result.orderId,
-                error: sendError,
+                error: safeErrorMetadata(sendError),
               });
             }),
         );
@@ -198,7 +206,7 @@ async function createOrder(request: Request, env: Env, ctx: ExecutionContext): P
         { status: error.status },
       );
     }
-    console.error("api.order_create_failed", error);
+    console.error("api.order_create_failed", safeErrorMetadata(error));
     return json(
       { error: { code: "ORDER_CREATE_FAILED", message: "Comanda nu a putut fi înregistrată." } },
       { status: 500 },
@@ -213,6 +221,8 @@ export async function handleApiRequest(
 ): Promise<Response | null> {
   const url = new URL(request.url);
   if (!url.pathname.startsWith(API_PREFIX)) return null;
+  const securityResponse = await handleSecurityCenter(request, env);
+  if (securityResponse) return securityResponse;
 
   const reviewAccountResponse = await handleReviewAccount(request, env);
   if (reviewAccountResponse) return reviewAccountResponse;
