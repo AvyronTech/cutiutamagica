@@ -1,0 +1,57 @@
+[
+  {
+    "label": "health",
+    "status": 200,
+    "expected": 200,
+    "pass": true,
+    "cache": "no-store",
+    "body": {
+      "status": "ok",
+      "environment": "production",
+      "schemaVersion": "94",
+      "timestamp": "2026-11-08T23:36:56.674Z"
+    }
+  },
+  {
+    "label": "anonymous admin",
+    "status": 401,
+    "expected": 401,
+    "pass": true,
+    "cache": "private, no-store"
+  },
+  {
+    "label": "cross-origin preflight",
+    "status": 403,
+    "expected": 403,
+    "pass": true,
+    "cache": "private, no-store"
+  },
+  {
+    "label": "legacy health",
+    "status": 421,
+    "expected": 421,
+    "pass": true,
+    "cache": "private, no-store"
+  },
+  {
+    "label": "legacy unsigned Stripe",
+    "status": 401,
+    "expected": 401,
+    "pass": true,
+    "cache": "private, no-store"
+  },
+  {
+    "label": "unsigned Stripe",
+    "status": 401,
+    "expected": 401,
+    "pass": true,
+    "cache": "private, no-store"
+  },
+  {
+    "label": "commerce",
+    "status": 200,
+    "expected": 200,
+    "pass": true,
+    "cache": "no-store"
+  }
+]

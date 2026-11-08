@@ -100,7 +100,7 @@ export default function BackupCenter() {
     try {
       const result = await runNow();
       await refresh();
-      toast.success(
+      (result.status === "partial" ? toast.warning : toast.success)(
         `Copie ${backupStatus[result.status]?.toLocaleLowerCase("ro-RO") ?? "procesată"}: ${bytes(result.sizeBytes)}`,
       );
     } catch (error) {
@@ -129,8 +129,8 @@ export default function BackupCenter() {
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-white">Copii de siguranță</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-            Copii comprimate ale datelor aplicației în R2 privat, cu retenție controlată și un
-            backup de bază protejat.
+            Exporturi ale datelor aplicației în R2 privat, fără parole, sesiuni sau secrete.
+            Recuperarea completă se face separat prin D1 Time Travel.
           </p>
         </div>
         <button className={primary} disabled={running} onClick={createBackup}>
@@ -241,14 +241,14 @@ export default function BackupCenter() {
               defaultChecked={policy.includeCustomerData}
               className="mt-1"
             />{" "}
-            Include datele clienților și comenzilor în snapshotul criptat la nivelul platformei
+            Include datele clienților și comenzilor în exportul privat
           </label>
           <button className={primary} disabled={policyMutation.isPending}>
             <Save size={15} /> Salvează politica
           </button>
           <p className="text-[11px] leading-5 text-slate-500">
-            Programarea folosește fusul Europe/Bucharest. Fișierele produselor rămân versionate în
-            R2 și nu sunt copiate în fiecare snapshot.
+            Programarea folosește fusul Europe/Bucharest. Fișierele produselor rămân în R2 și nu
+            sunt copiate în fiecare snapshot.
           </p>
         </form>
 
@@ -269,7 +269,7 @@ export default function BackupCenter() {
                         {String(run.triggerType) === "manual" ? "Manual" : "Programat"}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] ${run.status === "failed" ? "bg-rose-400/10 text-rose-200" : "bg-emerald-400/10 text-emerald-200"}`}
+                        className={`rounded-full px-2 py-0.5 text-[10px] ${run.status === "failed" ? "bg-rose-400/10 text-rose-200" : run.status === "partial" ? "bg-amber-400/10 text-amber-200" : "bg-emerald-400/10 text-emerald-200"}`}
                       >
                         {backupStatus[String(run.status)] ?? "De verificat"}
                       </span>
@@ -287,8 +287,7 @@ export default function BackupCenter() {
                       <p className="mt-1 text-xs text-rose-200">{String(run.errorMessage)}</p>
                     ) : null}
                   </div>
-                  {(run.status === "completed" || run.status === "partial") &&
-                  Number(run.isBaseline) !== 1 ? (
+                  {run.status === "completed" && Number(run.isBaseline) !== 1 ? (
                     <button className={secondary} onClick={() => setBaseline(String(run.id))}>
                       <ShieldCheck size={14} /> Protejează ca bază
                     </button>

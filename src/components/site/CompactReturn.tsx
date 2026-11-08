@@ -1,4 +1,5 @@
-import { useId, useState } from "react";
+import { reviewApi } from "@/lib/reviews";
+import { useId, useRef, useState } from "react";
 import { CheckCircle2, ArrowRight, PackageOpen, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Link } from "@tanstack/react-router";
@@ -6,6 +7,7 @@ import type { ReturnRequestPublicResult } from "@/lib/commerce-operations-contra
 
 export function CompactReturn() {
   const id = useId();
+  const sending = useRef(false);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [step, setStep] = useState(1);
@@ -19,11 +21,13 @@ export function CompactReturn() {
       setStep(2);
       return;
     }
+    if (sending.current) return;
+    sending.current = true;
     const form = new FormData(e.currentTarget);
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/v1/returns", {
+      const result = await reviewApi<ReturnRequestPublicResult>("/api/v1/returns", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -41,16 +45,11 @@ export function CompactReturn() {
           policyAccepted: form.get("policyAccepted") === "on",
         }),
       });
-      const body = (await response.json()) as {
-        data?: ReturnRequestPublicResult;
-        error?: { message?: string };
-      };
-      if (!response.ok || !body.data)
-        throw new Error(body.error?.message || "Verifică datele comenzii și încearcă din nou.");
-      setResult(body.data);
+      setResult(result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Cererea nu a fost trimisă.");
     } finally {
+      sending.current = false;
       setBusy(false);
     }
   }
@@ -91,6 +90,7 @@ export function CompactReturn() {
             ) : (
               <form
                 onSubmit={submit}
+                aria-busy={busy}
                 onChange={(event) => {
                   const form = new FormData(event.currentTarget);
                   const fields = Object.fromEntries(

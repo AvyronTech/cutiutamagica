@@ -1,3 +1,6 @@
+import { safeErrorMetadata } from "@/server/security/logging";
+import { runnerCredentials } from "@/server/security/service-identities";
+import { verifyAccessIdentity } from "@/server/security/access";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import { boundedBytes, boundedJson } from "@/server/api/bounded-json";
@@ -120,9 +123,6 @@ async function verifyRunnerRequest(
   env: AiStudioEnv,
   bodyBytes?: Uint8Array,
 ): Promise<{ runnerId: string; bodyBytes: Uint8Array }> {
-  if (!env.AI_STUDIO_RUNNER_HMAC_SECRET) {
-    throw Object.assign(new Error("Runnerul local nu este configurat."), { statusCode: 503 });
-  }
   const runnerId = request.headers.get("x-ai-runner-id") ?? "";
   const timestamp = request.headers.get("x-ai-runner-timestamp") ?? "";
   const nonce = request.headers.get("x-ai-runner-nonce") ?? "";
@@ -148,9 +148,29 @@ async function verifyRunnerRequest(
     });
   }
   const url = new URL(request.url);
-  const signedValue = [request.method, url.pathname, timestamp, nonce, declaredHash].join("\n");
-  const expected = await hmac(env.AI_STUDIO_RUNNER_HMAC_SECRET, signedValue);
-  if (!constantTimeEqual(supplied, expected)) {
+  const credentials = await runnerCredentials(env, runnerId);
+  const access = await verifyAccessIdentity(request, env, true);
+  if (
+    access &&
+    (access.kind !== "service" ||
+      !credentials.accessClientId ||
+      access.clientId !== credentials.accessClientId)
+  )
+    throw Object.assign(new Error("Identitatea Access nu corespunde runnerului."), {
+      statusCode: 403,
+    });
+  const version = request.headers.get("x-ai-signature-version") || "1";
+  if (version !== "2" && !(version === "1" && credentials.legacy))
+    throw Object.assign(new Error("Runnerul necesită semnătura v2."), { statusCode: 401 });
+  const signedValue = (
+    version === "2"
+      ? [runnerId, request.method, url.pathname, timestamp, nonce, declaredHash]
+      : [request.method, url.pathname, timestamp, nonce, declaredHash]
+  ).join("\n");
+  const expected = await Promise.all(
+    credentials.secrets.map((secret) => hmac(secret, signedValue)),
+  );
+  if (!expected.some((value) => constantTimeEqual(supplied, value))) {
     throw Object.assign(new Error("Semnătura runnerului nu este validă."), { statusCode: 401 });
   }
   if (!(await registerRunnerNonce(env, runnerId, nonce, url.pathname.endsWith("/heartbeat")))) {
@@ -764,7 +784,7 @@ export async function handleAdminAiStudioApi(request: Request, env: Env): Promis
     return json({ error: { code: "METHOD_NOT_ALLOWED" } }, { status: 405 });
   } catch (error) {
     const code = statusCode(error);
-    if (code >= 500) console.error("ai_studio.request_failed", error);
+    if (code >= 500) console.error("ai_studio.request_failed", safeErrorMetadata(error));
     return json(
       {
         error: {
@@ -779,3 +799,6 @@ export async function handleAdminAiStudioApi(request: Request, env: Env): Promis
     );
   }
 }
+
+/** Internal protocol verifier; not an HTTP route. */
+export const __runnerSecurity = { verifyRunnerRequest };

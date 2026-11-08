@@ -1,5 +1,6 @@
+import { reviewApi } from "@/lib/reviews";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CheckCircle2, PackageOpen, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import type { ReturnRequestPublicResult } from "@/lib/commerce-operations-contracts";
@@ -22,14 +23,19 @@ const fieldClass = "w-full rounded-md border border-border bg-background px-3 py
 
 function ReturnsPage() {
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const sending = useRef(false);
   const [result, setResult] = useState<ReturnRequestPublicResult | null>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sending.current) return;
+    sending.current = true;
+    setSubmitError("");
     const form = new FormData(event.currentTarget);
     setSubmitting(true);
     try {
-      const response = await fetch("/api/v1/returns", {
+      const result = await reviewApi<ReturnRequestPublicResult>("/api/v1/returns", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
@@ -46,28 +52,24 @@ function ReturnsPage() {
           policyAccepted: form.get("policyAccepted") === "on",
         }),
       });
-      const payload = (await response.json()) as {
-        data?: ReturnRequestPublicResult;
-        error?: { message?: string };
-      };
-      if (!response.ok || !payload.data)
-        throw new Error(
-          payload.error?.message ||
-            "Cererea nu a putut fi înregistrată. Verifică numărul comenzii și datele de contact.",
-        );
-      setResult(payload.data);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setResult(result);
+      window.scrollTo({
+        top: 0,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      });
     } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Încearcă din nou.");
       toast.error("Cererea de retur nu a fost trimisă.", {
         description: error instanceof Error ? error.message : "Încearcă din nou.",
       });
     } finally {
+      sending.current = false;
       setSubmitting(false);
     }
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12">
+    <div className="mx-auto max-w-6xl px-4 py-12">
       <header className="mx-auto max-w-3xl text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
           <PackageOpen className="h-6 w-6 text-primary" />
@@ -80,7 +82,10 @@ function ReturnsPage() {
       </header>
 
       {result && (
-        <section className="mx-auto mt-8 max-w-2xl rounded-lg border border-emerald-600/25 bg-emerald-500/10 p-5">
+        <section
+          role="status"
+          className="mx-auto mt-8 max-w-2xl rounded-lg border border-emerald-600/25 bg-emerald-500/10 p-5"
+        >
           <div className="flex gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
             <div>
@@ -118,7 +123,19 @@ function ReturnsPage() {
           </div>
         </section>
 
-        <form onSubmit={submit} className="rounded-lg border border-border bg-card p-5 md:p-6">
+        <form
+          onSubmit={submit}
+          aria-busy={submitting}
+          className="rounded-lg border border-border bg-card p-5 md:p-6"
+        >
+          {submitError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-lg border border-red-700/30 p-3 text-sm text-red-800"
+            >
+              {submitError}
+            </p>
+          )}
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-primary" />
             <h2 className="font-display text-2xl">Formular electronic</h2>
@@ -208,7 +225,7 @@ function ReturnsPage() {
           </button>
         </form>
       </div>
-    </main>
+    </div>
   );
 }
 

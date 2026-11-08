@@ -1,5 +1,17 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Audit e-commerce de securitate și calitate — 9 noiembrie 2026, local
+
+- Loturile de securitate PR #93 și storefront `19cbf5a` reunite local; limite upload/XLSX, AVYRON numai statistici aprobate cu verificare la execuție, alerte refund și CI fixat la SHA. **489 teste, 19 probe HTTP, SEO38, build/dry-run trecute; schema94 numai local.** Producția rămâne91; fără MFA, tranzacții reale, modificări comerciale sau deploy. [Raport, matrice ASVS și riscuri rămase](handoff/2026-11-09-ecommerce-security-audit.md).
+
+## Audit SEO, UX, formulare și consimțământ — 8–9 noiembrie 2026, local
+
+- Ramură separată `codex/storefront-audit-20261108`, din `dc0006e`; PR #93 de securitate este păstrat separat. Audit tabelar cu 17 puncte, consimțământ fără prebifare și cu retragere, tracking minimizat, cereri JSON finite, recuperarea fotografiei fără recenzie duplicată și corecții de semantică/focus. 429 teste și 45 probe responsive trecute; audit SEO live 38 URL-uri fără probleme în criteriile SEO verificate. Textele juridice și două probe vizuale rămase sunt marcate explicit. **Fără push/deploy, migrare, MFA sau schimbări de conturi.** [Raport, probe și limite](audits/storefront-20261108/report.md).
+
+## Securitate și acces — 8 noiembrie 2026, staging local
+
+- Audit în 15 activități, sesiuni/cookie-uri, RBAC server, protecție API, identități AI și backup v2 privat, cu modul și teste reutilizabile. **MFA/passkeys numai în pregătire; Access/WAF neactivate; nicio schimbare a conturilor sau producției.** Migrări append-only 0092 și 0093 numai local. [Audit, verificări și pașii externi](handoff/2026-11-08-security-hardening.md).
+
 ## Indexare Google completă — 8 noiembrie 2026, confirmată
 
 - **38/38 URL-uri canonice inspectate individual și indexate**, inclusiv toate cele 7 produse și cele două ghiduri rămase, „Cadouri mici” și „Pentru soră”. Ambele au trecut testul live, solicitările au fost acceptate, apoi inspecția indexului a confirmat indexarea efectivă. Audit SEO live fără probleme; patru sitemapuri Succes, zero probleme critice Product/Merchant/breadcrumbs/HTTPS, fără acțiuni manuale sau probleme de securitate. **Numai documentație, fără schimbare de runtime.** [Probe, inventar și raportul agregat vechi](handoff/2026-11-08-complete-google-indexation.md).

@@ -100,11 +100,36 @@ export function rowsToXlsx(rows: string[][]): Blob {
   });
 }
 
+/** Inspect ZIP metadata before inflation; ignore unrelated entries and bound total XML output. */
+export function extractSpreadsheetXml(bytes: Uint8Array) {
+  const allowed = new Set(["xl/worksheets/sheet1.xml", "xl/sharedStrings.xml"]);
+  let total = 0,
+    entries = 0;
+  const seen = new Set<string>();
+  // First pass reads only directory metadata, so no entry inflates before every limit is checked.
+  unzipSync(bytes, {
+    filter(entry) {
+      if (++entries > 128) throw new Error("Fișierul Excel conține prea multe fișiere.");
+      if (allowed.has(entry.name)) {
+        if (seen.has(entry.name)) throw new Error("Fișierul Excel conține intrări duplicate.");
+        seen.add(entry.name);
+        total += entry.originalSize;
+        if (entry.originalSize > 4_000_000 || total > 6_000_000)
+          throw new Error("Fișierul Excel este invalid sau prea mare.");
+      }
+      return false;
+    },
+  });
+  const files = unzipSync(bytes, { filter: (entry) => allowed.has(entry.name) });
+  if (!files["xl/worksheets/sheet1.xml"]) throw new Error("Fișierul Excel este invalid.");
+  return files;
+}
+
 export async function readSpreadsheet(file: File): Promise<string[][]> {
   if (file.size > 1_000_000) throw new Error("Fișierul trebuie să aibă sub 1 MB.");
   if (/\.csv$/i.test(file.name)) return parseCsv(await file.text());
   if (!/\.xlsx$/i.test(file.name)) throw new Error("Alege un fișier CSV sau XLSX.");
-  const files = unzipSync(new Uint8Array(await file.arrayBuffer()));
+  const files = extractSpreadsheetXml(new Uint8Array(await file.arrayBuffer()));
   const sheet = files["xl/worksheets/sheet1.xml"];
   if (!sheet || sheet.length > 4_000_000)
     throw new Error("Fișierul Excel este invalid sau prea mare.");
@@ -126,6 +151,8 @@ export async function readSpreadsheet(file: File): Promise<string[][]> {
       let index = 0;
       for (const letter of letters) index = index * 26 + letter.charCodeAt(0) - 64;
       index--;
+      if (!Number.isSafeInteger(index) || index < 0 || index >= 30)
+        throw new Error("Fișierul Excel conține coloane în afara formatului acceptat.");
       const raw =
         cell.getElementsByTagName("v")[0]?.textContent ??
         cell.getElementsByTagName("is")[0]?.textContent ??

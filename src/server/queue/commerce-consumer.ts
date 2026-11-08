@@ -1,4 +1,10 @@
 import {
+  isScheduledMaintenanceMessage,
+  processScheduledMaintenance,
+  type ScheduledMaintenanceMessage,
+} from "./scheduled-maintenance";
+import { safeErrorMetadata } from "@/server/security/logging";
+import {
   isAvyronQueueMessage,
   processAvyronSync,
   type AvyronQueueMessage,
@@ -34,7 +40,8 @@ type CommerceQueueMessage =
   | CommerceNotificationQueueMessage
   | OrderEmailQueueMessage
   | TransactionalEmailQueueMessage
-  | AvyronQueueMessage;
+  | AvyronQueueMessage
+  | ScheduledMaintenanceMessage;
 
 type OutboxRow = Record<string, string | number | null>;
 
@@ -210,13 +217,29 @@ async function processMessage(db: D1Database, outboxId: string): Promise<"ack" |
 
 export async function consumeCommerceEvents(batch: MessageBatch<unknown>, env: Env): Promise<void> {
   for (const message of batch.messages) {
+    if (isScheduledMaintenanceMessage(message.body)) {
+      try {
+        await processScheduledMaintenance(env, message.body);
+        message.ack();
+      } catch (error) {
+        console.error("maintenance.task_failed", {
+          task: message.body.type,
+          error: safeErrorMetadata(error),
+        });
+        message.retry({ delaySeconds: 60 });
+      }
+      continue;
+    }
     if (isAvyronQueueMessage(message.body)) {
       try {
         const result = await processAvyronSync(env, message.body);
         if (result.action === "ack") message.ack();
         else message.retry({ delaySeconds: result.delaySeconds ?? 30 });
       } catch (error) {
-        console.error("avyron.sync_queue_failed", { message: message.body, error });
+        console.error("avyron.sync_queue_failed", {
+          message: message.body,
+          error: safeErrorMetadata(error),
+        });
         message.retry({ delaySeconds: 30 });
       }
       continue;

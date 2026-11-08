@@ -1,0 +1,98 @@
+{
+  "recordedAt": "2026-11-08T23:32:14.787070+00:00",
+  "source": "Opera, GSC sc-domain:cutiutamagica.eu, authenticated read-only manual observation",
+  "scope": "11 individual URL inspections observed in this release session; not a fresh reinspection of all 38 URLs",
+  "inspections": [
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-sora",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/cadouri-mici",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-pisicuta-si-luna",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-halloween",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-you-are-sunshine",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-one-ring",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-piratii-din-caraibe",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produse",
+      "googlePresence": "Adresa URL este pe Google",
+      "indexing": "Pagina este indexată"
+    }
+  ],
+  "reports": {
+    "sitemaps": {
+      "success": 4,
+      "urlsBySitemap": {
+        "products": 7,
+        "core": 8,
+        "guides": 23,
+        "text": 38
+      }
+    },
+    "pages": {
+      "lastUpdated": "2026-10-23",
+      "excludedExamples": ["/favicon.ico", "/produse?q={search_term_string}"],
+      "interpretation": "intentional noncommercial exclusions; delayed aggregate report"
+    },
+    "product": {
+      "lastUpdated": "2026-11-07",
+      "criticalIssues": 0
+    },
+    "merchant": {
+      "lastUpdated": "2026-11-07",
+      "criticalIssues": 0,
+      "shippingReturnsAudienceValidation": "A reușit"
+    },
+    "manualActions": "Nu au fost detectate probleme",
+    "securityIssues": "Nu au fost detectate probleme",
+    "https": {
+      "lastUpdated": "2026-11-08",
+      "message": "Nu s-au detectat probleme în ultimele 90 de zile"
+    },
+    "breadcrumbs": {
+      "lastUpdated": "2026-11-07",
+      "valid": 23,
+      "invalid": 0
+    }
+  }
+}

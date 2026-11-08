@@ -5,6 +5,10 @@ import { readFile } from "node:fs/promises";
 const config = {
   apiBase: (process.env.AI_STUDIO_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, ""),
   secret: process.env.AI_STUDIO_RUNNER_SECRET || "",
+  signatureVersion: process.env.AI_STUDIO_SIGNATURE_VERSION || "2",
+  accessClientId: process.env.CF_ACCESS_CLIENT_ID || "",
+  accessClientSecret: process.env.CF_ACCESS_CLIENT_SECRET || "",
+  mediaOrigins: process.env.AI_STUDIO_MEDIA_ORIGINS || "",
   runnerId: process.env.AI_STUDIO_RUNNER_ID || "cutiuta-imac",
   ollamaUrl: (process.env.OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/$/, ""),
   ollamaModel: process.env.OLLAMA_MODEL || "qwen3:8b",
@@ -18,6 +22,20 @@ const config = {
   ),
 };
 
+const apiOrigin = new URL(config.apiBase);
+if (
+  apiOrigin.protocol !== "https:" &&
+  !(
+    apiOrigin.protocol === "http:" &&
+    ["127.0.0.1", "localhost", "[::1]"].includes(apiOrigin.hostname)
+  )
+)
+  throw new Error("Runnerul necesită HTTPS sau o adresă locală loopback.");
+if (Boolean(config.accessClientId) !== Boolean(config.accessClientSecret))
+  throw new Error("Configurează împreună cele două credențiale Cloudflare Access.");
+if (!["1", "2"].includes(config.signatureVersion))
+  throw new Error("Versiune de semnătură invalidă.");
+
 function digest(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -26,11 +44,22 @@ function signedHeaders(method, path, bodyBytes, mime = "application/json") {
   const timestamp = String(Date.now());
   const nonce = randomUUID().replaceAll("-", "");
   const bodyHash = digest(bodyBytes);
-  const signed = [method, path, timestamp, nonce, bodyHash].join("\n");
+  const signed = (
+    config.signatureVersion === "2"
+      ? [config.runnerId, method, path, timestamp, nonce, bodyHash]
+      : [method, path, timestamp, nonce, bodyHash]
+  ).join("\n");
   const signature = createHmac("sha256", config.secret).update(signed).digest("hex");
   return {
     "content-type": mime,
     "x-ai-runner-id": config.runnerId,
+    "x-ai-signature-version": config.signatureVersion,
+    ...(config.accessClientId
+      ? {
+          "CF-Access-Client-Id": config.accessClientId,
+          "CF-Access-Client-Secret": config.accessClientSecret,
+        }
+      : {}),
     "x-ai-runner-timestamp": timestamp,
     "x-ai-runner-nonce": nonce,
     "x-ai-content-sha256": bodyHash,
@@ -43,6 +72,7 @@ async function signedRequest(path, payload, method = "POST") {
   const response = await fetch(`${config.apiBase}${path}`, {
     method,
     headers: signedHeaders(method, path, bytes),
+    redirect: "manual",
     body: bytes,
   });
   if (response.status === 204) return null;
@@ -167,9 +197,43 @@ async function uploadSourceImage(job) {
     job.context?.product?.approvedMedia?.find((media) => media.is_primary) ||
     job.context?.product?.approvedMedia?.[0];
   if (!source?.sourceUrl) throw new Error("Lipsește imaginea publică aprobată a produsului.");
-  const response = await fetch(source.sourceUrl, { signal: AbortSignal.timeout(30_000) });
+  const sourceUrl = new URL(source.sourceUrl, config.apiBase);
+  const allowedOrigins = new Set([
+    apiOrigin.origin,
+    "https://cutiutamagica.eu",
+    "https://api.cutiutamagica.eu",
+    ...config.mediaOrigins
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ]);
+  if (!allowedOrigins.has(sourceUrl.origin) || sourceUrl.username || sourceUrl.password)
+    throw new Error("Originea imaginii nu este aprobată în configurația runnerului.");
+  const response = await fetch(sourceUrl, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(30_000),
+  });
   if (!response.ok) throw new Error("Imaginea-sursă aprobată nu poate fi descărcată.");
-  const blob = await response.blob();
+  if (!/^image\/(jpeg|png|webp)$/.test((response.headers.get("content-type") || "").split(";")[0]))
+    throw new Error("Formatul imaginii-sursă nu este acceptat.");
+  const maxBytes = 15 * 1024 * 1024;
+  if (Number(response.headers.get("content-length")) > maxBytes || !response.body)
+    throw new Error("Imaginea-sursă depășește limita de 15 MB.");
+  const chunks = [];
+  let size = 0;
+  const reader = response.body.getReader();
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) throw new Error("Imaginea-sursă depășește limita de 15 MB.");
+      chunks.push(value);
+    }
+  } finally {
+    await reader.cancel();
+  }
+  const blob = new Blob(chunks, { type: response.headers.get("content-type") });
   const form = new FormData();
   form.append(
     "image",
@@ -227,6 +291,7 @@ async function uploadResult(jobId, file) {
   const stored = await fetch(`${config.apiBase}${path}`, {
     method: "PUT",
     headers: signedHeaders("PUT", path, bytes, mime),
+    redirect: "manual",
     body: bytes,
   });
   const result = await stored.json().catch(() => ({}));

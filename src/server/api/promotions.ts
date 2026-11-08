@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { MAX_CART_QUANTITY, MAX_ITEM_QUANTITY } from "@/lib/pricing";
 import { boundedJson } from "./bounded-json";
@@ -75,7 +76,7 @@ export async function handlePromotionCodes(
     if (error instanceof z.ZodError) {
       return json({ error: { code: "INVALID_INPUT", message: "Verifică datele codului." } }, 400);
     }
-    console.error("promotion.validate_failed", error);
+    console.error("promotion.validate_failed", safeErrorMetadata(error));
     return json(
       {
         error: { code: "PROMOTION_UNAVAILABLE", message: "Codul nu poate fi verificat momentan." },

@@ -1,0 +1,367 @@
+{
+  "source": "Transcription of observed CUA DOM results, 9 pages x 5 widths",
+  "browser": "Opera",
+  "physicalDevices": false,
+  "checks": [
+    {
+      "page": "/despre-cutiuta",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/despre-cutiuta",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/despre-cutiuta",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/despre-cutiuta",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/despre-cutiuta",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produse",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produse",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produse",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produse",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produse",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/comanda-with-local-item",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/comanda-with-local-item",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/comanda-with-local-item",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/comanda-with-local-item",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/comanda-with-local-item",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/auth",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/auth",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/auth",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/auth",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/auth",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/retur",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/retur",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/retur",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/retur",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/retur",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/cadouri/pentru-sora",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/cadouri/pentru-sora",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/cadouri/pentru-sora",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/cadouri/pentru-sora",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/cadouri/pentru-sora",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/politica-de-confidentialitate",
+      "width": 320,
+      "scrollWidth": 320,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/politica-de-confidentialitate",
+      "width": 375,
+      "scrollWidth": 375,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/politica-de-confidentialitate",
+      "width": 768,
+      "scrollWidth": 768,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/politica-de-confidentialitate",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    },
+    {
+      "page": "/politica-de-confidentialitate",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "h1": 1,
+      "missingAlt": 0,
+      "unnamedButtons": 0
+    }
+  ]
+}

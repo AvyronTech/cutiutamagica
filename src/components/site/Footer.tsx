@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BrandMark } from "./BrandMark";
 import avyronLogo from "@/assets/avyron-logo.jpg";
 import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/whatsapp";
+import { openConsentSettings } from "@/lib/cookie-consent";
 
 const navGroups = [
   {
@@ -85,6 +86,15 @@ export function Footer() {
                   {item.label}
                 </Link>
               ))}
+              {group.title === "Informații" && (
+                <button
+                  type="button"
+                  className="magic-footer-cookie-settings"
+                  onClick={openConsentSettings}
+                >
+                  Setări cookie-uri
+                </button>
+              )}
             </div>
           ))}
         </nav>

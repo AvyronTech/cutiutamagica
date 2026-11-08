@@ -1,3 +1,4 @@
+import { storefrontRequest } from "@/lib/storefront-request";
 import type { PaymentProvider } from "@/lib/checkout-settings";
 import { CheckoutDelivery, type DeliveryOffer } from "@/components/site/CheckoutDelivery";
 import { isBucharest, sectorFromPostalCode } from "@/lib/bucharest-sector";
@@ -292,7 +293,7 @@ function OrderPage() {
 
   const loadConfig = useCallback(() => {
     setConfigFailed(false);
-    fetch("/api/v1/commerce/config", { credentials: "same-origin" })
+    storefrontRequest("/api/v1/commerce/config", { credentials: "same-origin" })
       .then(async (response) => {
         if (!response.ok) throw new Error("Config indisponibil");
         return (await response.json()) as { data: CommercePublicConfig };
@@ -318,7 +319,7 @@ function OrderPage() {
 
   useEffect(() => {
     if (!hasItems) return;
-    fetch("/api/v1/reviewer", { credentials: "same-origin" })
+    storefrontRequest("/api/v1/reviewer", { credentials: "same-origin" })
       .then(async (response) => {
         if (!response.ok) return null;
         return (await response.json()) as {
@@ -417,7 +418,7 @@ function OrderPage() {
     setPromotionError("");
     setQuote(null);
     try {
-      const response = await fetch("/api/v1/promotions/validate", {
+      const response = await storefrontRequest("/api/v1/promotions/validate", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },
@@ -612,7 +613,7 @@ function OrderPage() {
           checkoutConsentVersion: config.policies.checkoutConsentVersion,
           items: itemsDetailed.map((item) => ({ productId: item.id, quantity: item.qty })),
         });
-      const response = await fetch("/api/v1/orders", {
+      const response = await storefrontRequest("/api/v1/orders", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },

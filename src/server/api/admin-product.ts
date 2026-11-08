@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { productDiscoverySchema } from "@/lib/product-discovery";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
@@ -160,7 +161,7 @@ export async function handleAdminProductApi(request: Request, env: Env): Promise
       error && typeof error === "object" && "statusCode" in error
         ? Number((error as { statusCode: unknown }).statusCode) || 500
         : 500;
-    console.error("admin.product.failed", error);
+    console.error("admin.product.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

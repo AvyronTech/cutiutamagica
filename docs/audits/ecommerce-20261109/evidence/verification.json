@@ -1,0 +1,112 @@
+{
+  "at": "2026-11-08T23:05:34.727625+00:00",
+  "branch": "codex/ecommerce-security-audit-20261109",
+  "base": "dc0006ed32540aa975f4f2bb54ba988382d405a7",
+  "delivery": "local_only",
+  "schema": {
+    "local": 94,
+    "live_read_only": 91
+  },
+  "checks": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "tests": {
+      "status": "PASS",
+      "files": 87,
+      "tests": 489,
+      "command": "npm test -- --maxWorkers=1 --testTimeout=20000 --hookTimeout=30000",
+      "note": "Earlier 2-worker run: 9 tests exceeded 5s during concurrent builds; one expected 409 was updated to 400 because the new AVYRON schema rejects a forbidden true flag. No timeouts or failed assertions in final serial run; timing budget changed only for this invocation."
+    },
+    "build": "PASS",
+    "cf_deploy_dry": "PASS",
+    "source_scan": "PASS",
+    "dependency_audit": {
+      "status": "PASS",
+      "vulnerabilities": 0
+    },
+    "history_scan": {
+      "status": "PASS",
+      "candidateBlobs": 2894,
+      "scope": "Heuristic high-confidence patterns over reachable local refs and candidate text blobs <=2MB; no entropy, credential-validity or full remote refs audit."
+    },
+    "local_http": {
+      "status": "PASS",
+      "probes": 19
+    },
+    "seo_live": {
+      "status": "PASS",
+      "canonicalUrls": 38,
+      "problems": 0
+    },
+    "remote_mutations": false,
+    "source_scan_final": {
+      "files": 1052,
+      "serverFunctions": 102,
+      "findings": 0,
+      "note": "Final count is recorded in source-scan.txt; report artifacts can change inventory count without changing runtime."
+    }
+  },
+  "ui": {
+    "engine": "Opera via CUA",
+    "observed": [
+      "Local admin login succeeds without MFA; onboarding flag configured only in disposable fixture, no password changed",
+      "Security center: own session and Access/MFA preparation only",
+      "AI policy: one AVYRON aggregate-statistics checkbox, no skill-export action, no page overflow at observed desktop width1281",
+      "Product history: no sync action, history preserved; desktop1281 and mobile375 have no horizontal document overflow",
+      "Link from product history reaches /admin/ai",
+      "Catalog320: document width320, H1 present",
+      "Cookie panel320x568: top205.72 bottom556, actions44px; necessary-only choice persists with two false optional flags and heading focus",
+      "Product→cart: one synthetic119RON item, header opens cart; cart375x812 within viewport; /comanda reached without submitting an order"
+    ],
+    "limits": [
+      "A timed-out browser interaction was recovered by selecting the temporary local tab explicitly",
+      "Transient cart-toast control expired before automation; cart was opened using header",
+      "Floating-cart activation was not independently confirmed in this round; do not infer a fix or a defect from the two no-dialog observations",
+      "Final checkout DOM measurement/screenshot automation timed out; checkout form was visibly confirmed through snapshot; prior responsive evidence remains separately dated",
+      "Return inline error and full VoiceOver/NVDA/physical-device audit remain NOT_VERIFIED",
+      "Cart screenshot capture had an incorrect355px height and was discarded; current cart geometry and navigation were confirmed through DOM, not counted as a new valid screenshot."
+    ]
+  },
+  "external": {
+    "access": {
+      "checked": "read_only_browser",
+      "plan": "Zero Trust Free",
+      "accountApplicationCount": 3,
+      "storeCovered": false,
+      "activated": false
+    },
+    "productionWorker": "8d51b7d8-d05a-4486-897f-aa691476c00e",
+    "productionRuntimeSource": "2ade5f0",
+    "branchProtection": false,
+    "rulesets": 0,
+    "githubSecretScanning": "disabled",
+    "pushProtection": "disabled",
+    "paymentsProviderSandboxTransactions": "NOT_VERIFIED",
+    "inboxDelivery": "NOT_VERIFIED"
+  },
+  "runtimeFiles": {
+    ".github/workflows/quality.yml": "b76399180f8028fd64feb19797217792f017bfc0e37051daca5a24ac92730a10",
+    ".github/workflows/security-audit.yml": "07346e0e5e2a0250d963f303e6df1d2ca8b725dd270ea35674aa394072c67704",
+    "cloudflare/d1/migrations/0094_aggregate_only_exchange.sql": "e0d5d0b2325581d61f94c480fe673f128c1a543dc9f3b56c7a16bd7faf2a9089",
+    "scripts/security-history.mjs": "4acfe6b040e9f77f43a5ff04ddb191e18dee4438dbfbcc208736974fb9bca05f",
+    "src/admin/pages/MarketingOrdersAgentControl.tsx": "75d380bd50dedcb746b650b55d949557d2eee15654ca52d7f2fa575dedeeebdf",
+    "src/admin/pages/ProductStudio.tsx": "4d92c5c928b5bfccd06cd81e29343e1987be9f2d7db1aa475187bdbadcf1eb0d",
+    "src/lib/catalog-spreadsheet.test.ts": "f0148423d106e37d0583b338875fe2033ffb7b23fe303b9068e0bb333fe02901",
+    "src/lib/catalog-spreadsheet.ts": "0449fb6d845679e2616c742dfb5c7164bae0a67bea6d2002f0d87a57f35178f9",
+    "src/server/api/admin-avyron-sync.ts": "cc8f5d4e96be4ace9ce1c04cffd1302b662dc964a528141a86aecd017742f390",
+    "src/server/api/admin-marketing-agent.ts": "6956453b707a4264747b8148dca546a6061be9fb066289ee26f7250a699e024d",
+    "src/server/api/admin-media.ts": "2c75a00aaa73ebc66198bff40536216151ffd13e18df6687af655e8b653aa15c",
+    "src/server/api/bounded-json.ts": "9ba23abbacab49b18082340c13ffe8899f6833a044ba85d7906a84242cdbfd6a",
+    "src/server/api/payments.ts": "850f21877d838451050273d1b85ccc8d8f3bebd64df551e2acb22f0a90a7954c",
+    "src/server/api/personalization.ts": "b17c698905bd64394e3ae10c19425b139f53322d87e3473e389f278ce308bfd3",
+    "src/server/api/reviews.ts": "c702398d4baac6e729bbc121e0d1a82cea1e2a3ce7cd30d49e8b1c0e951a3321",
+    "src/server/checkout.test.ts": "391a175f66054f7da4e586a9270b469d4013f331d1821bde5b8d69fb693c2edf",
+    "src/server/queue/avyron-sync-consumer.ts": "9cd7c5720b51c1567e66b7dae6e18a4a6a84f1e7fe66516a574326e43ccf3c93",
+    "src/server/security/avyron-boundary.test.ts": "5b851d97f081df266781989fbc6a56d4cae28eb5a6a4acd6263dd9a0f1b18e1a",
+    "src/server/security/upload-bounds.test.ts": "2b27691567f6ae6bb801d2df3048b21ea0466f592b2d8cc2e4997007d664728a",
+    "src/server/storefront-experience.test.ts": "8b8a029e7ee94318f880b2b29f645ed17d78f70c76babe71d6efd7d86add7a89",
+    "package.json": "76c7a77acd8f6e5ccada3992534a4d056d11a4f11098b53241783a1f382eb5df",
+    "package-lock.json": "9636c3c58135a5f7541053372fb35b37f89372a1aa8ac7917d39f9d47bee67dc",
+    "wrangler.jsonc": "bfc3fe5957d9ac64ea6d8b5db56033b61d55062e449186b0ef5ee2e7b3da9007"
+  }
+}

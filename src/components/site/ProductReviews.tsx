@@ -1,3 +1,4 @@
+import { saveReviewWithPhoto, type SavedReview } from "@/lib/review-submission";
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +33,14 @@ export function ProductReviews({
     [error, setError] = useState(""),
     [rating, setRating] = useState(0),
     reduced = useReducedMotion();
+  const [savedReview, setSavedReview] = useState<SavedReview | null>(null);
+  const sending = useRef(false);
   const queryClient = useQueryClient();
+  useEffect(() => {
+    setSavedReview(null);
+    setError("");
+    setMessage("");
+  }, [slug]);
   const account = useQuery({
     queryKey: ["reviewer"],
     queryFn: () => reviewApi<Reviewer | null>("/api/v1/reviewer"),
@@ -110,17 +118,19 @@ export function ProductReviews({
   }, [displayedReviews.length, goToSlide, inView, paused, reduced, slide]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (sending.current) return;
+    sending.current = true;
     const form = new FormData(event.currentTarget);
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      if (!rating) throw new Error("Alege între 1 și 5 stele.");
+      if (!savedReview && !rating) throw new Error("Alege între 1 și 5 stele.");
+      const photo = form.get("photo");
       const locale = inferredLocale();
-      const selectedProduct = String(form.get("productSlug") || slug);
-      const created = await reviewApi<{ id: string }>("/api/v1/reviews", {
-        method: "POST",
-        body: JSON.stringify({
+      const selectedProduct = savedReview?.productSlug ?? String(form.get("productSlug") || slug);
+      await saveReviewWithPhoto({
+        draft: {
           productSlug: selectedProduct,
           displayName: account.data ? undefined : form.get("displayName"),
           email: account.data ? undefined : form.get("email"),
@@ -130,27 +140,11 @@ export function ProductReviews({
           countryCode: locale.countryCode,
           consent: form.get("consent") === "on",
           website: form.get("website"),
-        }),
+        },
+        photo: account.data && photo instanceof File ? photo : undefined,
+        saved: savedReview,
+        onSaved: setSavedReview,
       });
-      const photo = form.get("photo");
-      if (account.data && photo instanceof File && photo.size > 0) {
-        const upload = new FormData();
-        upload.set("photo", photo);
-        const response = await fetch(`/api/v1/reviews/${created.id}/photo`, {
-          method: "POST",
-          credentials: "same-origin",
-          body: upload,
-        });
-        if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as {
-            error?: { message?: string };
-          } | null;
-          throw new Error(
-            payload?.error?.message ||
-              "Recenzia a fost salvată, dar fotografia nu a putut fi încărcată.",
-          );
-        }
-      }
       trackGrowthEvent("review_submitted", {
         productSlug: selectedProduct,
         quantity: 1,
@@ -158,10 +152,12 @@ export function ProductReviews({
       });
       setMessage("Mulțumim! Recenzia ta va apărea după verificare.");
       setOpen(false);
+      setSavedReview(null);
       setRating(0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Reîncearcă.");
     } finally {
+      sending.current = false;
       setBusy(false);
     }
   }
@@ -222,100 +218,119 @@ export function ProductReviews({
             </p>
           ) : (
             <p className="review-feedback">
-              Poți publica fără cont. Pentru o fotografie și Magic Stars, intră în cont cu Google.{" "}
+              Poți publica fără cont. Pentru o fotografie și Magic Stars, intră în cont.{" "}
               <Link to="/cont">Deschide contul</Link>
             </p>
           )}
-          <form onSubmit={submit} className="review-form">
-            <div className="review-trap" aria-hidden="true">
-              <label>
-                Website
-                <input name="website" tabIndex={-1} autoComplete="off" />
-              </label>
-            </div>
-            <label className="review-product-field">
-              Cutiuța despre care scrii
-              <select name="productSlug" defaultValue={slug} required>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {!account.data && (
-              <div className="review-fields">
+          <form onSubmit={submit} className="review-form" aria-busy={busy}>
+            {savedReview && (
+              <p role="status" className="review-feedback">
+                Recenzia este salvată. Reîncearcă încărcarea fotografiei sau continuă fără ea;
+                recenzia nu va fi trimisă din nou.
+              </p>
+            )}
+            <fieldset disabled={busy || !!savedReview} className="contents">
+              <div className="review-trap" aria-hidden="true">
                 <label>
-                  Numele afișat
-                  <input
-                    name="displayName"
-                    required
-                    minLength={2}
-                    maxLength={60}
-                    autoComplete="nickname"
-                    placeholder="Prenume și inițială"
-                  />
-                </label>
-                <label>
-                  E-mail · nu apare public
-                  <input name="email" required type="email" maxLength={254} autoComplete="email" />
+                  Website
+                  <input name="website" tabIndex={-1} autoComplete="off" />
                 </label>
               </div>
-            )}
-            {
-              <>
-                <fieldset className="review-rating">
-                  <legend>Câte stele îi oferi?</legend>
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <label key={value} className={value <= rating ? "chosen" : ""}>
-                      <input
-                        type="radio"
-                        name="rating"
-                        value={value}
-                        checked={rating === value}
-                        onChange={() => setRating(value)}
-                        required
-                        aria-label={`${value} ${value === 1 ? "stea" : "stele"}`}
-                      />
-                      <span aria-hidden>★</span>
-                    </label>
+              <label className="review-product-field">
+                Cutiuța despre care scrii
+                <select name="productSlug" defaultValue={slug} required>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
                   ))}
-                </fieldset>
-                <label>
-                  Părerea ta despre {name}
-                  <textarea
-                    name="body"
-                    required
-                    minLength={10}
-                    maxLength={1200}
-                    rows={3}
-                    placeholder="Cum ai ales-o? Ce ți-a plăcut sau ce ai îmbunătăți?"
-                  />
-                </label>
-                {account.data && (
+                </select>
+              </label>
+              {!account.data && (
+                <div className="review-fields">
                   <label>
-                    Fotografie proprie · opțional, maximum 5 MB
-                    <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+                    Numele afișat
+                    <input
+                      name="displayName"
+                      required
+                      minLength={2}
+                      maxLength={60}
+                      autoComplete="nickname"
+                      placeholder="Prenume și inițială"
+                    />
                   </label>
-                )}
-                <label className="review-consent">
-                  <input type="checkbox" name="consent" required />
-                  Accept publicarea numelui afișat și a părerii mele după verificare.{" "}
-                  <Link to="/politica-de-confidentialitate">Confidențialitate</Link>
-                </label>
-                <p className="review-form-note">
-                  Limba și țara sunt deduse automat. Sunt binevenite și părerile critice; nu include
-                  date personale în text. Recenziile sunt moderate înainte de publicare.
-                </p>
-              </>
-            }
+                  <label>
+                    E-mail · nu apare public
+                    <input
+                      name="email"
+                      required
+                      type="email"
+                      maxLength={254}
+                      autoComplete="email"
+                    />
+                  </label>
+                </div>
+              )}
+              {
+                <>
+                  <fieldset className="review-rating">
+                    <legend>Câte stele îi oferi?</legend>
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <label key={value} className={value <= rating ? "chosen" : ""}>
+                        <input
+                          type="radio"
+                          name="rating"
+                          value={value}
+                          checked={rating === value}
+                          onChange={() => setRating(value)}
+                          required
+                          aria-label={`${value} ${value === 1 ? "stea" : "stele"}`}
+                        />
+                        <span aria-hidden>★</span>
+                      </label>
+                    ))}
+                  </fieldset>
+                  <label>
+                    Părerea ta despre {name}
+                    <textarea
+                      name="body"
+                      required
+                      minLength={10}
+                      maxLength={1200}
+                      rows={3}
+                      placeholder="Cum ai ales-o? Ce ți-a plăcut sau ce ai îmbunătăți?"
+                    />
+                  </label>
+                  <label className="review-consent">
+                    <input type="checkbox" name="consent" required />
+                    Accept publicarea numelui afișat și a părerii mele după verificare.{" "}
+                    <Link to="/politica-de-confidentialitate">Confidențialitate</Link>
+                  </label>
+                  <p className="review-form-note">
+                    Limba și țara sunt deduse automat. Sunt binevenite și părerile critice; nu
+                    include date personale în text. Recenziile sunt moderate înainte de publicare.
+                  </p>
+                </>
+              }
+            </fieldset>
+            {account.data && (
+              <label>
+                Fotografie proprie · opțional, maximum 5 MB
+                <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
+              </label>
+            )}
+
             {error && (
               <p role="alert" className="review-error">
                 {error}
               </p>
             )}
             <button className="review-button" disabled={busy || account.isFetching}>
-              {busy ? "Se salvează…" : "Trimite părerea ta"}
+              {busy
+                ? "Se salvează…"
+                : savedReview
+                  ? "Finalizează fotografia"
+                  : "Trimite părerea ta"}
             </button>
           </form>
         </div>

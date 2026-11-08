@@ -916,7 +916,7 @@ export default function ProductStudio({ productId }: { productId: string }) {
     { id: "suppliers", label: "Relevanță / furnizori", icon: Search },
     { id: "spin360", label: "360°", icon: Rotate3D },
     { id: "animation", label: "Animație", icon: Film },
-    { id: "avyron", label: "Sync AVYRON", icon: Send },
+    { id: "avyron", label: "Istoric AVYRON", icon: Send },
   ];
 
   return (
@@ -1239,7 +1239,6 @@ export default function ProductStudio({ productId }: { productId: string }) {
 }
 
 function AvyronSyncPanel({ data }: { data: StudioData }) {
-  const [busyAsset, setBusyAsset] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["admin", "avyron-sync", data.product.id],
     queryFn: () =>
@@ -1261,92 +1260,18 @@ function AvyronSyncPanel({ data }: { data: StudioData }) {
       }>(`/api/v1/admin/products/${data.product.id}/avyron-sync`),
     staleTime: 10_000,
   });
-  const eligible = data.media.filter(
-    (asset) =>
-      asset.status === "active" &&
-      asset.public_access === 1 &&
-      asset.marketing_approved === 1 &&
-      asset.rights_status === "cleared",
-  );
-
-  async function sync(asset: MediaAsset) {
-    setBusyAsset(asset.id);
-    try {
-      const result = await api<{ queued: boolean; targetStatus: string }>(
-        `/api/v1/admin/media/${asset.id}/sync-avyron`,
-        { method: "POST" },
-      );
-      await query.refetch();
-      toast.success(
-        result.queued
-          ? "Job trimis în coada de sincronizare"
-          : "Job salvat în așteptarea configurării AVYRON",
-      );
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Jobul nu a putut fi creat.");
-    } finally {
-      setBusyAsset(null);
-    }
-  }
-
-  const targetStatus = query.data?.target?.status ?? "disabled";
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
       <section className="rounded-lg border border-[#2a3951] bg-[#101a2c] p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-white">Asset-uri eligibile</h2>
-            <p className="mt-2 text-xs leading-5 text-slate-400">
-              Numai fișierele publicate, aprobate și cu drepturi validate pot părăsi magazinul.
-            </p>
-          </div>
-          <span
-            className={`rounded-md border px-2 py-1 text-[11px] ${targetStatus === "active" ? "border-emerald-400/30 text-emerald-300" : "border-amber-400/30 text-amber-300"}`}
-          >
-            {targetStatus}
-          </span>
-        </div>
-        {targetStatus !== "active" && (
-          <div className="mt-4 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-xs leading-5 text-amber-200">
-            Joburile sunt păstrate local. Pentru livrare trebuie configurate endpointul HTTPS în D1
-            și secretul <code>AVYRON_SYNC_HMAC_SECRET</code> în Worker, niciodată în frontend.
-          </div>
-        )}
-        <div className="mt-4 space-y-2">
-          {eligible.map((asset) => (
-            <div
-              key={asset.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-[#334155] p-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-slate-200">
-                  {asset.title || asset.id}
-                </p>
-                <p className="mt-1 text-[10px] text-slate-600">
-                  {asset.media_type} · v{asset.version}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={busyAsset === asset.id}
-                onClick={() => sync(asset)}
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-cyan-300 px-3 py-2 text-xs font-semibold text-[#07111f] disabled:opacity-50"
-              >
-                {busyAsset === asset.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Send className="h-3.5 w-3.5" />
-                )}{" "}
-                Sincronizează
-              </button>
-            </div>
-          ))}
-          {eligible.length === 0 && (
-            <p className="rounded-lg border border-dashed border-[#334155] p-6 text-center text-xs text-slate-500">
-              Aprobă și publică cel puțin un asset.
-            </p>
-          )}
-        </div>
+        <h2 className="text-sm font-semibold text-white">Raportare separată de magazin</h2>
+        <p className="mt-2 text-xs leading-5 text-slate-300">
+          Magazinul funcționează independent. AVYRON poate primi numai statistici agregate aprobate,
+          din secțiunea Agent marketing și comenzi. Produsele, fișierele și operațiunile interne nu
+          se sincronizează. Istoricul anterior rămâne disponibil aici.
+        </p>
+        <a href="/admin/ai" className="mt-4 inline-block text-xs text-cyan-300 underline">
+          Deschide raportarea statistică
+        </a>
       </section>
       <section className="rounded-lg border border-[#2a3951] bg-[#101a2c] p-5">
         <h2 className="text-sm font-semibold text-white">Jurnal sincronizare</h2>

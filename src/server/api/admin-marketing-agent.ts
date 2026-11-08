@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import { readAdminSessionToken } from "@/lib/admin-password-auth-service";
@@ -5,7 +6,7 @@ import {
   getMarketingOrdersAgentBuild,
   getMarketingOrdersSkillPackage,
 } from "@/server/agents/marketing-orders-manifest";
-import { boundedBytes, boundedJson } from "@/server/api/bounded-json";
+import { boundedJson } from "@/server/api/bounded-json";
 import type { AvyronQueueMessage } from "@/server/queue/avyron-sync-consumer";
 import {
   ApprovalDecisionError,
@@ -141,9 +142,9 @@ const updateSettingsSchema = z.object({
   avyron: z.object({
     enabled: z.boolean(),
     shareAggregatedStats: z.boolean(),
-    shareSkillPackage: z.boolean(),
-    acceptDataProposals: z.boolean(),
-    acceptSkillProposals: z.boolean(),
+    shareSkillPackage: z.literal(false),
+    acceptDataProposals: z.literal(false),
+    acceptSkillProposals: z.literal(false),
   }),
 });
 
@@ -163,12 +164,6 @@ const approvalDecisionSchema = z.object({
   revisionRef: z.string().trim().min(1).max(160),
   evidenceReference: z.string().trim().max(500).optional(),
   idempotencyKey: z.string().uuid(),
-});
-
-const inboundExchangeSchema = z.object({
-  exchangeId: z.string().uuid(),
-  type: z.enum(["data_proposal", "skill_proposal"]),
-  payload: z.record(z.string(), z.unknown()),
 });
 
 function json(data: unknown, init: ResponseInit = {}): Response {
@@ -327,6 +322,9 @@ function parseSettings(row: SettingsRow | null): AgentSettings {
       avyron: {
         ...fallback.avyron,
         ...avyron,
+        shareSkillPackage: false,
+        acceptDataProposals: false,
+        acceptSkillProposals: false,
         async: true,
         control: "none",
         allowPersonalData: false,
@@ -525,7 +523,7 @@ async function getState(request: Request, env: Env): Promise<Response> {
       authority: {
         controller: "cutiuta_magic_platform",
         administrators: "owner",
-        avyronRole: "statistics_and_approved_exchange_only",
+        avyronRole: "approved_aggregated_statistics_only",
       },
     },
   });
@@ -660,6 +658,8 @@ async function createExport(request: Request, env: Env): Promise<Response> {
       { status: 400 },
     );
   }
+  if (parsed.data.type !== "stats_snapshot")
+    return json({ error: { code: "STATISTICS_ONLY" } }, { status: 403 });
   const { settings } = await readSettings(env.DB);
   const allowed =
     parsed.data.type === "stats_snapshot"
@@ -757,6 +757,11 @@ async function decideExchange(request: Request, env: Env, exchangeId: string): P
     .bind(exchangeId)
     .first<ExchangeRow & { approval_request_id: string | null }>();
   if (!exchange) return json({ error: { code: "EXCHANGE_NOT_FOUND" } }, { status: 404 });
+  if (
+    parsed.data.decision === "approved" &&
+    (exchange.direction !== "outbound" || exchange.exchange_type !== "stats_snapshot")
+  )
+    return json({ error: { code: "STATISTICS_ONLY" } }, { status: 403 });
   if (exchange.status !== "pending_approval") {
     return json({ error: { code: "EXCHANGE_ALREADY_REVIEWED" } }, { status: 409 });
   }
@@ -851,7 +856,11 @@ async function dispatchExchange(request: Request, env: Env, exchangeId: string):
   )
     .bind(exchangeId)
     .first<ExchangeRow & { approval_request_id: string | null }>();
-  if (!exchange || exchange.direction !== "outbound") {
+  if (
+    !exchange ||
+    exchange.direction !== "outbound" ||
+    exchange.exchange_type !== "stats_snapshot"
+  ) {
     return json({ error: { code: "EXCHANGE_NOT_FOUND" } }, { status: 404 });
   }
   if (!exchange.approval_request_id || !["approved", "failed"].includes(exchange.status)) {
@@ -967,134 +976,6 @@ async function decideApproval(request: Request, env: Env, approvalId: string): P
   }
 }
 
-function bytesToHex(bytes: Uint8Array): string {
-  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-async function hmac(secret: string, value: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  return bytesToHex(
-    new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value))),
-  );
-}
-
-function constantTimeEqual(left: string, right: string): boolean {
-  if (left.length !== right.length) return false;
-  let difference = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
-  }
-  return difference === 0;
-}
-
-function containsForbiddenPersonalData(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  if (Array.isArray(value)) return value.some(containsForbiddenPersonalData);
-  const forbidden =
-    /(email|phone|telefon|address|adresa|customer|client|order|comanda|message|mesaj)/i;
-  return Object.entries(value as Record<string, unknown>).some(
-    ([key, nested]) => forbidden.test(key) || containsForbiddenPersonalData(nested),
-  );
-}
-
-async function receiveInboundExchange(request: Request, env: Env): Promise<Response> {
-  type SyncEnv = Env & { AVYRON_SYNC_HMAC_SECRET?: string };
-  const syncEnv = env as SyncEnv;
-  const target = await env.DB.prepare(
-    "SELECT status, auth_mode FROM avyron_sync_targets WHERE code = 'avyron-os'",
-  ).first<{ status: string; auth_mode: string }>();
-  if (
-    target?.status !== "active" ||
-    target.auth_mode !== "hmac" ||
-    !syncEnv.AVYRON_SYNC_HMAC_SECRET
-  ) {
-    return json({ error: { code: "INTEGRATION_NOT_READY" } }, { status: 503 });
-  }
-  const timestamp = request.headers.get("x-avyron-timestamp") ?? "";
-  const nonce = request.headers.get("x-avyron-nonce") ?? "";
-  const supplied = (request.headers.get("x-avyron-signature") ?? "").replace(/^sha256=/, "");
-  const timestampNumber = Number(timestamp);
-  if (
-    !nonce ||
-    !Number.isFinite(timestampNumber) ||
-    Math.abs(Date.now() - timestampNumber) > 300_000
-  ) {
-    return json({ error: { code: "STALE_OR_INVALID_REQUEST" } }, { status: 401 });
-  }
-  const rawBytes = await boundedBytes(request, 32_768);
-  const raw = new TextDecoder().decode(rawBytes);
-  const expected = await hmac(syncEnv.AVYRON_SYNC_HMAC_SECRET, `${timestamp}.${nonce}.${raw}`);
-  if (!constantTimeEqual(supplied, expected)) {
-    return json({ error: { code: "INVALID_SIGNATURE" } }, { status: 401 });
-  }
-  let body: unknown;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    return json({ error: { code: "INVALID_JSON" } }, { status: 400 });
-  }
-  const parsed = inboundExchangeSchema.safeParse(body);
-  if (!parsed.success || containsForbiddenPersonalData(parsed.data?.payload)) {
-    return json({ error: { code: "INVALID_OR_FORBIDDEN_PAYLOAD" } }, { status: 400 });
-  }
-  const { settings } = await readSettings(env.DB);
-  const accepted =
-    parsed.data.type === "data_proposal"
-      ? settings.avyron.acceptDataProposals
-      : settings.avyron.acceptSkillProposals;
-  if (!settings.avyron.enabled || !accepted) {
-    return json({ error: { code: "EXCHANGE_DISABLED" } }, { status: 403 });
-  }
-  const exchangeId = `in_${parsed.data.exchangeId.replaceAll("-", "")}`;
-  const approvalId = `approval_${parsed.data.exchangeId.replaceAll("-", "")}`;
-  const payloadJson = JSON.stringify({
-    schemaVersion: 1,
-    source: "avyron-os",
-    receivedAt: new Date().toISOString(),
-    personalDataIncluded: false,
-    data: parsed.data.payload,
-  });
-  const payloadHash = await sha256(payloadJson);
-  await env.DB.batch([
-    env.DB.prepare(
-      `INSERT OR IGNORE INTO approval_requests (
-           id, request_type, entity_type, entity_id, risk_level, summary,
-           proposed_action_json, status, requested_by_agent_id
-         ) VALUES (?1, 'avyron.agent.exchange', 'agent_exchange', ?2, 'medium', ?3,
-           ?4, 'pending', 'agent_marketing_orders')`,
-    ).bind(
-      approvalId,
-      exchangeId,
-      "Propunere AVYRON primită; nu se aplică fără aprobarea proprietarului Cutiuța Magică.",
-      JSON.stringify({ exchangeId, type: parsed.data.type, payloadHash }),
-    ),
-    env.DB.prepare(
-      `INSERT OR IGNORE INTO agent_exchange_items (
-           id, agent_id, direction, exchange_type, source_system, destination_system,
-           payload_json, payload_hash, idempotency_key, external_exchange_id, status,
-           approval_request_id, received_at
-         ) VALUES (?1, 'agent_marketing_orders', 'inbound', ?2, 'avyron-os',
-           'cutiuta-magica', ?3, ?4, ?5, ?6, 'pending_approval', ?7,
-           strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ).bind(
-      exchangeId,
-      parsed.data.type,
-      payloadJson,
-      payloadHash,
-      `avyron:${parsed.data.exchangeId}`,
-      parsed.data.exchangeId,
-      approvalId,
-    ),
-  ]);
-  return json({ data: { exchangeId, status: "pending_approval" } }, { status: 202 });
-}
-
 export async function handleAdminMarketingAgentApi(
   request: Request,
   env: Env,
@@ -1122,7 +1003,8 @@ export async function handleAdminMarketingAgentApi(
     return null;
   try {
     if (path === inbound) {
-      if (request.method === "POST") return receiveInboundExchange(request, env);
+      if (request.method === "POST")
+        return json({ error: { code: "STATISTICS_ONLY" } }, { status: 403 });
       return json(
         { error: { code: "METHOD_NOT_ALLOWED" } },
         { status: 405, headers: { allow: "POST" } },
@@ -1172,7 +1054,7 @@ export async function handleAdminMarketingAgentApi(
     );
   } catch (error) {
     const status = statusCode(error);
-    console.error("admin.marketing_agent.failed", error);
+    console.error("admin.marketing_agent.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

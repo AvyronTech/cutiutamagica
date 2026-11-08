@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { checkoutReadiness } from "../services/checkout-readiness";
 import { boundedJson } from "./bounded-json";
 import { returnRequestInputSchema } from "@/lib/commerce-operations-contracts";
@@ -67,7 +68,10 @@ async function handleCreateReturn(
         entityId: result.returnId,
       });
     } catch (error) {
-      console.error("return.email_queue_failed", { returnId: result.returnId, error });
+      console.error("return.email_queue_failed", {
+        returnId: result.returnId,
+        error: safeErrorMetadata(error),
+      });
       ctx.waitUntil(
         Promise.allSettled([
           sendReturnAcknowledgementForId(env, result.returnId),
@@ -121,7 +125,7 @@ export async function handleCommerceApi(
   } catch (error) {
     const status = error instanceof ProviderError ? error.status : 500;
     const code = error instanceof ProviderError ? error.code : "COMMERCE_OPERATION_FAILED";
-    console.error("commerce.api_failed", { path, error });
+    console.error("commerce.api_failed", { path, error: safeErrorMetadata(error) });
     return json(
       {
         error: {

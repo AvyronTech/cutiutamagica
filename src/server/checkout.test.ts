@@ -1,3 +1,4 @@
+import { guardSecurityEdge } from "./security/edge";
 import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
@@ -1830,4 +1831,126 @@ describe("registered first-order shipping", () => {
       0,
     );
   });
+});
+
+describe("audit: delayed and concurrent checkout events", () => {
+  async function typedEvent(type: string, id: string) {
+    const payload = JSON.stringify({
+      id,
+      type,
+      livemode: false,
+      data: { object: { id: "cs_test_local", payment_status: "unpaid" } },
+    });
+    const t = String(Math.floor(Date.now() / 1000));
+    const signature = await hmacHex(env.STRIPE_WEBHOOK_SECRET!, `${t}.${payload}`);
+    return handlePayments(
+      new Request("https://shop.test/api/v1/webhooks/stripe", {
+        method: "POST",
+        headers: { "stripe-signature": `t=${t},v1=${signature}` },
+        body: payload,
+      }),
+      env,
+    );
+  }
+  it("does not downgrade a captured payment for late expiry or failed events", async () => {
+    const created = await start();
+    expect((await event(created))?.status).toBe(200);
+    expect((await typedEvent("checkout.session.expired", "evt_late_expiry"))?.status).toBe(200);
+    expect(
+      (await typedEvent("checkout.session.async_payment_failed", "evt_late_failed"))?.status,
+    ).toBe(200);
+    expect(storedPayment(created.orderId)).toBe("paid");
+    expect(
+      sqlite.prepare("SELECT order_status FROM orders WHERE id=?").get(created.orderId)
+        ?.order_status,
+    ).toBe("pending");
+  });
+  it("records distinct success events once financially, including concurrent delivery", async () => {
+    const created = await start();
+    const responses = await Promise.all([
+      event(created, {}, "evt_success_a"),
+      event(created, {}, "evt_success_b"),
+    ]);
+    expect(responses.map((r) => r?.status)).toEqual([200, 200]);
+    expect(
+      sqlite
+        .prepare(
+          "SELECT order_count FROM customers WHERE id=(SELECT customer_id FROM orders WHERE id=?)",
+        )
+        .get(created.orderId)?.order_count,
+    ).toBe(1);
+    expect(
+      sqlite
+        .prepare("SELECT COUNT(*) n FROM order_events WHERE event_type='payment.captured'")
+        .get()?.n,
+    ).toBe(1);
+  });
+  it("creates one order for concurrent identical requests and rejects reuse with a different basket", async () => {
+    const body = input();
+    const [first, second] = await Promise.all([
+      createWebsiteOrder(env.DB, body),
+      createWebsiteOrder(env.DB, body),
+    ]);
+    expect(first.orderId).toBe(second.orderId);
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM orders").get()?.n).toBe(1);
+    await expect(
+      createWebsiteOrder(env.DB, { ...body, items: [{ productId: "hp-keeper", quantity: 2 }] }),
+    ).rejects.toThrow();
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM orders").get()?.n).toBe(1);
+  });
+});
+
+describe("audit: refund reconciliation visibility", () => {
+  it("raises one internal review alert for signed refund replay without inventing a refund", async () => {
+    const created = await start();
+    await event(created);
+    const payload = JSON.stringify({
+      id: "evt_refund_audit",
+      type: "charge.refunded",
+      livemode: false,
+      data: { object: { id: "ch_synthetic", amount_refunded: 1000 } },
+    });
+    const t = String(Math.floor(Date.now() / 1000));
+    const signature = await hmacHex(env.STRIPE_WEBHOOK_SECRET!, `${t}.${payload}`);
+    for (let i = 0; i < 2; i++)
+      expect(
+        (
+          await handlePayments(
+            new Request("https://shop.test/api/v1/webhooks/stripe", {
+              method: "POST",
+              headers: { "stripe-signature": `t=${t},v1=${signature}` },
+              body: payload,
+            }),
+            env,
+          )
+        )?.status,
+      ).toBe(200);
+    expect(
+      sqlite
+        .prepare("SELECT COUNT(*) n FROM admin_notifications WHERE notification_type='payment'")
+        .get()?.n,
+    ).toBe(1);
+    expect(
+      sqlite
+        .prepare("SELECT payment_status,refunded_bani FROM orders WHERE id=?")
+        .get(created.orderId),
+    ).toMatchObject({ payment_status: "paid", refunded_bani: 0 });
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM refunds").get()?.n).toBe(0);
+  });
+});
+
+it("keeps payment signature checks on compatible historical callbacks", async () => {
+  for (const provider of ["stripe", "revolut"]) {
+    const req = new Request(
+      `https://cutiuta-magica-store.avyrontech.workers.dev/api/v1/webhooks/${provider}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      },
+    );
+    expect(await guardSecurityEdge(req, { APP_ENV: "production" })).toBeNull();
+    expect((await handlePayments(req, env))?.status).toBe(401);
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM orders").get()?.n).toBe(0);
+  }
 });

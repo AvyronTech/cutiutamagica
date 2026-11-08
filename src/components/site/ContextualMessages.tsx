@@ -1,3 +1,4 @@
+import { storefrontRequest } from "@/lib/storefront-request";
 import { useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +29,7 @@ export function ContextualMessages() {
   const query = useQuery({
     queryKey: ["storefront-messages"],
     queryFn: async ({ signal }) => {
-      const r = await fetch("/api/v1/storefront/messages", { signal });
+      const r = await storefrontRequest("/api/v1/storefront/messages", { signal });
       if (!r.ok) return [];
       return ((await r.json()) as { data: StorefrontMessage[] }).data;
     },

@@ -1,0 +1,907 @@
+{
+  "scope": "Source inventory; complements runtime authorization tests",
+  "functions": [
+    {
+      "file": "src/lib/admin-auth.functions.ts",
+      "name": "loginAdminAccount",
+      "authentication": "public-or-handler-specific",
+      "permissions": [],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin-auth.functions.ts",
+      "name": "changeAdminAccountPassword",
+      "authentication": "admin-session",
+      "permissions": [],
+      "ownAccount": true
+    },
+    {
+      "file": "src/lib/admin-auth.functions.ts",
+      "name": "logoutAdminAccount",
+      "authentication": "admin-session",
+      "permissions": [],
+      "ownAccount": true
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getMyRole",
+      "authentication": "admin-session",
+      "permissions": [],
+      "ownAccount": true
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminOrders",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminProducts",
+      "authentication": "admin-session",
+      "permissions": [
+        "catalog.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminInventoryProducts",
+      "authentication": "admin-session",
+      "permissions": [
+        "inventory.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminDashboard",
+      "authentication": "admin-session",
+      "permissions": [
+        "dashboard.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminShippingInsights",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminSmartShipAccountOverview",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.read",
+        "reports.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "diagnoseAdminSmartShipQuote",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.read",
+        "reports.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "refreshAdminSmartShipTracking",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "createAdminOrderEntry",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "createAdminProductDraft",
+      "authentication": "admin-session",
+      "permissions": [
+        "catalog.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminNotifications",
+      "authentication": "admin-session",
+      "permissions": [
+        "dashboard.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminStatistics",
+      "authentication": "admin-session",
+      "permissions": [
+        "reports.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminIntegrations",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "saveEstetoAccount",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "saveAvyronCrmAccount",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminSettings",
+      "authentication": "admin-session",
+      "permissions": [
+        "team.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getAdminBusinessHub",
+      "authentication": "admin-session",
+      "permissions": [
+        "dashboard.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "getCommerceOperations",
+      "authentication": "admin-session",
+      "permissions": [
+        "operations.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "issueInvoice",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "saveLegalEntity",
+      "authentication": "admin-session",
+      "permissions": [
+        "team.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "saveInvoiceSeries",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "saveShippingPolicy",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "updateReturnStatus",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "saveAdminSettings",
+      "authentication": "admin-session",
+      "permissions": [
+        "team.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "saveAdminBusinessSettings",
+      "authentication": "admin-session",
+      "permissions": [
+        "team.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "markNotificationRead",
+      "authentication": "admin-session",
+      "permissions": [
+        "dashboard.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "markAllNotificationsRead",
+      "authentication": "admin-session",
+      "permissions": [
+        "dashboard.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "dismissNotification",
+      "authentication": "admin-session",
+      "permissions": [
+        "dashboard.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "updateAdminOrderStatus",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "issueAdminSmartShipAwb",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "reconcileAdminSmartShipAwb",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/admin.functions.ts",
+      "name": "updateAdminProductStatus",
+      "authentication": "admin-session",
+      "permissions": [
+        "catalog.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/analytics.functions.ts",
+      "name": "getAnalyticsOverview",
+      "authentication": "admin-session",
+      "permissions": [
+        "reports.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/chat.functions.ts",
+      "name": "getChatCenter",
+      "authentication": "admin-session",
+      "permissions": [
+        "chat.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/chat.functions.ts",
+      "name": "getChatConversation",
+      "authentication": "admin-session",
+      "permissions": [
+        "chat.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/chat.functions.ts",
+      "name": "replyToChatConversation",
+      "authentication": "admin-session",
+      "permissions": [
+        "chat.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/chat.functions.ts",
+      "name": "updateChatConversationStatus",
+      "authentication": "admin-session",
+      "permissions": [
+        "chat.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/chat.functions.ts",
+      "name": "controlChatAi",
+      "authentication": "admin-session",
+      "permissions": [
+        "chat.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/chat.functions.ts",
+      "name": "updateChatKnowledge",
+      "authentication": "admin-session",
+      "permissions": [
+        "chat.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/chat.functions.ts",
+      "name": "updateChatSettings",
+      "authentication": "admin-session",
+      "permissions": [
+        "chat.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/customer-admin.functions.ts",
+      "name": "getAdminCustomers",
+      "authentication": "admin-session",
+      "permissions": [
+        "customers.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/customer-admin.functions.ts",
+      "name": "getAdminCustomerDetail",
+      "authentication": "admin-session",
+      "permissions": [
+        "customers.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "getEmailHub",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "saveEmailSettings",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "saveEmailTemplate",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "addPartnerContact",
+      "authentication": "admin-session",
+      "permissions": [
+        "team.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "setPartnerContactStatus",
+      "authentication": "admin-session",
+      "permissions": [
+        "team.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "sendEmailTest",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "sendPartnerMessage",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/email.functions.ts",
+      "name": "getEmailTemplatePreview",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "getGrowthSettings",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "saveGrowthSettings",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write",
+        "team.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "saveIntegrationCredential",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "verifyIntegration",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "previewOwnerReport",
+      "authentication": "admin-session",
+      "permissions": [
+        "reports.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "getSupplierResearch",
+      "authentication": "admin-session",
+      "permissions": [
+        "catalog.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "runSupplierResearch",
+      "authentication": "admin-session",
+      "permissions": [
+        "catalog.write",
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "getTrafficMetrics",
+      "authentication": "admin-session",
+      "permissions": [
+        "reports.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/growth.functions.ts",
+      "name": "importTrafficMetrics",
+      "authentication": "admin-session",
+      "permissions": [
+        "integrations.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/legal.functions.ts",
+      "name": "getPublicSeller",
+      "authentication": "public-or-handler-specific",
+      "permissions": [],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/magic-rewards.functions.ts",
+      "name": "getMagicRewardsAdmin",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/magic-rewards.functions.ts",
+      "name": "getPublicMagicRewards",
+      "authentication": "public-or-handler-specific",
+      "permissions": [],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/magic-rewards.functions.ts",
+      "name": "saveMagicRewardsProgram",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/magic-rewards.functions.ts",
+      "name": "saveMagicRewardActivities",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/magic-rewards.functions.ts",
+      "name": "adjustMagicStars",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "getMarketingCenter",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "createMarketingCampaign",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "addMarketingCost",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "createSocialDraft",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "reviewSocialDraft",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "analyzeSocialRelationships",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "decideUnfollowProposal",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "getBackupCenter",
+      "authentication": "admin-session",
+      "permissions": [
+        "backup.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "saveBackupPolicy",
+      "authentication": "admin-session",
+      "permissions": [
+        "backup.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "runBackupNow",
+      "authentication": "admin-session",
+      "permissions": [
+        "backup.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "protectBackupAsBaseline",
+      "authentication": "admin-session",
+      "permissions": [
+        "backup.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "getAccountVault",
+      "authentication": "admin-session",
+      "permissions": [
+        "accounts.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "saveAccountConnection",
+      "authentication": "admin-session",
+      "permissions": [
+        "accounts.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "registerAdminDevice",
+      "authentication": "admin-session",
+      "permissions": [],
+      "ownAccount": true
+    },
+    {
+      "file": "src/lib/operations.functions.ts",
+      "name": "revokeAdminDevice",
+      "authentication": "admin-session",
+      "permissions": [
+        "accounts.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/personalization-admin.functions.ts",
+      "name": "getPersonalizationSources",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/personalization-admin.functions.ts",
+      "name": "getPersonalizationProcurementQueue",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/personalization-admin.functions.ts",
+      "name": "getPersonalizationProcurement",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/personalization-admin.functions.ts",
+      "name": "savePersonalizationTemuSource",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/personalization-admin.functions.ts",
+      "name": "updatePersonalizationProcurement",
+      "authentication": "admin-session",
+      "permissions": [
+        "orders.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/promotions.functions.ts",
+      "name": "getPromotionsAdmin",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/promotions.functions.ts",
+      "name": "saveProductPrice",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/promotions.functions.ts",
+      "name": "saveVolumePromotion",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/referrals.functions.ts",
+      "name": "getReferralAdmin",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/referrals.functions.ts",
+      "name": "saveReferralCampaign",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/referrals.functions.ts",
+      "name": "updateReferralCode",
+      "authentication": "admin-session",
+      "permissions": [
+        "promotions.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/reviews.functions.ts",
+      "name": "getPublicReviews",
+      "authentication": "public-or-handler-specific",
+      "permissions": [],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/seo-audit.functions.ts",
+      "name": "getSeoAudit",
+      "authentication": "admin-session",
+      "permissions": [
+        "reports.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/shipping-policy.functions.ts",
+      "name": "getPublicShippingPolicy",
+      "authentication": "public-or-handler-specific",
+      "permissions": [],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/social-dashboard.functions.ts",
+      "name": "getSocialDashboard",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.read"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/social-dashboard.functions.ts",
+      "name": "reconcileMetricoolSchedule",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/social-dashboard.functions.ts",
+      "name": "saveSocialSnapshot",
+      "authentication": "admin-session",
+      "permissions": [
+        "marketing.write"
+      ],
+      "ownAccount": false
+    },
+    {
+      "file": "src/lib/store-pricing.functions.ts",
+      "name": "getStorePricing",
+      "authentication": "public-or-handler-specific",
+      "permissions": [],
+      "ownAccount": false
+    }
+  ]
+}
