@@ -1,3 +1,4 @@
+import { guardSecurityEdge } from "./security/edge";
 import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
@@ -1936,4 +1937,20 @@ describe("audit: refund reconciliation visibility", () => {
     ).toMatchObject({ payment_status: "paid", refunded_bani: 0 });
     expect(sqlite.prepare("SELECT COUNT(*) n FROM refunds").get()?.n).toBe(0);
   });
+});
+
+it("keeps payment signature checks on compatible historical callbacks", async () => {
+  for (const provider of ["stripe", "revolut"]) {
+    const req = new Request(
+      `https://cutiuta-magica-store.avyrontech.workers.dev/api/v1/webhooks/${provider}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      },
+    );
+    expect(await guardSecurityEdge(req, { APP_ENV: "production" })).toBeNull();
+    expect((await handlePayments(req, env))?.status).toBe(401);
+    expect(sqlite.prepare("SELECT COUNT(*) n FROM orders").get()?.n).toBe(0);
+  }
 });

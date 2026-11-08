@@ -1,3 +1,5 @@
+> Actualizare release 9 noiembrie: `workers_dev` rămâne activ numai pentru compatibilitatea celor două callbackuri POST de plată. Allowlist-ul aplicației respinge orice altă rută de pe hostname-ul istoric și toate preview-urile; handlerul verifică separat semnătura. Dezactivarea completă a hostname-ului se amână până când destinațiile sunt confirmate în conturile procesatorilor. Nu modifica endpointuri sau secrete de plată pentru acest rollout.
+
 # Securitate: validare, activare graduală și revenire
 
 Niciun pas de mai jos nu activează MFA. Folosește contul Cloudflare și Workerul Cutiuța Magică, nu alt proiect din același cont. Nu accepta upgrade-uri și nu crea baze/stocări duplicate.

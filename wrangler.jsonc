@@ -75,7 +75,8 @@
       "name": "cutiuta-magica-store",
       "account_id": "51abbee1bab5f1fc9bfbfd9dcea5f3dc",
       "triggers": { "crons": ["0 * * * *", "15 * * * *", "30 * * * *"] },
-      "workers_dev": false,
+      // Compatibility only: the application permits signed payment POST callbacks; all other paths are denied.
+      "workers_dev": true,
       "preview_urls": false,
       "routes": [
         {

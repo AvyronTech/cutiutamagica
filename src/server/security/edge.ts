@@ -30,8 +30,17 @@ export async function guardSecurityEdge(
     )
       throw new SecurityError("AMBIGUOUS_PRIVATE_PATH", 400);
   }
+  // Keep only signed payment callbacks on the exact historical origin until provider
+  // destinations can be independently confirmed. No pages, auth, admin or other APIs pass.
+  const legacyPaymentCallback =
+    url.hostname === "cutiuta-magica-store.avyrontech.workers.dev" &&
+    url.protocol === "https:" &&
+    !url.port &&
+    request.method === "POST" &&
+    ["/api/v1/webhooks/stripe", "/api/v1/webhooks/revolut"].includes(url.pathname);
   if (
     env.APP_ENV === "production" &&
+    !legacyPaymentCallback &&
     ![
       "cutiutamagica.eu",
       "www.cutiutamagica.eu",

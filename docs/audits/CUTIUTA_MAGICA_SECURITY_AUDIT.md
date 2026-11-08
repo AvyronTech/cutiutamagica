@@ -1,3 +1,5 @@
+> Release pregătit la cererea administratorului, 9 noiembrie: toate loturile sunt în PR #94. Contul Stripe live a fost reverificat prin API-ul existent, cu verificarea identității contului/țării și `charges_enabled`. Revolut Merchant rămâne neconfigurat/dezactivat. Pentru continuitate, hostname-ul Worker istoric acceptă numai callbackurile POST Stripe/Revolut cu verificarea semnăturii în handler; orice altă rută și preview rămân blocate. Activarea MFA sau Access nu face parte din publicare. Starea live finală este documentată în handofful releaseului; constatările de mai jos sunt instantaneul auditului anterior.
+
 # Cutiuța Magică — audit de securitate și calitate e-commerce
 
 Data: 9 noiembrie 2026 (Europe/Bucharest). Evaluare tehnică a codului, staging local izolat și probe publice read-only. Obiectiv ASVS L2 în zonele autentificate; **nu este o certificare sau declarație de conformitate integrală**.

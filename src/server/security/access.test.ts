@@ -180,6 +180,31 @@ describe("edge policies preserve public flows", () => {
       }),
     ).toBeNull();
   });
+  it("preserves only exact legacy payment POST callbacks without opening admin or preview origins", async () => {
+    const host = "https://cutiuta-magica-store.avyrontech.workers.dev";
+    for (const path of ["/api/v1/webhooks/stripe", "/api/v1/webhooks/revolut"])
+      expect(
+        await guardSecurityEdge(new Request(host + path, { method: "POST" }), {
+          APP_ENV: "production",
+        }),
+      ).toBeNull();
+    for (const [origin, path, method] of [
+      [host, "/api/v1/webhooks/stripe", "GET"],
+      [host, "/api/v1/admin/security", "POST"],
+      [host, "/api/v1/payments/checkout", "POST"],
+      [host, "/api/v1/health", "GET"],
+      [host, "/", "GET"],
+      [
+        "https://preview-cutiuta-magica-store.avyrontech.workers.dev",
+        "/api/v1/webhooks/stripe",
+        "POST",
+      ],
+      [host + ":8443", "/api/v1/webhooks/stripe", "POST"],
+    ])
+      await expect(
+        guardSecurityEdge(new Request(origin + path, { method }), { APP_ENV: "production" }),
+      ).rejects.toMatchObject({ statusCode: 421 });
+  });
   it("rejects private cross-origin mutations, allows same-origin, and leaves signed webhooks untouched", async () => {
     await expect(
       guardSecurityEdge(
