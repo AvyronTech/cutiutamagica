@@ -31,7 +31,8 @@
     "cf:deploy": "npm run build:production && node ./scripts/verify-production-build.mjs && wrangler deploy --env production",
     "security:check": "node scripts/security-check.mjs",
     "security:plan": "node scripts/security-plan.mjs",
-    "security:test": "vitest run --config vitest.config.ts src/server/security --maxWorkers=2"
+    "security:test": "vitest run --config vitest.config.ts src/server/security --maxWorkers=2",
+    "security:history": "node scripts/security-history.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",

@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+9 noiembrie 2026: auditul e-commerce reunește local securitatea și storefrontul pe `codex/ecommerce-security-audit-20261109`; schema94,489teste,19probeHTTP,SEO38 și build/dry-run PASS. Access absent pentru magazin și alias workers.dev încă public în producția91. **Fără push/deploy/MFA sau schimbări comerciale live.** [Raport și limite](audits/CUTIUTA_MAGICA_SECURITY_AUDIT.md).
+
 9 noiembrie 2026: audit public local în `codex/storefront-audit-20261108`, separat de PR #93. SEO live 38 URL-uri; 429 teste, 45 verificări responsive; consimțământ/tracking/formulare și landmark-uri corectate. Fără push/deploy sau modificări de conturi. [Raport și configurări/verificări rămase](audits/storefront-20261108/report.md).
 
 8 noiembrie 2026, securitate: lot pregătit pe `codex/security-hardening-20261108`, schema 93 numai local. Cookie-uri/sesiuni, RBAC, JWT Access pregătit, identități runner și backup privat v2. **Fără activare MFA, Access/WAF, schimbare de conturi ori deploy în acest lot.** [Audit și limite](handoff/2026-11-08-security-hardening.md). Starea producției din intrările următoare rămâne separată.

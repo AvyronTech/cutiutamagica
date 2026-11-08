@@ -1,3 +1,4 @@
+import { boundedFormData } from "./bounded-json";
 import { safeErrorMetadata } from "@/server/security/logging";
 import {
   PERSONALIZATION_BASE_PRICE_BANI,
@@ -115,7 +116,7 @@ async function createRequest(request: Request, env: Env): Promise<Response> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data"))
     throw reviewFailure("Formularul trebuie trimis împreună cu imaginea.", 415);
 
-  const form = await request.formData();
+  const form = await boundedFormData(request, PERSONALIZATION_MAX_IMAGE_BYTES + 64 * 1024);
   const parsed = personalizationFieldsSchema.safeParse({
     customerName: form.get("customerName"),
     email: form.get("email"),

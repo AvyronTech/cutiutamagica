@@ -419,7 +419,9 @@ async function webhook(
   const eventId =
     provider === "stripe" ? String(event.id ?? "") : `${String(event.order_id ?? "")}/${type}`;
   let paidOrderId: string | null = null;
-  if (!eventId || !type || eventId.length > 200)
+  if (provider === "stripe" && event.livemode !== (paymentEnvironment(env) === "production"))
+    return json({ error: { code: "ENVIRONMENT_MISMATCH" } }, 400);
+  if (!eventId || !/^[a-zA-Z0-9_./-]{1,200}$/.test(eventId) || !/^[a-zA-Z0-9_.]{1,160}$/.test(type))
     return json({ error: { code: "INVALID_EVENT" } }, 400);
   const old = await env.DB.prepare(
     "SELECT status FROM webhook_events WHERE provider=?1 AND external_event_id=?2",
@@ -439,6 +441,25 @@ async function webhook(
       JSON.stringify({ eventId, type }),
     )
     .run();
+  // Refunds/disputes require verified reconciliation; never infer financial changes from a redirect
+  // or silently acknowledge them without an actionable internal alert.
+  if (
+    /^(?:charge\.refunded|charge\.refund\.updated|refund\.(?:created|updated|failed)|charge\.dispute\.[a-z_]+|ORDER_(?:PARTIALLY_)?REFUNDED)$/.test(
+      type,
+    )
+  ) {
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO admin_notifications(
+      id,notification_type,severity,title,message,entity_type,entity_id,deduplication_key,action_url)
+      VALUES(?1,'payment','warning','Verificare rambursare sau dispută',?2,'webhook',?3,?1,'/admin/financiar')`,
+    )
+      .bind(
+        `payment-review/${provider}/${eventId}`,
+        `Eveniment ${provider}: ${type}. Verifică procesatorul și corelează comanda, rambursarea și documentele înainte de actualizarea contabilă. Referință: ${eventId}.`,
+        eventId,
+      )
+      .run();
+  }
   if (
     provider === "stripe" &&
     [

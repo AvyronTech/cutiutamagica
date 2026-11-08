@@ -1,0 +1,5 @@
+{
+  "scope": "All reachable local Git refs, text blobs <=2MB; heuristic patterns, not a credential-validity or full entropy scan",
+  "scannedBlobs": 2894,
+  "findings": []
+}

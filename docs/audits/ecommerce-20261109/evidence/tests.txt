@@ -1,0 +1,13 @@
+
+> test
+> vitest run --config vitest.config.ts --maxWorkers=1 --testTimeout=20000 --hookTimeout=30000
+
+
+ RUN  v4.1.12 /Users/niss/.codex/worktrees/ecommerce-security-audit-20261109
+
+
+ Test Files  87 passed (87)
+      Tests  489 passed (489)
+   Start at  00:50:43
+   Duration  381.41s (transform 2.92s, setup 0ms, import 12.70s, tests 329.80s, environment 15ms)
+

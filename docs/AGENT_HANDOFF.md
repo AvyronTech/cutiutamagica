@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Audit e-commerce de securitate și calitate — 9 noiembrie 2026, local
+
+- Loturile de securitate PR #93 și storefront `19cbf5a` reunite local; limite upload/XLSX, AVYRON numai statistici aprobate cu verificare la execuție, alerte refund și CI fixat la SHA. **489 teste, 19 probe HTTP, SEO38, build/dry-run trecute; schema94 numai local.** Producția rămâne91; fără MFA, tranzacții reale, modificări comerciale sau deploy. [Raport, matrice ASVS și riscuri rămase](handoff/2026-11-09-ecommerce-security-audit.md).
+
 ## Audit SEO, UX, formulare și consimțământ — 8–9 noiembrie 2026, local
 
 - Ramură separată `codex/storefront-audit-20261108`, din `dc0006e`; PR #93 de securitate este păstrat separat. Audit tabelar cu 17 puncte, consimțământ fără prebifare și cu retragere, tracking minimizat, cereri JSON finite, recuperarea fotografiei fără recenzie duplicată și corecții de semantică/focus. 429 teste și 45 probe responsive trecute; audit SEO live 38 URL-uri fără probleme în criteriile SEO verificate. Textele juridice și două probe vizuale rămase sunt marcate explicit. **Fără push/deploy, migrare, MFA sau schimbări de conturi.** [Raport, probe și limite](audits/storefront-20261108/report.md).

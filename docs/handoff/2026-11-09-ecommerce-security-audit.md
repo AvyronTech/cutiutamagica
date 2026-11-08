@@ -1,0 +1,12 @@
+# Audit e-commerce — 9 noiembrie 2026
+
+- Scop: securitate, integritate comercială, fișiere, AI/AVYRON, accesibilitate/SEO și dovezi, fără tranzacții reale, modificări comerciale live, MFA sau costuri.
+- Bază: `dc0006e`, ramură `codex/ecommerce-security-audit-20261109`. Loturile `ee96d09`/`4116b2a` din PR #93 și `19cbf5a` sunt recuperate prin cherry-pick; originale păstrate. Fără merge extern/push/deploy.
+- Noi: consumer AVYRON verifică aprobarea/hashul/expirarea și revendică atomic execuția; numai statistici agregate numerice, destinație allowlist fără redirect. Asset/skill/inbound oprite pe server; istoric și UI coerente. Limite reale upload și XLSX înainte de alocare/decomprimare; media recenziei cere încă starea pending. Alerte interne idempotente pentru refund/dispută fără schimbări automate de ledger. Actions fixate la SHA; scanner euristic istoric fără afișare valori.
+- Migrare append-only **0094**, numai local, limitează setările AVYRON la statistici și marchează schema94. Lotul reunit necesită și 0092/0093; producția reconfirmată rămâne91/runtime2ade5f0.
+- Verificări: typecheck/lint, **489 teste/87 fișiere**, build și cf:deploy:dry PASS; 19 probe HTTP izolate, audit dependențe0, surse0constatări, istoric2894bloburi candidate0potriviri, SEO38URL-uri0probleme. Rulare finală serială cu timeoutCLI20s/hook30s după concurență CPU; nu s-a modificat configurația timeouturilor testelor.
+- UI Opera: login/centru de securitate, politica AI, produs/istoric desktop1281 și mobil375, catalog320, cookie320×568/retragere, coș375 și acces checkout fără submit. Capturi și limite ale automatizării în raport; nicio sesiune sau coș live modificat. Fixture-uri numai în `/tmp/cutiuta-security-ecommerce-20261109`; preview oprit la predare. Caffeinate păstrat.
+- Cloudflare read-only: Zero Trust Free,3aplicații pentru alte proiecte,niciuna pentru magazin; workers.dev încă servește schema91. Nicio activare Access/WAF și nicio modificare de DNS/secrete. GitHub read-only: fără branch protection/ruleset, secret scanning și push protection dezactivate.
+- Deschise: release autorizat separat; teste furnizor sandbox/inbox; ledger refund/storno; rezervări expirate; antivirus și lifecycle privat; CSP nonce/hash; restaurare completă; validare juridică și WCAG manual complet. Fără declarație de conformitate ASVS/PCI/WCAG integrală.
+
+[Raportul cerut](../audits/CUTIUTA_MAGICA_SECURITY_AUDIT.md) · [Matrice345ID-uri ASVS](../audits/ecommerce-20261109/ASVS_5_0_0_MATRIX.md) · [Verificări și limite](../audits/ecommerce-20261109/evidence/verification.json).
