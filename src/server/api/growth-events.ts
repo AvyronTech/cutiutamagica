@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { GROWTH_EVENT_NAMES, type GrowthEventName } from "@/lib/growth-events";
 import { boundedJson } from "./bounded-json";
@@ -43,7 +44,10 @@ export function recordGrowthEvent(
           doubles: [event.value ?? 0, event.quantity ?? 0],
         });
       } catch (error) {
-        console.warn("growth.analytics_write_failed", { name: event.name, error });
+        console.warn("growth.analytics_write_failed", {
+          name: event.name,
+          error: safeErrorMetadata(error),
+        });
       }
       await env.DB.prepare(
         `INSERT INTO growth_event_daily(event_day,event_name,product_slug,path,event_count,value_total,quantity_total)
@@ -56,7 +60,12 @@ export function recordGrowthEvent(
       )
         .bind(event.name, productSlug, event.path, event.value ?? 0, event.quantity ?? 0)
         .run();
-    })().catch((error) => console.warn("growth.rollup_write_failed", { name: event.name, error })),
+    })().catch((error) =>
+      console.warn("growth.rollup_write_failed", {
+        name: event.name,
+        error: safeErrorMetadata(error),
+      }),
+    ),
   );
 }
 

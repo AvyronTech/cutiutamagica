@@ -20,7 +20,7 @@ self.addEventListener("fetch", (event) => {
     url.origin !== self.location.origin ||
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/admin") ||
-    url.pathname === "/auth" ||
+    ["/auth", "/cont", "/comanda", "/personalizeaza"].includes(url.pathname) ||
     url.pathname.startsWith("/_serverFn")
   )
     return;
@@ -35,10 +35,17 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.open(STATIC_CACHE).then(async (cache) => {
       const cached = await cache.match(request);
-      const fresh = fetch(request).then((response) => {
-        if (response.ok) cache.put(request, response.clone());
+      const fresh = fetch(request).then(async (response) => {
+        if (response.ok && !/private|no-store/i.test(response.headers.get("cache-control") || "")) {
+          try {
+            await cache.put(request, response.clone());
+          } catch {
+            /* Cache quota must not break navigation. */
+          }
+        }
         return response;
       });
+      if (cached) event.waitUntil(fresh.catch(() => undefined));
       return cached || fresh;
     }),
   );

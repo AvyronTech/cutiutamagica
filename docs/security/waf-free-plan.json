@@ -1,0 +1,33 @@
+{
+  "state": "draft-not-applied",
+  "zone": "cutiutamagica.eu",
+  "customRule": {
+    "description": "Cutiuța — căi de configurare și aplicații inexistente",
+    "enabled": false,
+    "action": "block",
+    "expression": "(http.request.uri.path in {\"/.env\" \"/.git/config\" \"/.git/HEAD\" \"/wp-login.php\" \"/xmlrpc.php\"})"
+  },
+  "rateRule": {
+    "description": "Cutiuța — pilot limitare autentificări",
+    "enabled": false,
+    "action": "block",
+    "expression": "(http.host eq \"app.cutiutamagica.eu\" and http.request.method eq \"POST\" and starts_with(http.request.uri.path, \"/_serverFn/\")) or (http.request.method eq \"POST\" and http.request.uri.path eq \"/api/v1/reviewer/login\")",
+    "ratelimit": {
+      "characteristics": ["cf.colo.id", "ip.src"],
+      "period": 10,
+      "requests_per_period": 60,
+      "mitigation_timeout": 10
+    }
+  },
+  "beforeActivation": [
+    "Confirm exact Free plan parameters and current ruleset via Cloudflare before applying",
+    "Test owner/staff login and shared-IP bursts in pilot",
+    "Verify checkout, OAuth, signed webhooks, SEO crawlers and AI runner remain unaffected",
+    "Keep app-level KDF throttling, CSRF, RBAC and signed webhook checks",
+    "Do not use Everyone, Bypass, country blocks or generic SQL keyword filters"
+  ],
+  "planBudgets": {
+    "customMax": 5,
+    "rateLimitingMax": 1
+  }
+}

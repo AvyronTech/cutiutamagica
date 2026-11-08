@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import type { AvyronQueueMessage } from "@/server/queue/avyron-sync-consumer";
 
@@ -196,7 +197,7 @@ export async function handleAdminAvyronSyncApi(
       error && typeof error === "object" && "statusCode" in error
         ? Number((error as { statusCode: unknown }).statusCode) || 500
         : 500;
-    console.error("admin.avyron_sync.failed", error);
+    console.error("admin.avyron_sync.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

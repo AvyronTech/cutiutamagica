@@ -442,10 +442,17 @@ export const protectBackupAsBaseline = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     sameOrigin();
     assertPermission(context.admin, "backup.write");
+    const eligible = await env.DB.prepare(
+      "SELECT id FROM backup_runs WHERE id=?1 AND status='completed'",
+    )
+      .bind(data.backupId)
+      .first();
+    if (!eligible)
+      throw new Error("Numai un export finalizat complet poate deveni backup de bază.");
     await env.DB.batch([
       env.DB.prepare("UPDATE backup_runs SET is_baseline=0 WHERE is_baseline=1"),
       env.DB.prepare(
-        "UPDATE backup_runs SET is_baseline=1 WHERE id=?1 AND status IN ('completed','partial')",
+        "UPDATE backup_runs SET is_baseline=1 WHERE id=?1 AND status='completed'",
       ).bind(data.backupId),
       activity(env.DB, context.admin.id, "backup.baseline_changed", data.backupId),
     ]);

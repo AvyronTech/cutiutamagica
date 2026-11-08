@@ -28,7 +28,10 @@
     "cf:media:remote": "bash ./scripts/upload-product-media.sh --remote",
     "ai:runner": "node ./scripts/ai-studio-runner.mjs",
     "cf:deploy:dry": "npm run build:production && node ./scripts/verify-production-build.mjs && wrangler deploy --env production --dry-run",
-    "cf:deploy": "npm run build:production && node ./scripts/verify-production-build.mjs && wrangler deploy --env production"
+    "cf:deploy": "npm run build:production && node ./scripts/verify-production-build.mjs && wrangler deploy --env production",
+    "security:check": "node scripts/security-check.mjs",
+    "security:plan": "node scripts/security-plan.mjs",
+    "security:test": "vitest run --config vitest.config.ts src/server/security --maxWorkers=2"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
@@ -126,6 +129,9 @@
     "undici": "7.30.1",
     "@tanstack/router-plugin": {
       "zod": "4.6.7"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.1"
     }
   }
 }

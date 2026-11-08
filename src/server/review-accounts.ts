@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "./security/logging";
 import { z } from "zod";
 import type { Reviewer } from "@/lib/reviews";
 import { readProviderJson } from "./integrations/provider-runtime";
@@ -22,8 +23,11 @@ type CustomerOAuthEnv = Env & {
 };
 export const reviewFailure = (message: string, statusCode = 400) =>
   Object.assign(new Error(message), { statusCode });
-export const reviewJson = (data: unknown, status = 200, headers: HeadersInit = {}) =>
-  Response.json(data, { status, headers: { "cache-control": "private, no-store", ...headers } });
+export const reviewJson = (data: unknown, status = 200, headers: HeadersInit = {}) => {
+  const safeHeaders = new Headers(headers);
+  safeHeaders.set("cache-control", "private, no-store");
+  return Response.json(data, { status, headers: safeHeaders });
+};
 export async function digest(value: string) {
   const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, "0")).join("");
@@ -52,6 +56,7 @@ export function requestIP(request: Request) {
   return request.headers.get("cf-connecting-ip") || "local";
 }
 const cookieName = "cm_reviewer";
+const hostCookieName = "__Host-cm_reviewer";
 const oauthStateCookie = "cm_customer_oauth_state";
 const appleStateCookie = "cm_customer_apple_state";
 const customerEmailSchema = z.object({
@@ -87,11 +92,18 @@ function requestCookie(request: Request, name: string) {
 }
 
 function token(request: Request) {
-  const value = requestCookie(request, cookieName);
-  return value && /^[a-f0-9]{64}$/.test(value) ? value : null;
+  const values = (request.headers.get("cookie") || "").split(";").map((v) => v.trim());
+  const preferred = values.filter((v) => v.startsWith(hostCookieName + "="));
+  const selected = preferred.length
+    ? preferred
+    : values.filter((v) => v.startsWith(cookieName + "="));
+  if (selected.length !== 1) return null;
+  const value = selected[0].slice(selected[0].indexOf("=") + 1);
+  return /^[a-f0-9]{64}$/.test(value) ? value : null;
 }
 function cookie(request: Request, value: string, seconds = 604800) {
-  return `${cookieName}=${value}; Path=/api/v1/; HttpOnly; SameSite=Strict; Max-Age=${seconds}${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`;
+  const secure = new URL(request.url).protocol === "https:";
+  return `${secure ? hostCookieName : cookieName}=${value}; Path=${secure ? "/" : "/api/v1/"}; HttpOnly; SameSite=Strict; Max-Age=${seconds}${secure ? "; Secure" : ""}`;
 }
 
 function oauthCookie(request: Request, value: string, seconds = 600) {
@@ -170,7 +182,13 @@ async function createReviewerSession(
       "INSERT INTO review_sessions(token_hash,account_id,expires_at) VALUES(?1,?2,?3)",
     ).bind(await digest(value), account.id, Math.floor(Date.now() / 1000) + lifetime),
   ]);
-  return reviewJson({ data: account }, 200, { "set-cookie": cookie(request, value, lifetime) });
+  const headers = new Headers({ "set-cookie": cookie(request, value, lifetime) });
+  if (new URL(request.url).protocol === "https:")
+    headers.append(
+      "set-cookie",
+      `${cookieName}=; Path=/api/v1/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`,
+    );
+  return reviewJson({ data: account }, 200, headers);
 }
 
 async function startCustomerEmailLogin(request: Request, env: Env) {
@@ -659,15 +677,26 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
       return await verifyCustomerEmailLogin(request, env);
     if (path === "/api/v1/reviewer/login") return await loginCustomerPassword(request, env);
     if (path === "/api/v1/reviewer/password") return await setCustomerPassword(request, env);
-    if (path === "/api/v1/reviewer/logout") {
+    if (path === "/api/v1/reviewer/logout" || path === "/api/v1/reviewer/logout-all") {
+      if (path.endsWith("logout-all")) {
+        const account = await currentReviewer(request, env);
+        if (!account) throw reviewFailure("Autentificare necesară.", 401);
+        await env.DB.prepare("DELETE FROM review_sessions WHERE account_id=?1")
+          .bind(account.id)
+          .run();
+      }
       const value = token(request);
       if (value)
         await env.DB.prepare("DELETE FROM review_sessions WHERE token_hash=?1")
           .bind(await digest(value))
           .run();
-      return reviewJson({ data: { signedOut: true } }, 200, {
-        "set-cookie": cookie(request, "", 0),
-      });
+      const headers = new Headers({ "set-cookie": cookie(request, "", 0) });
+      if (new URL(request.url).protocol === "https:")
+        headers.append(
+          "set-cookie",
+          `${cookieName}=; Path=/api/v1/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`,
+        );
+      return reviewJson({ data: { signedOut: true } }, 200, headers);
     }
     if (path === "/api/v1/reviewer/register")
       throw reviewFailure("Creează contul prin verificarea adresei de e-mail.", 410);
@@ -678,7 +707,7 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
       path === "/api/v1/reviewer/oauth/apple/callback"
     ) {
       console.error("customer.oauth_callback_failed", {
-        message: error instanceof Error ? error.message : "unknown",
+        ...safeErrorMetadata(error),
       });
       return customerRedirect(request, "eroare");
     }
@@ -690,7 +719,7 @@ export async function handleReviewAccount(request: Request, env: Env): Promise<R
     )
       console.error("customer.password_request_failed", {
         operation: path.endsWith("/login") ? "login" : "save",
-        name: error instanceof Error ? error.name : "unknown",
+        ...safeErrorMetadata(error),
         category:
           error instanceof Error &&
           /D1_ERROR|SQLITE|no such column|no such table/.test(error.message)

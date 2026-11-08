@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import {
   isAvyronQueueMessage,
   processAvyronSync,
@@ -216,7 +217,10 @@ export async function consumeCommerceEvents(batch: MessageBatch<unknown>, env: E
         if (result.action === "ack") message.ack();
         else message.retry({ delaySeconds: result.delaySeconds ?? 30 });
       } catch (error) {
-        console.error("avyron.sync_queue_failed", { message: message.body, error });
+        console.error("avyron.sync_queue_failed", {
+          message: message.body,
+          error: safeErrorMetadata(error),
+        });
         message.retry({ delaySeconds: 30 });
       }
       continue;

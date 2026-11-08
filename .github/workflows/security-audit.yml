@@ -1,0 +1,21 @@
+name: Security dependency monitoring
+
+on:
+  schedule:
+    - cron: "45 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # npm audit reads the lockfile; no dependency install or lifecycle scripts are needed.
+      - run: npm audit --audit-level=moderate

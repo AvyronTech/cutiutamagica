@@ -30,9 +30,14 @@ function isAppPath(pathname: string): boolean {
   );
 }
 
-export function resolveHostRoute(url: URL, method: string): HostRoute {
+export function resolveHostRoute(
+  url: URL,
+  method: string,
+  adminHostname = APP_HOSTNAME,
+): HostRoute {
   if (
-    (url.protocol === "http:" && PUBLIC_HOSTNAMES.has(url.hostname)) ||
+    (url.protocol === "http:" &&
+      (PUBLIC_HOSTNAMES.has(url.hostname) || url.hostname === adminHostname)) ||
     url.hostname === WWW_HOSTNAME
   ) {
     const target = new URL(url);
@@ -65,7 +70,7 @@ export function resolveHostRoute(url: URL, method: string): HostRoute {
     return { type: "api-not-found" };
   }
 
-  if (url.hostname === APP_HOSTNAME && isSafeNavigationMethod(method)) {
+  if (url.hostname === adminHostname && isSafeNavigationMethod(method)) {
     if (url.pathname === "/") {
       const target = new URL(url);
       target.pathname = "/admin";

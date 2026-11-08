@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { z } from "zod";
 import { boundedJson } from "./bounded-json";
 import { credential } from "../services/growth-settings";
@@ -535,20 +536,29 @@ async function webhook(
         await env.COMMERCE_EVENTS.send({ version: 1, outboxId: outbox.id });
         await markOrderNotificationQueued(env.DB, outbox.id);
       } catch (error) {
-        console.error("payment.admin_notification_queue_failed", { orderId, error });
+        console.error("payment.admin_notification_queue_failed", {
+          orderId,
+          error: safeErrorMetadata(error),
+        });
       }
     }
     try {
       await env.COMMERCE_EVENTS.send({ version: 2, type: "order.email", orderId });
     } catch (error) {
-      console.error("payment.order_email_queue_failed", { orderId, error });
+      console.error("payment.order_email_queue_failed", {
+        orderId,
+        error: safeErrorMetadata(error),
+      });
       const fallback = Promise.all([
         sendOrderConfirmation(env, orderId),
         sendOrderOwnerNotification(env, orderId),
       ])
         .then(() => undefined)
         .catch((sendError: unknown) => {
-          console.error("payment.order_email_fallback_failed", { orderId, error: sendError });
+          console.error("payment.order_email_fallback_failed", {
+            orderId,
+            error: safeErrorMetadata(sendError),
+          });
         });
       if (ctx) ctx.waitUntil(fallback);
       else await fallback;

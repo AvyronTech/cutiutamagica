@@ -1,3 +1,4 @@
+import { safeErrorMetadata } from "@/server/security/logging";
 import { localMediaPreview } from "../media-policy";
 import { pcmWavDuration } from "@/lib/audio-clip";
 import { z } from "zod";
@@ -699,7 +700,7 @@ export async function handleAdminMediaApi(request: Request, env: Env): Promise<R
     );
   } catch (error) {
     const status = statusCode(error);
-    console.error("admin.media.failed", error);
+    console.error("admin.media.failed", safeErrorMetadata(error));
     return json(
       {
         error: {

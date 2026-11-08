@@ -1,4 +1,7 @@
+import { rateLimit } from "@/server/security/events";
 export const ADMIN_SESSION_COOKIE = "cm_admin_session";
+export const ADMIN_HOST_SESSION_COOKIE = "__Host-cm_admin_session";
+export const ADMIN_IDLE_SECONDS = 2 * 60 * 60;
 export const ADMIN_SESSION_SECONDS = 12 * 60 * 60;
 export const ADMIN_PASSWORD_ALGORITHM = "scrypt-v1";
 export const ADMIN_PASSWORD_ITERATIONS = 32_768;
@@ -43,6 +46,8 @@ interface CredentialRow {
 interface SessionRow extends CredentialRow {
   session_id: string;
   expires_at: string;
+  idle_expires_at: string | null;
+  last_seen_at: string;
 }
 
 export class AdminAuthError extends Error {
@@ -231,22 +236,37 @@ async function createSession(
     db
       .prepare(
         `INSERT INTO admin_sessions (
-          id, admin_user_id, token_hash, password_version, expires_at
-        ) VALUES (?1, ?2, ?3, ?4, ?5)`,
+          id, admin_user_id, token_hash, password_version, expires_at, idle_expires_at
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
       )
-      .bind(id, adminUserId, tokenHash, passwordVersion, expiresAt),
+      .bind(
+        id,
+        adminUserId,
+        tokenHash,
+        passwordVersion,
+        expiresAt,
+        new Date(Date.now() + ADMIN_IDLE_SECONDS * 1000).toISOString(),
+      ),
   ]);
   return { id, token };
 }
 
 export function readAdminSessionToken(request: Request): string | null {
-  const cookie = request.headers.get("cookie");
-  if (!cookie) return null;
-  for (const part of cookie.split(";")) {
+  const pairs = (request.headers.get("cookie") || "").split(";").map((part) => {
     const [name, ...value] = part.trim().split("=");
-    if (name === ADMIN_SESSION_COOKIE) return decodeURIComponent(value.join("="));
+    return { name, value: value.join("=") };
+  });
+  const preferred = pairs.filter((p) => p.name === ADMIN_HOST_SESSION_COOKIE);
+  const selected = preferred.length
+    ? preferred
+    : pairs.filter((p) => p.name === ADMIN_SESSION_COOKIE);
+  if (selected.length !== 1) return null;
+  try {
+    const value = decodeURIComponent(selected[0].value);
+    return value.length >= 32 && value.length <= 256 ? value : null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export async function loginAdminWithPassword(
@@ -256,6 +276,8 @@ export async function loginAdminWithPassword(
   password: string,
 ): Promise<{ token: string; admin: PasswordAdminIdentity }> {
   const email = rawEmail.trim().toLowerCase();
+  await rateLimit(db, "admin-login-ip", request.headers.get("cf-connecting-ip") || "local", 30);
+  await rateLimit(db, "admin-login-account", email, 15);
   const metadata = await eventMetadata(email, request);
   const recentFailures = await db
     .prepare(
@@ -288,7 +310,10 @@ export async function loginAdminWithPassword(
     !valid ||
     row.status === "suspended" ||
     locked ||
-    !row.roles?.split(",").includes("owner")
+    !(
+      row.roles?.split(",").includes("owner") ||
+      row.permissions?.split(",").includes("admin.access")
+    )
   ) {
     if (row && !locked) {
       await db
@@ -345,14 +370,34 @@ export async function authenticateAdminSession(
     .prepare(
       credentialQuery(
         "admin_sessions s INNER JOIN admin_users au ON au.id = s.admin_user_id",
-        "s.token_hash = ?1 AND s.revoked_at IS NULL AND datetime(s.expires_at) > datetime('now') AND s.password_version = apc.password_version",
-        "s.id AS session_id, s.expires_at, ",
+        "s.token_hash = ?1 AND s.revoked_at IS NULL AND datetime(s.expires_at) > datetime('now') AND (s.idle_expires_at IS NULL OR datetime(s.idle_expires_at)>datetime('now')) AND s.password_version = apc.password_version",
+        "s.id AS session_id, s.expires_at, s.idle_expires_at, s.last_seen_at, ",
       ),
     )
     .bind(tokenHash)
     .first<SessionRow>();
   if (!row || row.status !== "active") {
     throw new AdminAuthError("Sesiunea a expirat. Autentifică-te din nou.", 401);
+  }
+  if (!(
+    row.roles?.split(",").includes("owner") || row.permissions?.split(",").includes("admin.access")
+  ))
+    throw new AdminAuthError("Accesul administrativ nu este acordat acestui cont.", 403);
+  if (row.idle_expires_at && Date.now() - Date.parse(row.last_seen_at) > 300_000) {
+    await db
+      .prepare(
+        `UPDATE admin_sessions SET last_seen_at=?2,idle_expires_at=?3
+      WHERE id=?1 AND revoked_at IS NULL AND datetime(expires_at)>datetime('now')
+      AND datetime(idle_expires_at)>datetime('now')`,
+      )
+      .bind(
+        row.session_id,
+        new Date().toISOString(),
+        new Date(
+          Math.min(Date.parse(row.expires_at), Date.now() + ADMIN_IDLE_SECONDS * 1000),
+        ).toISOString(),
+      )
+      .run();
   }
   return identity(row, row.session_id);
 }
