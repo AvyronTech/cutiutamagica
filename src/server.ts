@@ -270,16 +270,14 @@ export default {
     await consumeCommerceEvents(batch, env);
   },
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    if (controller.cron === "15 * * * *") {
-      const { processScheduledBackup } = await import("./server/services/backup-center");
-      ctx.waitUntil(processScheduledBackup(env));
-      return;
-    }
-    if (controller.cron === "30 * * * *") {
-      const { maintainSecurityLog } = await import("./server/security/events");
-      ctx.waitUntil(maintainSecurityLog(env.DB));
-      return;
-    }
+    // Reuse the account's existing hourly trigger. Delayed queue deliveries isolate
+    // backup/security D1 and CPU budgets from commercial scheduled work.
+    const { enqueueScheduledMaintenance } = await import("./server/queue/scheduled-maintenance");
+    ctx.waitUntil(
+      enqueueScheduledMaintenance(env).catch((error: unknown) => {
+        console.error("maintenance.queue_failed", safeErrorMetadata(error));
+      }),
+    );
     const [
       { processOwnerReports },
       { purgeExpiredChatConversations },
