@@ -1,0 +1,364 @@
+{
+  "checkedAt": "2026-11-08T18:54:04.361Z",
+  "property": "sc-domain:cutiutamagica.eu",
+  "scope": "All 38 canonical sitemap URLs individually inspected in the Google index; the two pending guides additionally live-tested and indexing requested once each.",
+  "canonicalUrls": 38,
+  "indexed": 38,
+  "pending": [],
+  "indexingRequestsAccepted": 2,
+  "reports": {
+    "sitemaps": {
+      "products": {
+        "status": "success",
+        "urls": 7,
+        "lastRead": "2026-11-05"
+      },
+      "core": {
+        "status": "success",
+        "urls": 8,
+        "lastRead": "2026-11-07"
+      },
+      "guides": {
+        "status": "success",
+        "urls": 23,
+        "lastRead": "2026-11-03"
+      },
+      "text": {
+        "status": "success",
+        "urls": 38,
+        "lastRead": "2026-11-07"
+      }
+    },
+    "pageIndexingAggregate": {
+      "updated": "2026-10-23",
+      "indexed": 7,
+      "excluded": 2,
+      "examples": [
+        "/favicon.ico",
+        "/produse?q={search_term_string}"
+      ],
+      "note": "Historical report; current canonical inventory checked individually"
+    },
+    "merchant": {
+      "updated": "2026-11-07",
+      "invalid": 0,
+      "validAggregate": 0,
+      "hasMerchantReturnPolicy": "passed, 0 affected",
+      "shippingDetails": "passed, 0 affected",
+      "audience": "passed, 0 affected"
+    },
+    "product": {
+      "updated": "2026-11-07",
+      "invalid": 0,
+      "validAggregate": 0,
+      "reviewAffected": 0,
+      "aggregateRatingAffected": 0
+    },
+    "https": {
+      "updated": "2026-11-08",
+      "http": 0,
+      "https": 29,
+      "issues": 0
+    },
+    "manualActions": "none_detected",
+    "securityIssues": "none_detected",
+    "breadcrumbs": {
+      "updated": "2026-11-07",
+      "invalid": 0,
+      "valid": 23
+    }
+  },
+  "pages": [
+    {
+      "url": "https://cutiutamagica.eu/cadouri/cadouri-mici",
+      "checkedAt": "2026-11-08T18:52:14.803Z",
+      "indexed": true,
+      "status": "indexed",
+      "liveTest": "passed",
+      "crawlAllowed": true,
+      "fetch": "successful",
+      "indexAllowed": true,
+      "canonical": "https://cutiutamagica.eu/cadouri/cadouri-mici",
+      "indexingRequest": "accepted",
+      "indexResult": "https://cutiutamagica.eu/cadouri/cadouri-mici\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-sora",
+      "checkedAt": "2026-11-08T18:52:20.055Z",
+      "indexed": true,
+      "status": "indexed",
+      "liveTest": "passed",
+      "crawlAllowed": true,
+      "fetch": "successful",
+      "indexAllowed": true,
+      "canonical": "https://cutiutamagica.eu/cadouri/pentru-sora",
+      "indexingRequest": "accepted",
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-sora\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n"
+    },
+    {
+      "url": "https://cutiutamagica.eu/",
+      "checkedAt": "2026-11-08T18:44:12.846Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produse",
+      "checkedAt": "2026-11-08T18:44:45.191Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produse\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-harry-potter-hedwig",
+      "checkedAt": "2026-11-08T18:45:14.507Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produs-cutiuta-muzicala-harry-potter-hedwig\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming",
+      "checkedAt": "2026-11-08T18:45:35.727Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produs-cutiuta-muzicala-winter-is-coming\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-pisicuta-si-luna",
+      "checkedAt": "2026-11-08T18:46:06.247Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produs-cutiuta-muzicala-pisicuta-si-luna\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-halloween",
+      "checkedAt": "2026-11-08T18:46:11.593Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produs-cutiuta-muzicala-halloween\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-you-are-sunshine",
+      "checkedAt": "2026-11-08T18:46:16.882Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produs-cutiuta-muzicala-you-are-sunshine\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-one-ring",
+      "checkedAt": "2026-11-08T18:46:22.530Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produs-cutiuta-muzicala-one-ring\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/produs-cutiuta-muzicala-piratii-din-caraibe",
+      "checkedAt": "2026-11-08T18:46:27.817Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/produs-cutiuta-muzicala-piratii-din-caraibe\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/despre-cutiuta",
+      "checkedAt": "2026-11-08T18:46:45.692Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/despre-cutiuta\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/despre-noi",
+      "checkedAt": "2026-11-08T18:46:51.119Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/despre-noi\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/magic-rewards",
+      "checkedAt": "2026-11-08T18:46:56.629Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/magic-rewards\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/livrare",
+      "checkedAt": "2026-11-08T18:47:02.425Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/livrare\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri",
+      "checkedAt": "2026-11-08T18:47:08.118Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/ghid-cadouri-personalizate",
+      "checkedAt": "2026-11-08T18:47:21.779Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/ghid-cadouri-personalizate\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/retur",
+      "checkedAt": "2026-11-08T18:47:27.349Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/retur\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/halloween",
+      "checkedAt": "2026-11-08T18:47:32.767Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/halloween\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/secret-santa",
+      "checkedAt": "2026-11-08T18:47:37.997Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/secret-santa\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/mos-nicolae",
+      "checkedAt": "2026-11-08T18:47:43.745Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/mos-nicolae\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/craciun",
+      "checkedAt": "2026-11-08T18:47:55.658Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/craciun\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/zi-de-nastere",
+      "checkedAt": "2026-11-08T18:48:02.059Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/zi-de-nastere\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/aniversare-cuplu",
+      "checkedAt": "2026-11-08T18:48:07.453Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/aniversare-cuplu\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/valentines-day",
+      "checkedAt": "2026-11-08T18:48:12.772Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/valentines-day\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/multumire",
+      "checkedAt": "2026-11-08T18:48:18.092Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/multumire\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-ea",
+      "checkedAt": "2026-11-08T18:48:35.390Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-ea\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-iubita",
+      "checkedAt": "2026-11-08T18:48:43.819Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-iubita\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-el",
+      "checkedAt": "2026-11-08T18:48:50.020Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-el\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-iubit",
+      "checkedAt": "2026-11-08T18:48:55.361Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-iubit\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-mama",
+      "checkedAt": "2026-11-08T18:49:00.641Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-mama\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-tata",
+      "checkedAt": "2026-11-08T18:49:12.215Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-tata\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-colegi",
+      "checkedAt": "2026-11-08T18:49:17.566Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-colegi\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/pentru-colega",
+      "checkedAt": "2026-11-08T18:49:23.173Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/pentru-colega\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/iubitori-de-pisici",
+      "checkedAt": "2026-11-08T18:49:28.757Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/iubitori-de-pisici\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/fani-harry-potter",
+      "checkedAt": "2026-11-08T18:49:43.846Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/fani-harry-potter\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/fani-game-of-thrones",
+      "checkedAt": "2026-11-08T18:49:49.147Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/fani-game-of-thrones\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    },
+    {
+      "url": "https://cutiutamagica.eu/cadouri/fani-fantasy",
+      "checkedAt": "2026-11-08T18:49:54.357Z",
+      "indexed": true,
+      "indexResult": "https://cutiutamagica.eu/cadouri/fani-fantasy\nVerificarea adresei URL\nTESTEAZĂ ADRESA URL LIVE\ncheck_circle\nAdresa URL este pe Google\nPoate apărea în rezultatele Căutării Google (dacă nu este supusă unei acțiuni manuale sau unei solicitări de eliminare) cu toate îmbunătățirile relevante. Aflați mai multe\nAFIȘEAZĂ PAGINA ACCESATĂ CU CRAWLERE\nPagina a fost modificată?\nSOLICITĂ INDEXAREA\ncheck_circle\nIndexarea paginilor\nPagina este indexată\n\n",
+      "status": "indexed"
+    }
+  ],
+  "liveSeoAudit": {
+    "origin": "https://cutiutamagica.eu",
+    "sitemapUrls": 38,
+    "products": 7,
+    "merchantProducts": 5,
+    "images": 35,
+    "orphanPages": 0,
+    "additionalInternalLinks": 5,
+    "excludedPages": 6,
+    "missingPages": 3,
+    "problems": []
+  },
+  "runtimeChanged": false
+}

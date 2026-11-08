@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Indexare Google completă — 8 noiembrie 2026, confirmată
+
+- **38/38 URL-uri canonice inspectate individual și indexate**, inclusiv toate cele 7 produse și cele două ghiduri rămase, „Cadouri mici” și „Pentru soră”. Ambele au trecut testul live, solicitările au fost acceptate, apoi inspecția indexului a confirmat indexarea efectivă. Audit SEO live fără probleme; patru sitemapuri Succes, zero probleme critice Product/Merchant/breadcrumbs/HTTPS, fără acțiuni manuale sau probleme de securitate. **Numai documentație, fără schimbare de runtime.** [Probe, inventar și raportul agregat vechi](handoff/2026-11-08-complete-google-indexation.md).
+
 ## Release consolidat — 8 noiembrie 2026, verificat live
 
 - PR #90 și #1 integrate; toate cele patru commituri locale și corecția de livrare omisă sunt incluse. Worker **8d51b7d8-d05a-4486-897f-aa691476c00e**, sursă **2ade5f0**, distribuit 100%; D1 **91**, 10/10 coduri produse și variante, FK curat, fără migrații rămase. **415 teste CI**, SEO live 38 URL-uri fără probleme, probele 1102 răspund corect, loginul normal și UI desktop/mobil verificate. [Release, reconciliere și limite](handoff/2026-11-08-production-consolidation.md).
