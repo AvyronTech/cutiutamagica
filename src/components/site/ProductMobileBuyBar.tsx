@@ -39,6 +39,7 @@ export function ProductMobileBuyBar({
       data-visible={visible || undefined}
       data-audio={audioAvailable || undefined}
       aria-label="Cumpără rapid"
+      inert={!visible}
       style={{ "--world-accent": "#d9ae68" } as CSSProperties}
     >
       <div>

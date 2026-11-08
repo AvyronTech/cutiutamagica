@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+9 noiembrie 2026: audit public local în `codex/storefront-audit-20261108`, separat de PR #93. SEO live 38 URL-uri; 429 teste, 45 verificări responsive; consimțământ/tracking/formulare și landmark-uri corectate. Fără push/deploy sau modificări de conturi. [Raport și configurări/verificări rămase](audits/storefront-20261108/report.md).
+
 8 noiembrie 2026, securitate: lot pregătit pe `codex/security-hardening-20261108`, schema 93 numai local. Cookie-uri/sesiuni, RBAC, JWT Access pregătit, identități runner și backup privat v2. **Fără activare MFA, Access/WAF, schimbare de conturi ori deploy în acest lot.** [Audit și limite](handoff/2026-11-08-security-hardening.md). Starea producției din intrările următoare rămâne separată.
 
 8 noiembrie 2026, verificare finală GSC: **38/38 URL-uri canonice indexate**, fiecare inspectat individual; cele două ghiduri anterior în așteptare sunt acum confirmate în index. SEO live și rapoartele critice verificate fără probleme. Raportul agregat Pagini, încă din 23 octombrie, nu reflectă inventarul actual; exemplele sale sunt faviconul și varianta de căutare a catalogului. Livrare numai de documentație, runtime neschimbat. [Inventar și capturi](handoff/2026-11-08-complete-google-indexation.md).

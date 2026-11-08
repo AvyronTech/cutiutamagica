@@ -1,0 +1,25 @@
+{
+  "environment": "disposable local staging only",
+  "initialAnalyticsRequests": 0,
+  "analyticsRequestsAfterExplicitAccept": 1,
+  "additionalAnalyticsRequestsAfterWithdrawalAndNavigation": 0,
+  "optionalChoicesAfterWithdrawal": [
+    false,
+    false
+  ],
+  "consentButtonHeights": [
+    44,
+    44,
+    44,
+    44
+  ],
+  "interestInvalidEmailRejected": true,
+  "interestRegistered": true,
+  "returnUnknownOrderStatus": 404,
+  "returnFieldsRetained": true,
+  "newInlineReturnErrorVisuallyReconfirmed": false,
+  "ordersPlaced": 0,
+  "paymentsMade": 0,
+  "providerEmailsSent": 0,
+  "screenshotViewportOverrides": "Agent test tabs closed after use"
+}

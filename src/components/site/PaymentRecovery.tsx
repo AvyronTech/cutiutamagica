@@ -1,3 +1,4 @@
+import { storefrontRequest } from "@/lib/storefront-request";
 import { PHONE_TEL } from "@/lib/whatsapp";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -36,7 +37,7 @@ export function PaymentRecovery({
         return;
       }
       try {
-        const response = await fetch("/api/v1/payments/status", {
+        const response = await storefrontRequest("/api/v1/payments/status", {
           method: "POST",
           credentials: "same-origin",
           signal: controller.signal,
@@ -93,7 +94,7 @@ export function PaymentRecovery({
   async function changeMethod() {
     setBusy(true);
     try {
-      const response = await fetch("/api/v1/payments/abandon", {
+      const response = await storefrontRequest("/api/v1/payments/abandon", {
         method: "POST",
         credentials: "same-origin",
         headers: { "content-type": "application/json" },

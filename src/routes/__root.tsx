@@ -25,6 +25,7 @@ import { CookieConsent } from "@/components/site/CookieConsent";
 import { MetricoolTracker } from "@/components/site/MetricoolTracker";
 import { loadStorefrontPricing, needsStorefrontPricing } from "@/lib/storefront-pricing";
 import { trackGrowthEvent } from "@/lib/growth-events";
+import { subscribeConsent } from "@/lib/cookie-consent";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
 import { isProductPath, productIdFromPathname } from "@/lib/product-url";
 
@@ -34,28 +35,32 @@ const ChatWidget = lazy(() =>
 
 function GrowthPageView({ pathname }: { pathname: string }) {
   useEffect(() => {
-    const productSlug = productIdFromPathname(pathname);
-    trackGrowthEvent("page_view", {
-      productSlug,
-      once: `page_view:${pathname}`,
-      properties: {
-        pageType: productSlug
-          ? "product"
-          : pathname === "/comanda"
-            ? "checkout"
-            : pathname === "/produse"
-              ? "catalog"
-              : pathname === "/"
-                ? "home"
-                : "content",
-      },
-    });
-    if (productSlug) {
-      trackGrowthEvent("product_view", {
+    const track = () => {
+      const productSlug = productIdFromPathname(pathname);
+      trackGrowthEvent("page_view", {
         productSlug,
-        once: `product_view:${productSlug}`,
+        once: `page_view:${pathname}`,
+        properties: {
+          pageType: productSlug
+            ? "product"
+            : pathname === "/comanda"
+              ? "checkout"
+              : pathname === "/produse"
+                ? "catalog"
+                : pathname === "/"
+                  ? "home"
+                  : "content",
+        },
       });
-    }
+      if (productSlug) {
+        trackGrowthEvent("product_view", {
+          productSlug,
+          once: `product_view:${productSlug}`,
+        });
+      }
+    };
+    track();
+    return subscribeConsent(track);
   }, [pathname]);
   return null;
 }
@@ -262,7 +267,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
         <ShopProvider pricing={pricing}>
-          {isChrome && <GrowthPageView pathname={pathname} />}
+          {isChrome && !isAccountPage && <GrowthPageView pathname={pathname} />}
           {isChrome && !isAccountPage && <PageStoryLoader initialPath={pathname} />}
           {isChrome && (
             <a href="#continut-principal" className="skip-to-content">

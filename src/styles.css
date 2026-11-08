@@ -21016,3 +21016,16 @@ body:has(.chat-widget[data-open="true"]) .floating-contacts {
   color: #8fa0b9;
   opacity: 1;
 }
+
+/* Preferințe accesibile și control mobil fără suprapunerea consimțământului. */
+.magic-footer-cookie-settings { display: inline-flex; align-items: center; width: fit-content; min-height: 28px; text-align: left; font-size: 12px; line-height: 1.45; color: #d1c3b1; cursor: pointer; }
+.magic-footer-cookie-settings:hover { text-decoration: underline; }
+.magic-footer-cookie-settings:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 3px; }
+.cookie-story { max-height: calc(100dvh - 36px); overflow-y: auto; overscroll-behavior: contain; }
+@media (max-width: 767px) {
+  body:has(.cookie-story) .product-mobile-buy-bar { visibility: hidden; pointer-events: none; }
+}
+
+.cookie-story__actions button { min-height: 44px; }
+.cookie-story__settings label { min-height: 40px; cursor: pointer; }
+.cookie-story__copy > a { color: #decbab; font-size: 11px; min-height: 24px; padding-block: 4px; }

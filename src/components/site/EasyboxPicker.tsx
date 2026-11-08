@@ -1,3 +1,4 @@
+import { storefrontRequest } from "@/lib/storefront-request";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LayerGroup, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -58,10 +59,13 @@ export function EasyboxPicker({
       setBusy(true);
       setError("");
       try {
-        const response = await fetch(`/api/v1/shipping/easyboxes?q=${encodeURIComponent(query)}`, {
-          credentials: "same-origin",
-          signal: controller.signal,
-        });
+        const response = await storefrontRequest(
+          `/api/v1/shipping/easyboxes?q=${encodeURIComponent(query)}`,
+          {
+            credentials: "same-origin",
+            signal: controller.signal,
+          },
+        );
         const payload = (await response.json()) as {
           data?: EasyboxLocker[];
           error?: { message?: string };

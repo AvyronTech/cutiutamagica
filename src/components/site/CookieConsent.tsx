@@ -1,45 +1,52 @@
 import { Link } from "@tanstack/react-router";
 import { Check, ChevronDown, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
-
-const STORAGE_KEY = "cutiuta:cookie-consent:v1";
-
-type ConsentChoice = {
-  necessary: true;
-  experience: boolean;
-  marketing: boolean;
-  savedAt: string;
-};
-
-function saveConsent(choice: Omit<ConsentChoice, "savedAt">) {
-  const value: ConsentChoice = { ...choice, savedAt: new Date().toISOString() };
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    /* Alegerea rămâne valabilă pentru vizita curentă dacă stocarea este blocată. */
-  }
-  window.dispatchEvent(new CustomEvent("cutiuta:consent", { detail: value }));
-}
+import { useEffect, useRef, useState } from "react";
+import {
+  CONSENT_OPEN_EVENT,
+  readConsent,
+  saveConsent,
+  subscribeConsent,
+  type ConsentChoice,
+} from "@/lib/cookie-consent";
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [experience, setExperience] = useState(true);
+  const [experience, setExperience] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const title = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    try {
-      setVisible(!localStorage.getItem(STORAGE_KEY));
-    } catch {
+    setVisible(!readConsent());
+    const open = () => {
+      const choice = readConsent();
+      returnFocus.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setExperience(choice?.experience ?? false);
+      setMarketing(choice?.marketing ?? false);
+      setSettingsOpen(true);
       setVisible(true);
-    }
+    };
+    window.addEventListener(CONSENT_OPEN_EVENT, open);
+    const unsubscribe = subscribeConsent(() => setVisible(false));
+    return () => {
+      window.removeEventListener(CONSENT_OPEN_EVENT, open);
+      unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (visible && settingsOpen && returnFocus.current) title.current?.focus();
+  }, [visible, settingsOpen]);
 
   if (!visible) return null;
 
   const choose = (choice: Omit<ConsentChoice, "savedAt">) => {
     saveConsent(choice);
     setVisible(false);
+    returnFocus.current?.focus();
+    returnFocus.current = null;
   };
 
   return (
@@ -49,7 +56,9 @@ export function CookieConsent() {
       </div>
       <div className="cookie-story__copy">
         <p>Alegerea ta</p>
-        <h2 id="cookie-story-title">Cookie-uri, pe scurt.</h2>
+        <h2 id="cookie-story-title" ref={title} tabIndex={-1}>
+          Cookie-uri, pe scurt.
+        </h2>
         <span>
           Cele necesare funcționării sunt mereu active. Pentru experiență și marketing, alegi tu.
         </span>

@@ -1,3 +1,4 @@
+import { storefrontRequest } from "./storefront-request";
 import { z } from "zod";
 export const reviewSources = {
   store: "Cutiuța Store",
@@ -93,7 +94,7 @@ export function validReviewSource(source: ReviewSource, value: string) {
   }
 }
 export async function reviewApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await storefrontRequest(path, {
     ...init,
     headers: { "content-type": "application/json", ...init?.headers },
   });

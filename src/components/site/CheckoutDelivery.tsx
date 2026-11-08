@@ -1,3 +1,4 @@
+import { storefrontRequest } from "@/lib/storefront-request";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { websiteOrderInputSchema, type WebsiteOrderInput } from "@/lib/order-contracts";
 export type DeliveryOffer = {
@@ -65,7 +66,7 @@ export function CheckoutDelivery({
       setError("");
       setOffers([]);
       try {
-        const r = await fetch("/api/v1/shipping/quotes", {
+        const r = await storefrontRequest("/api/v1/shipping/quotes", {
           method: "POST",
           credentials: "same-origin",
           headers: { "content-type": "application/json" },

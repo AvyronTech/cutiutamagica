@@ -1,3 +1,4 @@
+import { storefrontRequest } from "@/lib/storefront-request";
 import { useState } from "react";
 import { Check, Copy, Facebook, Mail, MessageCircle, Send, Share2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
@@ -34,7 +35,7 @@ export function ProductShare({ id, name, tagline }: ProductShareProps) {
   async function recordRewardShare(channel: string) {
     if (channel !== "native" && channel !== "facebook") return;
     try {
-      const response = await fetch("/api/v1/customer/rewards/share", {
+      const response = await storefrontRequest("/api/v1/customer/rewards/share", {
         method: "POST",
         credentials: "same-origin",
         keepalive: true,

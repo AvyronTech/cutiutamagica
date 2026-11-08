@@ -1,0 +1,32 @@
+{
+  "scope": "local code validation; no new remote release",
+  "base": "dc0006ed32540aa975f4f2bb54ba988382d405a7",
+  "branch": "codex/storefront-audit-20261108",
+  "typecheck": "passed",
+  "lint": "passed",
+  "build": "passed",
+  "productionDryRun": "passed, no deploy",
+  "tests": {
+    "files": 77,
+    "passed": 429,
+    "workers": 2
+  },
+  "sourceScan": {
+    "files": 990,
+    "serverFunctions": 102,
+    "findings": 0
+  },
+  "dependencyVulnerabilities": 0,
+  "responsiveChecks": 45,
+  "newMigrations": 0,
+  "remoteMigrationsApplied": 0,
+  "push": false,
+  "deploy": false,
+  "pending": [
+    "responsible approval of legal text drafts",
+    "visual reconfirmation of the new inline return error in a fresh client session",
+    "short-height viewport check",
+    "provider-side Metricool ingestion after release",
+    "physical Safari/Firefox/iOS/Android and field INP"
+  ]
+}
