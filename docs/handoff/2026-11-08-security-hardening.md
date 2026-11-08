@@ -27,7 +27,9 @@ Auditul celor 15 activități și remedieri compatibile pe ramura `codex/securit
 
 Capturi persistente ale mediului local: [securitate desktop](../security/evidence/admin-security-desktop.png), [securitate mobil](../security/evidence/admin-security-mobile.png), [staff desktop](../security/evidence/staff-dashboard-desktop.png), [staff mobil](../security/evidence/staff-dashboard-mobile.png). Nu conțin valori de chei/parole.
 
-**Verificare vizuală finală în așteptare:** contrastul butonului de logout global al clientului a fost corectat în ultima revizie CSS, după proba funcțională. Ecranul Mac s-a blocat înaintea recapturării; este necesară deblocarea manuală pentru confirmarea vizuală și resetarea viewportului Opera. Capturile clientului dinaintea corecției nu sunt prezentate ca probe finale. Verificarea UI „staff → sesiuni proprii” este susținută de probe HTTP; ultima captură a acestei pagini rămâne în așteptare.
+Verificarea vizuală finală a fost reluată după deblocarea Macului: [profil client desktop](../security/evidence/customer-profile-desktop.png), [profil client mobil](../security/evidence/customer-profile-mobile.png), [sesiuni proprii staff](../security/evidence/staff-security-desktop.png). Butonul de logout global folosește text închis pe fond deschis; la 320 px lățimea paginii și a viewportului sunt ambele 320 px. Staff are numai fila de sesiuni proprii, fără servicii/jurnal; „Închide celelalte sesiuni” a fost verificat pe identitățile locale de test. Viewportul Opera a fost resetat după test. Conturile de producție nu au fost accesate/modificate prin aceste probe.
+
+Livrare pentru review: [PR draft #93](https://github.com/AvyronTech/cutiutamagica/pull/93), cod `ee96d09`, [Quality gates trecute](https://github.com/AvyronTech/cutiutamagica/actions/runs/42524149015). Actualizarea ulterioară adaugă numai capturi și documentație. Fără merge sau deploy.
 
 ## Configurare externă rămasă
 
