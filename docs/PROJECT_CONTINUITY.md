@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+9 noiembrie 2026, stare consolidată: PR #94–#97 sunt integrate; `main` și ramura de referință au fost aliniate la `889ba3d`. Înaintea republicării, runtime-ul `d7134c9` / Worker `82c4007f-5926-4dd0-9f43-33800f4289e2` servește 100% traficului; D1 are schema **94**, fără migrații restante. Securitatea și storefrontul descrise ca locale în intrările istorice de mai jos sunt **publicate**. Codul aplicației din `889ba3d` corespunde runtime-ului; documentația are o revizie distinctă. [Dovezi și limite](handoff/2026-11-09-production-release.md); [reverificarea și republicarea curentă](handoff/2026-11-09-production-recheck.md). Acest rezumat are prioritate pentru starea livrării; păstrează excepțiile și limitările documentate.
+
 9 noiembrie 2026: auditul e-commerce reunește local securitatea și storefrontul pe `codex/ecommerce-security-audit-20261109`; schema94,489teste,19probeHTTP,SEO38 și build/dry-run PASS. Access absent pentru magazin și alias workers.dev încă public în producția91. **Fără push/deploy/MFA sau schimbări comerciale live.** [Raport și limite](audits/CUTIUTA_MAGICA_SECURITY_AUDIT.md).
 
 9 noiembrie 2026: audit public local în `codex/storefront-audit-20261108`, separat de PR #93. SEO live 38 URL-uri; 429 teste, 45 verificări responsive; consimțământ/tracking/formulare și landmark-uri corectate. Fără push/deploy sau modificări de conturi. [Raport și configurări/verificări rămase](audits/storefront-20261108/report.md).
