@@ -1,0 +1,80 @@
+[
+  {
+    "brokenImages": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/produse",
+    "viewport": 1440,
+    "width": 1440
+  },
+  {
+    "brokenImages": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/produse",
+    "viewport": 390,
+    "width": 390
+  },
+  {
+    "brokenImages": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/produs-cutiuta-muzicala-harry-potter-hedwig",
+    "viewport": 390,
+    "width": 390
+  },
+  {
+    "brokenImages": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/produs-cutiuta-muzicala-harry-potter-hedwig",
+    "viewport": 1440,
+    "width": 1440
+  },
+  {
+    "brokenImages": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/comanda",
+    "viewport": 1440,
+    "width": 1440
+  },
+  {
+    "brokenImages": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/comanda",
+    "viewport": 390,
+    "width": 390
+  },
+  {
+    "adminLinks": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/cont",
+    "viewport": 1440,
+    "width": 1440
+  },
+  {
+    "adminLinks": 0,
+    "h1": 1,
+    "main": 1,
+    "url": "/cont",
+    "viewport": 390,
+    "width": 390
+  },
+  {
+    "h1": 1,
+    "main": 1,
+    "url": "/admin/financiar",
+    "viewport": 1440,
+    "width": 1440
+  },
+  {
+    "h1": 1,
+    "main": 1,
+    "url": "/admin/financiar",
+    "viewport": 390,
+    "width": 390
+  }
+]

@@ -1,5 +1,11 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Reverificare și republicare producție — 9 noiembrie 2026
+
+- Bază `889ba3da57e79b419822fbf1a4e9ef47dbb75f78`: `main` și `codex/cutiuta-cloudflare-final` sunt sincronizate; PR #94–#97 sunt integrate/închise. Runtime-ul verificat înaintea acestei republicări este `d7134c9`, Worker `82c4007f-5926-4dd0-9f43-33800f4289e2`, 100% trafic, D1 **94**, fără migrații restante. Codul aplicației din `889ba3d` este identic cu cel publicat; diferențele ulterioare sunt documentație.
+- Intrările „local” de mai jos sunt **instantanee istorice**, înlocuite pentru starea livrării de [releaseul verificat](handoff/2026-11-09-production-release.md). MFA/Access nu sunt activate; limitările financiare, de furnizori și CPU Free rămân explicit documentate.
+- Această rundă repetă typecheck, testele, lint, securitate/dependențe, build și dry-run, apoi publică din nou sursa validată și verifică domeniile, API-ul, SEO și UI desktop/mobil. Rezultatele și receipt-ul Cloudflare sunt în [reverificarea releaseului](handoff/2026-11-09-production-recheck.md) și PR-ul aferent.
+
 ## Audit e-commerce de securitate și calitate — 9 noiembrie 2026, local
 
 - Loturile de securitate PR #93 și storefront `19cbf5a` reunite local; limite upload/XLSX, AVYRON numai statistici aprobate cu verificare la execuție, alerte refund și CI fixat la SHA. **489 teste, 19 probe HTTP, SEO38, build/dry-run trecute; schema94 numai local.** Producția rămâne91; fără MFA, tranzacții reale, modificări comerciale sau deploy. [Raport, matrice ASVS și riscuri rămase](handoff/2026-11-09-ecommerce-security-audit.md).

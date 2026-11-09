@@ -1,0 +1,96 @@
+{
+  "recordedAt": "2026-11-09T01:02:53.994Z",
+  "scope": "Low volume read-only and invalid-signature probes; no financial transactions",
+  "checks": [
+    {
+      "name": "store health",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "cache": "no-store",
+      "elapsedMs": 250,
+      "schema": "94"
+    },
+    {
+      "name": "app health",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "cache": "no-store",
+      "elapsedMs": 126,
+      "schema": "94"
+    },
+    {
+      "name": "api health",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "cache": "no-store",
+      "elapsedMs": 131,
+      "schema": "94"
+    },
+    {
+      "name": "anonymous admin",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "cache": "private, no-store",
+      "elapsedMs": 32
+    },
+    {
+      "name": "foreign CORS",
+      "status": 403,
+      "expected": 403,
+      "pass": true,
+      "cache": "private, no-store",
+      "elapsedMs": 50
+    },
+    {
+      "name": "legacy health",
+      "status": 421,
+      "expected": 421,
+      "pass": true,
+      "cache": "private, no-store",
+      "elapsedMs": 202
+    },
+    {
+      "name": "unsigned webhook",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "cache": "private, no-store",
+      "elapsedMs": 63
+    },
+    {
+      "name": "legacy unsigned webhook",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "cache": "private, no-store",
+      "elapsedMs": 80
+    },
+    {
+      "name": "checkout",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "cache": "private, no-store",
+      "elapsedMs": 150
+    },
+    {
+      "name": "commerce",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "cache": "no-store",
+      "elapsedMs": 306,
+      "card": {
+        "enabled": true,
+        "provider": "stripe"
+      },
+      "cashOnDelivery": {
+        "enabled": true
+      }
+    }
+  ]
+}
