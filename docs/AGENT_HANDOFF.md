@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Consolidare cinci înregistrări audio — 10 noiembrie 2026
+
+- Pisicuță și Lună, Halloween, Intro Harry Potter WB, Winter Is Coming și Sunshine sunt active public și în dashboard, fiecare 15 s. Manifestul media, preflight-ul de release și inventarul worktrees sunt în [raportul consolidat](audits/audio-20261110/report.md). Fișierele sunt în R2 și configurațiile în D1; acest commit adaugă documentația, iar receipt-ul PR-ului consemnează republicarea exactă și verificările finale. Ciornele independente din alte worktrees rămân separate.
+
 ## Audio Pisicuță și Lună — 10 noiembrie 2026, publicat și verificat
 
 - Înregistrare reală activă în Test Drive și dashboard, 15 s/−18,04 LUFS. Corecție upload R2 și eliminarea tăierii fixe la 12 s; 535 teste, CI, build/dry-run trecute. Worker `59a52a7f-3d56-4688-a159-f194be92500a`, sursă runtime `06cabaf`, fără migrare. Redarea publică și administrativă, Range 206 și viewportul mobil sunt verificate. [Probe și starea publicării](handoff/2026-11-10-kitten-audio.md).
