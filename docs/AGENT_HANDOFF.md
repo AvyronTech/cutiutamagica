@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Audio Pisicuță și Lună — 10 noiembrie 2026, în verificare
+
+- Înregistrare reală prelucrată la 15 s/−18 LUFS. Încărcarea a identificat o incompatibilitate între filtrul de stream și R2: lungimea necunoscută producea 500. Corecție streaming cu `FixedLengthStream`, limite păstrate și probă workerd/R2. [Scop, probe și starea publicării](handoff/2026-11-10-kitten-audio.md).
+
 ## Trendyol RO — 10 noiembrie 2026, release PR #99
 
 - Conector Order V2/stream, comenzi în registrul comun, inventar, documente FAN, preview nefiscal, șase categorii de decont și coadă pe infrastructura Free existentă. Profilul și credențialele existente sunt salvate criptat live; citirile oficiale sunt verificate. Livrarea runtime-ului, migrarea **0095** și verificarea comenzii reale se urmăresc în receipt-ul final din [PR #99](https://github.com/AvyronTech/cutiutamagica/pull/99). Stocul fizic CM-KITTEN a fost confirmat de administrator, nu dedus. Fără facturi/AWB/plăți noi. [Flux, teste, diferența ramburs/facturare și activarea](handoff/2026-11-10-trendyol-sync.md).
