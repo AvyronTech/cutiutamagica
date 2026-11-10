@@ -271,16 +271,17 @@ export async function syncTrendyolFinancials(env: CommerceEnv) {
     return { imported: rows.length, hasMore: !!next, transactionType: kind };
   });
 }
-export type TrendyolPollMessage = {
-  version: 5;
-  type: "trendyol.poll" | "trendyol.finance" | "trendyol.stock";
-};
+export type TrendyolPollMessage =
+  | { version: 5; type: "trendyol.poll" | "trendyol.finance" }
+  | { version: 5; type: "trendyol.stock"; sku?: string };
 export function isTrendyolPoll(v: unknown): v is TrendyolPollMessage {
   if (!v || typeof v !== "object") return false;
   const x = v as Record<string, unknown>;
+  if (x.version !== 5) return false;
+  if (x.type === "trendyol.stock" && typeof x.sku === "string")
+    return Object.keys(x).length === 3 && /^[\w-]{1,100}$/.test(x.sku);
   return (
     Object.keys(x).length === 2 &&
-    x.version === 5 &&
     ["trendyol.poll", "trendyol.finance", "trendyol.stock"].includes(String(x.type))
   );
 }
@@ -303,18 +304,31 @@ export async function processTrendyolPoll(env: CommerceEnv, message: TrendyolPol
       const result = await syncTrendyolFinancials(env);
       if (result.hasMore) await env.COMMERCE_EVENTS.send(message, { delaySeconds: 30 });
     } else if (message.type === "trendyol.stock") {
-      const rows = (
-        await env.DB.prepare(
-          `SELECT DISTINCT v.sku,COALESCE(m.observed_at,'') AS observed FROM product_variants v
-        JOIN order_items oi ON oi.variant_id=v.id JOIN marketplace_order_sources s ON s.order_id=oi.order_id
-        LEFT JOIN marketplace_inventory_snapshots m ON m.sku=v.sku AND m.provider='trendyol'
-        WHERE v.inventory_policy='deny' AND v.status='active' ORDER BY observed LIMIT 1`,
-        ).all<{ sku: string }>()
-      ).results;
-      if (rows[0]) {
+      const eligible = `FROM product_variants v LEFT JOIN marketplace_inventory_snapshots m ON m.sku=v.sku AND m.provider='trendyol'
+        WHERE v.inventory_policy='deny' AND v.status='active' AND (m.sku IS NOT NULL OR EXISTS(SELECT 1 FROM order_items oi JOIN marketplace_order_sources s ON s.order_id=oi.order_id WHERE oi.variant_id=v.id))`;
+      if (message.sku) {
+        const allowed = await env.DB.prepare(`SELECT v.sku ${eligible} AND v.sku=?1`)
+          .bind(message.sku)
+          .first();
+        if (!allowed) throw new TrendyolReviewError("SKU_NOT_CONFIGURED");
         const { reconcileTrendyolStock } = await import("./trendyol-stock");
-        await reconcileTrendyolStock(env, rows[0].sku);
+        await reconcileTrendyolStock(env, message.sku);
+        return;
       }
+      const rows = (
+        await env.DB.prepare(`SELECT DISTINCT v.sku ${eligible} ORDER BY v.sku LIMIT 21`).all<{
+          sku: string;
+        }>()
+      ).results;
+      if (rows.length > 20) throw new TrendyolReviewError("STOCK_CATALOG_REQUIRES_PAGINATION");
+      if (rows.length)
+        await env.COMMERCE_EVENTS.sendBatch(
+          rows.map((r, i) => ({
+            body: { version: 5, type: "trendyol.stock", sku: r.sku } satisfies TrendyolPollMessage,
+            contentType: "json" as const,
+            delaySeconds: 10 + i * 30,
+          })),
+        );
     } else {
       const result = await syncTrendyolOrders(env);
       if (!result.hasMore)
