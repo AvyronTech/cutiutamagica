@@ -120,7 +120,19 @@ export async function handleTrendyol(request: Request, env: CommerceEnv): Promis
       )
         .bind(crypto.randomUUID(), admin.id, admin.email, JSON.stringify({ enabled: a.enabled }))
         .run();
-      return json({ data: { saved: true } });
+      let initialPollQueued: boolean | undefined;
+      if (a.enabled) {
+        try {
+          await env.COMMERCE_EVENTS.send({ version: 5, type: "trendyol.poll" });
+          initialPollQueued = true;
+        } catch {
+          initialPollQueued = false;
+          await env.DB.prepare(
+            "UPDATE trendyol_sync_state SET last_error_code='QUEUE_ENQUEUE_FAILED' WHERE id=1",
+          ).run();
+        }
+      }
+      return json({ data: { saved: true, initialPollQueued } });
     }
     if (a.action === "sync-finance") {
       assertPermission(admin, "operations.read");

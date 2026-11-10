@@ -12,6 +12,7 @@ import {
   isTrendyolPoll,
   syncTrendyolFinancials,
   verifyTrendyolConnection,
+  processTrendyolPoll,
 } from "./services/trendyol-sync";
 import { reconcileTrendyolStock } from "./services/trendyol-stock";
 import { handleTrendyol } from "./api/trendyol";
@@ -355,6 +356,8 @@ describe("Trendyol source validation", () => {
     expect(isTrendyolPoll({ version: 5, type: "trendyol.poll" })).toBe(true);
     expect(isTrendyolPoll({ version: 5, type: "trendyol.poll", apiKey: "secret" })).toBe(false);
     expect(isTrendyolPoll({ version: 5, type: "admin" })).toBe(false);
+    expect(isTrendyolPoll({ version: 5, type: "trendyol.stock", sku: "CM-SUNSHINE" })).toBe(true);
+    expect(isTrendyolPoll({ version: 5, type: "trendyol.poll", sku: "CM-SUNSHINE" })).toBe(false);
   });
   it("supports platform-collected COD without treating it as a shop payment", async () => {
     const p = normalizeTrendyolPackage({ ...raw(), isCod: true }, "123");
@@ -408,6 +411,48 @@ function stockFetch(quantity: number, post?: () => Response | Promise<Response>)
   });
 }
 describe("Trendyol stock and financial reconciliation", () => {
+  it("dispatches every tracked observed SKU, including products without a marketplace order", async () => {
+    const env = connectedEnv();
+    sql.exec(
+      "UPDATE product_variants SET inventory_policy='deny' WHERE sku='CM-SUNSHINE';UPDATE inventory_levels SET on_hand_quantity=20 WHERE variant_id='variant_sunshine_standard';INSERT INTO marketplace_inventory_snapshots(provider,sku,barcode,quantity,sale_price_bani,list_price_bani,observed_at) VALUES('trendyol','CM-SUNSHINE','sunshine-test',20,11900,11900,'2026-01-01T00:00:00Z')",
+    );
+    await processTrendyolPoll(env, { version: 5, type: "trendyol.stock" });
+    expect(env.COMMERCE_EVENTS.sendBatch).toHaveBeenCalledWith([
+      {
+        body: { version: 5, type: "trendyol.stock", sku: "CM-SUNSHINE" },
+        contentType: "json",
+        delaySeconds: 10,
+      },
+    ]);
+    const f = vi.fn(async (input: RequestInfo | URL) =>
+      new URL(String(input)).pathname.endsWith("/orders/stream")
+        ? Response.json({ content: [], hasMore: false })
+        : Response.json({
+            content: [
+              {
+                variants: [
+                  {
+                    stockCode: "CM-SUNSHINE",
+                    barcode: "sunshine-test",
+                    quantity: 20,
+                    salePrice: 119,
+                    listPrice: 119,
+                  },
+                ],
+              },
+            ],
+            totalPages: 1,
+          }),
+    );
+    vi.stubGlobal("fetch", f);
+    await processTrendyolPoll(env, { version: 5, type: "trendyol.stock", sku: "CM-SUNSHINE" });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(
+      sql
+        .prepare("SELECT observed_at FROM marketplace_inventory_snapshots WHERE sku='CM-SUNSHINE'")
+        .get()?.observed_at,
+    ).not.toBe("2026-01-01T00:00:00Z");
+  });
   it("marks the existing channel and integration verified only after a real adapter read succeeds", async () => {
     const f = vi.fn(async () => Response.json({ content: [], hasMore: false }));
     vi.stubGlobal("fetch", f);
@@ -540,6 +585,29 @@ describe("Trendyol stock and financial reconciliation", () => {
   });
 });
 describe("Trendyol administrative API permissions", () => {
+  it("starts the first approved poll immediately when automation is enabled", async () => {
+    const env = connectedEnv();
+    sql.exec(
+      "INSERT INTO admin_users(id,external_subject,email) VALUES('queue-admin','queue-admin','queue-admin@example.test')",
+    );
+    vi.mocked(authenticateAdminRequest).mockResolvedValue({
+      id: "queue-admin",
+      email: "queue-admin@example.test",
+      permissions: ["orders.read", "integrations.write"],
+      mustChangePassword: false,
+    } as Awaited<ReturnType<typeof authenticateAdminRequest>>);
+    const r = await handleTrendyol(
+      new Request("https://test.local" + endpoint, {
+        method: "POST",
+        headers: { origin: "https://test.local", "content-type": "application/json" },
+        body: JSON.stringify({ action: "automation", enabled: true }),
+      }),
+      env,
+    );
+    expect(r?.status).toBe(200);
+    expect(await r!.json()).toMatchObject({ data: { saved: true, initialPollQueued: true } });
+    expect(env.COMMERCE_EVENTS.send).toHaveBeenCalledWith({ version: 5, type: "trendyol.poll" });
+  });
   it("denies an unauthenticated document and state request", async () => {
     vi.mocked(authenticateAdminRequest).mockRejectedValue(
       new AdminAuthError("Acces interzis", 401),

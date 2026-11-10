@@ -141,8 +141,15 @@ export function TrendyolOperations() {
         reviewCode?: string;
         results?: { reviewCode?: string }[];
         status?: string;
+        initialPollQueued?: boolean;
       };
-      if (data.reviewCode || data.results?.some((v) => v.reviewCode))
+      if (data.initialPollQueued === true)
+        toast.success("Automatizarea este activă. Prima verificare a fost pusă în coadă.");
+      else if (data.initialPollQueued === false)
+        toast.info(
+          "Automatizarea este activă; prima verificare va folosi următorul trigger programat.",
+        );
+      else if (data.reviewCode || data.results?.some((v) => v.reviewCode))
         toast.info("Date preluate. Verifică alertele de reconciliere.");
       else
         toast.success(
