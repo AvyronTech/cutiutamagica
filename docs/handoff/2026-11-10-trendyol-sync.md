@@ -2,7 +2,7 @@
 
 ## Starea livrării
 
-10 noiembrie 2026. Ramură `codex/trendyol-order-sync-20261110`, bază `33898e9`, separată de AVYRON. Codul și migrarea append-only **0095** sunt pregătite local. Publicarea și aplicarea în producție se confirmă separat înainte de a declara sincronizarea activă. În această etapă nu s-au emis facturi, creat AWB-uri, schimbat prețuri sau executat plăți/rambursări.
+10 noiembrie 2026. Ramură `codex/trendyol-order-sync-20261110`, bază `33898e9`, separată de AVYRON. Codul și migrarea append-only **0095** sunt livrate prin [PR #99](https://github.com/AvyronTech/cutiutamagica/pull/99). Acest raport păstrează probele de implementare; receipt-ul final din PR consemnează commitul, distribuția Workerului, schema și importul efectiv în producție. O simulare locală nu înlocuiește acel receipt. În această etapă nu s-au emis facturi, creat AWB-uri, schimbat prețuri sau executat plăți/rambursări.
 
 În producție sunt salvate identitatea contului oficial Trendyol RO și credențialele existente, prin mecanismul criptat al magazinului. Citirile autentificate oficiale au confirmat comanda, inventarul, documentul FAN și cele șase categorii financiare. Simplul mesaj „Cheie configurată” din versiunea veche nu este o verificare a noului conector.
 
