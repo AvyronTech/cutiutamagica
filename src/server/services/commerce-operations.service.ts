@@ -39,10 +39,15 @@ export async function issueInvoiceForOrder(
 
   const [orderResult, lineResult, seriesResult, entityResult] = await env.DB.batch<DbRow>([
     env.DB.prepare(
-      `SELECT o.*, oa.line1, oa.line2, oa.city, oa.county, oa.country_code,
-              oa.company_name, oa.tax_id, oa.postal_code
+      `SELECT o.*, COALESCE(ba.full_name,o.customer_name) AS billing_full_name,
+              COALESCE(ba.line1,oa.line1) AS line1,COALESCE(ba.line2,oa.line2) AS line2,
+              COALESCE(ba.city,oa.city) AS city,COALESCE(ba.county,oa.county) AS county,
+              COALESCE(ba.country_code,oa.country_code) AS country_code,
+              COALESCE(ba.company_name,oa.company_name) AS company_name,
+              COALESCE(ba.tax_id,oa.tax_id) AS tax_id,COALESCE(ba.postal_code,oa.postal_code) AS postal_code
        FROM orders o
        LEFT JOIN order_addresses oa ON oa.order_id = o.id AND oa.address_type = 'shipping'
+       LEFT JOIN order_addresses ba ON ba.order_id = o.id AND ba.address_type = 'billing'
        WHERE o.id = ?1 AND o.order_status != 'cancelled'`,
     ).bind(orderId),
     env.DB.prepare("SELECT * FROM order_items WHERE order_id = ?1 ORDER BY created_at").bind(
@@ -59,6 +64,33 @@ export async function issueInvoiceForOrder(
   const entity = entityResult.results[0];
   if (!order)
     throw new ProviderError("Comanda nu există sau este anulată.", "ORDER_NOT_INVOICEABLE", 404);
+  if (order.channel_id === "channel_trendyol") {
+    const external = await env.DB.prepare(
+      `SELECT s.review_code,
+      EXISTS(SELECT 1 FROM marketplace_packages p WHERE p.order_id=s.order_id AND COALESCE(p.invoice_number,'')!='') AS externally_invoiced,
+      i.updated_at AS checked_at FROM marketplace_order_sources s
+      LEFT JOIN trendyol_sync_issues i ON i.external_order_id=s.external_order_id AND i.status='resolved'
+      WHERE s.order_id=?1`,
+    )
+      .bind(orderId)
+      .first<{
+        review_code: string | null;
+        externally_invoiced: number;
+        checked_at: string | null;
+      }>();
+    if (
+      !external ||
+      external.review_code ||
+      external.externally_invoiced ||
+      !external.checked_at ||
+      Date.now() - Date.parse(external.checked_at) > 15 * 60 * 1000
+    )
+      throw new ProviderError(
+        "Sincronizează și verifică întâi comanda în panoul Trendyol. O factură existentă în platformă nu se emite încă o dată.",
+        "TRENDYOL_INVOICE_REVIEW_REQUIRED",
+        409,
+      );
+  }
   if (!series) {
     throw new ProviderError(
       "Activează în admin seria Oblio confirmată înainte de emitere.",
@@ -135,7 +167,10 @@ export async function issueInvoiceForOrder(
       expectedNextNumber: amount(series, "next_number"),
       currency: value(order, "currency") || "RON",
       customer: {
-        name: value(order, "company_name") || value(order, "customer_name"),
+        name:
+          value(order, "company_name") ||
+          value(order, "billing_full_name") ||
+          value(order, "customer_name"),
         email: value(order, "customer_email") || null,
         phone: value(order, "customer_phone_e164"),
         country: value(order, "country_code") || "RO",
@@ -212,7 +247,10 @@ export async function issueInvoiceForOrder(
           address: entity.registered_address,
         }),
         JSON.stringify({
-          name: value(order, "company_name") || value(order, "customer_name"),
+          name:
+            value(order, "company_name") ||
+            value(order, "billing_full_name") ||
+            value(order, "customer_name"),
           taxId: value(order, "tax_id") || null,
           email: value(order, "customer_email") || null,
           address: value(order, "line1"),

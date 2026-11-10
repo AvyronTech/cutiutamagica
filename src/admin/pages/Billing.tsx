@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useEffect, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, FileText, Loader2, ReceiptText, Save } from "lucide-react";
@@ -62,6 +62,11 @@ export default function Billing() {
     },
     onError: showError,
   });
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (/^invoice-order-[\w-]+$/.test(id))
+      document.getElementById(id)?.scrollIntoView({ block: "center" });
+  }, [query.data]);
 
   if (query.isLoading || !query.data)
     return <Loader2 className="h-6 w-6 animate-spin text-cyan-300" />;
@@ -226,6 +231,7 @@ export default function Billing() {
             data.pendingInvoiceOrders.map((order) => (
               <div
                 key={order.id}
+                id={`invoice-order-${order.id}`}
                 className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>

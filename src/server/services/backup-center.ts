@@ -44,6 +44,8 @@ const CUSTOMER_TABLES = new Set([
   "order_risk_assessments",
   "order_tags",
   "orders",
+  "marketplace_financial_entries",
+  "trendyol_sync_issues",
   "payment_attempts",
   "refunds",
   "return_request_items",
@@ -163,7 +165,7 @@ export async function createApplicationBackup(
       const last = groups[groups.length - 1];
       if (
         !last ||
-        last.length >= 5 ||
+        last.length >= 6 ||
         last.reduce((n, q) => n + q.sql.length, 0) + query.sql.length > 80_000
       )
         groups.push([query]);
