@@ -5,29 +5,66 @@ export function LegalPage({
   title,
   intro,
   children,
+  updatedAt = "15 septembrie 2026",
+  contents,
 }: {
   title: string;
   intro: string;
   children: ReactNode;
+  updatedAt?: string;
+  contents?: ReadonlyArray<{ id: string; title: string }>;
 }) {
   return (
-    <article className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
+    <article className={contents ? "privacy-policy" : "mx-auto max-w-3xl px-5 py-12 sm:py-16"}>
       <header className="border-b border-border pb-8">
         <p className="mb-3 text-sm text-muted-foreground">Cutiuța Magică · Informații utile</p>
         <h1 className="font-display text-3xl sm:text-4xl">{title}</h1>
         <p className="mt-4 leading-7 text-muted-foreground">{intro}</p>
-        <p className="mt-4 text-xs text-muted-foreground">Actualizat la 15 septembrie 2026</p>
+        <p className="mt-4 text-xs text-muted-foreground">Actualizat la {updatedAt}</p>
       </header>
-      <div className="space-y-8 pt-8 text-sm leading-7 [&_a]:underline [&_a]:underline-offset-4">
-        {children}
+      <div className={contents ? "privacy-policy__layout" : undefined}>
+        {contents && (
+          <nav
+            className="privacy-policy__contents"
+            aria-label="Cuprinsul politicii de confidențialitate"
+          >
+            <p>În această pagină</p>
+            <ol>
+              {contents.map((item) => (
+                <li key={item.id}>
+                  <a href={`#${item.id}`}>{item.title}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+        <div
+          className={
+            contents
+              ? "privacy-policy__body"
+              : "space-y-8 pt-8 text-sm leading-7 [&_a]:underline [&_a]:underline-offset-4"
+          }
+        >
+          {children}
+        </div>
       </div>
     </article>
   );
 }
-export function LegalSection({ title, children }: { title: string; children: ReactNode }) {
+export function LegalSection({
+  title,
+  children,
+  id,
+}: {
+  title: string;
+  children: ReactNode;
+  id?: string;
+}) {
   return (
-    <section>
-      <h2 className="mb-3 font-display text-2xl">{title}</h2>
+    <section id={id} aria-labelledby={id ? `${id}-title` : undefined}>
+      <h2 id={id ? `${id}-title` : undefined} className="mb-3 font-display text-2xl">
+        {title}
+      </h2>
       <div className="space-y-3 text-muted-foreground">{children}</div>
     </section>
   );
@@ -41,7 +78,7 @@ export function SellerIdentity({
     <address className="not-italic">
       <strong>{normalizeRomanianDisplayText(seller.legal_name)}</strong>
       <br />
-      CUI {seller.tax_id} · neplătitor de TVA
+      CUI {seller.tax_id}
       <br />
       {seller.registration_number && (
         <>
