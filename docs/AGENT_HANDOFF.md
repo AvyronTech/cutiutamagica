@@ -1,8 +1,8 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
-## Audio Pisicuță și Lună — 10 noiembrie 2026, în verificare
+## Audio Pisicuță și Lună — 10 noiembrie 2026, publicat și verificat
 
-- Înregistrare reală prelucrată la 15 s/−18 LUFS. Încărcarea a identificat o incompatibilitate între filtrul de stream și R2: lungimea necunoscută producea 500. Corecție streaming cu `FixedLengthStream`, limite păstrate și probă workerd/R2. [Scop, probe și starea publicării](handoff/2026-11-10-kitten-audio.md).
+- Înregistrare reală activă în Test Drive și dashboard, 15 s/−18,04 LUFS. Corecție upload R2 și eliminarea tăierii fixe la 12 s; 535 teste, CI, build/dry-run trecute. Worker `59a52a7f-3d56-4688-a159-f194be92500a`, sursă runtime `06cabaf`, fără migrare. Redarea publică și administrativă, Range 206 și viewportul mobil sunt verificate. [Probe și starea publicării](handoff/2026-11-10-kitten-audio.md).
 
 ## Trendyol RO — 10 noiembrie 2026, release PR #99
 
