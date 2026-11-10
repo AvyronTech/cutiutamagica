@@ -72,3 +72,8 @@ export function boundedUploadStream(body: ReadableStream<Uint8Array>, limit: num
     }),
   );
 }
+
+/** R2 requires a known length; also reject truncated bodies without buffering the file. */
+export function r2UploadStream(body: ReadableStream<Uint8Array>, declaredSize: number) {
+  return boundedUploadStream(body, declaredSize).pipeThrough(new FixedLengthStream(declaredSize));
+}

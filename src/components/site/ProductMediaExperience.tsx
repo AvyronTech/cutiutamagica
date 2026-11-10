@@ -136,7 +136,7 @@ export function ProductAudioOverlay({
           setError("Înregistrarea este momentan indisponibilă.");
         }}
         onTimeUpdate={(e) => {
-          const previewDuration = Math.min(duration || 12, 12);
+          const previewDuration = Math.min(duration || 15, 30);
           const current = Math.min(e.currentTarget.currentTime, previewDuration);
           setTime(current);
           if (!tracked75.current && current >= previewDuration * 0.75) {
@@ -147,7 +147,7 @@ export function ProductAudioOverlay({
         }}
         onLoadedMetadata={(e) => {
           if (Number.isFinite(e.currentTarget.duration))
-            setDuration(Math.min(e.currentTarget.duration, 12));
+            setDuration(Math.min(e.currentTarget.duration, 30));
         }}
       />
       <button
@@ -161,15 +161,17 @@ export function ProductAudioOverlay({
       </button>
       <div className="melody-content">
         <p className="scene-eyebrow">Test drive-ul cutiuței</p>
-        <span className="melody-content__cta">▶ Ascultă cutiuța · 12 sec.</span>
+        <span className="melody-content__cta">
+          ▶ Ascultă cutiuța · {Math.round(Math.min(duration || 15, 30))} sec.
+        </span>
         <strong>{audio.display_name || "Melodia acestei cutiuțe"}</strong>
         <div className="melody-progress">
           <input
             type="range"
             min={0}
-            max={Math.min(duration || 12, 12)}
+            max={Math.min(duration || 15, 30)}
             step={0.1}
-            value={Math.min(time, duration || 12, 12)}
+            value={Math.min(time, duration || 15, 30)}
             aria-label="Poziția în melodie"
             disabled={!duration}
             onChange={(e) => {
@@ -180,7 +182,7 @@ export function ProductAudioOverlay({
             }}
           />
           <span>
-            {Math.floor(time)} / {Math.round(Math.min(duration || 12, 12))} s
+            {Math.floor(time)} / {Math.round(Math.min(duration || 15, 30))} s
           </span>
         </div>
         {error && (

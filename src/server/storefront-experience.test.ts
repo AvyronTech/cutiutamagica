@@ -118,6 +118,15 @@ function catalog() {
   return listPublicCatalog(db);
 }
 beforeEach(() => {
+  // Node lacks this Worker primitive; real R2 behavior is tested in media-storage-runtime.test.ts.
+  vi.stubGlobal(
+    "FixedLengthStream",
+    class extends TransformStream<Uint8Array, Uint8Array> {
+      constructor() {
+        super();
+      }
+    },
+  );
   sqlite = new DatabaseSync(":memory:");
   migrate();
   seed();
@@ -138,7 +147,10 @@ beforeEach(() => {
   sqlite.exec(readFileSync(resolve(migrations, "0028_romanian_catalog_copy.sql"), "utf8"));
   sqlite.exec(readFileSync(resolve(migrations, "0029_product_discovery_seo.sql"), "utf8"));
 });
-afterEach(() => sqlite.close());
+afterEach(() => {
+  sqlite.close();
+  vi.unstubAllGlobals();
+});
 describe("storefront and dashboard share one catalog", () => {
   it("restores untouched collection placements after a late seed without changing admin choices", () => {
     sqlite.exec(

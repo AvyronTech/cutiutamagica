@@ -1,4 +1,4 @@
-import { boundedUploadStream } from "./bounded-json";
+import { r2UploadStream } from "./bounded-json";
 import { safeErrorMetadata } from "@/server/security/logging";
 import { localMediaPreview } from "../media-policy";
 import { pcmWavDuration } from "@/lib/audio-clip";
@@ -349,18 +349,14 @@ async function uploadProductMedia(
 
   const assetId = `media_${crypto.randomUUID().replaceAll("-", "")}`;
   const key = `products/${productId}/${folder(parsed.data)}/${assetId}.${rule.extension}`;
-  const storedObject = await env.MEDIA.put(
-    key,
-    boundedUploadStream(uploadStream, Math.min(declaredSize, rule.max)),
-    {
-      httpMetadata: {
-        contentType,
-        cacheControl:
-          parsed.data.mediaType === "document" ? "private, no-store" : "public, max-age=3600",
-      },
-      customMetadata: { productId, assetId, uploadedBy: admin.id },
+  const storedObject = await env.MEDIA.put(key, r2UploadStream(uploadStream, declaredSize), {
+    httpMetadata: {
+      contentType,
+      cacheControl:
+        parsed.data.mediaType === "document" ? "private, no-store" : "public, max-age=3600",
     },
-  );
+    customMetadata: { productId, assetId, uploadedBy: admin.id },
+  });
   if (storedObject.size !== declaredSize || storedObject.size > rule.max) {
     await env.MEDIA.delete(key);
     return json({ error: { code: "MEDIA_SIZE_MISMATCH" } }, { status: 400 });
