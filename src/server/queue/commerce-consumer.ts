@@ -18,6 +18,11 @@ import {
   sendReturnOwnerNotification,
 } from "@/server/integrations/resend";
 import type { CommerceEnv } from "@/server/integrations/provider-runtime";
+import {
+  isTrendyolPoll,
+  processTrendyolPoll,
+  type TrendyolPollMessage,
+} from "../services/trendyol-sync";
 
 interface CommerceNotificationQueueMessage {
   version: 1;
@@ -41,6 +46,7 @@ type CommerceQueueMessage =
   | OrderEmailQueueMessage
   | TransactionalEmailQueueMessage
   | AvyronQueueMessage
+  | TrendyolPollMessage
   | ScheduledMaintenanceMessage;
 
 type OutboxRow = Record<string, string | number | null>;
@@ -217,6 +223,16 @@ async function processMessage(db: D1Database, outboxId: string): Promise<"ack" |
 
 export async function consumeCommerceEvents(batch: MessageBatch<unknown>, env: Env): Promise<void> {
   for (const message of batch.messages) {
+    if (isTrendyolPoll(message.body)) {
+      try {
+        await processTrendyolPoll(env as CommerceEnv, message.body);
+        message.ack();
+      } catch (error) {
+        console.error("trendyol.sync_failed", safeErrorMetadata(error));
+        message.retry({ delaySeconds: 120 });
+      }
+      continue;
+    }
     if (isScheduledMaintenanceMessage(message.body)) {
       try {
         await processScheduledMaintenance(env, message.body);

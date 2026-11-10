@@ -65,6 +65,19 @@ async function recordConnectionCheck(
 export async function checkConnection(env: CommerceEnv, provider: CredentialProvider) {
   const key = await credential(env, provider);
   if (!key) throw new Error("Cheia sau tokenul nu este configurat.");
+  if (provider === "trendyol") {
+    try {
+      const { verifyTrendyolConnection } = await import("./trendyol-sync");
+      const result = await verifyTrendyolConnection(env);
+      await recordConnectionCheck(env, provider, "verified");
+      return result;
+    } catch {
+      const message =
+        "Verificarea API Trendyol RO nu a reușit. Verifică datele contului și permisiunile în portal.";
+      await recordConnectionCheck(env, provider, "failed", message);
+      return { ok: false, message };
+    }
+  }
   if (provider === "oblio") {
     const settings = await readSetting(env.DB, "commerce.checkout", checkoutSettingsSchema);
     const [entity, series] = await Promise.all([

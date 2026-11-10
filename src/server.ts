@@ -273,6 +273,12 @@ export default {
     // Reuse the account's existing hourly trigger. Delayed queue deliveries isolate
     // backup/security D1 and CPU budgets from commercial scheduled work.
     const { enqueueScheduledMaintenance } = await import("./server/queue/scheduled-maintenance");
+    const { enqueueTrendyolPolls } = await import("./server/services/trendyol-sync");
+    ctx.waitUntil(
+      enqueueTrendyolPolls(env).catch((error: unknown) => {
+        console.error("trendyol.queue_failed", safeErrorMetadata(error));
+      }),
+    );
     ctx.waitUntil(
       enqueueScheduledMaintenance(env).catch((error: unknown) => {
         console.error("maintenance.queue_failed", safeErrorMetadata(error));

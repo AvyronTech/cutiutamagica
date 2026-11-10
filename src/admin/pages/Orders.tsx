@@ -39,6 +39,7 @@ import {
   refreshAdminSmartShipTracking,
   updateAdminOrderStatus,
 } from "@/lib/admin.functions";
+import { TrendyolOperations } from "./TrendyolOperations";
 import { canTransitionOrderStatus } from "@/lib/order-status";
 
 const localDateTime = (value: string) => {
@@ -55,6 +56,7 @@ const localDateTime = (value: string) => {
 const PLATFORM_COLORS: Record<string, string> = {
   "Cutiuța Magică": "platform-cutiuta",
   eMAG: "platform-emag",
+  Trendyol: "bg-orange-500/15 text-orange-200",
   OLX: "platform-olx",
   Instagram: "platform-instagram",
   TikTok: "platform-tiktok",
@@ -96,6 +98,17 @@ const SALES_CHANNELS = [
     color: "bg-blue-400",
   },
 ] as const;
+
+const DISPLAY_CHANNELS = [
+  ...SALES_CHANNELS,
+  {
+    code: "trendyol",
+    label: "Trendyol",
+    platform: "Trendyol",
+    kind: "API oficial · FAN Courier",
+    color: "bg-orange-400",
+  },
+];
 
 function StatusIcon({ status }: { status: AdminOrderStatus }) {
   switch (status) {
@@ -398,9 +411,16 @@ function OrderDetailPanel({
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Actualizează statusul
           </p>
+          {order.channelCode === "trendyol" && (
+            <p className="mb-2 text-xs text-orange-200">
+              Statusul se preia din API. Folosește panoul Trendyol din Comenzi pentru sincronizare
+              și documente.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ADMIN_ORDER_STATUSES.map((status) => {
               const allowed =
+                order.channelCode !== "trendyol" &&
                 canTransitionOrderStatus(order.status, status) &&
                 (!awaitingOnlinePayment || status === "Anulată" || status === order.status);
               return (
@@ -735,7 +755,7 @@ export default function Orders() {
     return matchesSearch && matchesPlatform && matchesStatus;
   });
   const channelCounts = new Map(
-    SALES_CHANNELS.map((channel) => [
+    DISPLAY_CHANNELS.map((channel) => [
       channel.code,
       orders.filter((order) => order.channelCode === channel.code).length,
     ]),
@@ -778,12 +798,14 @@ export default function Orders() {
         </div>
       </div>
 
+      <TrendyolOperations />
+
       <section>
         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
           <Store className="h-4 w-4" /> Canale comerciale
         </div>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
-          {SALES_CHANNELS.map((channel) => (
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-7">
+          {DISPLAY_CHANNELS.map((channel) => (
             <button
               type="button"
               key={channel.code}

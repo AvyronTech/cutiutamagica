@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Trendyol RO — 10 noiembrie 2026, release PR #99
+
+- Conector Order V2/stream, comenzi în registrul comun, inventar, documente FAN, preview nefiscal, șase categorii de decont și coadă pe infrastructura Free existentă. Profilul și credențialele existente sunt salvate criptat live; citirile oficiale sunt verificate. Livrarea runtime-ului, migrarea **0095** și verificarea comenzii reale se urmăresc în receipt-ul final din [PR #99](https://github.com/AvyronTech/cutiutamagica/pull/99). Stocul fizic CM-KITTEN a fost confirmat de administrator, nu dedus. Fără facturi/AWB/plăți noi. [Flux, teste, diferența ramburs/facturare și activarea](handoff/2026-11-10-trendyol-sync.md).
+
 ## Reverificare și republicare producție — 9 noiembrie 2026
 
 - Bază `889ba3da57e79b419822fbf1a4e9ef47dbb75f78`: `main` și `codex/cutiuta-cloudflare-final` sunt sincronizate; PR #94–#97 sunt integrate/închise. Runtime-ul verificat înaintea acestei republicări este `d7134c9`, Worker `82c4007f-5926-4dd0-9f43-33800f4289e2`, 100% trafic, D1 **94**, fără migrații restante. Codul aplicației din `889ba3d` este identic cu cel publicat; diferențele ulterioare sunt documentație.

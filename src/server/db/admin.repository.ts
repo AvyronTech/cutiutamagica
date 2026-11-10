@@ -1093,7 +1093,7 @@ export async function updateOrderStatus(
   const current = await db
     .prepare(
       `
-    SELECT order_status, fulfillment_status, payment_method_requested, payment_status, paid_bani, total_bani, version
+    SELECT channel_id, order_status, fulfillment_status, payment_method_requested, payment_status, paid_bani, total_bani, version
     FROM orders
     WHERE id = ?1
   `,
@@ -1102,6 +1102,11 @@ export async function updateOrderStatus(
     .first<DbRow>();
 
   if (!current) throw new Error("ORDER_NOT_FOUND");
+  if (current.channel_id === "channel_trendyol") {
+    throw new Error(
+      "Statusul Trendyol se actualizează prin sincronizarea API din Comenzi → Trendyol.",
+    );
+  }
   if (numberValue(current.version) !== input.expectedVersion) {
     throw new Error("ORDER_VERSION_CONFLICT");
   }

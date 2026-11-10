@@ -151,6 +151,15 @@ export function SalesConnections() {
           în Merchant Center; aprobarea Google este separată.
         </p>
       </div>
+      <div className="rounded-lg border border-orange-400/30 p-3 text-sm">
+        <a href="/admin/orders#trendyol" className="font-semibold text-orange-200 underline">
+          Trendyol · comenzi, stoc, documente FAN și decontare
+        </a>
+        <p className="mt-2 text-xs text-slate-300">
+          Credențialele Trendyol se salvează ca JSON cu sellerId, apiKey, apiSecret și
+          storeFrontCode: RO. Verificarea face o citire reală, fără emitere de facturi ori AWB.
+        </p>
+      </div>
       <CredentialPanel providers={["google_merchant", "emag", "trendyol", "olx", "okazii"]} />
     </section>
   );
