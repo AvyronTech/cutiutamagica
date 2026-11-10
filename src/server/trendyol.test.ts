@@ -291,6 +291,21 @@ describe("Trendyol official V2 order and shared inventory", () => {
   });
 });
 describe("Trendyol source validation", () => {
+  it("uses edge-compatible manual redirects and refuses to forward API authentication", async () => {
+    const f = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(null, { status: 302, headers: { location: "https://attacker.invalid" } }),
+    );
+    vi.stubGlobal("fetch", f);
+    await expect(
+      trendyolRequest(
+        { sellerId: "123", apiKey: "test-key", apiSecret: "test-secret", storeFrontCode: "RO" },
+        "/integration/test",
+      ),
+    ).rejects.toMatchObject({ code: "TRENDYOL_HTTP_302" });
+    expect(f).toHaveBeenCalledTimes(1);
+    expect(f.mock.calls[0][1]?.redirect).toBe("manual");
+  });
   it("accepts a RO supplierId zero only when every line attests the authenticated seller", () => {
     const p = raw();
     p.supplierId = 0;

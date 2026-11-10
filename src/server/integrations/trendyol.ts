@@ -279,7 +279,7 @@ export async function trendyolRequest(
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const response = await fetchWithTimeout(url, {
     method: body === undefined ? "GET" : "POST",
-    redirect: "error",
+    redirect: "manual",
     headers: {
       Authorization: `Basic ${btoa(c.apiKey + ":" + c.apiSecret)}`,
       storeFrontCode: c.storeFrontCode,
