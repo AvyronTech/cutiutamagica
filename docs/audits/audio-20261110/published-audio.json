@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "kitten",
+    "media_id": "media_a6af5858b1fd47ae85feb99af5540f90",
+    "duration_seconds": 15,
+    "display_name": "Melodia cutiuței Pisicuță și Lună",
+    "public_audio": "PASS",
+    "range": "PASS",
+    "format": "PCM16 mono 44100 Hz",
+    "size_bytes": 1323044,
+    "integrated_lufs": -18.04,
+    "true_peak_dbtp": -3.2
+  },
+  {
+    "slug": "halloween",
+    "media_id": "media_386e4ee850d0421582257d385c63a0e4",
+    "duration_seconds": 15,
+    "display_name": "Melodia cutiuței Halloween",
+    "public_audio": "PASS",
+    "range": "PASS",
+    "format": "PCM16 mono 44100 Hz",
+    "size_bytes": 1323044,
+    "integrated_lufs": -17.99,
+    "true_peak_dbtp": -2.9
+  },
+  {
+    "slug": "hp-keeper",
+    "media_id": "media_58deee1a84de44eb8e0f267a33547df8",
+    "duration_seconds": 15,
+    "display_name": "Intro Harry Potter WB",
+    "public_audio": "PASS",
+    "range": "PASS",
+    "format": "PCM16 mono 44100 Hz",
+    "size_bytes": 1323044,
+    "integrated_lufs": -18.28,
+    "true_peak_dbtp": -1.49
+  },
+  {
+    "slug": "got-winter",
+    "media_id": "media_25a26d89457f4c399b303df81676e0c3",
+    "duration_seconds": 15,
+    "display_name": "Game of Thrones · Winter Is Coming",
+    "public_audio": "PASS",
+    "range": "PASS",
+    "format": "PCM16 mono 44100 Hz",
+    "size_bytes": 1323044,
+    "integrated_lufs": -18.77,
+    "true_peak_dbtp": -1.77
+  },
+  {
+    "slug": "sunshine",
+    "media_id": "media_c4b9c5cbcd834c83bc2c27b815428826",
+    "duration_seconds": 15,
+    "display_name": "You Are My Sunshine",
+    "public_audio": "PASS",
+    "range": "PASS",
+    "format": "PCM16 mono 44100 Hz",
+    "size_bytes": 1323044,
+    "integrated_lufs": -18.31,
+    "true_peak_dbtp": -1.8
+  }
+]

@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+10 noiembrie 2026, consolidare audio: toate cele cinci fragmente reale sunt active în Test Drive și dashboard, 15 s fiecare. Datele media sunt în R2/D1 și sunt păstrate la republicare. [Manifest, teste și reconcilierea worktrees](audits/audio-20261110/report.md); receipt-ul PR-ului de consolidare identifică versiunea efectiv republicată.
+
 10 noiembrie 2026, audio Pisicuță și Lună: înregistrare reală 15 s publicată și redată în pagina produsului și dashboard. Runtime `06cabaf`, Worker `59a52a7f-3d56-4688-a159-f194be92500a`, schema 95; upload R2 corectat prin stream cu lungime cunoscută și player sincronizat cu durata reală. 535 teste și CI trecute, probe desktop/mobil și Range 206. [Handoff audio](handoff/2026-11-10-kitten-audio.md).
 
 10 noiembrie 2026: integrarea Trendyol este pregătită pe `codex/trendyol-order-sync-20261110`, din `33898e9`, cu migrarea append-only **0095**. Starea livrării și verificarea live sunt consemnate în receipt-ul final din [PR #99](https://github.com/AvyronTech/cutiutamagica/pull/99). Identitatea contului și credențialele existente sunt salvate criptat; API-ul real de comenzi, stoc, documente și finanțe a fost citit. Importul/rezervarea și panoul nou au validare locală; activarea efectivă se verifică separat în receipt. [Handoff și limite](handoff/2026-11-10-trendyol-sync.md).
