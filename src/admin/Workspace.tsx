@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { WorkspaceActivity } from "./workspace-activity";
+import { FeatureBoundary } from "@/components/FeatureBoundary";
 
 type Tab = { id: string; label: string; description: string; icon: LucideIcon; content: ReactNode };
 
@@ -93,18 +94,20 @@ export function Workspace({
         >
           {(active === tab.id || visited.includes(tab.id)) && (
             <WorkspaceActivity.Provider value={active === tab.id}>
-              <Suspense
-                fallback={
-                  <p
-                    role="status"
-                    className="rounded-xl border border-slate-700 p-5 text-sm text-slate-300"
-                  >
-                    Se încarcă secțiunea…
-                  </p>
-                }
-              >
-                {tab.content}
-              </Suspense>
+              <FeatureBoundary name={tab.label}>
+                <Suspense
+                  fallback={
+                    <p
+                      role="status"
+                      className="rounded-xl border border-slate-700 p-5 text-sm text-slate-300"
+                    >
+                      Se încarcă secțiunea…
+                    </p>
+                  }
+                >
+                  {tab.content}
+                </Suspense>
+              </FeatureBoundary>
             </WorkspaceActivity.Provider>
           )}
         </section>

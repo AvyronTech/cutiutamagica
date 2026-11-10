@@ -8,7 +8,9 @@ import { ProductWorld } from "@/components/site/ProductWorld";
 import { animateIntoCart } from "@/lib/cart-flight";
 import { ProductInterest } from "@/components/site/ProductInterest";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ProductLightbox } from "@/components/site/ProductLightbox";
+import { FeatureBoundary } from "@/components/FeatureBoundary";
 import { ShoppingBag, Music, Gift, Sparkles, Minus, Plus, Rotate3D, Hourglass } from "lucide-react";
 import { isAvailable, MAX_QTY } from "@/data/products";
 import { loadStorefrontPricing } from "@/lib/storefront-pricing";
@@ -35,12 +37,6 @@ import { seoHead } from "@/lib/seo-head";
 import { productIdFromPublicSlug, productPath } from "@/lib/product-url";
 import { getPublicShippingPolicy } from "@/lib/shipping-policy.functions";
 import { offerShippingDetails } from "@/lib/shipping-seo";
-
-const ProductLightbox = lazy(() =>
-  import("@/components/site/ProductLightbox").then((module) => ({
-    default: module.ProductLightbox,
-  })),
-);
 
 export const Route = createFileRoute("/produs-cutiuta-muzicala-{$slug}")({
   component: ProductPage,
@@ -234,10 +230,13 @@ function ProductPage() {
         .slice(0, 4),
     [product.id, product.category, products],
   );
-  const gallery = product.gallery;
+  const gallery = product.gallery.length
+    ? product.gallery
+    : [{ src: product.image, label: product.name }];
   const available = isAvailable(product);
   const isInCart = itemsDetailed.some((item) => item.product.id === product.id);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [galleryReady, setGalleryReady] = useState(false);
   const currentImage = gallery[active] ?? gallery[0] ?? { src: product.image, label: product.name };
   const spin = experienceQuery.data?.spin360 ?? null;
   const has360 = Boolean(
@@ -252,10 +251,13 @@ function ProductPage() {
   const [galleryInteracting, setGalleryInteracting] = useState(false);
   const [galleryVisible, setGalleryVisible] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
+  useEffect(() => setGalleryReady(true), []);
   useEffect(() => {
     setActive(0);
     setShow360(false);
     setGalleryPaused(false);
+    setZoomOpen(false);
+    suppressGalleryClick.current = false;
   }, [product.id]);
   useEffect(() => {
     const node = galleryRoot.current;
@@ -324,7 +326,11 @@ function ProductPage() {
             )
           }
           onBlurCapture={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setGalleryInteracting(false);
+            if (
+              !(event.relatedTarget instanceof Node) ||
+              !event.currentTarget.contains(event.relatedTarget)
+            )
+              setGalleryInteracting(false);
           }}
         >
           {show360 && spin && has360 ? (
@@ -352,8 +358,11 @@ function ProductPage() {
 
               <button
                 type="button"
-                key={currentImage.src}
+                disabled={!galleryReady}
+                aria-busy={!galleryReady}
+                style={{ cursor: galleryReady ? "zoom-in" : "progress" }}
                 onPointerDown={(event) => {
+                  suppressGalleryClick.current = false;
                   if (event.pointerType === "mouse") return;
                   gallerySwipe.current = {
                     x: event.clientX,
@@ -376,11 +385,10 @@ function ProductPage() {
                 onPointerCancel={() => {
                   gallerySwipe.current = null;
                 }}
-                onClick={() => {
-                  if (suppressGalleryClick.current) {
-                    suppressGalleryClick.current = false;
-                    return;
-                  }
+                onClick={(event) => {
+                  const suppress = suppressGalleryClick.current;
+                  suppressGalleryClick.current = false;
+                  if (suppress && event.detail > 0) return;
                   setZoomOpen(true);
                   trackGrowthEvent("gallery_open", { productSlug: product.id });
                 }}
@@ -666,7 +674,30 @@ function ProductPage() {
       </div>
 
       {zoomOpen && (
-        <Suspense fallback={null}>
+        <FeatureBoundary
+          name="Galeria foto"
+          fallback={
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Fotografie produs"
+              className="fixed inset-0 z-[100] grid place-content-center gap-4 bg-black/95 p-6 text-center text-white"
+            >
+              <img
+                src={currentImage.src}
+                alt={product.name}
+                className="max-h-[75vh] max-w-full object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => setZoomOpen(false)}
+                className="rounded-lg border border-white/50 px-4 py-3"
+              >
+                Închide fotografiile
+              </button>
+            </div>
+          }
+        >
           <ProductLightbox
             images={gallery}
             index={active}
@@ -674,7 +705,7 @@ function ProductPage() {
             onClose={() => setZoomOpen(false)}
             onIndexChange={setActive}
           />
-        </Suspense>
+        </FeatureBoundary>
       )}
       {available && (
         <ProductMobileBuyBar
