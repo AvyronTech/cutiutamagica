@@ -670,7 +670,7 @@ export async function handleAdminMediaApi(request: Request, env: Env): Promise<R
   try {
     if (contentMatch) {
       if (request.method === "GET" || request.method === "HEAD") {
-        return previewMedia(request, env, contentMatch[1]);
+        return await previewMedia(request, env, contentMatch[1]);
       }
       return json(
         { error: { code: "METHOD_NOT_ALLOWED" } },
@@ -679,7 +679,7 @@ export async function handleAdminMediaApi(request: Request, env: Env): Promise<R
     }
     if (documentMatch) {
       if (request.method === "GET" || request.method === "HEAD") {
-        return previewBusinessDocument(request, env, documentMatch[1]);
+        return await previewBusinessDocument(request, env, documentMatch[1]);
       }
       return json(
         { error: { code: "METHOD_NOT_ALLOWED" } },
@@ -687,14 +687,14 @@ export async function handleAdminMediaApi(request: Request, env: Env): Promise<R
       );
     }
     if (productMatch) {
-      if (request.method === "GET") return listProductMedia(request, env, productMatch[1]);
-      if (request.method === "POST") return uploadProductMedia(request, env, productMatch[1]);
+      if (request.method === "GET") return await listProductMedia(request, env, productMatch[1]);
+      if (request.method === "POST") return await uploadProductMedia(request, env, productMatch[1]);
       return json(
         { error: { code: "METHOD_NOT_ALLOWED" } },
         { status: 405, headers: { allow: "GET, POST" } },
       );
     }
-    if (request.method === "PATCH") return updateMedia(request, env, mediaMatch![1]);
+    if (request.method === "PATCH") return await updateMedia(request, env, mediaMatch![1]);
     return json(
       { error: { code: "METHOD_NOT_ALLOWED" } },
       { status: 405, headers: { allow: "PATCH" } },

@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Tratarea refuzurilor API media — 10 noiembrie 2026
+
+- Probele de după consolidare au identificat refuzuri asincrone care deveneau 500 în dispatcherul media. Corecția `return await` păstrează răspunsurile 401/403 și acoperă șapte rute/metode cu 14 regresii, fără schimbarea autentificării sau permisiunilor. [Raportul și receipt-ul releaseului](audits/audio-20261110/report.md) separă republicarea inițială de corecția finală.
+
 ## Consolidare cinci înregistrări audio — 10 noiembrie 2026
 
 - Pisicuță și Lună, Halloween, Intro Harry Potter WB, Winter Is Coming și Sunshine sunt active public și în dashboard, fiecare 15 s. Manifestul media, preflight-ul de release și inventarul worktrees sunt în [raportul consolidat](audits/audio-20261110/report.md). Fișierele sunt în R2 și configurațiile în D1; acest commit adaugă documentația, iar receipt-ul PR-ului consemnează republicarea exactă și verificările finale. Ciornele independente din alte worktrees rămân separate.
