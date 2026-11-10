@@ -16,13 +16,15 @@ Cele cinci înregistrări furnizate de administrator sunt încărcate în R2, ap
 
 Procesarea păstrează înălțimea și ritmul original, cu fade-uri scurte, normalizare și reducere moderată a zgomotului unde a fost solicitată. Sunshine exclude zgomotele mai puternice de la capete și utilizează repararea conservatoare a impulsurilor. Zgomotele care se suprapun peste armonicele melodiei nu pot fi declarate complet eliminate. Nu este o înregistrare sintetizată sau o certificare a drepturilor asupra compoziției.
 
+Etichetele audio generice au fost înlocuite în configurațiile publice cu titlurile din fișele produselor: La Vie en Rose, This Is Halloween, Hedwig's Theme, Game of Thrones - Main Theme și You Are My Sunshine. Aceste etichete sunt folosite și în coș/checkout; numele produsului Intro Harry Potter WB rămâne neschimbat.
+
 Fiecare player a fost verificat în Opera: redare completă până la 15 s, pauză/reluare și fișier persistent în dashboard după reload. Viewporturile de 390 px nu au depășiri orizontale; probele sunt de viewport, nu pe dispozitive fizice iOS/Android. Capturile și copiile prelucrate rămân în artefactele locale `cutiuta-*-audio-20261110`.
 
 ## Cod și verificări de release
 
 Corecția uploadului R2 cu `FixedLengthStream` și sincronizarea playerului cu durata reală sunt integrate prin PR #102. Această consolidare adaugă manifestul și documentația; codul aplicației este același cu runtime-ul validat `06cabaf`.
 
-Preflight curent: 535 teste în 90 de fișiere, typecheck, lint, build și security:check trecute; zero constatări la verificarea sursei și zero vulnerabilități npm. Migrări D1 restante: zero (schema 95). Dry-run, CI, verificarea D1 și probele de după republicare sunt consemnate în receipt-ul PR-ului acestei consolidări. Publicarea folosește `--keep-vars`; nu schimbă planul Free, autentificarea, stocurile, prețurile sau fluxurile financiare.
+Preflight curent: 535 teste în 90 de fișiere, typecheck, lint, build și security:check trecute; zero constatări la verificarea sursei și zero vulnerabilități npm. Migrări D1 restante: zero (schema 95). Dry-run: PASS. Verificarea D1: zero încălcări FK și quick_check OK pentru media/configurațiile audio. Auditul SEO live: 38 URL-uri, zero probleme în criteriile verificate. CI și probele de după republicare sunt consemnate în receipt-ul [PR #103](https://github.com/AvyronTech/cutiutamagica/pull/103). Publicarea folosește `--keep-vars`; nu schimbă planul Free, autentificarea, stocurile, prețurile sau fluxurile financiare.
 
 ## Reconcilierea spațiilor de lucru
 
