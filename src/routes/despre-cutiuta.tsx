@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { BrandMark } from "@/components/site/BrandMark";
 import { safeJsonLd } from "@/lib/product-discovery";
 import { seoHead } from "@/lib/seo-head";
+import { FeatureBoundary } from "@/components/FeatureBoundary";
 const AssemblyStory = lazy(() => import("@/components/site/AssemblyStory"));
 export const Route = createFileRoute("/despre-cutiuta")({
   component: AboutBox,
@@ -58,16 +59,18 @@ function AboutBox() {
           Mergi direct la cutiuțe <ArrowUpRight size={14} />
         </Link>
       </header>
-      <Suspense
-        fallback={
-          <div className="assembly-placeholder">
-            <BrandMark sizes="192px" className="w-48 h-48" />
-            <p>Se conturează povestea…</p>
-          </div>
-        }
-      >
-        <AssemblyStory />
-      </Suspense>
+      <FeatureBoundary name="Prezentarea cutiuței">
+        <Suspense
+          fallback={
+            <div className="assembly-placeholder">
+              <BrandMark sizes="192px" className="w-48 h-48" />
+              <p>Se conturează povestea…</p>
+            </div>
+          }
+        >
+          <AssemblyStory />
+        </Suspense>
+      </FeatureBoundary>
       <section className="about-details">
         <p className="scene-eyebrow">Din atelierul poveștii, în universul tău</p>
         <h2>

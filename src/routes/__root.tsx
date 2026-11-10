@@ -5,7 +5,6 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
-  useRouter,
   useRouterState,
   HeadContent,
   Scripts,
@@ -28,6 +27,7 @@ import { trackGrowthEvent } from "@/lib/growth-events";
 import { subscribeConsent } from "@/lib/cookie-consent";
 import { DEFAULT_SOCIAL_IMAGE } from "@/lib/seo-head";
 import { isProductPath, productIdFromPathname } from "@/lib/product-url";
+import { FeatureBoundary } from "@/components/FeatureBoundary";
 
 const ChatWidget = lazy(() =>
   import("@/components/site/ChatWidget").then((module) => ({ default: module.ChatWidget })),
@@ -82,9 +82,8 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
+function ErrorComponent({ error }: { error: unknown }) {
   console.error(error);
-  const router = useRouter();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -93,13 +92,10 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
           A apărut o eroare neașteptată. Te rugăm să încerci din nou.
         </p>
         <button
-          onClick={() => {
-            router.invalidate();
-            reset();
-          }}
+          onClick={() => window.location.reload()}
           className="mt-6 bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm"
         >
-          Reîncearcă
+          Reîncarcă pagina
         </button>
       </div>
     </div>
@@ -311,9 +307,21 @@ function RootComponent() {
           {isChrome && !isAccountPage && <ContextualMessages />}
           {isChrome && !isAccountPage && <SideScrollMagic />}
           {isChrome && !isProductPage && !isAccountPage && (
-            <Suspense fallback={null}>
-              <ChatWidget />
-            </Suspense>
+            <FeatureBoundary
+              name="Asistența online"
+              fallback={
+                <a
+                  href="mailto:contact@cutiutamagica.eu"
+                  className="fixed bottom-5 right-5 z-40 rounded-xl border bg-background px-4 py-3 text-sm"
+                >
+                  Scrie-ne
+                </a>
+              }
+            >
+              <Suspense fallback={null}>
+                <ChatWidget />
+              </Suspense>
+            </FeatureBoundary>
           )}
           {isChrome && !isAccountPage && <MetricoolTracker pathname={pathname} />}
           {isChrome && <CookieConsent />}

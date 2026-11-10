@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Activity, BarChart3, Link2, RefreshCw, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { Workspace } from "@/admin/Workspace";
+import { FeatureBoundary } from "@/components/FeatureBoundary";
 import { getAnalyticsOverview } from "@/lib/analytics.functions";
 import { useWorkspaceActive } from "@/admin/workspace-activity";
 import { getGrowthSettings, importTrafficMetrics } from "@/lib/growth.functions";
@@ -192,9 +193,11 @@ function Sales({ report }: { report: Report }) {
               return (
                 <div key={m.currency}>
                   <h3 className="mt-3 text-sm text-amber-100">{m.currency}</h3>
-                  <Suspense fallback={<p role="status">Se încarcă graficul…</p>}>
-                    <SalesChart rows={rows} currency={m.currency} />
-                  </Suspense>
+                  <FeatureBoundary name="Graficul vânzărilor">
+                    <Suspense fallback={<p role="status">Se încarcă graficul…</p>}>
+                      <SalesChart rows={rows} currency={m.currency} />
+                    </Suspense>
+                  </FeatureBoundary>
                 </div>
               );
             })

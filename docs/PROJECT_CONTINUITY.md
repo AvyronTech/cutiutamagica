@@ -1,5 +1,7 @@
 # Continuitatea proiectului Cutiuța Magică
 
+11 noiembrie 2026, galerie foto: corecția importului amânat la click, izolare pentru secțiuni opționale și modal accesibil cu restaurarea focusului/scrollului. [Raport și evidența publicării](audits/product-gallery-20261111.md); versiunea efectivă și validarea sunt în receipt-ul PR-ului de galerie.
+
 10 noiembrie 2026, consolidare audio: toate cele cinci fragmente reale sunt active în Test Drive și dashboard, 15 s fiecare. Datele media sunt în R2/D1 și sunt păstrate la republicare. [Manifest, teste și reconcilierea worktrees](audits/audio-20261110/report.md); receipt-ul PR-ului de consolidare identifică versiunea efectiv republicată.
 
 10 noiembrie 2026, audio Pisicuță și Lună: înregistrare reală 15 s publicată și redată în pagina produsului și dashboard. Runtime `06cabaf`, Worker `59a52a7f-3d56-4688-a159-f194be92500a`, schema 95; upload R2 corectat prin stream cu lungime cunoscută și player sincronizat cu durata reală. 535 teste și CI trecute, probe desktop/mobil și Range 206. [Handoff audio](handoff/2026-11-10-kitten-audio.md).

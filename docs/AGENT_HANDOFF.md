@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Galerie foto și secțiuni recuperabile — 11 noiembrie 2026
+
+- Eroarea globală a fost reprodusă prin indisponibilitatea modulului de galerie; există și un URL de build anterior care răspunde 404. Galeria critică nu mai este lazy, folosește modalul Radix cu focus/scroll restaurate, iar modulele opționale au protecție locală și recuperare. [Cauză, modificări, probe și receipt](audits/product-gallery-20261111.md). Fără migrări sau schimbări ale datelor comerciale.
+
 ## Tratarea refuzurilor API media — 10 noiembrie 2026
 
 - Probele de după consolidare au identificat refuzuri asincrone care deveneau 500 în dispatcherul media. Corecția `return await` păstrează răspunsurile 401/403 și acoperă șapte rute/metode cu 14 regresii, fără schimbarea autentificării sau permisiunilor. [Raportul și receipt-ul releaseului](audits/audio-20261110/report.md) separă republicarea inițială de corecția finală.
