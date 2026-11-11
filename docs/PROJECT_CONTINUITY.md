@@ -1,5 +1,9 @@
 # Continuitatea proiectului Cutiuța Magică
 
+11 noiembrie 2026, [pregătirea publicării fluxurilor comerciale](handoff/2026-11-11-commerce-release-preflight.md): schema 95 și checkout Stripe/ramburs verificate live. Revizia locală adaugă recuperarea confirmării Stripe și include migrarea 0096 pentru marketplace.
+
+11 noiembrie 2026, local: [Fluxul fiscal Oblio, Trendyol și eMAG RO](handoff/2026-11-11-marketplace-fiscal-sync.md), cu schema **0096**, imprimare în fișa comenzii și transmitere configurabilă. eMAG 3P este condiționat de utilizatorul API și ieșirea IP autorizată; eMAG 2P rămâne în configurația proprie. Revizia nu este publicată.
+
 11 noiembrie 2026, confidențialitate: politică reorganizată în 11 secțiuni, cuprins desktop/mobil, operator spre final și identitate publică minimă fără mențiune TVA. Conținut verificat față de funcțiile curente și surse legale oficiale; starea publicării și limitele sunt în [handofful reviziei](handoff/2026-11-11-privacy-policy.md) și receipt-ul PR-ului.
 
 11 noiembrie 2026, galerie foto: corecția importului amânat la click, izolare pentru secțiuni opționale și modal accesibil cu restaurarea focusului/scrollului. [Raport și evidența publicării](audits/product-gallery-20261111.md); versiunea efectivă și validarea sunt în receipt-ul PR-ului de galerie.

@@ -280,6 +280,24 @@ export default {
       }),
     );
     ctx.waitUntil(
+      (async () => {
+        const { enqueueMarketplaceInvoices } =
+          await import("./server/services/marketplace-invoices");
+        await enqueueMarketplaceInvoices(env);
+      })().catch((error: unknown) =>
+        console.error("marketplace.invoice_queue_failed", safeErrorMetadata(error)),
+      ),
+    );
+    ctx.waitUntil(
+      (async () => {
+        const enabled = await env.DB.prepare(
+          "SELECT 1 FROM emag_sync_state WHERE id=1 AND enabled=1",
+        ).first();
+        if (enabled)
+          await env.COMMERCE_EVENTS.send({ version: 7, type: "emag.poll" }, { delaySeconds: 90 });
+      })().catch((error: unknown) => console.error("emag.queue_failed", safeErrorMetadata(error))),
+    );
+    ctx.waitUntil(
       enqueueScheduledMaintenance(env).catch((error: unknown) => {
         console.error("maintenance.queue_failed", safeErrorMetadata(error));
       }),

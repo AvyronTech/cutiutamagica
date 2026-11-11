@@ -63,7 +63,13 @@ function download(value: unknown, name: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export function CredentialPanel({ providers }: { providers: CredentialProvider[] }) {
+export function CredentialPanel({
+  providers,
+  hideVerify = false,
+}: {
+  providers: CredentialProvider[];
+  hideVerify?: boolean;
+}) {
   const query = useSettings(),
     client = useQueryClient();
   const save = useServerFn(saveIntegrationCredential),
@@ -147,14 +153,16 @@ export function CredentialPanel({ providers }: { providers: CredentialProvider[]
             <button className={button} disabled={busy || !query.data?.secureStorageReady}>
               Salvează
             </button>
-            <button
-              type="button"
-              className={button}
-              disabled={busy || !state?.configured}
-              onClick={() => check(provider)}
-            >
-              Verifică
-            </button>
+            {!hideVerify && (
+              <button
+                type="button"
+                className={button}
+                disabled={busy || !state?.configured}
+                onClick={() => check(provider)}
+              >
+                Verifică
+              </button>
+            )}
           </form>
         );
       })}

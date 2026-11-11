@@ -364,3 +364,33 @@ export async function emitOblioInvoice(
     pdfUrl: result.data.link ?? null,
   };
 }
+
+export async function readOblioInvoiceLink(
+  env: CommerceEnv,
+  input: Pick<OblioCollectionInput, "accountEmail" | "taxId" | "series" | "number">,
+): Promise<string> {
+  const token = await accessToken(env, input.accountEmail);
+  const params = new URLSearchParams({
+    cif: input.taxId,
+    seriesName: input.series,
+    number: input.number,
+  });
+  const response = await fetchWithTimeout(`${OBLIO_API}/docs/invoice?${params}`, {
+    redirect: "manual",
+    headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+  });
+  const result = (await readProviderJson(response)) as OblioInvoiceResponse;
+  if (
+    !response.ok ||
+    result.status !== 200 ||
+    result.data?.seriesName !== input.series ||
+    String(result.data.number) !== input.number ||
+    !result.data.link
+  )
+    throw new ProviderError(
+      "Oblio nu a confirmat PDF-ul facturii cerute.",
+      "OBLIO_INVOICE_UNVERIFIED",
+      409,
+    );
+  return result.data.link;
+}

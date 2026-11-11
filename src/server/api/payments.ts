@@ -12,6 +12,7 @@ import {
 import {
   createStripeCheckoutSession,
   expireStripeCheckoutSession,
+  readStripeCheckoutSession,
   verifyStripeWebhook,
 } from "../integrations/stripe";
 import { completeStripeCardSetup } from "../services/customer-stripe-cards";
@@ -76,15 +77,19 @@ export function safeCheckoutUrl(url: string, provider: PaymentProvider, environm
     throw new ProviderError("Adresa de plată nu este disponibilă.", "INVALID_CHECKOUT_URL", 502);
   return parsed.href;
 }
+function readPaymentOrder(env: CommerceEnv, orderId: string) {
+  return env.DB.prepare(
+    `SELECT *, EXISTS(SELECT 1 FROM order_tags t WHERE t.order_id=orders.id AND t.tag='shipping_quote_required') AS shipping_pending FROM orders WHERE id=?1`,
+  )
+    .bind(orderId)
+    .first<Order>();
+}
+
 async function orderFor(request: Request, env: CommerceEnv) {
   if (request.headers.get("origin") !== new URL(request.url).origin)
     throw new ProviderError("Cerere nepermisă.", "ORIGIN_NOT_ALLOWED", 403);
   const input = capability.parse(await boundedJson(request, 2048));
-  const order = await env.DB.prepare(
-    `SELECT *, EXISTS(SELECT 1 FROM order_tags t WHERE t.order_id=orders.id AND t.tag='shipping_quote_required') AS shipping_pending FROM orders WHERE id=?1`,
-  )
-    .bind(input.orderId)
-    .first<Order>();
+  const order = await readPaymentOrder(env, input.orderId);
   if (!order || !constantTimeEqual(order.public_token, input.publicToken))
     throw new ProviderError("Comanda nu a fost găsită.", "ORDER_NOT_FOUND", 404);
   return order;
@@ -251,7 +256,7 @@ async function settle(
   amount: unknown,
   currency: unknown,
   eventId: string,
-): Promise<string> {
+): Promise<string | null> {
   const attempt = await env.DB.prepare(
     "SELECT * FROM payment_attempts WHERE provider=?1 AND external_payment_id=?2",
   )
@@ -273,7 +278,7 @@ async function settle(
     ["refunded", "partially_refunded"].includes(order.payment_status)
   )
     throw new ProviderError("Confirmarea necesită verificare.", "PAYMENT_MISMATCH", 409);
-  await env.DB.batch([
+  const [, , orderUpdate] = await env.DB.batch([
     env.DB.prepare(
       `UPDATE payment_attempts SET status='captured',updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id=?1 AND status IN ('created','pending','authorized','captured') AND EXISTS(SELECT 1 FROM orders WHERE id=?2 AND total_bani=?3 AND currency=?4 AND order_status!='cancelled' AND payment_status NOT IN ('refunded','partially_refunded'))`,
     ).bind(attempt.id, order.id, amount as number, attempt.currency),
@@ -304,7 +309,7 @@ async function settle(
     .first<{ confirmed: number }>();
   if (!confirmed)
     throw new ProviderError("Confirmarea necesită verificare.", "PAYMENT_MISMATCH", 409);
-  return order.id;
+  return orderUpdate.meta.changes ? order.id : null;
 }
 async function expireAttempt(
   env: CommerceEnv,
@@ -544,58 +549,106 @@ async function webhook(
   )
     .bind(provider, eventId)
     .run();
-  if (paidOrderId) {
-    const orderId = paidOrderId;
-    const outbox = await env.DB.prepare(
-      `SELECT id FROM outbox_events WHERE aggregate_type='order' AND aggregate_id=?1
-       AND event_type='order.created' AND destination='admin.notification' LIMIT 1`,
-    )
-      .bind(orderId)
-      .first<{ id: string }>();
-    if (outbox) {
-      try {
-        await env.COMMERCE_EVENTS.send({ version: 1, outboxId: outbox.id });
-        await markOrderNotificationQueued(env.DB, outbox.id);
-      } catch (error) {
-        console.error("payment.admin_notification_queue_failed", {
-          orderId,
-          error: safeErrorMetadata(error),
-        });
-      }
-    }
+  if (paidOrderId) await afterPaymentCapture(env, paidOrderId, ctx);
+  return json({ received: true });
+}
+async function afterPaymentCapture(
+  env: CommerceEnv,
+  orderId: string,
+  ctx?: Pick<ExecutionContext, "waitUntil">,
+) {
+  const outbox = await env.DB.prepare(
+    `SELECT id FROM outbox_events WHERE aggregate_type='order' AND aggregate_id=?1
+     AND event_type='order.created' AND destination='admin.notification' LIMIT 1`,
+  )
+    .bind(orderId)
+    .first<{ id: string }>();
+  if (outbox) {
     try {
-      await env.COMMERCE_EVENTS.send({ version: 2, type: "order.email", orderId });
+      await env.COMMERCE_EVENTS.send({ version: 1, outboxId: outbox.id });
+      await markOrderNotificationQueued(env.DB, outbox.id);
     } catch (error) {
-      console.error("payment.order_email_queue_failed", {
+      console.error("payment.admin_notification_queue_failed", {
         orderId,
         error: safeErrorMetadata(error),
       });
-      const fallback = Promise.all([
-        sendOrderConfirmation(env, orderId),
-        sendOrderOwnerNotification(env, orderId),
-      ])
-        .then(() => undefined)
-        .catch((sendError: unknown) => {
-          console.error("payment.order_email_fallback_failed", {
-            orderId,
-            error: safeErrorMetadata(sendError),
-          });
-        });
-      if (ctx) ctx.waitUntil(fallback);
-      else await fallback;
     }
-    // Oblio is independent of the processor response. The hourly job retries interrupted work.
-    const accounting = syncPaidInvoiceCollection(env, orderId).catch((error: unknown) => {
-      console.error("payment.oblio_sync_pending", {
-        orderId,
-        code: error instanceof ProviderError ? error.code : "UNKNOWN",
-      });
-    });
-    if (ctx) ctx.waitUntil(accounting);
-    else await accounting;
   }
-  return json({ received: true });
+  try {
+    await env.COMMERCE_EVENTS.send({ version: 2, type: "order.email", orderId });
+  } catch (error) {
+    console.error("payment.order_email_queue_failed", {
+      orderId,
+      error: safeErrorMetadata(error),
+    });
+    const fallback = Promise.all([
+      sendOrderConfirmation(env, orderId),
+      sendOrderOwnerNotification(env, orderId),
+    ])
+      .then(() => undefined)
+      .catch((sendError: unknown) => {
+        console.error("payment.order_email_fallback_failed", {
+          orderId,
+          error: safeErrorMetadata(sendError),
+        });
+      });
+    if (ctx) ctx.waitUntil(fallback);
+    else await fallback;
+  }
+  // Oblio is independent of the processor response. The hourly job retries interrupted work.
+  const accounting = syncPaidInvoiceCollection(env, orderId).catch((error: unknown) => {
+    console.error("payment.oblio_sync_pending", {
+      orderId,
+      code: error instanceof ProviderError ? error.code : "UNKNOWN",
+    });
+  });
+  if (ctx) ctx.waitUntil(accounting);
+  else await accounting;
 }
+
+async function reconcileStripeCheckout(
+  env: CommerceEnv,
+  order: Order,
+  attempt: Attempt,
+  ctx?: Pick<ExecutionContext, "waitUntil">,
+) {
+  if (!attempt.external_payment_id || attempt.environment !== paymentEnvironment(env)) return;
+  // The database claim also throttles concurrent polls from separate devices.
+  const claim = await env.DB.prepare(
+    `UPDATE payment_attempts SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+     WHERE id=?1 AND status='pending' AND datetime(updated_at)<=datetime('now','-10 seconds')`,
+  )
+    .bind(attempt.id)
+    .run();
+  if (!claim.meta.changes) return;
+  const session = await readStripeCheckoutSession(env, attempt.external_payment_id);
+  if (
+    session.client_reference_id !== order.id ||
+    session.amount_total !== order.total_bani ||
+    session.currency?.toUpperCase() !== order.currency
+  )
+    throw new ProviderError("Sesiunea nu corespunde comenzii.", "PAYMENT_MISMATCH", 409);
+
+  if (session.status === "complete" && session.payment_status === "paid") {
+    const captured = await settle(
+      env,
+      "stripe",
+      attempt.external_payment_id,
+      session.amount_total,
+      session.currency,
+      `stripe-reconciliation/${attempt.id}`,
+    );
+    if (captured) await afterPaymentCapture(env, captured, ctx);
+  } else if (session.status === "expired" && session.payment_status === "unpaid") {
+    await expireAttempt(
+      env,
+      "stripe",
+      attempt.external_payment_id,
+      `stripe-reconciliation/${attempt.id}`,
+    );
+  }
+}
+
 export async function handlePayments(
   request: Request,
   env: CommerceEnv,
@@ -635,7 +688,25 @@ export async function handlePayments(
       return json({ data: { status: "cancelled" } });
     }
     if (path.endsWith("/status")) {
-      const order = await orderFor(request, env);
+      let order = await orderFor(request, env);
+      let attempt = await attemptFor(env, order.id);
+      if (
+        order.order_status === "pending" &&
+        order.payment_status === "unpaid" &&
+        order.payment_method_requested === "card" &&
+        !order.shipping_pending &&
+        attempt?.provider === "stripe" &&
+        attempt.status === "pending"
+      ) {
+        try {
+          await reconcileStripeCheckout(env, order, attempt, ctx);
+          order = (await readPaymentOrder(env, order.id)) ?? order;
+          attempt = await attemptFor(env, order.id);
+        } catch (error) {
+          // The signed webhook can still complete payment if the provider lookup is unavailable.
+          console.error("payment.stripe_reconciliation_pending", safeErrorMetadata(error));
+        }
+      }
       const status =
         order.payment_status === "paid"
           ? "paid"
@@ -644,7 +715,6 @@ export async function handlePayments(
             : order.order_status === "cancelled"
               ? "cancelled"
               : "pending";
-      const attempt = await attemptFor(env, order.id);
       return json({
         data: {
           orderNumber: order.order_number,

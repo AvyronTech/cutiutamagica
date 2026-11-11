@@ -343,3 +343,34 @@ export async function getTrendyolStream(
     nextCursor: typeof raw.nextCursor === "string" ? raw.nextCursor : null,
   };
 }
+
+export async function uploadTrendyolInvoice(
+  c: TrendyolCredentials,
+  packageId: string,
+  pdf: { bytes: Uint8Array<ArrayBuffer>; filename: string },
+): Promise<void> {
+  if (!/^\d{1,20}$/.test(packageId)) throw new TrendyolReviewError("INVALID_PACKAGE_ID");
+  const body = new FormData();
+  body.set("shipmentPackageId", packageId);
+  body.set("file", new Blob([pdf.bytes], { type: "application/pdf" }), pdf.filename);
+  const response = await fetchWithTimeout(
+    `https://apigw.trendyol.com/integration/sellers/${c.sellerId}/seller-invoice-file`,
+    {
+      method: "POST",
+      redirect: "manual",
+      headers: {
+        Authorization: `Basic ${btoa(c.apiKey + ":" + c.apiSecret)}`,
+        storeFrontCode: c.storeFrontCode,
+        "User-Agent": `${c.sellerId} - CutiutaMagicaSelfIntegration`,
+      },
+      body,
+    },
+  );
+  await response.body?.cancel();
+  if (![200, 201].includes(response.status))
+    throw new ProviderError(
+      "Trendyol nu a confirmat încărcarea facturii.",
+      `TRENDYOL_INVOICE_HTTP_${response.status}`,
+      409,
+    );
+}

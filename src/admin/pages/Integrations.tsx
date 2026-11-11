@@ -13,6 +13,7 @@ import {
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { CommercePublicConfig } from "@/lib/commerce-operations-contracts";
 import type { AdminChannelMetric, AdminIntegrationAccount } from "@/lib/admin-contracts";
 import {
   getAdminIntegrations,
@@ -65,7 +66,8 @@ const OPERATIONAL_PROVIDERS: Record<
 };
 
 function StatusPill({ status }: { status: string }) {
-  const ready = status === "active" || status === "connected";
+  const ready =
+    status === "active" || status === "connected" || status === "Disponibil în checkout";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium ${
@@ -325,6 +327,16 @@ export default function Integrations() {
     queryFn: () => fetchOperations(),
     staleTime: 30_000,
   });
+  const checkoutQuery = useQuery({
+    queryKey: ["commerce", "payment-options"],
+    queryFn: async () => {
+      const response = await fetch("/api/v1/commerce/config");
+      if (!response.ok) throw new Error("Starea checkoutului nu este disponibilă.");
+      const { data } = (await response.json()) as { data: CommercePublicConfig };
+      return data.payments.options;
+    },
+    staleTime: 30_000,
+  });
   const data = integrationsQuery.data;
   const operationalProviders = (operationsQuery.data?.providers ?? []).filter(
     (provider) =>
@@ -353,7 +365,13 @@ export default function Integrations() {
         </div>
         <button
           type="button"
-          onClick={() => Promise.all([integrationsQuery.refetch(), operationsQuery.refetch()])}
+          onClick={() =>
+            Promise.all([
+              integrationsQuery.refetch(),
+              operationsQuery.refetch(),
+              checkoutQuery.refetch(),
+            ])
+          }
           disabled={integrationsQuery.isFetching || operationsQuery.isFetching}
           className="flex items-center justify-center gap-2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs text-slate-200 disabled:opacity-50"
         >
@@ -380,13 +398,20 @@ export default function Integrations() {
               label: provider.provider,
               route: "/admin/integrations" as const,
             };
-            const effectiveStatus = provider.secretConfigured
-              ? provider.status === "degraded"
-                ? "degraded"
-                : provider.status === "active"
-                  ? "active"
-                  : "ready_for_test"
-              : "setup_required";
+            const checkoutId =
+              provider.provider === "revolut_merchant" ? "revolut_pay" : provider.provider;
+            const shownAtCheckout =
+              provider.capability === "payments" &&
+              checkoutQuery.data?.some((option) => option.id === checkoutId);
+            const effectiveStatus = shownAtCheckout
+              ? "active"
+              : provider.secretConfigured
+                ? provider.status === "degraded"
+                  ? "degraded"
+                  : provider.status === "active"
+                    ? "active"
+                    : "ready_for_test"
+                : "setup_required";
             return (
               <article key={provider.id} className="glass-card rounded-xl p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -394,7 +419,9 @@ export default function Integrations() {
                     <h3 className="text-sm font-semibold text-white">{meta.label}</h3>
                     <p className="mt-1 text-xs text-slate-500">{provider.capability}</p>
                   </div>
-                  <StatusPill status={effectiveStatus} />
+                  <StatusPill
+                    status={shownAtCheckout ? "Disponibil în checkout" : effectiveStatus}
+                  />
                 </div>
                 <dl className="mt-4 space-y-2 text-xs">
                   <div className="flex justify-between gap-3">

@@ -1,10 +1,9 @@
 import { safeErrorMetadata } from "@/server/security/logging";
 import { emitOblioInvoice } from "@/server/integrations/oblio";
 import { checkoutSettingsSchema } from "@/lib/checkout-settings";
+import { archiveFiscalPdf } from "./fiscal-pdf";
 import { syncPaidInvoiceCollection } from "@/server/services/oblio-payment-sync";
 import {
-  digestHex,
-  fetchWithTimeout,
   logProviderOperation,
   ProviderError,
   type CommerceEnv,
@@ -64,30 +63,34 @@ export async function issueInvoiceForOrder(
   const entity = entityResult.results[0];
   if (!order)
     throw new ProviderError("Comanda nu există sau este anulată.", "ORDER_NOT_INVOICEABLE", 404);
-  if (order.channel_id === "channel_trendyol") {
-    const external = await env.DB.prepare(
-      `SELECT s.review_code,
-      EXISTS(SELECT 1 FROM marketplace_packages p WHERE p.order_id=s.order_id AND COALESCE(p.invoice_number,'')!='') AS externally_invoiced,
-      i.updated_at AS checked_at FROM marketplace_order_sources s
-      LEFT JOIN trendyol_sync_issues i ON i.external_order_id=s.external_order_id AND i.status='resolved'
-      WHERE s.order_id=?1`,
-    )
-      .bind(orderId)
-      .first<{
-        review_code: string | null;
-        externally_invoiced: number;
-        checked_at: string | null;
-      }>();
-    if (
-      !external ||
-      external.review_code ||
-      external.externally_invoiced ||
-      !external.checked_at ||
-      Date.now() - Date.parse(external.checked_at) > 15 * 60 * 1000
-    )
+  const marketplace = ["channel_trendyol", "channel_emag"].includes(String(order.channel_id));
+  if (marketplace) {
+    if (env.APP_ENV !== "production")
       throw new ProviderError(
-        "Sincronizează și verifică întâi comanda în panoul Trendyol. O factură existentă în platformă nu se emite încă o dată.",
-        "TRENDYOL_INVOICE_REVIEW_REQUIRED",
+        "Emiterea fiscală marketplace este dezactivată în mediul de test.",
+        "MARKETPLACE_LIVE_REQUIRED",
+        409,
+      );
+    const externalId = value(order, "external_order_id");
+    if (!externalId)
+      throw new ProviderError(
+        "Comanda nu are o referință marketplace verificată.",
+        "MARKETPLACE_INVOICE_REVIEW",
+        409,
+      );
+    const { verifyTrendyolFiscalOrder, verifyEmagFiscalOrder } =
+      await import("./marketplace-invoices");
+    const verify =
+      order.channel_id === "channel_trendyol" ? verifyTrendyolFiscalOrder : verifyEmagFiscalOrder;
+    await verify(env, orderId, externalId, amount(order, "total_bani"), value(order, "currency"));
+    const localTotal = lineResult.results.reduce(
+      (sum, line) => sum + amount(line, "line_total_bani"),
+      amount(order, "shipping_bani"),
+    );
+    if (localTotal !== amount(order, "total_bani"))
+      throw new ProviderError(
+        "Liniile facturii nu însumează valoarea marketplace.",
+        "MARKETPLACE_INVOICE_TOTAL_MISMATCH",
         409,
       );
   }
@@ -182,15 +185,32 @@ export async function issueInvoiceForOrder(
         companyTaxId: value(order, "tax_id") || null,
       },
       lines: [
-        ...lineResult.results.map((line) => ({
-          name: value(line, "product_name"),
-          sku: value(line, "sku"),
-          quantity: amount(line, "quantity"),
-          unitPrice: amount(line, "line_total_bani") / Math.max(1, amount(line, "quantity")) / 100,
-          vatRate: amount(line, "tax_rate_bps") / 100,
-          itemType: (value(line, "item_type") === "service" ? "service" : "product") as
-            "service" | "product",
-        })),
+        ...lineResult.results.flatMap((line) => {
+          const quantity = Math.max(1, amount(line, "quantity"));
+          const total = amount(line, "line_total_bani");
+          const base = {
+            name: value(line, "product_name"),
+            sku: value(line, "sku"),
+            vatRate: amount(line, "tax_rate_bps") / 100,
+            itemType: (value(line, "item_type") === "service" ? "service" : "product") as
+              "service" | "product",
+          };
+          const remainder = marketplace ? total % quantity : 0;
+          return remainder
+            ? [
+                {
+                  ...base,
+                  quantity: quantity - remainder,
+                  unitPrice: Math.floor(total / quantity) / 100,
+                },
+                {
+                  ...base,
+                  quantity: remainder,
+                  unitPrice: (Math.floor(total / quantity) + 1) / 100,
+                },
+              ]
+            : [{ ...base, quantity, unitPrice: total / quantity / 100 }];
+        }),
         ...(amount(order, "shipping_bani") > 0
           ? [
               {
@@ -312,46 +332,11 @@ export async function issueInvoiceForOrder(
     await env.DB.batch(statements);
     if (result.pdfUrl) {
       try {
-        const response = await fetchWithTimeout(
-          result.pdfUrl,
-          { headers: { accept: "application/pdf" } },
-          15_000,
+        await archiveFiscalPdf(
+          env,
+          { id: invoiceId, invoice_number: invoiceNumber },
+          new URL(result.pdfUrl),
         );
-        const declaredSize = Number(response.headers.get("content-length") ?? 0);
-        if (!response.ok || (declaredSize > 0 && declaredSize > 10_000_000)) {
-          throw new Error(`PDF Oblio indisponibil (${response.status}).`);
-        }
-        const bytes = await response.arrayBuffer();
-        if (
-          bytes.byteLength > 10_000_000 ||
-          new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-"
-        ) {
-          throw new Error("Fișierul Oblio nu este un PDF valid.");
-        }
-        const documentId = crypto.randomUUID();
-        const r2Key = `invoices/${nowIso.slice(0, 4)}/${invoiceId}.pdf`;
-        const checksum = await digestHex("SHA-256", bytes);
-        await env.MEDIA.put(r2Key, bytes, {
-          httpMetadata: { contentType: "application/pdf", cacheControl: "private, no-store" },
-          customMetadata: { invoiceId, invoiceNumber },
-        });
-        await env.DB.prepare(
-          `INSERT INTO business_documents (
-             id, document_type, entity_type, entity_id, r2_key, filename, mime_type,
-             size_bytes, checksum_sha256, retention_class, created_by, created_at
-           ) VALUES (?1, 'invoice_pdf', 'invoice', ?2, ?3, ?4, 'application/pdf', ?5, ?6, 'fiscal', ?7, ?8)`,
-        )
-          .bind(
-            documentId,
-            invoiceId,
-            r2Key,
-            `${invoiceNumber}.pdf`,
-            bytes.byteLength,
-            checksum,
-            admin.id,
-            nowIso,
-          )
-          .run();
       } catch (error) {
         console.error("invoice.pdf_archive_failed", { invoiceId, error: safeErrorMetadata(error) });
       }
@@ -366,7 +351,7 @@ export async function issueInvoiceForOrder(
       status: "succeeded",
       externalId: invoiceNumber,
       responseCode: 200,
-      responseSummary: { invoiceNumber, pdfUrl: result.pdfUrl },
+      responseSummary: { invoiceNumber },
     });
     try {
       await syncPaidInvoiceCollection(env, orderId);
@@ -375,6 +360,14 @@ export async function issueInvoiceForOrder(
         orderId,
         code: error instanceof ProviderError ? error.code : "UNKNOWN",
       });
+    }
+    if (marketplace) {
+      try {
+        const { queueMarketplaceInvoice } = await import("./marketplace-invoices");
+        await queueMarketplaceInvoice(env, orderId);
+      } catch (error) {
+        console.error("marketplace.invoice_queue_failed", safeErrorMetadata(error));
+      }
     }
     return { invoiceId, invoiceNumber, pdfUrl: result.pdfUrl };
   } catch (error) {

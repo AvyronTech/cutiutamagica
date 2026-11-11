@@ -1093,7 +1093,8 @@ export async function updateOrderStatus(
   const current = await db
     .prepare(
       `
-    SELECT channel_id, order_status, fulfillment_status, payment_method_requested, payment_status, paid_bani, total_bani, version
+    SELECT channel_id, order_status, fulfillment_status, payment_method_requested, payment_status, paid_bani, total_bani, version,
+      EXISTS(SELECT 1 FROM emag_order_sources e WHERE e.order_id=orders.id) AS managed_emag
     FROM orders
     WHERE id = ?1
   `,
@@ -1107,6 +1108,8 @@ export async function updateOrderStatus(
       "Statusul Trendyol se actualizează prin sincronizarea API din Comenzi → Trendyol.",
     );
   }
+  if (numberValue(current.managed_emag) === 1)
+    throw new Error("Statusul comenzilor sincronizate eMAG se preia din API.");
   if (numberValue(current.version) !== input.expectedVersion) {
     throw new Error("ORDER_VERSION_CONFLICT");
   }

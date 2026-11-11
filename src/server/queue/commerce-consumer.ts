@@ -47,7 +47,9 @@ type CommerceQueueMessage =
   | TransactionalEmailQueueMessage
   | AvyronQueueMessage
   | TrendyolPollMessage
-  | ScheduledMaintenanceMessage;
+  | ScheduledMaintenanceMessage
+  | { version: 7; type: "marketplace.invoice"; orderId: string }
+  | { version: 7; type: "emag.poll" };
 
 type OutboxRow = Record<string, string | number | null>;
 
@@ -223,6 +225,23 @@ async function processMessage(db: D1Database, outboxId: string): Promise<"ack" |
 
 export async function consumeCommerceEvents(batch: MessageBatch<unknown>, env: Env): Promise<void> {
   for (const message of batch.messages) {
+    const work = message.body as { version?: unknown; type?: unknown; orderId?: unknown } | null;
+    if (work?.version === 7) {
+      try {
+        if (work.type === "marketplace.invoice" && typeof work.orderId === "string") {
+          const { processMarketplaceInvoice } = await import("../services/marketplace-invoices");
+          await processMarketplaceInvoice(env as CommerceEnv, work.orderId);
+        } else if (work.type === "emag.poll") {
+          const { pollEmagOrders } = await import("../services/emag-orders");
+          await pollEmagOrders(env as CommerceEnv);
+        }
+        message.ack();
+      } catch (error) {
+        console.error("marketplace.sync_failed", safeErrorMetadata(error));
+        message.retry({ delaySeconds: 180 });
+      }
+      continue;
+    }
     if (isTrendyolPoll(message.body)) {
       try {
         await processTrendyolPoll(env as CommerceEnv, message.body);

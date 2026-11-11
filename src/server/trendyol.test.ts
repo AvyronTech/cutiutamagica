@@ -19,6 +19,11 @@ import { handleTrendyol } from "./api/trendyol";
 import { authenticateAdminRequest } from "@/lib/admin-auth";
 import { AdminAuthError } from "@/lib/admin-password-auth-service";
 import { issueSmartShipAwb } from "./services/smartship-fulfillment";
+import { importEmagOrder, linkEmagAwb, verifyEmagConnection } from "./services/emag-orders";
+import { emagAttachInvoice, emagAttachments } from "./integrations/emag";
+import { handleMarketplaceFiscal } from "./api/marketplace-fiscal";
+import { sendMarketplaceInvoice } from "./services/marketplace-invoices";
+import { readFiscalPdf, safeOblioPdfUrl } from "./services/fiscal-pdf";
 import { updateOrderStatus } from "./db/admin.repository";
 vi.mock("@/lib/admin-auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/admin-auth")>()),
@@ -26,13 +31,15 @@ vi.mock("@/lib/admin-auth", async (importOriginal) => ({
 }));
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("./services/growth-settings", () => ({
-  credential: vi.fn(async () =>
-    JSON.stringify({
-      sellerId: "123",
-      apiKey: "synthetic-key",
-      apiSecret: "synthetic-secret",
-      storeFrontCode: "RO",
-    }),
+  credential: vi.fn(async (_env, provider: string) =>
+    provider === "emag"
+      ? JSON.stringify({ username: "test-api@example.test", password: "synthetic-only" })
+      : JSON.stringify({
+          sellerId: "123",
+          apiKey: "synthetic-key",
+          apiSecret: "synthetic-secret",
+          storeFrontCode: "RO",
+        }),
   ),
 }));
 let sql: DatabaseSync, db: D1Database;
@@ -99,20 +106,26 @@ beforeEach(() => {
     "UPDATE product_variants SET inventory_policy='deny' WHERE sku='CM-KITTEN'; UPDATE inventory_levels SET on_hand_quantity=20,reserved_quantity=0 WHERE variant_id='variant_kitten_standard'",
   );
   const prepare = (query: string) => {
-    let values: Record<string, SQLInputValue> = {};
+    let values: SQLInputValue[] = [];
+    const invoke = (mode: "get" | "all" | "run") => {
+      const statement = sql.prepare(query);
+      return /\?\d/.test(query)
+        ? statement[mode](Object.fromEntries(values.map((x, i) => [`?${i + 1}`, x])))
+        : statement[mode](...values);
+    };
     return {
       bind(...v: SQLInputValue[]) {
-        values = Object.fromEntries(v.map((x, i) => [`?${i + 1}`, x]));
+        values = v;
         return this;
       },
       async first() {
-        return sql.prepare(query).get(values) ?? null;
+        return invoke("get") ?? null;
       },
       async all() {
-        return { results: sql.prepare(query).all(values), success: true };
+        return { results: invoke("all"), success: true };
       },
       async run() {
-        const r = sql.prepare(query).run(values);
+        const r = invoke("run") as { changes: number };
         return { success: true, meta: { changes: Number(r.changes) } };
       },
     };
@@ -647,3 +660,232 @@ describe("Trendyol administrative API permissions", () => {
   });
 });
 const endpoint = "/api/v1/admin/trendyol";
+
+const emagOrder = () => ({
+  id: 2221,
+  type: 3,
+  status: 1,
+  is_complete: 1,
+  payment_status: 0,
+  payment_mode_id: 3,
+  date: "2026-11-11 09:30:00",
+  modified: "2026-11-11 09:30:00",
+  shipping_tax: 13.5,
+  delivery_mode: "courier",
+  products: [{ id: 11, ext_part_number: "CM-KITTEN", quantity: 2, sale_price: 33.25, status: 1 }],
+  customer: {
+    name: "Client demo",
+    billing_street: "Stradă de test",
+    billing_city: "Iași",
+    billing_country: "RO",
+    email: "irreversible-digest.example.test",
+    shipping_street: "Stradă test",
+    shipping_city: "Iași",
+  },
+});
+const physical = () =>
+  sql
+    .prepare(
+      "SELECT on_hand_quantity AS available,reserved_quantity AS reserved FROM inventory_levels WHERE variant_id='variant_kitten_standard'",
+    )
+    .get();
+
+describe("marketplace fiscal and stock safeguards", () => {
+  it("imports the marketplace sale price without treating an eMAG payment as collected, then consumes stock exactly once", async () => {
+    const o = emagOrder();
+    await importEmagOrder(db, o, false);
+    await importEmagOrder(db, o, false);
+    expect(physical()).toEqual({ available: 20, reserved: 2 });
+    expect(
+      sql
+        .prepare(
+          "SELECT total_bani,customer_email,paid_bani,payment_status FROM orders WHERE id='emag-2221'",
+        )
+        .get(),
+    ).toEqual({ total_bani: 8000, customer_email: null, paid_bani: 0, payment_status: "unpaid" });
+    const done = { ...o, status: 4, payment_status: 1, modified: "2026-11-11 10:00:00" };
+    await importEmagOrder(db, done, true);
+    await importEmagOrder(db, done, true);
+    await importEmagOrder(db, o, false);
+    expect(physical()).toEqual({ available: 18, reserved: 0 });
+    expect(
+      sql
+        .prepare("SELECT COUNT(*) AS n FROM inventory_movements WHERE reference_id='emag-2221'")
+        .get(),
+    ).toEqual({ n: 1 });
+    expect(
+      sql.prepare("SELECT paid_bani,payment_status FROM orders WHERE id='emag-2221'").get(),
+    ).toEqual({ paid_bani: 0, payment_status: "authorized" });
+  });
+
+  it("blocks ambiguous promotions, releases cancellation once, and cannot recreate stock from stale reads", async () => {
+    const o = emagOrder();
+    await expect(
+      importEmagOrder(db, { ...o, vouchers: [{ code: "DEMO" }] }, false),
+    ).rejects.toMatchObject({ code: "EMAG_FINANCIAL_REVIEW" });
+    await importEmagOrder(db, o, false);
+    const changed = {
+      ...o,
+      modified: "2026-11-11 09:35:00",
+      products: [{ ...o.products[0], sale_price: 32.25 }],
+    };
+    expect(await importEmagOrder(db, changed, false)).toMatchObject({
+      reviewCode: "EMAG_CHANGED_FINANCIALS",
+    });
+    const cancelled = { ...o, status: 0, modified: "2026-11-11 10:00:00" };
+    await importEmagOrder(db, cancelled, false);
+    await importEmagOrder(db, cancelled, false);
+    await importEmagOrder(db, o, false);
+    expect(physical()).toEqual({ available: 20, reserved: 0 });
+  });
+
+  it("refuses external PDF redirects and non-PDF responses", async () => {
+    expect(() => safeOblioPdfUrl("https://www.oblio.eu.evil.test/utils/show_file/")).toThrow();
+    expect(() => safeOblioPdfUrl("https://www.oblio.eu/redirect")).toThrow();
+    await expect(readFiscalPdf(new Response("<html>Failed</html>"))).rejects.toMatchObject({
+      code: "FISCAL_PDF_INVALID",
+    });
+  });
+
+  it.each([201, 409])(
+    "uses the official Trendyol PDF endpoint once even if the outcome needs review (%s)",
+    async (code) => {
+      const original = raw();
+      const normalized = normalizeTrendyolPackage(original, "123");
+      const order = await importTrendyolOrder(db, [normalized]);
+      const orderId = order.orderId;
+      sql
+        .prepare(
+          "INSERT INTO invoices(id,order_id,invoice_number,status,issued_at,external_provider,total_bani) VALUES('invoice-demo',?,'CM-99999','issued','2026-11-11T00:00:00Z','oblio',6650)",
+        )
+        .run(orderId);
+      sql.exec(
+        "INSERT INTO business_documents(id,document_type,entity_type,entity_id,r2_key,filename,mime_type,size_bytes,retention_class) VALUES('demo-doc','invoice_pdf','invoice','invoice-demo','invoices/oblio/demo.pdf','CM-99999.pdf','application/pdf',12,'fiscal')",
+      );
+      const pdf = "%PDF-1.7\n%%EOF";
+      const runtime = {
+        DB: db,
+        APP_ENV: "production",
+        MEDIA: { get: async () => ({ body: new Response(pdf).body, size: pdf.length }) },
+      } as unknown as Parameters<typeof sendMarketplaceInvoice>[0];
+      const post = vi.fn();
+      const fetcher = vi.fn(async (url: string, init: RequestInit) => {
+        if (init.method === "POST") {
+          post(url, init);
+          return new Response(null, { status: code });
+        }
+        return Response.json({ content: [original], totalPages: 1 });
+      });
+      vi.stubGlobal("fetch", fetcher);
+      const delivery = await sendMarketplaceInvoice(runtime, orderId, null);
+      expect(delivery.status).toBe(code === 201 ? "confirmed" : "review");
+      await sendMarketplaceInvoice(runtime, orderId, null);
+      expect(post).toHaveBeenCalledTimes(1);
+      const [url, req] = post.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe("https://apigw.trendyol.com/integration/sellers/123/seller-invoice-file");
+      expect((req.body as FormData).get("shipmentPackageId")).toBe("10001");
+      expect((req.body as FormData).get("file")).toMatchObject({
+        name: "CM-99999.pdf",
+        type: "application/pdf",
+      });
+    },
+  );
+});
+
+describe("eMAG marketplace fiscal API contract", () => {
+  it("uses the 3P attachment payload and keeps attachments scoped to the selected order", async () => {
+    const fetcher = vi.fn(async (url: string, init: RequestInit) => {
+      expect(init.redirect).toBe("manual");
+      const body = JSON.parse(String(init.body));
+      if (url.endsWith("/save")) {
+        expect(body).toEqual({
+          data: [
+            {
+              order_id: 2221,
+              order_type: 3,
+              type: 1,
+              name: "Factura CM-42.pdf",
+              url: "https://www.oblio.eu/utils/show_file/?test-only=42",
+            },
+          ],
+        });
+        return Response.json({ isError: false });
+      }
+      expect(body).toEqual({ order_id: 2221, order_type: 3 });
+      return Response.json({
+        isError: false,
+        results: [
+          { order_id: 2221, type: 1, name: "Factura CM-42.pdf" },
+          { order_id: 999, type: 1, name: "Other" },
+        ],
+      });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const c = { username: "api-test@example.test", password: "test-only" };
+    await emagAttachInvoice(
+      c,
+      2221,
+      "Factura CM-42.pdf",
+      new URL("https://www.oblio.eu/utils/show_file/?test-only=42"),
+    );
+    expect(await emagAttachments(c, 2221)).toEqual([
+      { order_id: 2221, type: 1, name: "Factura CM-42.pdf" },
+    ]);
+  });
+
+  it("rejects a delivery label from a different eMAG order and records only the verified AWB", async () => {
+    await importEmagOrder(db, emagOrder(), false);
+    const runtime = { DB: db } as unknown as Parameters<typeof verifyEmagConnection>[0];
+    let belongs = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        Response.json({
+          isError: false,
+          results: url.endsWith("/awb/read")
+            ? [
+                {
+                  emag_id: 123,
+                  order_id: belongs ? 2221 : 2222,
+                  type: 3,
+                  awb_type: 1,
+                  awb: [{ awb_number: "TEST-AWB" }],
+                  courier: [{ courier_name: "Test" }],
+                },
+              ]
+            : [],
+        }),
+      ),
+    );
+    await verifyEmagConnection(runtime);
+    await expect(linkEmagAwb(runtime, "emag-2221", 123)).rejects.toMatchObject({
+      code: "EMAG_AWB_MISMATCH",
+    });
+    expect(
+      sql.prepare("SELECT awb_id FROM emag_order_sources WHERE order_id='emag-2221'").get(),
+    ).toEqual({ awb_id: null });
+    belongs = true;
+    await linkEmagAwb(runtime, "emag-2221", 123);
+    expect(
+      sql.prepare("SELECT awb_id FROM emag_order_sources WHERE order_id='emag-2221'").get(),
+    ).toEqual({ awb_id: 123 });
+  });
+
+  it("denies fiscal PDFs to signed-out users and order staff without fiscal permissions", async () => {
+    const req = new Request(
+      "https://cutiutamagica.eu/api/v1/admin/marketplace-fiscal/orders/emag-2221/invoice",
+    );
+    const runtime = { DB: db } as unknown as Parameters<typeof handleMarketplaceFiscal>[1];
+    vi.mocked(authenticateAdminRequest).mockRejectedValueOnce(
+      new AdminAuthError("Autentificare necesară", 401),
+    );
+    expect((await handleMarketplaceFiscal(req, runtime))?.status).toBe(401);
+    vi.mocked(authenticateAdminRequest).mockResolvedValueOnce({
+      id: "staff",
+      email: "staff@example.test",
+      roles: ["staff"],
+      permissions: ["orders.read"],
+    } as Awaited<ReturnType<typeof authenticateAdminRequest>>);
+    expect((await handleMarketplaceFiscal(req, runtime))?.status).toBe(403);
+  });
+});
