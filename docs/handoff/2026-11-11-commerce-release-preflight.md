@@ -16,6 +16,8 @@ Revizia locală include migrarea D1 append-only `0096_marketplace_invoices.sql`,
 
 Stripe poate confirma acum o comandă și când clientul revine înainte de webhook. Backendul citește de la Stripe sesiunea asociată încercării salvate, verifică mediul, identitatea comenzii, suma și moneda și marchează plata o singură dată. Aceeași confirmare poate sosi ulterior prin webhook. Rezultatul expirat și neplătit folosește logica existentă de eliberare a comenzii. O referință diferită sau un răspuns incomplet lasă comanda în așteptare. [Stripe Checkout și confirmarea plăților](https://docs.stripe.com/checkout/fulfillment)
 
+Fișa comenzii folosește un dialog accesibil, cu navigare la tastatură și închidere prin Escape. La comenzile marketplace, fișa afișează operatorul de livrare, factura și eticheta disponibile. Statusul vine din platformă. În Integrări, disponibilitatea plății se citește din aceeași configurație publică folosită în checkout.
+
 ## Ordinea de publicare
 
 1. Verifică din nou ramurile de referință, Workerul activ, schema D1, triggerul orar și bookmarkul D1. Aplică doar migrarea 0096 înainte de publicarea Workerului.

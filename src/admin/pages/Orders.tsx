@@ -1,3 +1,4 @@
+import * as Dialog from "@radix-ui/react-dialog";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -226,254 +227,281 @@ function OrderDetailPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm md:items-center md:p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-xl border border-[#334155] bg-[#1E293B] p-5 md:rounded-xl md:p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
-              <Package className="h-5 w-5 text-purple-400" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white">{order.orderNumber}</h2>
-              <div className="flex items-center gap-2">
-                <PlatformBadge platform={order.platform} />
-                <span className="text-[10px] text-slate-500">{order.date}</span>
+    <Dialog.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
+        <Dialog.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-xl border border-[#334155] bg-[#1E293B] p-4 focus:outline-none sm:p-5 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:rounded-xl md:p-6">
+          <Dialog.Description className="sr-only">
+            Detaliile, livrarea și documentele comenzii.
+          </Dialog.Description>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
+                <Package className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <Dialog.Title className="text-base font-bold text-white">
+                  {order.orderNumber}
+                </Dialog.Title>
+                <div className="flex items-center gap-2">
+                  <PlatformBadge platform={order.platform} />
+                  <span className="text-[10px] text-slate-500">{order.date}</span>
+                </div>
               </div>
             </div>
+            <Dialog.Close
+              className="inline-grid size-10 place-items-center rounded-lg text-slate-300 hover:bg-[#334155] focus-visible:outline-2 focus-visible:outline-cyan-300"
+              aria-label="Închide"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </Dialog.Close>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-[#334155]"
-            aria-label="Închide"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
-        <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Client
-          </p>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-white">{order.customer}</span>
-            {order.phone && (
-              <a
-                href={`tel:${order.phone}`}
-                className="flex items-center gap-1.5 rounded-md bg-emerald-500/20 px-2 py-1 text-xs text-emerald-300"
-              >
-                <Phone className="h-3 w-3" /> Sună
-              </a>
-            )}
-          </div>
-          {(order.address || order.city) && (
-            <p className="mt-2 flex items-start gap-2 text-xs text-slate-400">
-              <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0" />
-              {[order.address, order.city, order.county].filter(Boolean).join(", ")}
+          <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Client
             </p>
-          )}
-          {order.email && <p className="mt-1 text-xs text-slate-500">{order.email}</p>}
-        </section>
-
-        <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3 text-sm">
-          {awaitingOnlinePayment && (
-            <p className="mb-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100">
-              Plata online nu este confirmată. Această solicitare nu poate fi pregătită sau
-              expediată.
-            </p>
-          )}
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Comandă
-          </p>
-          <p className="mb-2 text-slate-200">{order.products}</p>
-          <div className="flex items-center justify-between border-t border-[#334155]/50 pt-2">
-            <span className="text-xs text-slate-400">Total</span>
-            <strong className="text-lg text-white">
-              {order.total.toLocaleString("ro-RO")} {order.currency}
-            </strong>
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs text-slate-400">Livrare</span>
-            <span className="text-xs text-slate-200">{order.deliveryMethod}</span>
-          </div>
-          {order.awb && (
-            <button
-              type="button"
-              onClick={copyAwb}
-              className="mt-2 flex w-full items-center justify-end gap-1.5 text-xs font-mono text-purple-300"
-            >
-              {order.awb} <Copy className="h-3 w-3" /> {copied && "Copiat"}
-            </button>
-          )}
-          {order.trackingUrl && (
-            <a
-              href={order.trackingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex min-h-10 items-center text-xs font-medium text-cyan-300 underline underline-offset-4"
-            >
-              Urmărește coletul la SmartShip
-            </a>
-          )}
-          {order.shipmentStatus && (
-            <p className="mt-2 text-xs text-slate-300">
-              Status SmartShip:{" "}
-              <strong className="text-white">
-                {{
-                  label_created: "AWB emis",
-                  picked_up: "Ridicat",
-                  in_transit: "În tranzit",
-                  delivered: "Livrat",
-                  returned: "Returnat",
-                  cancelled: "Anulat",
-                  exception: "Necesită verificare",
-                }[order.shipmentStatus] ?? order.shipmentStatus}
-              </strong>
-              {order.shipmentUpdatedAt
-                ? ` · actualizat ${localDateTime(order.shipmentUpdatedAt)}`
-                : ""}
-            </p>
-          )}
-          {order.shipmentId && (
-            <button
-              type="button"
-              disabled={trackingBusy}
-              onClick={async () => {
-                setTrackingBusy(true);
-                try {
-                  await onTrackingRefresh();
-                } finally {
-                  setTrackingBusy(false);
-                }
-              }}
-              className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-cyan-300/30 px-3 text-xs font-semibold text-cyan-200 disabled:opacity-50"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />{" "}
-              {trackingBusy ? "Verificăm…" : "Actualizează trackingul"}
-            </button>
-          )}
-          {order.awbRequestStatus === "issued" && order.awb && (
-            <a
-              href={`/api/v1/admin/shipping/orders/${order.id}/label`}
-              className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg border border-cyan-300/30 px-3 text-xs font-medium text-cyan-200"
-            >
-              <Download className="h-3.5 w-3.5" /> Descarcă eticheta AWB
-            </a>
-          )}
-          {!order.awb && order.awbRequestStatus && (
-            <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
-              Emiterea AWB necesită verificare după numărul comenzii la SmartShip.
-            </p>
-          )}
-          {!order.awb && order.awbRequestStatus && (
-            <button
-              type="button"
-              disabled={awbBusy}
-              onClick={() => void handleAwb(true)}
-              className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 text-xs font-medium text-amber-200 disabled:opacity-50"
-            >
-              {awbBusy ? "Verificăm…" : "Verifică AWB după numărul comenzii"}
-            </button>
-          )}
-          {!order.awb &&
-            !order.awbRequestStatus &&
-            (Boolean(order.smartshipCourierId) ||
-              (order.channelCode === "website" && order.shippingOption === "home_delivery")) && (
-              <button
-                type="button"
-                disabled={
-                  awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
-                }
-                onClick={() => void handleAwb(false)}
-                className="mt-3 min-h-10 w-full rounded-lg bg-cyan-300 px-3 text-xs font-semibold text-[#07111f] disabled:opacity-50"
-              >
-                {awbBusy
-                  ? "Emitem AWB…"
-                  : order.smartshipCourierId
-                    ? "Emite AWB SmartShip"
-                    : "Alege curierul disponibil și emite AWB"}
-              </button>
-            )}
-          {!order.awb && !order.awbRequestStatus && order.smartshipCourierId === 0 && (
-            <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
-              <p>
-                Pentru acest Easybox, creează AWB-ul în SmartShip cu numărul comenzii{" "}
-                <strong>{order.orderNumber}</strong>, apoi sincronizează-l aici.
-              </p>
-              <button
-                type="button"
-                disabled={
-                  awbBusy || (order.paymentMethod === "card" && order.paymentStatus !== "paid")
-                }
-                onClick={() => void handleAwb(true)}
-                className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 font-medium disabled:opacity-50"
-              >
-                {awbBusy ? "Verificăm…" : "Sincronizează AWB-ul SmartShip"}
-              </button>
-            </div>
-          )}
-        </section>
-
-        <OrderFiscalActions key={order.id} id={order.id} channel={order.channelCode} />
-
-        <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Actualizează statusul
-          </p>
-          {marketplaceManaged && (
-            <p className="mb-2 text-xs text-orange-200">
-              Statusul se preia din marketplace. Pentru actualizări, folosește secțiunea de
-              sincronizare din Comenzi.
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {ADMIN_ORDER_STATUSES.map((status) => {
-              const allowed =
-                !marketplaceManaged &&
-                canTransitionOrderStatus(order.status, status) &&
-                (!awaitingOnlinePayment || status === "Anulată" || status === order.status);
-              return (
-                <button
-                  key={status}
-                  type="button"
-                  disabled={!allowed || isSaving}
-                  onClick={() => setCurrentStatus(status)}
-                  className={`flex items-center justify-center gap-1 rounded-lg border px-2 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
-                    currentStatus === status
-                      ? "border-purple-500/50 bg-purple-600/30 text-purple-200"
-                      : "border-[#334155] bg-[#1E293B] text-slate-400"
-                  }`}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-white">{order.customer}</span>
+              {order.phone && (
+                <a
+                  href={`tel:${order.phone}`}
+                  className="flex items-center gap-1.5 rounded-md bg-emerald-500/20 px-2 py-1 text-xs text-emerald-300"
                 >
-                  <StatusIcon status={status} /> {status}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={save}
-            disabled={isSaving}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {isSaving ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
+                  <Phone className="h-3 w-3" /> Sună
+                </a>
+              )}
+            </div>
+            {(order.address || order.city) && (
+              <p className="mt-2 flex items-start gap-2 text-xs text-slate-400">
+                <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                {[order.address, order.city, order.county].filter(Boolean).join(", ")}
+              </p>
             )}
-            Salvează
-          </button>
-          <a
-            href={`/admin/qr-generator?order=${encodeURIComponent(order.orderNumber)}`}
-            className="flex items-center justify-center gap-2 rounded-lg bg-[#334155] px-4 py-2.5 text-sm font-medium text-white"
-          >
-            <QrCode className="h-4 w-4" /> QR
-          </a>
-        </div>
-      </div>
-    </div>
+            {order.email && <p className="mt-1 text-xs text-slate-500">{order.email}</p>}
+          </section>
+
+          <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3 text-sm">
+            {awaitingOnlinePayment && (
+              <p className="mb-3 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-amber-100">
+                Plata online nu este confirmată. Această solicitare nu poate fi pregătită sau
+                expediată.
+              </p>
+            )}
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Comandă
+            </p>
+            <p className="mb-2 text-slate-200">{order.products}</p>
+            <div className="flex items-center justify-between border-t border-[#334155]/50 pt-2">
+              <span className="text-xs text-slate-400">Total</span>
+              <strong className="text-lg text-white">
+                {order.total.toLocaleString("ro-RO")} {order.currency}
+              </strong>
+            </div>
+            {marketplaceManaged ? (
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                <span className="text-slate-400">Livrare</span>
+                <span className="text-slate-200">
+                  {order.channelCode === "trendyol"
+                    ? "FAN Courier prin Trendyol"
+                    : "Gestionată în eMAG"}
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Livrare</span>
+                  <span className="text-xs text-slate-200">{order.deliveryMethod}</span>
+                </div>
+                {order.awb && (
+                  <button
+                    type="button"
+                    onClick={copyAwb}
+                    className="mt-2 flex w-full items-center justify-end gap-1.5 text-xs font-mono text-purple-300"
+                  >
+                    {order.awb} <Copy className="h-3 w-3" /> {copied && "Copiat"}
+                  </button>
+                )}
+                {order.trackingUrl && (
+                  <a
+                    href={order.trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex min-h-10 items-center text-xs font-medium text-cyan-300 underline underline-offset-4"
+                  >
+                    Urmărește coletul la SmartShip
+                  </a>
+                )}
+                {order.shipmentStatus && (
+                  <p className="mt-2 text-xs text-slate-300">
+                    Status SmartShip:{" "}
+                    <strong className="text-white">
+                      {{
+                        label_created: "AWB emis",
+                        picked_up: "Ridicat",
+                        in_transit: "În tranzit",
+                        delivered: "Livrat",
+                        returned: "Returnat",
+                        cancelled: "Anulat",
+                        exception: "Necesită verificare",
+                      }[order.shipmentStatus] ?? order.shipmentStatus}
+                    </strong>
+                    {order.shipmentUpdatedAt
+                      ? ` · actualizat ${localDateTime(order.shipmentUpdatedAt)}`
+                      : ""}
+                  </p>
+                )}
+                {order.shipmentId && (
+                  <button
+                    type="button"
+                    disabled={trackingBusy}
+                    onClick={async () => {
+                      setTrackingBusy(true);
+                      try {
+                        await onTrackingRefresh();
+                      } finally {
+                        setTrackingBusy(false);
+                      }
+                    }}
+                    className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-cyan-300/30 px-3 text-xs font-semibold text-cyan-200 disabled:opacity-50"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />{" "}
+                    {trackingBusy ? "Verificăm…" : "Actualizează trackingul"}
+                  </button>
+                )}
+                {order.awbRequestStatus === "issued" && order.awb && (
+                  <a
+                    href={`/api/v1/admin/shipping/orders/${order.id}/label`}
+                    className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg border border-cyan-300/30 px-3 text-xs font-medium text-cyan-200"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Descarcă eticheta AWB
+                  </a>
+                )}
+                {!order.awb && order.awbRequestStatus && (
+                  <p className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
+                    Emiterea AWB necesită verificare după numărul comenzii la SmartShip.
+                  </p>
+                )}
+                {!order.awb && order.awbRequestStatus && (
+                  <button
+                    type="button"
+                    disabled={awbBusy}
+                    onClick={() => void handleAwb(true)}
+                    className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 text-xs font-medium text-amber-200 disabled:opacity-50"
+                  >
+                    {awbBusy ? "Verificăm…" : "Verifică AWB după numărul comenzii"}
+                  </button>
+                )}
+                {!order.awb &&
+                  !order.awbRequestStatus &&
+                  (Boolean(order.smartshipCourierId) ||
+                    (order.channelCode === "website" &&
+                      order.shippingOption === "home_delivery")) && (
+                    <button
+                      type="button"
+                      disabled={
+                        awbBusy ||
+                        (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+                      }
+                      onClick={() => void handleAwb(false)}
+                      className="mt-3 min-h-10 w-full rounded-lg bg-cyan-300 px-3 text-xs font-semibold text-[#07111f] disabled:opacity-50"
+                    >
+                      {awbBusy
+                        ? "Emitem AWB…"
+                        : order.smartshipCourierId
+                          ? "Emite AWB SmartShip"
+                          : "Alege curierul disponibil și emite AWB"}
+                    </button>
+                  )}
+                {!order.awb && !order.awbRequestStatus && order.smartshipCourierId === 0 && (
+                  <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-xs text-amber-200">
+                    <p>
+                      Pentru acest Easybox, creează AWB-ul în SmartShip cu numărul comenzii{" "}
+                      <strong>{order.orderNumber}</strong>, apoi sincronizează-l aici.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={
+                        awbBusy ||
+                        (order.paymentMethod === "card" && order.paymentStatus !== "paid")
+                      }
+                      onClick={() => void handleAwb(true)}
+                      className="mt-2 min-h-10 w-full rounded-lg border border-amber-400/30 px-3 font-medium disabled:opacity-50"
+                    >
+                      {awbBusy ? "Verificăm…" : "Sincronizează AWB-ul SmartShip"}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          <OrderFiscalActions key={order.id} id={order.id} channel={order.channelCode} />
+
+          {marketplaceManaged ? (
+            <p className="mb-3 text-xs text-slate-300">
+              Statusul se sincronizează din {order.channelCode === "trendyol" ? "Trendyol" : "eMAG"}
+              .
+            </p>
+          ) : (
+            <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
+              <p className="mb-2 text-xs font-semibold text-slate-300">Actualizează statusul</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {ADMIN_ORDER_STATUSES.map((status) => {
+                  const allowed =
+                    canTransitionOrderStatus(order.status, status) &&
+                    (!awaitingOnlinePayment || status === "Anulată" || status === order.status);
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      disabled={!allowed || isSaving}
+                      onClick={() => setCurrentStatus(status)}
+                      className={`flex items-center justify-center gap-1 rounded-lg border px-2 py-2 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
+                        currentStatus === status
+                          ? "border-purple-500/50 bg-purple-600/30 text-purple-200"
+                          : "border-[#334155] bg-[#1E293B] text-slate-400"
+                      }`}
+                    >
+                      <StatusIcon status={status} /> {status}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {!marketplaceManaged && (
+              <button
+                type="button"
+                onClick={save}
+                disabled={isSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-600 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Salvează statusul
+              </button>
+            )}
+            <a
+              href={`/admin/qr-generator?order=${encodeURIComponent(order.orderNumber)}`}
+              className="flex items-center justify-center gap-2 rounded-lg bg-[#334155] px-4 py-2.5 text-sm font-medium text-white"
+            >
+              <QrCode className="h-4 w-4" aria-hidden="true" /> Cod QR
+            </a>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
