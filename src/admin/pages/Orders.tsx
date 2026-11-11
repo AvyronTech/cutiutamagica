@@ -40,6 +40,7 @@ import {
   updateAdminOrderStatus,
 } from "@/lib/admin.functions";
 import { TrendyolOperations } from "./TrendyolOperations";
+import { MarketplaceFiscalOperations, OrderFiscalActions } from "./MarketplaceFiscal";
 import { canTransitionOrderStatus } from "@/lib/order-status";
 
 const localDateTime = (value: string) => {
@@ -174,8 +175,14 @@ function OrderDetailPanel({
   const [copied, setCopied] = useState(false);
   const [awbBusy, setAwbBusy] = useState(false);
   const [trackingBusy, setTrackingBusy] = useState(false);
+  const marketplaceManaged =
+    order.channelCode === "trendyol" ||
+    (order.channelCode === "emag" && order.id.startsWith("emag-"));
   const awaitingOnlinePayment =
-    order.paymentMethod === "card" && order.paymentStatus !== "paid" && order.status !== "Anulată";
+    !marketplaceManaged &&
+    order.paymentMethod === "card" &&
+    order.paymentStatus !== "paid" &&
+    order.status !== "Anulată";
 
   async function handleAwb(reconcile: boolean) {
     if (
@@ -407,20 +414,22 @@ function OrderDetailPanel({
           )}
         </section>
 
+        <OrderFiscalActions key={order.id} id={order.id} channel={order.channelCode} />
+
         <section className="mb-4 rounded-xl border border-[#334155]/50 bg-[#0F172A] p-3">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Actualizează statusul
           </p>
-          {order.channelCode === "trendyol" && (
+          {marketplaceManaged && (
             <p className="mb-2 text-xs text-orange-200">
-              Statusul se preia din API. Folosește panoul Trendyol din Comenzi pentru sincronizare
-              și documente.
+              Statusul se preia din marketplace. Pentru actualizări, folosește secțiunea de
+              sincronizare din Comenzi.
             </p>
           )}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ADMIN_ORDER_STATUSES.map((status) => {
               const allowed =
-                order.channelCode !== "trendyol" &&
+                !marketplaceManaged &&
                 canTransitionOrderStatus(order.status, status) &&
                 (!awaitingOnlinePayment || status === "Anulată" || status === order.status);
               return (
@@ -799,6 +808,7 @@ export default function Orders() {
       </div>
 
       <TrendyolOperations />
+      <MarketplaceFiscalOperations />
 
       <section>
         <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">

@@ -249,6 +249,11 @@ export async function handleApiRequest(
   if (shippingLabelResponse) return shippingLabelResponse;
   const salesResponse = await handleSalesWorkbench(request, env);
   if (salesResponse) return salesResponse;
+  if (url.pathname.startsWith("/api/v1/admin/marketplace-fiscal")) {
+    const { handleMarketplaceFiscal } = await import("./marketplace-fiscal");
+    const fiscalResponse = await handleMarketplaceFiscal(request, env as CommerceEnv);
+    if (fiscalResponse) return fiscalResponse;
+  }
   const trendyolResponse = await handleTrendyol(request, env as CommerceEnv);
   if (trendyolResponse) return trendyolResponse;
   const dropshippingResponse = await handleDropshipping(request, env);

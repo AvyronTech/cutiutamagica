@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Facturi marketplace și eMAG RO — 11 noiembrie 2026, local
+
+- Factura PDF Oblio, emiterea explicită, imprimarea și documentele de expediere sunt în fișa comenzii. Trendyol folosește upload multipart și eticheta FAN a platformei. eMAG 3P importă comenzi, sincronizează inventarul intern pe SKU și atașează factura prin API. Migrare append-only **0096**; fără activare sau operații fiscale reale. [Handoff, probe și pași de activare](handoff/2026-11-11-marketplace-fiscal-sync.md).
+
 ## Politica de confidențialitate — 11 noiembrie 2026
 
 - Informare reorganizată cu operatorul spre final, fără sediu/mențiune TVA, cuprins accesibil, fonturi locale, scopuri și temeiuri, drepturi și referințe primare. Corectate sesiunea, conectarea și analiza/AI față de implementarea curentă. Fără migrare sau schimbări comerciale. [Surse, probe, limite juridice și receipt](handoff/2026-11-11-privacy-policy.md).

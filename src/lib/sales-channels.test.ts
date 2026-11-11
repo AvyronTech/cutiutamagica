@@ -17,7 +17,7 @@ describe("sales channel policy", () => {
     expect(channelRequiresVerifiedConnector("emag")).toBe(true);
     expect(channelRequiresVerifiedConnector("trendyol")).toBe(true);
     expect(channelRequiresVerifiedConnector("okazii")).toBe(true);
-    expect(salesChannelDefinitions.emag.mode).toContain("v4.5.1");
+    expect(salesChannelDefinitions.emag.mode).toContain("v4.5.2");
     expect(salesChannelDefinitions.trendyol.orderMode).toBe("official_api_v2");
     expect(salesChannelDefinitions.okazii.orderMode).toBe("manual_import");
   });

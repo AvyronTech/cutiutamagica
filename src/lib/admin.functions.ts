@@ -412,13 +412,14 @@ export const getCommerceOperations = createServerFn({ method: "GET" })
     };
   });
 
-const invoiceOrderInput = z.object({ orderId: z.string().uuid() });
+const invoiceOrderInput = z.object({ orderId: z.string().regex(/^[\w-]{1,100}$/) });
 
 export const issueInvoice = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator(invoiceOrderInput)
   .handler(async ({ context, data }) => {
     assertPermission(context.admin, "orders.write");
+    assertPermission(context.admin, "operations.read");
     return issueInvoiceForOrder(env as CommerceEnv, data.orderId, {
       id: context.admin.id,
       email: context.admin.email,

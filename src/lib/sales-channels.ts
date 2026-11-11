@@ -12,10 +12,10 @@ export const salesChannelDefinitions = {
     name: "eMAG",
     portal: "https://marketplace.emag.ro/",
     hosts: ["marketplace.emag.ro", "www.emag.ro", "emag.ro"],
-    mode: "API oficial v4.5.1 · necesită maparea categoriei",
+    mode: "API oficial v4.5.2 · necesită maparea categoriei",
     listingPolicy: "setup_required",
     orderMode: "official_api",
-    help: "Cont seller, acces API v4.5.1, categorii, caracteristici și identificatori validați. Până la verificarea conectorului, pregătește numai ciorna/exportul din catalog.",
+    help: "Cont seller, acces API v4.5.2, categorii, caracteristici și identificatori validați. Până la verificarea conectorului, pregătește numai ciorna/exportul din catalog.",
   },
   trendyol: {
     name: "Trendyol",
