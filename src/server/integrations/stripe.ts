@@ -23,6 +23,41 @@ export interface StripeCheckoutInput {
 
 type StripeSession = { id?: string; url?: string; payment_intent?: string };
 
+export async function readStripeCheckoutSession(env: CommerceEnv, id: string) {
+  const live = env.APP_ENV === "production";
+  const idPattern = live ? /^cs_live_[A-Za-z0-9]+$/ : /^cs_test_[A-Za-z0-9]+$/;
+  if (!idPattern.test(id))
+    throw new ProviderError("Sesiune de plată invalidă.", "INVALID_STRIPE_SESSION", 409);
+
+  const key = requiredSecret((await credential(env, "stripe")) ?? undefined, "STRIPE_SECRET_KEY");
+  const response = await fetchWithTimeout(
+    `https://api.stripe.com/v1/checkout/sessions/${id}`,
+    {
+      method: "GET",
+      headers: { authorization: `Bearer ${key}`, accept: "application/json" },
+      redirect: "manual",
+    },
+    4000,
+  );
+  const session = (await readProviderJson(response, 131072)) as {
+    id?: string;
+    livemode?: boolean;
+    mode?: string;
+    client_reference_id?: string;
+    status?: string;
+    payment_status?: string;
+    amount_total?: number;
+    currency?: string;
+  } | null;
+  if (!response.ok || session?.id !== id || session.livemode !== live || session.mode !== "payment")
+    throw new ProviderError(
+      "Sesiunea de plată nu a fost confirmată.",
+      "STRIPE_SESSION_UNVERIFIED",
+      409,
+    );
+  return session;
+}
+
 export async function expireStripeCheckoutSession(
   env: CommerceEnv,
   sessionId: string,

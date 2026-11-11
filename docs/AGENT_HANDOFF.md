@@ -1,5 +1,9 @@
 # Handoff pentru agenții care lucrează la Cutiuța Magică
 
+## Pregătirea publicării fluxurilor comerciale — 11 noiembrie 2026
+
+- Verificări de producție pentru Stripe, ramburs, Trendyol, Oblio și schema D1, plus recuperarea Stripe când webhookul întârzie. [Pașii de publicare și dovezile](handoff/2026-11-11-commerce-release-preflight.md).
+
 ## Facturi marketplace și eMAG RO — 11 noiembrie 2026, local
 
 - Factura PDF Oblio, emiterea explicită, imprimarea și documentele de expediere sunt în fișa comenzii. Trendyol folosește upload multipart și eticheta FAN a platformei. eMAG 3P importă comenzi, sincronizează inventarul intern pe SKU și atașează factura prin API. Migrare append-only **0096**; fără activare sau operații fiscale reale. [Handoff, probe și pași de activare](handoff/2026-11-11-marketplace-fiscal-sync.md).

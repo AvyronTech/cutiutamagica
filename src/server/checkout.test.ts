@@ -603,6 +603,59 @@ describe("secure checkout", () => {
       canResume: false,
     });
   });
+  it("confirms a real provider result after a missing webhook and dispatches order notifications only once", async () => {
+    const created = await start();
+    sqlite.exec("UPDATE payment_attempts SET updated_at=datetime('now','-1 minute')");
+    const fetcher = vi.fn(async (url: string | URL | Request, options?: RequestInit) => {
+      expect(String(url)).toBe("https://api.stripe.com/v1/checkout/sessions/cs_test_local");
+      expect(options?.method).toBe("GET");
+      return Response.json({
+        id: "cs_test_local",
+        livemode: false,
+        mode: "payment",
+        client_reference_id: created.orderId,
+        status: "complete",
+        payment_status: "paid",
+        amount_total: Math.round(created.total * 100),
+        currency: "ron",
+      });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const status = await handlePayments(request("/api/v1/payments/status", created), env);
+    expect(await status?.json()).toMatchObject({ data: { status: "paid", canResume: false } });
+    expect((await event(created, {}, "evt_late_after_lookup"))?.status).toBe(200);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(env.COMMERCE_EVENTS.send).toHaveBeenCalledTimes(2);
+    expect(
+      sqlite
+        .prepare("SELECT COUNT(*) n FROM order_events WHERE event_type='payment.captured'")
+        .get()?.n,
+    ).toBe(1);
+  });
+
+  it("keeps a checkout pending when the provider returns a different order reference", async () => {
+    const created = await start();
+    sqlite.exec("UPDATE payment_attempts SET updated_at=datetime('now','-1 minute')");
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        id: "cs_test_local",
+        livemode: false,
+        mode: "payment",
+        client_reference_id: crypto.randomUUID(),
+        status: "complete",
+        payment_status: "paid",
+        amount_total: Math.round(created.total * 100),
+        currency: "ron",
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const status = await handlePayments(request("/api/v1/payments/status", created), env);
+    expect(await status?.json()).toMatchObject({ data: { status: "pending" } });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(storedPayment(created.orderId)).toBe("unpaid");
+    expect(env.COMMERCE_EVENTS.send).not.toHaveBeenCalled();
+  });
+
   it("acknowledges a captured payment while accounting reconciliation runs in the Worker context", async () => {
     const created = await start();
     const scheduled: Promise<unknown>[] = [];
